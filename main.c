@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 // чтобы не использовать malloc лишний раз, выделим память заранее в сегменте данных
 // (ИМХО сложно его использовать, не зная размер входных данных)
@@ -18,8 +19,40 @@ int comp(const void *a, const void *b)
     return strcmp(*(const char**)a, *(const char**)b);
 }
 
+void unit_test_1()
+{
+    const char *a = "Alpha";
+    const char b[] = "Beta";
+    const char *c = b;
+    assert(comp(&a, &c) < 0);
+    assert(comp(&c, &a) > 0);
+}
+
+void unit_test_2()
+{
+    const char *a = "Alpha";
+    const char *b = "Alpha";
+    assert(comp(&a, &b) == 0);
+}
+
+void unit_test_3()
+{
+    const char *a = "Charlie";
+    const char *b = "Beta";
+    assert(comp(&a, &b) > 0);
+    assert(comp(&b, &a) < 0);
+}
+
+void do_unit_tests()
+{
+    unit_test_1();
+    unit_test_2();
+    unit_test_3();
+}
+
 int main()
 {
+    do_unit_tests();
     FILE *fd = fopen("onegin.txt", "r");
     // счетчик строк
     int str_cnt = 0;
