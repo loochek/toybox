@@ -4,7 +4,9 @@
 // Помним, что даблы нельзя сравнивать с помощью ==, напишем свою функцию, сравнивая
 // числа с погрешностью EPS
 
-#define EPS 1e-7
+// обернуть в функции, тесты
+
+const double EPS = 1e-7;
 
 int is_equal(double a, double b)
 {
@@ -13,7 +15,9 @@ int is_equal(double a, double b)
 
 int main()
 {
-    double a, b, c;
+    double  a = 0,
+            b = 0,
+            c = 0;
     printf("Quadratic equation solver\nax^2 + bx + c = 0\nEnter a, b, c: ");
     scanf("%lf %lf %lf", &a, &b, &c);
     if (is_equal(a, 0))

@@ -3,11 +3,18 @@
 #include <stdlib.h>
 #include <assert.h>
 
+/* ввод вывод обернуть в функции
+свой strcmp
+malloc
+*/
+
+const int MAX_STRING = 100;
+
 // чтобы не использовать malloc лишний раз, выделим память заранее в сегменте данных
 // (ИМХО сложно его использовать, не зная размер входных данных)
 // (так что, надеюсь, за такое выделение меня не побьют        )
 // 10000 строк по 100 символов хватит
-char mem[10000][100];
+char mem[10000][MAX_STRING];
 // еще будем хранить указатели на строки - их и будем сортировать
 char* strings[10000];
 
@@ -52,12 +59,14 @@ void do_unit_tests()
 
 int main()
 {
+#ifdef DO_UNIT_TESTS
     do_unit_tests();
+#endif
     FILE *fd = fopen("onegin.txt", "r");
     // счетчик строк
     int str_cnt = 0;
     // считываем строки пока они есть и записываем указатели на них в strings
-    while (fgets(mem[str_cnt], 100, fd) != NULL)
+    while (fgets(mem[str_cnt], MAX_STRING, fd) != NULL)
     {
         strings[str_cnt] = mem[str_cnt];
         str_cnt++;
