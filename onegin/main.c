@@ -119,7 +119,7 @@ int dummy()
     // читаем файл
     int str_cnt = read_input();
     // сортируем
-    if (argc >= 2 && strcmp(argv[1], "-r"))
+    if (argc >= 2 && strcmp(argv[1], "-r") == 0)
         qsort(strings, str_cnt, sizeof(string_entry_t), comp_rev);
     else
         qsort(strings, str_cnt, sizeof(string_entry_t), comp);
