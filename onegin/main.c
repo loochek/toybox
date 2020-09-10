@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <ctype.h>
+
+#include "custom_strcmp.h"
 
 /* ввод вывод обернуть в функции done
-свой strcmp
+свой strcmp done
 malloc done
 */
 
@@ -15,55 +17,12 @@ malloc done
 // Сами строки будем хранить в памяти, выделяемой malloc'ом
 char* strings[MAX_STRINGS_COUNT];
 
-// так как библиотечная не может в русские буквы
-int is_alpha(unsigned char c)
-{
-    return ((c >= 'a' && c <= 'z') ||
-        (c >= 'A' && c <= 'Z') ||
-        (c >= 192 && c <= 223) ||
-        (c >= 224 && c <= 255));
-}
-
 // компаратор строк. Обратите внимание, что раз сортить мы будем указатели,
 // то qsort будет нам передавать указатели на указатели на строки
 int comp(const void *f, const void *s)
 {
     // разыменовываем УнУнС просто в указатели на строку
-    const unsigned char *a = *(const char**)f;
-    const unsigned char *b = *(const char**)s;
-
-    // сравниваем строки a и b без учета знаков препинания и пробелов
-    // иначе говоря, рассмариваем только буквы a..z A..Z а..я А...Я
-
-    while (*a != '\0' && *b != '\0')
-    {
-        // игнорируем не-буквы
-        while (!is_alpha(*a) && *a != '\0')
-            a++;
-        while (!is_alpha(*b) && *b != '\0')
-            b++;
-        if (*a == 0 || *b == 0)
-            break;
-
-        printf("%c %c\n", *a, *b);
-        printf("%u %u\n", *a, *b);
-        if (*a > *b)
-            return 1;
-        else if (*a < *b)
-            return -1;
-        else
-        {
-            a++;
-            b++;
-        }
-        
-    }
-    if (*a != '\0' && *b == '\0')
-        return 1;
-    else if (*a == '\0' && *b != '\0')
-        return -1;
-    else
-        return 0;
+    return custom_strcmp(*(const unsigned char**)f, *(const unsigned char**)s);
 }
 
 // считывает строки из файла
@@ -111,43 +70,13 @@ void cleanup(int str_cnt)
         free(strings[i]);
 }
 
-void unit_test_1()
-{
-    const char *a = "Alpha";
-    const char b[] = "Beta";
-    const char *c = b;
-    assert(comp(&a, &c) < 0);
-    assert(comp(&c, &a) > 0);
-}
-
-void unit_test_2()
-{
-    const char *a = "Alpha";
-    const char *b = "Alpha";
-    assert(comp(&a, &b) == 0);
-}
-
-void unit_test_3()
-{
-    const char *a = "Charlie";
-    const char *b = "Beta";
-    assert(comp(&a, &b) > 0);
-    assert(comp(&b, &a) < 0);
-}
-
-void do_unit_tests()
-{
-    unit_test_1();
-    unit_test_2();
-    unit_test_3();
-}
-
+#ifndef TEST
 int main()
-{
-#ifdef DO_UNIT_TESTS
-    do_unit_tests();
+#else
+int dummy()
 #endif
-    // читаем файл5
+{
+    // читаем файл
     int str_cnt = read_input();
     // еще раз: сортим указатели!
     qsort(strings, str_cnt, sizeof(char*), comp);
