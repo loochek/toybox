@@ -5,24 +5,37 @@
 
 #include "custom_strcmp.h"
 
-/* ввод вывод обернуть в функции done
-свой strcmp done
-malloc done
-*/
+// в gcc с константой не компилируется, а с clang'ом не работает отладчик
+// в релизе можно будет заменить
 
-#define MAX_STRINGS_COUNT 10000
-//const int MAX_STRINGS_COUNT = 10000;
+//#define MAX_STRINGS_COUNT 10000
+const int MAX_STRINGS_COUNT = 10000;
 
-// Будем хранить указатели на строки - их и будем сортировать
+// Будем хранить указатели на начало и конец строк (для перевернутого компаратора) - их и будем сортировать
 // Сами строки будем хранить в памяти, выделяемой malloc'ом
-char* strings[MAX_STRINGS_COUNT];
 
-// компаратор строк. Обратите внимание, что раз сортить мы будем указатели,
-// то qsort будет нам передавать указатели на указатели на строки
+typedef struct
+{
+    char *begin;
+    char *end;
+}  string_entry_t;
+
+string_entry_t strings[MAX_STRINGS_COUNT];
+
+// компаратор строк
 int comp(const void *f, const void *s)
 {
-    // разыменовываем УнУнС просто в указатели на строку
-    return custom_strcmp(*(const unsigned char**)f, *(const unsigned char**)s);
+    string_entry_t a = *(string_entry_t*)f;
+    string_entry_t b = *(string_entry_t*)s;
+    return custom_strcmp((const unsigned char*)a.begin, (const unsigned char*)b.begin);
+}
+
+// перевернутый компаратор
+int comp_rev(const void *f, const void *s)
+{
+    string_entry_t a = *(string_entry_t*)f;
+    string_entry_t b = *(string_entry_t*)s;
+    return custom_strcmp_rev((const unsigned char*)a.end, (const unsigned char*)b.end);
 }
 
 // указатель на выделенный кусок памяти
@@ -39,19 +52,24 @@ int read_input()
     // определяем размер файла
 
     fseek(fd, 0, SEEK_END);
-    // в худшем случае нам нужно sizeof(char) * (file_size + 1) памяти
+    // в худшем случае нам нужно sizeof(char) * (file_size + 2) памяти
     // память для \0 обеспечена \n'ами, для последней строки делаем на всякий случай +1
+    // еще первым символом запихнем \0, тогда можем бежать по строке и в обратную сторону
+    // итого +2
     int file_size = ftell(fd);
     fseek(fd, 0, SEEK_SET);
 
     // выделяем все одним блоком - строки будем хранить последовательно
-    char *mem = malloc(sizeof(char) * (file_size + 1));
-    mem_start = mem;
-    strings[0] = mem;
-
+    mem_start = malloc(sizeof(char) * (file_size + 2));
+    // этим указателем будем двигаться по памяти
+    char *mem = mem_start;
+    // тот самый \0
+    *mem = '\0';
+    mem++;
+    // далее уже строки
+    strings[0].begin = mem;
     // счетчик строк
-    int str_cnt = 0; 
-    
+    int str_cnt = 0;
     // считываем посимвольно
     int c;
     while (str_cnt < MAX_STRINGS_COUNT && (c = fgetc(fd)) != EOF)
@@ -59,9 +77,10 @@ int read_input()
         if (c == '\n')
         {
             *mem = '\0';
+            strings[str_cnt].end = mem;
             mem++;
             str_cnt++;
-            strings[str_cnt] = mem;
+            strings[str_cnt].begin = mem;
         }
         else
         {
@@ -70,6 +89,7 @@ int read_input()
         }
     }
     *mem = '\0';
+    strings[str_cnt].end = mem;
     str_cnt++;
     fclose(fd);
 
@@ -84,22 +104,25 @@ void write_output(int str_cnt)
     FILE *fdout = fopen("onegin_parsed.txt", "w");
     for (int i = 0; i < str_cnt; i++)
     {
-        fputs(strings[i], fdout);
+        fputs(strings[i].begin, fdout);
         fputc('\n', fdout);
     }
     fclose(fdout);
 }
 
 #ifndef TEST
-int main()
+int main(const int argc, const char* argv[])
 #else
 int dummy()
 #endif
 {
     // читаем файл
     int str_cnt = read_input();
-    // еще раз: сортим указатели!
-    qsort(strings, str_cnt, sizeof(char*), comp);
+    // сортируем
+    if (argc >= 2 && strcmp(argv[1], "-r"))
+        qsort(strings, str_cnt, sizeof(string_entry_t), comp_rev);
+    else
+        qsort(strings, str_cnt, sizeof(string_entry_t), comp);
     // выводим
     write_output(str_cnt);
     // освобождаем память

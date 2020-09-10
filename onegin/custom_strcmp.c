@@ -42,3 +42,38 @@ int custom_strcmp(const unsigned char *a, const unsigned char *b)
     else
         return 0;
 }
+
+// перевернутый компаратор
+// просто ++ заменены на --, так как наша организация памяти позволяет
+// (строки нуль-терминированы с обоих сторон)
+// также помним, что указатели указывают на нуль-терминатор
+int custom_strcmp_rev(const unsigned char *a, const unsigned char *b)
+{
+    a--; b--;
+    while (*a != '\0' && *b != '\0')
+    {
+        // игнорируем не-буквы
+        while (!is_alpha(*a) && *a != '\0')
+            a--;
+        while (!is_alpha(*b) && *b != '\0')
+            b--;
+        if (*a == 0 || *b == 0)
+            break;
+
+        if (*a > *b)
+            return 1;
+        else if (*a < *b)
+            return -1;
+        else
+        {
+            a--;
+            b--;
+        }
+    }
+    if (*a != '\0' && *b == '\0')
+        return 1;
+    else if (*a == '\0' && *b != '\0')
+        return -1;
+    else
+        return 0;
+}
