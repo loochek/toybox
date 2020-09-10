@@ -10,8 +10,8 @@
 malloc done
 */
 
-#define MAX_LENGTH 100
-#define MAX_STRINGS_COUNT 10000
+const int MAX_LENGTH = 100;
+const int MAX_STRINGS_COUNT = 10000;
 
 // Будем хранить указатели на строки - их и будем сортировать
 // Сами строки будем хранить в памяти, выделяемой malloc'ом

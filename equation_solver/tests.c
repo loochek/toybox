@@ -7,9 +7,9 @@ const double tests[TEST_COUNT][3] = {
     { 0, 0, 0 },
     { 3, -14, -5 },
     { 9, -6, 1 },
-    {4, 0, 8 },
-    {0, -4, 8 },
-    {0, 0, 1 }
+    { 4, 0, 8 },
+    { 0, -4, 8 },
+    { 0, 0, 1 }
 };
 
 const equation_solution_t answers[TEST_COUNT] = {
@@ -17,8 +17,8 @@ const equation_solution_t answers[TEST_COUNT] = {
     { TWO_SOLUTIONS, 5, -1.0 / 3},
     { ONE_SOLUTION, 1.0 / 3, 0 },
     { NO_SOLUTIONS, 0, 0 },
-    { ONE_SOLUTION, 2, 0},
-    { NO_SOLUTIONS, 0, 0}
+    { ONE_SOLUTION, 2, 0 },
+    { NO_SOLUTIONS, 0, 0 }
 };
 
 #ifndef TEST
