@@ -25,6 +25,8 @@ int comp(const void *f, const void *s)
     return custom_strcmp(*(const unsigned char**)f, *(const unsigned char**)s);
 }
 
+// лишняя память sys/stat.h 
+
 // считывает строки из файла
 // результат: str_cnt указателей на строки в strings
 // не забудьте освободить эту память!

@@ -8,7 +8,9 @@ int dummy();
 int main()
 #endif
 {
-    double a = 0, b = 0, c = 0;
+    double  a = 0, 
+            b = 0,
+            c = 0;
     printf("Equation solver\nax^2 + bx + c = 0\nEnter a, b, c: ");
     scanf("%lf %lf %lf", &a, &b, &c);
     equation_solution_t sol = solve_equation(a, b, c);
