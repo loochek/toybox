@@ -10,8 +10,8 @@
 malloc done
 */
 
-const int MAX_LENGTH = 100;
-const int MAX_STRINGS_COUNT = 10000;
+#define MAX_STRINGS_COUNT 10000
+//const int MAX_STRINGS_COUNT = 10000;
 
 // Будем хранить указатели на строки - их и будем сортировать
 // Сами строки будем хранить в памяти, выделяемой malloc'ом
@@ -25,30 +25,52 @@ int comp(const void *f, const void *s)
     return custom_strcmp(*(const unsigned char**)f, *(const unsigned char**)s);
 }
 
-// лишняя память sys/stat.h 
+// указатель на выделенный кусок памяти
+static char *mem_start;
 
 // считывает строки из файла
 // результат: str_cnt указателей на строки в strings
-// не забудьте освободить эту память!
+// не забудьте освободить память по указателю mem_start!
+// из за \n'а в конце файла пихает пустую строку, ну и ладно
 int read_input()
 {
     FILE *fd = fopen("onegin.txt", "r");
+ 
+    // определяем размер файла
+
+    fseek(fd, 0, SEEK_END);
+    // в худшем случае нам нужно sizeof(char) * (file_size + 1) памяти
+    // память для \0 обеспечена \n'ами, для последней строки делаем на всякий случай +1
+    int file_size = ftell(fd);
+    fseek(fd, 0, SEEK_SET);
+
+    // выделяем все одним блоком - строки будем хранить последовательно
+    char *mem = malloc(sizeof(char) * (file_size + 1));
+    mem_start = mem;
+    strings[0] = mem;
+
     // счетчик строк
-    int str_cnt = 0;
-    // выделяем память под первую строку
-    char *str_ptr = malloc(sizeof(char) * MAX_LENGTH);
-    // считываем строки и записываем указатели на них в strings
-    while (str_cnt < MAX_STRINGS_COUNT && fgets(str_ptr, MAX_LENGTH, fd) != NULL)
+    int str_cnt = 0; 
+    
+    // считываем посимвольно
+    int c;
+    while (str_cnt < MAX_STRINGS_COUNT && (c = fgetc(fd)) != EOF)
     {
-        strings[str_cnt] = str_ptr;
-        // выделяем память под очередную строку
-        str_ptr = malloc(sizeof(char) * MAX_LENGTH);
-        str_cnt++;
+        if (c == '\n')
+        {
+            *mem = '\0';
+            mem++;
+            str_cnt++;
+            strings[str_cnt] = mem;
+        }
+        else
+        {
+            *mem = c;
+            mem++;
+        }
     }
-    // освобождаем последнюю неиспользованную память
-    // (издержки реализации)
-    // (зато ничего не копируем)
-    free(str_ptr);
+    *mem = '\0';
+    str_cnt++;
     fclose(fd);
 
     // возвращаем количество считанных строк
@@ -61,15 +83,11 @@ void write_output(int str_cnt)
     // выводим первые str_cnt строк из strings
     FILE *fdout = fopen("onegin_parsed.txt", "w");
     for (int i = 0; i < str_cnt; i++)
+    {
         fputs(strings[i], fdout);
+        fputc('\n', fdout);
+    }
     fclose(fdout);
-}
-
-// освобождает память
-void cleanup(int str_cnt)
-{
-    for (int i = 0; i < str_cnt; i++)
-        free(strings[i]);
 }
 
 #ifndef TEST
@@ -85,6 +103,6 @@ int dummy()
     // выводим
     write_output(str_cnt);
     // освобождаем память
-    cleanup(str_cnt);
+    free(mem_start);
     return 0;
 }

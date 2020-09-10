@@ -32,7 +32,7 @@ equation_solution_t solve_equation(double a, double b, double c)
         return (equation_solution_t){ ONE_SOLUTION, -b / (2 * a), 0 };
     else if (discr > 0)
         return (equation_solution_t){ TWO_SOLUTIONS, (-b + sqrt(discr)) / (2 * a),
-                                                            (-b - sqrt(discr)) / (2 * a) };
+                                                     (-b - sqrt(discr)) / (2 * a) };
     else
         return (equation_solution_t){ NO_SOLUTIONS, 0, 0 };
     
