@@ -5,29 +5,19 @@
 
 #include "custom_strcmp.h"
 
-// в gcc с константой не компилируется, а с clang'ом не работает отладчик
-// в релизе можно будет заменить
-
-//#define MAX_STRINGS_COUNT 10000
-const int MAX_STRINGS_COUNT = 10000;
-
 // Будем хранить указатели на начало и конец строк (для перевернутого компаратора) - их и будем сортировать
-// Сами строки будем хранить в памяти, выделяемой malloc'ом
-
 typedef struct
 {
     char *begin;
     char *end;
 }  string_entry_t;
 
-string_entry_t strings[MAX_STRINGS_COUNT];
-
 // компаратор строк
 int comp(const void *f, const void *s)
 {
     string_entry_t a = *(string_entry_t*)f;
     string_entry_t b = *(string_entry_t*)s;
-    return custom_strcmp((const unsigned char*)a.begin, (const unsigned char*)b.begin);
+    return custom_strcmp(a.begin, b.begin);
 }
 
 // перевернутый компаратор
@@ -35,79 +25,124 @@ int comp_rev(const void *f, const void *s)
 {
     string_entry_t a = *(string_entry_t*)f;
     string_entry_t b = *(string_entry_t*)s;
-    return custom_strcmp_rev((const unsigned char*)a.end, (const unsigned char*)b.end);
+    return custom_strcmp_rev(a.end, b.end);
 }
 
-// указатель на выделенный кусок памяти
-static char *mem_start;
-
-// считывает строки из файла
-// результат: str_cnt указателей на строки в strings
-// не забудьте освободить память по указателю mem_start!
-// из за \n'а в конце файла пихает пустую строку, ну и ладно
-int read_input()
+// читает строки
+// требуется указать адреса buffer, str_cnt, index - в случае успешного чтения
+// в них будут лежать указатель на буфер памяти, количество считанных строк 
+// и указатель на индекс, в котором для всех строк последовательно хранятся указатели
+// на начало и конец строк
+// чтение успешно, если возвращен 0, иначе ошибка
+// если чтение успешно, вы обязаны освободить память buffer и index!!!
+int read_input(char **buffer_ret, size_t *str_cnt, string_entry_t **index_ret)
 {
-    FILE *fd = fopen("onegin.txt", "r");
+    FILE *fd = fopen("onegin.txt", "rb");
  
     // определяем размер файла
 
-    fseek(fd, 0, SEEK_END);
+    if (fseek(fd, 0, SEEK_END) != 0)
+    {
+        fclose(fd);
+        return -1;
+    }
+
+    int file_size = ftell(fd);
+    if (file_size == -1)
+    {
+        fclose(fd);
+        return -1;
+    }
+    if (fseek(fd, 0, SEEK_SET) != 0)
+    {
+        fclose(fd);
+        return -1;
+    }
+
+    // будем хранить строки последовательно в одном буфере
     // в худшем случае нам нужно sizeof(char) * (file_size + 2) памяти
-    // память для \0 обеспечена \n'ами, для последней строки делаем на всякий случай +1
+    // память для \0 обеспечена \n'ами, для последней строки добавим если его нет
+    // (по-хорошему в конце файла должен быть \n, но не всегда)
     // еще первым символом запихнем \0, тогда можем бежать по строке и в обратную сторону
     // итого +2
-    int file_size = ftell(fd);
-    fseek(fd, 0, SEEK_SET);
-
-    // выделяем все одним блоком - строки будем хранить последовательно
-    mem_start = malloc(sizeof(char) * (file_size + 2));
-    // этим указателем будем двигаться по памяти
-    char *mem = mem_start;
-    // тот самый \0
-    *mem = '\0';
-    mem++;
-    // далее уже строки
-    strings[0].begin = mem;
-    // счетчик строк
-    int str_cnt = 0;
-    // считываем посимвольно
-    int c;
-    while (str_cnt < MAX_STRINGS_COUNT && (c = fgetc(fd)) != EOF)
+    char* buf = malloc(sizeof(char) * (file_size + 2));
+    if (buf == NULL)
     {
-        if (c == '\n')
-        {
-            *mem = '\0';
-            strings[str_cnt].end = mem;
-            mem++;
-            str_cnt++;
-            strings[str_cnt].begin = mem;
-        }
-        else
-        {
-            *mem = c;
-            mem++;
-        }
+        fclose(fd);
+        return -1;
     }
-    *mem = '\0';
-    strings[str_cnt].end = mem;
-    str_cnt++;
+    // "вернем" его, свою копию будем двигать
+    *buffer_ret = buf;
+    // тот самый \0
+    *(buf++) = '\0';
+
+    // читаем файл напрямую в буфер
+    if (fread(buf, sizeof(char), file_size, fd) != file_size)
+    {
+        free(*buffer_ret);
+        fclose(fd);
+        return -1;
+    }
     fclose(fd);
 
-    // возвращаем количество считанных строк
-    return str_cnt;
+    // тот самый \n в конце (проще добавить тут и не делать доп. проверок в дальнейшем)
+    if (buf[file_size - 1] != '\n')
+    {
+        buf[file_size] = '\n';
+        // как будто он и был в файле
+        file_size++;
+    }    
+    
+    // заменяем \n на \0, параллельно считаем число строк
+    // (сколько \n - столько и строк по определению)
+    *str_cnt = 0;
+    for (size_t i = 0; i < file_size; i++)
+    {
+        if (buf[i] == '\n')
+        {
+            buf[i] = '\0';
+            (*str_cnt)++;
+        }
+    }
+    
+    // выделяем память под индекс
+    string_entry_t *index = malloc(*str_cnt * sizeof(string_entry_t));
+    if (index == NULL)
+    {
+        free(*buffer_ret);
+        fclose(fd);
+        return -1;
+    }
+    *index_ret = index;
+
+    // строим индекс, все достаточно прозрачно
+    size_t idx_cnt = 0;
+    // первый и последний символы - частные случаи
+    index[idx_cnt].begin = buf;
+    for (size_t i = 0; i < file_size - 1; i++)
+    {
+        if (buf[i] == '\0')
+        {
+            index[idx_cnt].end = buf + i;
+            idx_cnt++;
+            index[idx_cnt].begin = buf + i + 1;
+        }
+    }
+    index[idx_cnt].end = buf + file_size - 1;
+    return 0;
 }
 
-// пишет строки из strings в файл
-void write_output(int str_cnt)
+// пишет строки из strings в файл fd
+void write_output(FILE *fdout, string_entry_t *index, size_t str_cnt)
 {
-    // выводим первые str_cnt строк из strings
-    FILE *fdout = fopen("onegin_parsed.txt", "w");
-    for (int i = 0; i < str_cnt; i++)
+    // выводим первые str_cnt строк из index
+    for (size_t i = 0; i < str_cnt; i++)
     {
-        fputs(strings[i].begin, fdout);
+        fputs(index[i].begin, fdout);
         fputc('\n', fdout);
     }
-    fclose(fdout);
+    // перевод строки в конце
+    fputc('\n', fdout);
 }
 
 #ifndef TEST
@@ -117,15 +152,39 @@ int dummy()
 #endif
 {
     // читаем файл
-    int str_cnt = read_input();
-    // сортируем
-    if (argc >= 2 && strcmp(argv[1], "-r") == 0)
-        qsort(strings, str_cnt, sizeof(string_entry_t), comp_rev);
-    else
-        qsort(strings, str_cnt, sizeof(string_entry_t), comp);
-    // выводим
-    write_output(str_cnt);
+    char *buffer = NULL;
+    string_entry_t *index = NULL;
+    size_t str_cnt = 0;
+    if (read_input(&buffer, &str_cnt, &index) != 0)
+    {
+        printf("An error has occured\n");
+        return -1;
+    }
+
+    // скопируем индекс, чтобы сохранить его изначальное состояние
+    string_entry_t *index_orig = malloc(str_cnt * sizeof(string_entry_t));
+    if (index_orig == NULL)
+    {
+        printf("An error has occured\n");
+        return -1;
+    }
+    memcpy(index_orig, index, str_cnt * sizeof(string_entry_t));
+
+    FILE *fdout = fopen("onegin_parsed.txt", "w");
+    // сортируем и выводим
+    // обычная сортировка
+    qsort(index, str_cnt, sizeof(string_entry_t), comp);
+    write_output(fdout, index, str_cnt);
+    // перевернутая
+    qsort(index, str_cnt, sizeof(string_entry_t), comp_rev);
+    write_output(fdout, index, str_cnt);
+    // оригинал текста
+    write_output(fdout, index_orig, str_cnt);
+
+    fclose(fdout);
     // освобождаем память
-    free(mem_start);
+    free(buffer);
+    free(index);
+    free(index_orig);
     return 0;
 }

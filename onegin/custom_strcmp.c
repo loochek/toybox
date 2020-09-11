@@ -9,7 +9,7 @@ static int is_alpha(unsigned char c)
         (c >= 224 && c <= 255));
 }
 
-int custom_strcmp(const unsigned char *a, const unsigned char *b)
+int custom_strcmp(const char *a, const char *b)
 {
     // сравниваем строки a и b без учета знаков препинания и пробелов
     // иначе говоря, рассмариваем только буквы a..z A..Z а..я А...Я
@@ -47,7 +47,7 @@ int custom_strcmp(const unsigned char *a, const unsigned char *b)
 // просто ++ заменены на --, так как наша организация памяти позволяет
 // (строки нуль-терминированы с обоих сторон)
 // также помним, что указатели указывают на нуль-терминатор
-int custom_strcmp_rev(const unsigned char *a, const unsigned char *b)
+int custom_strcmp_rev(const char *a, const char *b)
 {
     a--; b--;
     while (*a != '\0' && *b != '\0')
