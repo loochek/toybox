@@ -3,6 +3,9 @@ CC=clang
 build:
 	$(CC) main.c custom_strcmp.c -o onegin
 
+build_debug:
+	$(CC) -g main.c custom_strcmp.c -o onegin
+
 run: build
 	./onegin
 
