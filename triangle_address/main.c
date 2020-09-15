@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TRIANGLE(r, c) ((0 + (r - 1)) * ((r - 1) + 1) / 2 + c)
+#define TRIANGLE(r, c) ((r - 1) * r / 2 + c)
 
 int main()
 {

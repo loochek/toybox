@@ -1,16 +1,33 @@
 #include "custom_strcmp.h"
 
-// так как библиотечная не может в русские буквы
+//так как библиотечная не может в русские буквы
 static int is_alpha(unsigned char c)
 {
     return ((c >= 'a' && c <= 'z') ||
         (c >= 'A' && c <= 'Z') ||
         (c >= 192 && c <= 223) ||
-        (c >= 224 && c <= 255));
+        (c >= 224 && c <= 255)) ||
+        (c == 184 || c == 168);
 }
 
-int custom_strcmp(const char *a, const char *b)
+static void plus(const char **s)
 {
+    (*s)++;
+}
+
+static void minus(const char **s)
+{
+    (*s)--;
+}
+
+int custom_strcmp(const char *a, const char *b, int rev)
+{
+    void (*operation)(const char**);
+    if (rev == 1)
+        operation = minus;
+    else
+        operation = plus;
+        
     // сравниваем строки a и b без учета знаков препинания и пробелов
     // иначе говоря, рассмариваем только буквы a..z A..Z а..я А...Я
 
@@ -18,9 +35,9 @@ int custom_strcmp(const char *a, const char *b)
     {
         // игнорируем не-буквы
         while (!is_alpha(*a) && *a != '\0')
-            a++;
+            operation(&a);
         while (!is_alpha(*b) && *b != '\0')
-            b++;
+            operation(&b);
         if (*a == 0 || *b == 0)
             break;
 
@@ -30,45 +47,10 @@ int custom_strcmp(const char *a, const char *b)
             return -1;
         else
         {
-            a++;
-            b++;
+            operation(&a);
+            operation(&b);
         }
         
-    }
-    if (*a != '\0' && *b == '\0')
-        return 1;
-    else if (*a == '\0' && *b != '\0')
-        return -1;
-    else
-        return 0;
-}
-
-// перевернутый компаратор
-// просто ++ заменены на --, так как наша организация памяти позволяет
-// (строки нуль-терминированы с обоих сторон)
-// также помним, что указатели указывают на нуль-терминатор
-int custom_strcmp_rev(const char *a, const char *b)
-{
-    a--; b--;
-    while (*a != '\0' && *b != '\0')
-    {
-        // игнорируем не-буквы
-        while (!is_alpha(*a) && *a != '\0')
-            a--;
-        while (!is_alpha(*b) && *b != '\0')
-            b--;
-        if (*a == 0 || *b == 0)
-            break;
-
-        if (*a > *b)
-            return 1;
-        else if (*a < *b)
-            return -1;
-        else
-        {
-            a--;
-            b--;
-        }
     }
     if (*a != '\0' && *b == '\0')
         return 1;

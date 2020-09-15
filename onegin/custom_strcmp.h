@@ -1,7 +1,5 @@
 // свой strcmp для соответствия ТЗ
 // Следите за тем, чтобы был windows-1251, на двухбайтной кодировке не работает
-// (потратил прилично времени, чтобы это понять)
-int custom_strcmp(const char *a, const char *b);
-
-// перевернутый custom_strcmp
-int custom_strcmp_rev(const char *a, const char *b);
+// если rev = 1, то компаратор идет в обратную сторону, принимая указатели на последние символы строк
+// (однако перед первым символом должен быть нуль-терминатор)
+int custom_strcmp(const char *a, const char *b, int rev);

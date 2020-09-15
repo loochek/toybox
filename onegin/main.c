@@ -17,7 +17,7 @@ int comp(const void *f, const void *s)
 {
     string_entry_t a = *(string_entry_t*)f;
     string_entry_t b = *(string_entry_t*)s;
-    return custom_strcmp(a.begin, b.begin);
+    return custom_strcmp(a.begin, b.begin, 0);
 }
 
 // перевернутый компаратор
@@ -25,7 +25,24 @@ int comp_rev(const void *f, const void *s)
 {
     string_entry_t a = *(string_entry_t*)f;
     string_entry_t b = *(string_entry_t*)s;
-    return custom_strcmp_rev(a.end, b.end);
+    // т.к. .end указывает на нуль-терминатор
+    return custom_strcmp(a.end - 1, b.end - 1, 1);
+}
+
+int get_file_size(FILE *fd)
+{
+    // определяем размер файла
+
+    if (fseek(fd, 0, SEEK_END) != 0)
+        return -1;
+
+    int file_size = ftell(fd);
+    if (file_size == -1)
+        return -1;
+    if (fseek(fd, 0, SEEK_SET) != 0)
+        return -1;
+
+    return file_size;
 }
 
 // читает строки
@@ -38,26 +55,12 @@ int comp_rev(const void *f, const void *s)
 int read_input(char **buffer_ret, size_t *str_cnt, string_entry_t **index_ret)
 {
     FILE *fd = fopen("onegin.txt", "rb");
- 
-    // определяем размер файла
+    if (fd == NULL)
+        return -1;
 
-    if (fseek(fd, 0, SEEK_END) != 0)
-    {
-        fclose(fd);
+    int file_size = -1;
+    if ((file_size = get_file_size(fd)) == -1)
         return -1;
-    }
-
-    int file_size = ftell(fd);
-    if (file_size == -1)
-    {
-        fclose(fd);
-        return -1;
-    }
-    if (fseek(fd, 0, SEEK_SET) != 0)
-    {
-        fclose(fd);
-        return -1;
-    }
 
     // будем хранить строки последовательно в одном буфере
     // в худшем случае нам нужно sizeof(char) * (file_size + 2) памяти
@@ -133,16 +136,22 @@ int read_input(char **buffer_ret, size_t *str_cnt, string_entry_t **index_ret)
 }
 
 // пишет строки из strings в файл fd
-void write_output(FILE *fdout, string_entry_t *index, size_t str_cnt)
+int write_output(FILE *fdout, string_entry_t *index, size_t str_cnt)
 {
+    if (fdout == NULL)
+        return -1;
     // выводим первые str_cnt строк из index
     for (size_t i = 0; i < str_cnt; i++)
     {
-        fputs(index[i].begin, fdout);
-        fputc('\n', fdout);
+        if (fputs(index[i].begin, fdout) == EOF)
+            return -1;
+        if (fputc('\n', fdout) == EOF)
+            return -1;
     }
     // перевод строки в конце
-    fputc('\n', fdout);
+    if (fputc('\n', fdout) == EOF)
+        return -1;
+    return 0;
 }
 
 #ifndef TEST
@@ -160,7 +169,6 @@ int dummy()
         printf("An error has occured\n");
         return -1;
     }
-
     // скопируем индекс, чтобы сохранить его изначальное состояние
     string_entry_t *index_orig = malloc(str_cnt * sizeof(string_entry_t));
     if (index_orig == NULL)
@@ -171,16 +179,32 @@ int dummy()
     memcpy(index_orig, index, str_cnt * sizeof(string_entry_t));
 
     FILE *fdout = fopen("onegin_parsed.txt", "w");
+    if (fdout == NULL)
+    {
+        printf("An error has occured\n");
+        return -1;
+    }
     // сортируем и выводим
     // обычная сортировка
     qsort(index, str_cnt, sizeof(string_entry_t), comp);
-    write_output(fdout, index, str_cnt);
+    if (write_output(fdout, index, str_cnt) != 0)
+    {
+        printf("An error has occured\n");
+        return -1;
+    }
     // перевернутая
     qsort(index, str_cnt, sizeof(string_entry_t), comp_rev);
-    write_output(fdout, index, str_cnt);
+    if (write_output(fdout, index, str_cnt) != 0)
+    {
+        printf("An error has occured\n");
+        return -1;
+    }
     // оригинал текста
-    write_output(fdout, index_orig, str_cnt);
-
+    if (write_output(fdout, index_orig, str_cnt) != 0)
+    {
+        printf("An error has occured\n");
+        return -1;
+    }
     fclose(fdout);
     // освобождаем память
     free(buffer);
