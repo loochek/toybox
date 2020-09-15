@@ -154,61 +154,53 @@ int write_output(FILE *fdout, string_entry_t *index, size_t str_cnt)
     return 0;
 }
 
-#ifndef TEST
-int main(const int argc, const char* argv[])
-#else
-int dummy()
-#endif
+int onegin()
 {
     // читаем файл
     char *buffer = NULL;
     string_entry_t *index = NULL;
     size_t str_cnt = 0;
     if (read_input(&buffer, &str_cnt, &index) != 0)
-    {
-        printf("An error has occured\n");
         return -1;
-    }
     // скопируем индекс, чтобы сохранить его изначальное состояние
     string_entry_t *index_orig = malloc(str_cnt * sizeof(string_entry_t));
     if (index_orig == NULL)
-    {
-        printf("An error has occured\n");
         return -1;
-    }
     memcpy(index_orig, index, str_cnt * sizeof(string_entry_t));
 
     FILE *fdout = fopen("onegin_parsed.txt", "w");
     if (fdout == NULL)
-    {
-        printf("An error has occured\n");
         return -1;
-    }
     // сортируем и выводим
     // обычная сортировка
     qsort(index, str_cnt, sizeof(string_entry_t), comp);
     if (write_output(fdout, index, str_cnt) != 0)
-    {
-        printf("An error has occured\n");
         return -1;
-    }
     // перевернутая
     qsort(index, str_cnt, sizeof(string_entry_t), comp_rev);
     if (write_output(fdout, index, str_cnt) != 0)
-    {
-        printf("An error has occured\n");
         return -1;
-    }
     // оригинал текста
     if (write_output(fdout, index_orig, str_cnt) != 0)
-    {
-        printf("An error has occured\n");
         return -1;
-    }
     fclose(fdout);
     // освобождаем память
     free(buffer);
     free(index);
     free(index_orig);
+    return 0;
+}
+
+#ifndef TEST
+int main(const int argc, const char* argv[])
+#else
+int dummy()
+#endif
+{
+    if (onegin() != 0)
+    {
+        printf("An error has occured\n");
+        return -1;
+    }
     return 0;
 }
