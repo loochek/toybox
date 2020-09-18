@@ -10,24 +10,8 @@ static int is_alpha(unsigned char c)
         (c == 184 || c == 168);
 }
 
-static void plus(const char **s)
+int custom_strcmp(const char *a, const char *b, int step)
 {
-    (*s)++;
-}
-
-static void minus(const char **s)
-{
-    (*s)--;
-}
-
-int custom_strcmp(const char *a, const char *b, int rev)
-{
-    void (*operation)(const char**);
-    if (rev == 1)
-        operation = minus;
-    else
-        operation = plus;
-        
     // сравниваем строки a и b без учета знаков препинания и пробелов
     // иначе говоря, рассмариваем только буквы a..z A..Z а..я А...Я
 
@@ -35,9 +19,9 @@ int custom_strcmp(const char *a, const char *b, int rev)
     {
         // игнорируем не-буквы
         while (!is_alpha(*a) && *a != '\0')
-            operation(&a);
+            a += step;
         while (!is_alpha(*b) && *b != '\0')
-            operation(&b);
+            b += step;
         if (*a == 0 || *b == 0)
             break;
 
@@ -47,10 +31,9 @@ int custom_strcmp(const char *a, const char *b, int rev)
             return -1;
         else
         {
-            operation(&a);
-            operation(&b);
+            a += step;
+            b += step;
         }
-        
     }
     if (*a != '\0' && *b == '\0')
         return 1;
