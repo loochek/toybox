@@ -12,6 +12,28 @@ typedef struct
     const char *end;
 }  string_entry_t;
 
+typedef int (*comp_t)(const void *a_ptr, const void *b_ptr);
+
+void bubble_sort(void *data, size_t elem_count, size_t elem_size, comp_t cmp_func)
+{
+    for (int i = elem_count; i >= 0; i--)
+    {
+        for (int j = 0; j < i - 1; j++)
+        {
+            char *first_addr = (char*)data + j * elem_size;
+            char *second_addr = (char*)data + (j + 1) * elem_size;
+            if (cmp_func(first_addr, second_addr) > 0)
+            {
+                #warning check size of tmp buffer!
+                char tmp[16];
+                memcpy(tmp, first_addr, elem_size);
+                memcpy(first_addr, second_addr, elem_size);
+                memcpy(second_addr, tmp, elem_size);
+            }
+        }
+    }
+}
+
 // компаратор строк
 int comp(const void *a_ptr, const void *b_ptr)
 {
@@ -45,17 +67,17 @@ int get_file_size(FILE *fd)
     return file_size;
 }
 
-// выдает нуль-терминорованную строку с пробелом в начале и гарантированным \n в конце
+// выдает нуль-терминированную строку с пробелом в начале и гарантированным \n в конце
 // в случае ошибки вернет нулевой указатель
 char* create_string_from_file(const char* file_name, size_t *str_size_ptr)
 {
     FILE *file = fopen(file_name, "r");
-    int file_size = -1;
-    if ((file_size = get_file_size(file)) == -1)
+    int data_size = -1;
+    if ((data_size = get_file_size(file)) == -1)
         return NULL;
 
     // +2 для пробела, возможного \n в конце и нуль-терминатора
-    char* buf = calloc(file_size + 3, sizeof(char));
+    char* buf = calloc(data_size + 3, sizeof(char));
     if (buf == NULL)
     {
         fclose(file);
@@ -63,22 +85,22 @@ char* create_string_from_file(const char* file_name, size_t *str_size_ptr)
     }
 
     // читаем файл напрямую в буфер (оставляем место под пробел)
-    if (fread(buf + 1, sizeof(char), file_size, file) != file_size)
+    if (fread(buf + 1, sizeof(char), data_size, file) != data_size)
     {
         free(buf);
         fclose(file);
         return NULL;
     }
-
+    // т. к. мы сдвинулись на 1
+    data_size++;
     // пробел в начале
     *buf = ' ';
-    file_size++;
 
     // \n в конце (если его не было)
-    if (buf[file_size - 1] != '\n')
+    if (buf[data_size - 1] != '\n')
     {
-        buf[file_size] = '\n';
-        file_size++;
+        buf[data_size] = '\n';
+        data_size++;
     }
 
     // \0 обеспечивается calloc'ом
@@ -89,7 +111,7 @@ char* create_string_from_file(const char* file_name, size_t *str_size_ptr)
         fclose(file);
         return NULL;
     }
-    *str_size_ptr = file_size;
+    *str_size_ptr = data_size;
     return buf;
 }
 
@@ -113,8 +135,8 @@ size_t parse_string(char *buf)
 
 // строит индекс
 // если не получилось, возвращает NULL
-// иначе массив из str_cnt элементов типа string_entry_t
-string_entry_t *create_index(const char *buf, int buf_size, size_t str_cnt)
+// иначе возвращает массив из str_cnt элементов типа string_entry_t
+string_entry_t *create_index(const char *buf, size_t buf_size, size_t str_cnt)
 {
     // выделяем память
     string_entry_t *index = calloc(str_cnt, sizeof(string_entry_t));
@@ -162,7 +184,7 @@ int main(const int argc, const char* argv[])
 int dummy()
 #endif
 {
-    size_t size;
+    size_t size = 0;
     char *buf = create_string_from_file("onegin.txt", &size);
     if (buf == NULL)
     {
@@ -172,7 +194,7 @@ int dummy()
     size_t str_cnt = parse_string(buf);
     // игнорируем \0 в начале
     string_entry_t *index = create_index(buf + 1, size - 1, str_cnt);
-    if (buf == NULL)
+    if (index == NULL)
     {
         printf("Index creation error\n");
         return -1;
@@ -180,7 +202,6 @@ int dummy()
     //скопируем индекс, чтобы сохранить его изначальное состояние
     string_entry_t *index_orig = calloc(str_cnt, sizeof(string_entry_t));
     if (index_orig == NULL)
-    if (buf == NULL)
     {
         printf("Malloc error\n");
         return -1;
@@ -195,14 +216,14 @@ int dummy()
     }
     // сортируем и выводим
     // обычная сортировка
-    qsort(index, str_cnt, sizeof(string_entry_t), comp);
+    bubble_sort(index, str_cnt, sizeof(string_entry_t), comp);
     if (write_output(fdout, index, str_cnt) != 0)
     {
         printf("Output error\n");
         return -1;
     }
     // перевернутая
-    qsort(index, str_cnt, sizeof(string_entry_t), comp_rev);
+    bubble_sort(index, str_cnt, sizeof(string_entry_t), comp_rev);
     if (write_output(fdout, index, str_cnt) != 0)
     {
         printf("Output error\n");
