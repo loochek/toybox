@@ -4,6 +4,8 @@
 
 int get_file_size(FILE *fd)
 {
+    if (fd == NULL)
+        return -1;
     // определяем размер файла
 
     if (fseek(fd, 0, SEEK_END) != 0)
