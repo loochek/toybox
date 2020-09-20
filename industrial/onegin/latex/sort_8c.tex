@@ -1,0 +1,37 @@
+\hypertarget{sort_8c}{}\doxysection{Файл sort.\+c}
+\label{sort_8c}\index{sort.c@{sort.c}}
+{\ttfamily \#include $<$string.\+h$>$}\newline
+{\ttfamily \#include \char`\"{}sort.\+h\char`\"{}}\newline
+Граф включаемых заголовочных файлов для sort.\+c\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=200pt]{sort_8c__incl}
+\end{center}
+\end{figure}
+\doxysubsection*{Функции}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{sort_8c_a3149729eb928eed2a5af1f11f943bb8f}\label{sort_8c_a3149729eb928eed2a5af1f11f943bb8f}} 
+static int \mbox{\hyperlink{sort_8c_a3149729eb928eed2a5af1f11f943bb8f}{is\+\_\+alpha}} (unsigned char c)
+\begin{DoxyCompactList}\small\item\em так как библиотечная не может в русские буквы \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{sort_8c_af7d86274e89fdb43d53fb9f85de43674}{custom\+\_\+strcmp}} (const char $\ast$a, const char $\ast$b, int step)
+\begin{DoxyCompactList}\small\item\em свой strcmp для соответствия ТЗ \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{sort_8c_a4f74edc86bdcdf9c1c1be2ede42d5c34}\label{sort_8c_a4f74edc86bdcdf9c1c1be2ede42d5c34}} 
+void \mbox{\hyperlink{sort_8c_a4f74edc86bdcdf9c1c1be2ede42d5c34}{bubble\+\_\+sort}} (void $\ast$data, size\+\_\+t elem\+\_\+count, size\+\_\+t elem\+\_\+size, cmp\+\_\+func\+\_\+t cmp\+\_\+func)
+\begin{DoxyCompactList}\small\item\em своя сортировка, полностью совместима с объявлением qsort. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Функции}
+\mbox{\Hypertarget{sort_8c_af7d86274e89fdb43d53fb9f85de43674}\label{sort_8c_af7d86274e89fdb43d53fb9f85de43674}} 
+\index{sort.c@{sort.c}!custom\_strcmp@{custom\_strcmp}}
+\index{custom\_strcmp@{custom\_strcmp}!sort.c@{sort.c}}
+\doxysubsubsection{\texorpdfstring{custom\_strcmp()}{custom\_strcmp()}}
+{\footnotesize\ttfamily int custom\+\_\+strcmp (\begin{DoxyParamCaption}\item[{const char $\ast$}]{a,  }\item[{const char $\ast$}]{b,  }\item[{int}]{step }\end{DoxyParamCaption})}
+
+
+
+свой strcmp для соответствия ТЗ 
+
+step -\/ шаг сравнения 

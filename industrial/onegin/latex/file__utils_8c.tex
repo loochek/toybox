@@ -1,0 +1,40 @@
+\hypertarget{file__utils_8c}{}\doxysection{Файл file\+\_\+utils.\+c}
+\label{file__utils_8c}\index{file\_utils.c@{file\_utils.c}}
+{\ttfamily \#include \char`\"{}file\+\_\+utils.\+h\char`\"{}}\newline
+Граф включаемых заголовочных файлов для file\+\_\+utils.\+c\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=202pt]{file__utils_8c__incl}
+\end{center}
+\end{figure}
+\doxysubsection*{Функции}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{file__utils_8c_a84971169ba9cdc9a21ebadfafd39b2a0}{get\+\_\+file\+\_\+size}} (F\+I\+LE $\ast$fd)
+\item 
+char $\ast$ \mbox{\hyperlink{file__utils_8c_a06faf8eba6c23008504722816f2f61eb}{create\+\_\+string\+\_\+from\+\_\+file}} (const char $\ast$file\+\_\+name, size\+\_\+t $\ast$str\+\_\+size\+\_\+ptr)
+\begin{DoxyCompactList}\small\item\em выдает нуль-\/терминированную строку с пробелом в начале и гарантированным ~\newline
+ в конце \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Функции}
+\mbox{\Hypertarget{file__utils_8c_a06faf8eba6c23008504722816f2f61eb}\label{file__utils_8c_a06faf8eba6c23008504722816f2f61eb}} 
+\index{file\_utils.c@{file\_utils.c}!create\_string\_from\_file@{create\_string\_from\_file}}
+\index{create\_string\_from\_file@{create\_string\_from\_file}!file\_utils.c@{file\_utils.c}}
+\doxysubsubsection{\texorpdfstring{create\_string\_from\_file()}{create\_string\_from\_file()}}
+{\footnotesize\ttfamily char$\ast$ create\+\_\+string\+\_\+from\+\_\+file (\begin{DoxyParamCaption}\item[{const char $\ast$}]{file\+\_\+name,  }\item[{size\+\_\+t $\ast$}]{str\+\_\+size\+\_\+ptr }\end{DoxyParamCaption})}
+
+
+
+выдает нуль-\/терминированную строку с пробелом в начале и гарантированным ~\newline
+ в конце 
+
+в случае ошибки вернет нулевой указатель \mbox{\Hypertarget{file__utils_8c_a84971169ba9cdc9a21ebadfafd39b2a0}\label{file__utils_8c_a84971169ba9cdc9a21ebadfafd39b2a0}} 
+\index{file\_utils.c@{file\_utils.c}!get\_file\_size@{get\_file\_size}}
+\index{get\_file\_size@{get\_file\_size}!file\_utils.c@{file\_utils.c}}
+\doxysubsubsection{\texorpdfstring{get\_file\_size()}{get\_file\_size()}}
+{\footnotesize\ttfamily int get\+\_\+file\+\_\+size (\begin{DoxyParamCaption}\item[{F\+I\+LE $\ast$}]{fd }\end{DoxyParamCaption})}
+
+устанавливает указатель чтения в начало! в случае ошибки возвращает -\/1 

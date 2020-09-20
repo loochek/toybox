@@ -1,16 +1,16 @@
 CC=clang
 
 build:
-	$(CC) main.c custom_strcmp.c -o onegin
+	$(CC) main.c file_utils.c sort.c -o onegin
 
 build_debug:
-	$(CC) -g main.c custom_strcmp.c -o onegin
+	$(CC) -g main.c file_utils.c sort.c -o onegin
 
 run: build
 	./onegin
 
 test:
-	$(CC) -DTEST custom_strcmp.c tests.c -o onegin
+	$(CC) -DTEST main.c file_utils.c sort.c -o onegin
 	./onegin
 
 clean:

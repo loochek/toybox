@@ -1,0 +1,49 @@
+\hypertarget{file__utils_8h}{}\doxysection{Файл file\+\_\+utils.\+h}
+\label{file__utils_8h}\index{file\_utils.h@{file\_utils.h}}
+{\ttfamily \#include $<$stdlib.\+h$>$}\newline
+{\ttfamily \#include $<$stdio.\+h$>$}\newline
+Граф включаемых заголовочных файлов для file\+\_\+utils.\+h\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=202pt]{file__utils_8h__incl}
+\end{center}
+\end{figure}
+Граф файлов, в которые включается этот файл\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=214pt]{file__utils_8h__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsection*{Функции}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{file__utils_8h_a84971169ba9cdc9a21ebadfafd39b2a0}{get\+\_\+file\+\_\+size}} (F\+I\+LE $\ast$fd)
+\item 
+char $\ast$ \mbox{\hyperlink{file__utils_8h_a06faf8eba6c23008504722816f2f61eb}{create\+\_\+string\+\_\+from\+\_\+file}} (const char $\ast$file\+\_\+name, size\+\_\+t $\ast$str\+\_\+size\+\_\+ptr)
+\begin{DoxyCompactList}\small\item\em выдает нуль-\/терминированную строку с пробелом в начале и гарантированным ~\newline
+ в конце \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Функции}
+\mbox{\Hypertarget{file__utils_8h_a06faf8eba6c23008504722816f2f61eb}\label{file__utils_8h_a06faf8eba6c23008504722816f2f61eb}} 
+\index{file\_utils.h@{file\_utils.h}!create\_string\_from\_file@{create\_string\_from\_file}}
+\index{create\_string\_from\_file@{create\_string\_from\_file}!file\_utils.h@{file\_utils.h}}
+\doxysubsubsection{\texorpdfstring{create\_string\_from\_file()}{create\_string\_from\_file()}}
+{\footnotesize\ttfamily char$\ast$ create\+\_\+string\+\_\+from\+\_\+file (\begin{DoxyParamCaption}\item[{const char $\ast$}]{file\+\_\+name,  }\item[{size\+\_\+t $\ast$}]{str\+\_\+size\+\_\+ptr }\end{DoxyParamCaption})}
+
+
+
+выдает нуль-\/терминированную строку с пробелом в начале и гарантированным ~\newline
+ в конце 
+
+в случае ошибки вернет нулевой указатель \mbox{\Hypertarget{file__utils_8h_a84971169ba9cdc9a21ebadfafd39b2a0}\label{file__utils_8h_a84971169ba9cdc9a21ebadfafd39b2a0}} 
+\index{file\_utils.h@{file\_utils.h}!get\_file\_size@{get\_file\_size}}
+\index{get\_file\_size@{get\_file\_size}!file\_utils.h@{file\_utils.h}}
+\doxysubsubsection{\texorpdfstring{get\_file\_size()}{get\_file\_size()}}
+{\footnotesize\ttfamily int get\+\_\+file\+\_\+size (\begin{DoxyParamCaption}\item[{F\+I\+LE $\ast$}]{fd }\end{DoxyParamCaption})}
+
+устанавливает указатель чтения в начало! в случае ошибки возвращает -\/1 

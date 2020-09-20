@@ -1,0 +1,47 @@
+\hypertarget{sort_8h}{}\doxysection{Файл sort.\+h}
+\label{sort_8h}\index{sort.h@{sort.h}}
+{\ttfamily \#include $<$stdlib.\+h$>$}\newline
+Граф включаемых заголовочных файлов для sort.\+h\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=133pt]{sort_8h__incl}
+\end{center}
+\end{figure}
+Граф файлов, в которые включается этот файл\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{sort_8h__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsection*{Определения типов}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{sort_8h_af1820003a6f2f42a095a2df95f4c0ab5}\label{sort_8h_af1820003a6f2f42a095a2df95f4c0ab5}} 
+typedef int($\ast$ {\bfseries cmp\+\_\+func\+\_\+t}) (const void $\ast$, const void $\ast$)
+\end{DoxyCompactItemize}
+\doxysubsection*{Функции}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{sort_8h_af7d86274e89fdb43d53fb9f85de43674}{custom\+\_\+strcmp}} (const char $\ast$a, const char $\ast$b, int step)
+\begin{DoxyCompactList}\small\item\em свой strcmp для соответствия ТЗ \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{sort_8h_a4f74edc86bdcdf9c1c1be2ede42d5c34}\label{sort_8h_a4f74edc86bdcdf9c1c1be2ede42d5c34}} 
+void \mbox{\hyperlink{sort_8h_a4f74edc86bdcdf9c1c1be2ede42d5c34}{bubble\+\_\+sort}} (void $\ast$data, size\+\_\+t elem\+\_\+count, size\+\_\+t elem\+\_\+size, cmp\+\_\+func\+\_\+t cmp\+\_\+func)
+\begin{DoxyCompactList}\small\item\em своя сортировка, полностью совместима с объявлением qsort. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Функции}
+\mbox{\Hypertarget{sort_8h_af7d86274e89fdb43d53fb9f85de43674}\label{sort_8h_af7d86274e89fdb43d53fb9f85de43674}} 
+\index{sort.h@{sort.h}!custom\_strcmp@{custom\_strcmp}}
+\index{custom\_strcmp@{custom\_strcmp}!sort.h@{sort.h}}
+\doxysubsubsection{\texorpdfstring{custom\_strcmp()}{custom\_strcmp()}}
+{\footnotesize\ttfamily int custom\+\_\+strcmp (\begin{DoxyParamCaption}\item[{const char $\ast$}]{a,  }\item[{const char $\ast$}]{b,  }\item[{int}]{step }\end{DoxyParamCaption})}
+
+
+
+свой strcmp для соответствия ТЗ 
+
+step -\/ шаг сравнения 
