@@ -5,6 +5,7 @@
 
 #include "sort.h"
 #include "file_utils.h"
+#include "debug_print.h"
 
 /** \file */
 
@@ -62,8 +63,8 @@ static string_entry_t *create_index(const char *buf, size_t buf_size, size_t str
     string_entry_t *index = calloc(str_cnt, sizeof(string_entry_t));
     if (index == NULL)
     {
-        fprintf(stderr, "Fatal: unable to allocate memory");
-        abort();
+        DPRINT("unable to allocate memory");
+        return NULL;
     }
     size_t idx_cnt = 0;
     // первый и последний символы - частные случаи
@@ -90,18 +91,30 @@ static string_entry_t *create_index(const char *buf, size_t buf_size, size_t str
 static int write_by_index(FILE *fdout, string_entry_t *index, size_t str_cnt)
 {
     if (fdout == NULL)
+    {
+        DPRINT("file descriptor is null");
         return -1;
+    }
     // выводим первые str_cnt строк из index
     for (size_t i = 0; i < str_cnt; i++)
     {
         if (fputs(index[i].begin, fdout) == EOF)
+        {
+            DPRINT("fputs failed");
             return -1;
+        }
         if (fputc('\n', fdout) == EOF)
+        {
+            DPRINT("fputc failed");
             return -1;
+        }
     }
     // перевод строки в конце
     if (fputc('\n', fdout) == EOF)
+    {
+        DPRINT("fputc failed");
         return -1;
+    }
     return 0;
 }
 
@@ -110,8 +123,8 @@ static string_entry_t* copy_index(string_entry_t *src, size_t str_cnt)
     string_entry_t *copy = calloc(str_cnt, sizeof(string_entry_t));
     if (copy == NULL)
     {
-        fprintf(stderr, "Fatal: unable to allocate memory");
-        abort();
+        DPRINT("unable to allocate memory");
+        return NULL;
     }
     memcpy(copy, src, str_cnt * sizeof(string_entry_t));
     return copy;
@@ -135,14 +148,24 @@ int dummy()
 
     // игнорируем \0 в начале
     string_entry_t *index = create_index(buf + 1, size - 1, str_cnt);
+    if (index == NULL)
+    {
+        fprintf(stderr, "Can't create index\n");
+        return -1;
+    }
 
     //скопируем индекс, чтобы сохранить его изначальное состояние
     string_entry_t *index_orig = copy_index(index, str_cnt);
+    if (index_orig == NULL)
+    {
+        fprintf(stderr, "Can't copy index\n");
+        return -1;
+    }
 
     FILE *fdout = fopen("onegin_parsed.txt", "w");
     if (fdout == NULL)
     {
-        fprintf(stderr, "Unable to create output file\n");   
+        fprintf(stderr, "Unable to open output file\n");   
         return -1;
     }
 
