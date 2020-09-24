@@ -5,7 +5,7 @@
 
 #include "sort.h"
 #include "file_utils.h"
-#include "debug_print.h"
+#include "lerror.h"
 
 /** \file */
 
@@ -63,7 +63,8 @@ static string_entry_t *create_index(const char *buf, size_t buf_size, size_t str
     string_entry_t *index = calloc(str_cnt, sizeof(string_entry_t));
     if (index == NULL)
     {
-        DPRINT("unable to allocate memory");
+        LERRNO(LERR_ALLOC);
+        LERRSTR("unable to allocate memory");
         return NULL;
     }
     size_t idx_cnt = 0;
@@ -92,7 +93,8 @@ static int write_by_index(FILE *fdout, string_entry_t *index, size_t str_cnt)
 {
     if (fdout == NULL)
     {
-        DPRINT("file descriptor is null");
+        LERRNO(LERR_FILE_IO);
+        LERRSTR("file descriptor is null");
         return -1;
     }
     // выводим первые str_cnt строк из index
@@ -100,19 +102,22 @@ static int write_by_index(FILE *fdout, string_entry_t *index, size_t str_cnt)
     {
         if (fputs(index[i].begin, fdout) == EOF)
         {
-            DPRINT("fputs failed");
+            LERRNO(LERR_FILE_IO);
+            LERRSTR("fputs failed");
             return -1;
         }
         if (fputc('\n', fdout) == EOF)
         {
-            DPRINT("fputc failed");
+            LERRNO(LERR_FILE_IO);
+            LERRSTR("fputc failed");
             return -1;
         }
     }
     // перевод строки в конце
     if (fputc('\n', fdout) == EOF)
     {
-        DPRINT("fputc failed");
+        LERRNO(LERR_FILE_IO);
+        LERRSTR("fputc failed");
         return -1;
     }
     return 0;
@@ -123,7 +128,8 @@ static string_entry_t* copy_index(string_entry_t *src, size_t str_cnt)
     string_entry_t *copy = calloc(str_cnt, sizeof(string_entry_t));
     if (copy == NULL)
     {
-        DPRINT("unable to allocate memory");
+        LERRNO(LERR_ALLOC);
+        LERRSTR("unable to allocate memory");
         return NULL;
     }
     memcpy(copy, src, str_cnt * sizeof(string_entry_t));
@@ -140,6 +146,7 @@ int dummy()
     char *buf = create_string_from_file("onegin.txt", &size);
     if (buf == NULL)
     {
+        LERRPRINT("Error");
         fprintf(stderr, "Unable to read input file. Does it exist?\n");
         return -1;
     }
@@ -150,6 +157,7 @@ int dummy()
     string_entry_t *index = create_index(buf + 1, size - 1, str_cnt);
     if (index == NULL)
     {
+        LERRPRINT("Errors");
         fprintf(stderr, "Can't create index\n");
         return -1;
     }
@@ -158,6 +166,7 @@ int dummy()
     string_entry_t *index_orig = copy_index(index, str_cnt);
     if (index_orig == NULL)
     {
+        LERRPRINT("Error");
         fprintf(stderr, "Can't copy index\n");
         return -1;
     }
@@ -165,6 +174,7 @@ int dummy()
     FILE *fdout = fopen("onegin_parsed.txt", "w");
     if (fdout == NULL)
     {
+        LERRPRINT("Error");
         fprintf(stderr, "Unable to open output file\n");   
         return -1;
     }
@@ -174,6 +184,7 @@ int dummy()
     bubble_sort(index, str_cnt, sizeof(string_entry_t), comp);
     if (write_by_index(fdout, index, str_cnt) != 0)
     {
+        LERRPRINT("Error");
         fprintf(stderr, "Output error\n");
         return -1;
     }
@@ -182,6 +193,7 @@ int dummy()
     bubble_sort(index, str_cnt, sizeof(string_entry_t), comp_rev);
     if (write_by_index(fdout, index, str_cnt) != 0)
     {
+        LERRPRINT("Error");
         fprintf(stderr, "Output error\n");
         return -1;
     }
@@ -189,12 +201,14 @@ int dummy()
     // оригинал текста
     if (write_by_index(fdout, index_orig, str_cnt) != 0)
     {
+        LERRPRINT("Error");
         fprintf(stderr, "Output error\n");
         return -1;
     }
 
     if (fclose(fdout) != 0)
     {
+        LERRPRINT("Error");
         fprintf(stderr, "Output error\n");
         return -1;
     }
