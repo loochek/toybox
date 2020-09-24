@@ -157,7 +157,7 @@ int dummy()
     string_entry_t *index = create_index(buf + 1, size - 1, str_cnt);
     if (index == NULL)
     {
-        LERRPRINT("Errors");
+        LERRPRINT("Error");
         fprintf(stderr, "Can't create index\n");
         return -1;
     }
