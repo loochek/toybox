@@ -82,24 +82,34 @@ $(document).ready(function(){initNavTree('file__utils_8c.html',''); initResizabl
 
 <div class="header">
   <div class="summary">
+<a href="#define-members">Макросы</a> &#124;
 <a href="#func-members">Функции</a>  </div>
   <div class="headertitle">
 <div class="title">Файл file_utils.c</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="file__utils_8h_source.html">file_utils.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="lerror_8h_source.html">lerror.h</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Граф включаемых заголовочных файлов для file_utils.c:</div>
 <div class="dyncontent">
 <div class="center"><img src="file__utils_8c__incl.png" border="0" usemap="#file__utils_8c" alt=""/></div>
 <map name="file__utils_8c" id="file__utils_8c">
-<area shape="rect" title=" " alt="" coords="43,5,131,32"/>
-<area shape="rect" href="file__utils_8h.html" title=" " alt="" coords="43,80,132,107"/>
+<area shape="rect" title=" " alt="" coords="89,5,177,32"/>
+<area shape="rect" href="file__utils_8h.html" title=" " alt="" coords="37,80,127,107"/>
+<area shape="rect" href="lerror_8h.html" title=" " alt="" coords="151,80,219,107"/>
 <area shape="rect" title=" " alt="" coords="5,155,76,181"/>
 <area shape="rect" title=" " alt="" coords="101,155,167,181"/>
+<area shape="rect" title=" " alt="" coords="192,155,263,181"/>
 </map>
 </div>
 </div><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Макросы</h2></td></tr>
+<tr class="memitem:a864ed1e12103b295ba3220daa4dbc65b"><td class="memItemLeft" align="right" valign="top"><a id="a864ed1e12103b295ba3220daa4dbc65b"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>LERRPRINT</b>(string)&#160;&#160;&#160;fprintf(stderr, &quot;%s: %s, in function %s\n&quot;, (string), __lerr_str, __lerr_func_name)</td></tr>
+<tr class="separator:a864ed1e12103b295ba3220daa4dbc65b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Функции</h2></td></tr>
 <tr class="memitem:a84971169ba9cdc9a21ebadfafd39b2a0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="file__utils_8c.html#a84971169ba9cdc9a21ebadfafd39b2a0">get_file_size</a> (FILE *fd)</td></tr>
@@ -139,15 +149,6 @@ $(document).ready(function(){initNavTree('file__utils_8c.html',''); initResizabl
 <p>выдает нуль-терминированную строку с пробелом в начале и гарантированным <br  />
  в конце </p>
 <p>в случае ошибки вернет нулевой указатель </p>
-<div class="dynheader">
-Граф вызовов:</div>
-<div class="dyncontent">
-<div class="center"><img src="file__utils_8c_a06faf8eba6c23008504722816f2f61eb_cgraph.png" border="0" usemap="#file__utils_8c_a06faf8eba6c23008504722816f2f61eb_cgraph" alt=""/></div>
-<map name="file__utils_8c_a06faf8eba6c23008504722816f2f61eb_cgraph" id="file__utils_8c_a06faf8eba6c23008504722816f2f61eb_cgraph">
-<area shape="rect" title="выдает нуль&#45;терминированную строку с пробелом в начале и гарантированным &#160;&#160;в конце" alt="" coords="5,5,177,32"/>
-<area shape="rect" href="file__utils_8c.html#a84971169ba9cdc9a21ebadfafd39b2a0" title=" " alt="" coords="225,5,328,32"/>
-</map>
-</div>
 
 </div>
 </div>
@@ -167,21 +168,13 @@ $(document).ready(function(){initNavTree('file__utils_8c.html',''); initResizabl
       </table>
 </div><div class="memdoc">
 <p>устанавливает указатель чтения в начало! в случае ошибки возвращает -1 </p>
-<div class="dynheader">
-Граф вызова функции:</div>
-<div class="dyncontent">
-<div class="center"><img src="file__utils_8c_a84971169ba9cdc9a21ebadfafd39b2a0_icgraph.png" border="0" usemap="#file__utils_8c_a84971169ba9cdc9a21ebadfafd39b2a0_icgraph" alt=""/></div>
-<map name="file__utils_8c_a84971169ba9cdc9a21ebadfafd39b2a0_icgraph" id="file__utils_8c_a84971169ba9cdc9a21ebadfafd39b2a0_icgraph">
-<area shape="rect" title=" " alt="" coords="225,5,328,32"/>
-<area shape="rect" href="file__utils_8h.html#a06faf8eba6c23008504722816f2f61eb" title="выдает нуль&#45;терминированную строку с пробелом в начале и гарантированным &#160;&#160;в конце" alt="" coords="5,5,177,32"/>
-</map>
-</div>
 
 </div>
 </div>
 </div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="asort_8c_html_af7d86274e89fdb43d53fb9f85de43674"><div class="ttname"><a href="sort_8c.html#af7d86274e89fdb43d53fb9f85de43674">custom_strcmp</a></div><div class="ttdeci">int custom_strcmp(const char *a, const char *b, int step)</div><div class="ttdoc">свой strcmp для соответствия ТЗ</div><div class="ttdef"><b>Definition:</b> sort.c:16</div></div>
+<div class="ttc" id="asort_8c_html_af7d86274e89fdb43d53fb9f85de43674"><div class="ttname"><a href="sort_8c.html#af7d86274e89fdb43d53fb9f85de43674">custom_strcmp</a></div><div class="ttdeci">int custom_strcmp(const char *a, const char *b, int step)</div><div class="ttdoc">свой strcmp для соответствия ТЗ</div><div class="ttdef"><b>Definition:</b> sort.c:17</div></div>
+<div class="ttc" id="asort_8c_html_a4f74edc86bdcdf9c1c1be2ede42d5c34"><div class="ttname"><a href="sort_8c.html#a4f74edc86bdcdf9c1c1be2ede42d5c34">bubble_sort</a></div><div class="ttdeci">void bubble_sort(void *data, size_t elem_count, size_t elem_size, cmp_func_t cmp_func)</div><div class="ttdoc">своя сортировка, полностью совместима с объявлением qsort.</div><div class="ttdef"><b>Definition:</b> sort.c:50</div></div>
 <div class="ttc" id="asort_8h_html"><div class="ttname"><a href="sort_8h.html">sort.h</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->

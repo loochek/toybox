@@ -1,6 +1,4 @@
 var searchData=
 [
-  ['sort_2ec_12',['sort.c',['../sort_8c.html',1,'']]],
-  ['sort_2eh_13',['sort.h',['../sort_8h.html',1,'']]],
-  ['string_5fentry_5ft_14',['string_entry_t',['../structstring__entry__t.html',1,'']]]
+  ['parse_5fstring_13',['parse_string',['../main_8c.html#ad9dd020455d71634a205dfc144c8f9c9',1,'main.c']]]
 ];
