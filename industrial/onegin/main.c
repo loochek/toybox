@@ -174,7 +174,6 @@ int dummy()
     FILE *fdout = fopen("onegin_parsed.txt", "w");
     if (fdout == NULL)
     {
-        LERRPRINT("Error");
         fprintf(stderr, "Unable to open output file\n");   
         return -1;
     }
