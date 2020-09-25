@@ -142,8 +142,22 @@ int main(const int argc, const char* argv[])
 int dummy()
 #endif
 {
+    const char* input_file_name  = "onegin.txt";
+    const char* output_file_name = "onegin_output.txt";
+
+    if (argc == 3)
+    {
+        input_file_name  = argv[1];
+        output_file_name = argv[2];
+    }
+    else
+    {
+        printf("Usage:\nonegin <input file name> <output file name>\n");
+        return 0;
+    }
+
     size_t size = 0;
-    char *buf = create_string_from_file("onegin.txt", &size);
+    char *buf = create_string_from_file(input_file_name, &size);
     if (buf == NULL)
     {
         LERRPRINT("Error");
@@ -171,7 +185,7 @@ int dummy()
         return -1;
     }
 
-    FILE *fdout = fopen("onegin_parsed.txt", "w");
+    FILE *fdout = fopen(output_file_name, "w");
     if (fdout == NULL)
     {
         fprintf(stderr, "Unable to open output file\n");   

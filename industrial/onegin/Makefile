@@ -14,4 +14,4 @@ test:
 	./onegin
 
 clean:
-	rm -f onegin onegin_parsed.txt
+	rm -f onegin onegin_output.txt
