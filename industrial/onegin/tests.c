@@ -61,7 +61,7 @@ static void sort_test(int elem_count, int iterations)
     {
             for (int i = 0; i < elem_count; i++)
             {
-                arr[i] = rand();
+                arr[i]         = rand();
                 arr_trusted[i] = arr[i];
             }
             bubble_sort(arr        , elem_count, sizeof(int), int_cmp);
@@ -84,8 +84,6 @@ static void sort_test(int elem_count, int iterations)
     free(arr);
     free(arr_trusted);
 }
-
-
 
 #ifdef TEST
 int main()
