@@ -139,11 +139,11 @@ static string_entry_t* copy_index(string_entry_t *src, size_t str_cnt)
 #ifndef TEST
 int main(const int argc, const char* argv[])
 #else
-int dummy()
+int dummy(const int argc, const char* argv[])
 #endif
 {
-    const char* input_file_name  = "onegin.txt";
-    const char* output_file_name = "onegin_output.txt";
+    const char* input_file_name  = NULL;
+    const char* output_file_name = NULL;
 
     if (argc == 3)
     {

@@ -7,7 +7,7 @@ build_debug:
 	$(CC) -g main.c file_utils.c sort.c tests.c lerror.c -o onegin
 
 run: build
-	./onegin
+	./onegin onegin.txt onegin_output.txt
 
 test:
 	$(CC) -DTEST main.c file_utils.c sort.c tests.c lerror.c -o onegin -fsanitize=address
