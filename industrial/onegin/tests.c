@@ -59,13 +59,8 @@ static void sort_test(int elem_count, int iterations)
     int *arr_trusted = calloc(elem_count, sizeof(int));
     for (int iter_cnt = 0; iter_cnt < iterations; iter_cnt++)
     {
-            for (int i = 0; i < elem_count; i++)
-            {
-                arr[i]         = rand();
-                arr_trusted[i] = arr[i];
-            }
-            bubble_sort(arr        , elem_count, sizeof(int), int_cmp);
-            qsort      (arr_trusted, elem_count, sizeof(int), int_cmp);
+            qsort_custom(arr        , elem_count, sizeof(int), int_cmp);
+            qsort       (arr_trusted, elem_count, sizeof(int), int_cmp);
             for (int i = 0; i < elem_count; i++)
             {
                 if (arr[i] != arr_trusted[i])
@@ -96,7 +91,7 @@ int dummy()
     unit_test_3();
     unit_test_4();
     unit_test_5();
-    sort_test(100, 100);
+    sort_test(100, 10000);
     printf("Testing done, no errors!\n");
     return 0;
 }

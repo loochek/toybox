@@ -1,18 +1,14 @@
 #include <string.h>
+#include <stdio.h>
+#include <ctype.h>
 
 #include "sort.h"
 
 /** \file */
 
-/// так как библиотечная не может в русские буквы
-static int is_alpha(unsigned char c)
-{
-    return ((c >= 'a' && c <= 'z') ||
-        (c >= 'A' && c <= 'Z') ||
-        (c >= 192 && c <= 223) ||
-        (c >= 224 && c <= 255)) ||
-        (c == 184 || c == 168);
-}
+static int is_alpha(unsigned char c);
+static int partition(void *data, size_t elem_count, size_t elem_size, cmp_func_t cmp_func);
+static void memswap(void *ptr1, void *ptr2, size_t bytes_count);
 
 int custom_strcmp(const char *a, const char *b, int step)
 {
@@ -39,12 +35,7 @@ int custom_strcmp(const char *a, const char *b, int step)
             b += step;
         }
     }
-    if (*a != '\0' && *b == '\0')
-        return 1;
-    else if (*a == '\0' && *b != '\0')
-        return -1;
-    else
-        return 0;
+    return *a - *b;
 }
 
 void bubble_sort(void *data, size_t elem_count, size_t elem_size, cmp_func_t cmp_func)
@@ -56,13 +47,86 @@ void bubble_sort(void *data, size_t elem_count, size_t elem_size, cmp_func_t cmp
             char *first_addr = (char*)data + j * elem_size;
             char *second_addr = (char*)data + (j + 1) * elem_size;
             if (cmp_func(first_addr, second_addr) > 0)
-            {
-                #warning check size of tmp buffer!
-                char tmp[16];
-                memcpy(tmp, first_addr, elem_size);
-                memcpy(first_addr, second_addr, elem_size);
-                memcpy(second_addr, tmp, elem_size);
-            }
+                memswap(first_addr, second_addr, elem_size);
         }
     }
+}
+
+void qsort_custom(void *data, size_t elem_count, size_t elem_size, cmp_func_t cmp_func)
+{
+    if (elem_count < 2)
+        return;
+    int pivot_idx = partition(data, elem_count, elem_size, cmp_func);
+    qsort_custom(data, pivot_idx + 1, elem_size, cmp_func);
+    qsort_custom((char*)data + (pivot_idx + 1) * elem_size, elem_count - pivot_idx - 1, elem_size, cmp_func);
+}
+
+static int partition(void *data, size_t elem_count, size_t elem_size, cmp_func_t cmp_func)
+{
+    // выбираем опорный элемент
+    void* pivot = calloc(1, elem_size);
+    memcpy(pivot, (char*)data + (rand() % elem_count) * elem_size, elem_size);
+    int i = 0, j = elem_count - 1;
+    
+    for (;;)
+    {
+        while (i < elem_count && cmp_func((char*)data + i * elem_size, pivot) < 0)
+            i++;
+        if (i == elem_count)
+            i--;
+        while (j >= 0 && cmp_func((char*)data + j * elem_size, pivot) > 0)
+            j--;
+        if (j == -1)
+            j++;
+        if (i >= j)
+        {
+            free(pivot);
+            return j;
+        }
+        memswap((char*)data + i * elem_size, (char*)data + j * elem_size, elem_size);
+        i++;
+        j--;
+    }   
+}
+
+static void memswap(void *ptr1, void *ptr2, size_t bytes_count)
+{
+    const int TMP_BUF_SIZE = 16;
+    char tmp[TMP_BUF_SIZE];
+    for (size_t i = 0; i < bytes_count; i += TMP_BUF_SIZE)
+    {
+        size_t copy_size = TMP_BUF_SIZE;
+        if (bytes_count - i < TMP_BUF_SIZE)
+            copy_size = bytes_count - i;
+
+        memcpy(tmp, ptr1 + i, copy_size);
+        memcpy(ptr1 + i, ptr2 + i, copy_size);
+        memcpy(ptr2 + i, tmp, copy_size);
+    }
+}
+
+/// является ли символ буквой в CP1251
+static int is_alpha_1251(unsigned char c)
+{
+    return ((c >= 'a' && c <= 'z') ||
+        (c >= 'A' && c <= 'Z') ||
+        (c >= 192 && c <= 223) || // а..я
+        (c >= 224 && c <= 255)) || // А..Я
+        (c == 184 || c == 168); // ё Ё
+}
+
+/// является ли символ буквой в CP866
+static int is_alpha_866(unsigned char c)
+{
+    return ((c >= 'a' && c <= 'z') ||
+        (c >= 'A' && c <= 'Z') ||
+        (c >= 192 && c <= 223) || // а..я
+        (c >= 224 && c <= 255)) || // А..Я
+        (c == 184 || c == 168); // ё Ё
+}
+
+/// адаптер
+static int is_alpha(unsigned char c)
+{
+    return is_alpha_1251(c);
 }

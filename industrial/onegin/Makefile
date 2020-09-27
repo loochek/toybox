@@ -1,16 +1,18 @@
 CC=clang
+SRC_FILES= main.c string_lib.c sort.c tests.c lerror.c
+CFLAGS=-std=c99
 
 build:
-	$(CC) main.c file_utils.c sort.c tests.c lerror.c -o onegin
+	$(CC) $(CFLAGS) $(SRC_FILES) -o onegin
 
 build_debug:
-	$(CC) -g main.c file_utils.c sort.c tests.c lerror.c -o onegin
+	$(CC) -g $(CFLAGS) $(SRC_FILES) -o onegin -DTEST
 
 run: build
 	./onegin onegin.txt onegin_output.txt
 
 test:
-	$(CC) -DTEST main.c file_utils.c sort.c tests.c lerror.c -o onegin -fsanitize=address
+	$(CC) -DTEST $(CFLAGS) $(SRC_FILES) -o onegin -fsanitize=address
 	./onegin
 
 clean:
