@@ -6,6 +6,8 @@
 
 /** \file */
 
+codepage_t global_cp_switch = CSTDLIB_CURRENT_LOCALE;
+
 static int is_alpha(unsigned char c);
 static int partition(void *data, size_t elem_count, size_t elem_size, cmp_func_t cmp_func);
 static void memswap(void *ptr1, void *ptr2, size_t bytes_count);
@@ -120,13 +122,16 @@ static int is_alpha_866(unsigned char c)
 {
     return ((c >= 'a' && c <= 'z') ||
         (c >= 'A' && c <= 'Z') ||
-        (c >= 192 && c <= 223) || // а..я
-        (c >= 224 && c <= 255)) || // А..Я
-        (c == 184 || c == 168); // ё Ё
+        (c >= 128 && c <= 175) || // А..п
+        (c >= 224 && c <= 241)); // р..ё
 }
 
 /// адаптер
 static int is_alpha(unsigned char c)
 {
-    return is_alpha_1251(c);
+    if (global_cp_switch == BUILTIN_CP1251)
+        return is_alpha_1251(c);
+    else if (global_cp_switch == BUILTIN_CP866)
+        return is_alpha_866(c);
+    return isalpha(c);
 }

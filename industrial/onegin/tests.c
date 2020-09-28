@@ -59,22 +59,22 @@ static void sort_test(int elem_count, int iterations)
     int *arr_trusted = calloc(elem_count, sizeof(int));
     for (int iter_cnt = 0; iter_cnt < iterations; iter_cnt++)
     {
-            qsort_custom(arr        , elem_count, sizeof(int), int_cmp);
-            qsort       (arr_trusted, elem_count, sizeof(int), int_cmp);
-            for (int i = 0; i < elem_count; i++)
+        qsort_custom(arr        , elem_count, sizeof(int), int_cmp);
+        qsort       (arr_trusted, elem_count, sizeof(int), int_cmp);
+        for (int i = 0; i < elem_count; i++)
+        {
+            if (arr[i] != arr_trusted[i])
             {
-                if (arr[i] != arr_trusted[i])
-                {
-                    printf("Incorrect sorting!\nSort function output:\n");
-                    for (int i = 0; i < elem_count; i++)
-                        printf("%d ", arr[i]);
-                    printf("\nCorrect output:\n");
-                    for (int i = 0; i < elem_count; i++)
-                        printf("%d ", arr_trusted[i]);
-                    printf("\n");
-                    assert(0);
-                }
+                printf("Incorrect sorting!\nSort function output:\n");
+                for (int i = 0; i < elem_count; i++)
+                    printf("%d ", arr[i]);
+                printf("\nCorrect output:\n");
+                for (int i = 0; i < elem_count; i++)
+                    printf("%d ", arr_trusted[i]);
+                printf("\n");
+                assert(0);
             }
+        }
     }
     free(arr);
     free(arr_trusted);
@@ -91,7 +91,7 @@ int dummy()
     unit_test_3();
     unit_test_4();
     unit_test_5();
-    sort_test(100, 10000);
+    sort_test(1000, 10000);
     printf("Testing done, no errors!\n");
     return 0;
 }

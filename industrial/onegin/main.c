@@ -33,20 +33,43 @@ int main(const int argc, const char* argv[])
 int dummy(const int argc, const char* argv[])
 #endif
 {
-    setlocale(LC_ALL, "ru_RU.CP1251");
+    global_cp_switch = CSTDLIB_CURRENT_LOCALE;
 
     const char* input_file_name  = NULL;
     const char* output_file_name = NULL;
-
-    if (argc == 3)
+    if (argc == 4)
     {
         input_file_name  = argv[1];
         output_file_name = argv[2];
+        if (strcmp("cp1251", argv[3]) == 0)
+            global_cp_switch = BUILTIN_CP1251;
+        else if (strcmp("cp866", argv[3]) == 0)
+            global_cp_switch = BUILTIN_CP866;
+        else if (strcmp("system_cp1251", argv[3]) == 0)
+            setlocale(LC_ALL, "ru_RU.CP1251");
+        else if (strcmp("system_cp866", argv[3]) == 0)
+            setlocale(LC_ALL, "ru_RU.CP866");
+        else
+        {
+            printf("Unknown codepage\n");
+            return 0;
+        }
+    }
+    else if (argc == 3)
+    {
+        input_file_name  = argv[1];
+        output_file_name = argv[2];
+        global_cp_switch = BUILTIN_CP1251;
     }
     else
     {
         printf("Usage:\n"
-               "onegin <input file name> <output file name>\n");
+               "onegin <input file name> <output file name> [codepage]\n"
+               "codepages:\n"
+               "  cp1251 [default]\n"
+               "  cp866\n"
+               "  system_cp1251\n"
+               "  system_cp866\n");
         return 0;
     }
 

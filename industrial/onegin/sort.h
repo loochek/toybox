@@ -2,6 +2,15 @@
 
 /** \file */
 
+typedef enum
+{
+    BUILTIN_CP1251,
+    BUILTIN_CP866,
+    CSTDLIB_CURRENT_LOCALE
+} codepage_t;
+
+extern codepage_t global_cp_switch;
+
 /**
  * \brief свой strcmp для соответствия ТЗ
  * 
