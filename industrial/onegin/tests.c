@@ -86,6 +86,7 @@ int main()
 int dummy()
 #endif
 {
+    global_cp_switch = BUILTIN_CP1251;
     unit_test_1();
     unit_test_2();
     unit_test_3();
