@@ -19,6 +19,8 @@
     }                                               \
 }
 
+#define SECURITY_MARKER 0xABADBABE
+
 typedef enum
 {
     STACK_OK,
