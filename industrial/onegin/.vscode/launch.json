@@ -9,7 +9,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/onegin",
-            "args": [],
+            "args": ["onegin.txt", "onegin_output.txt"],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "onegin build debug"
         }

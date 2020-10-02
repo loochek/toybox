@@ -10,22 +10,8 @@
 
 /** \file */
 
-/// компаратор строк
-static int comp(const void *a_ptr, const void *b_ptr)
-{
-    string_entry_t a = *(string_entry_t*)a_ptr;
-    string_entry_t b = *(string_entry_t*)b_ptr;
-    return custom_strcmp(a.begin, b.begin, 1);
-}
-
-/// перевернутый компаратор
-static int comp_rev(const void *a_ptr, const void *b_ptr)
-{
-    string_entry_t a = *(string_entry_t*)a_ptr;
-    string_entry_t b = *(string_entry_t*)b_ptr;
-    // т.к. .end указывает на нуль-терминатор
-    return custom_strcmp(a.end - 1, b.end - 1, -1);
-}
+static int comp    (const void *a_ptr, const void *b_ptr);
+static int comp_rev(const void *a_ptr, const void *b_ptr);
 
 #ifndef TEST
 int main(const int argc, const char* argv[])
@@ -134,4 +120,21 @@ int dummy(const int argc, const char* argv[])
     destroy_index(index);
     destroy_index(index_orig);
     return 0;
+}
+
+/// компаратор строк
+static int comp(const void *a_ptr, const void *b_ptr)
+{
+    string_entry_t a = *(string_entry_t*)a_ptr;
+    string_entry_t b = *(string_entry_t*)b_ptr;
+    return custom_strcmp(a.begin, b.begin, 1);
+}
+
+/// перевернутый компаратор
+static int comp_rev(const void *a_ptr, const void *b_ptr)
+{
+    string_entry_t a = *(string_entry_t*)a_ptr;
+    string_entry_t b = *(string_entry_t*)b_ptr;
+    // т.к. .end указывает на нуль-терминатор
+    return custom_strcmp(a.end - 1, b.end - 1, -1);
 }
