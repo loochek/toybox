@@ -32,7 +32,7 @@ const elem_t OVERLOAD(POISON) = 0xDEAD;
 // double
 static void stack_print_double(double *a)
 {
-    printf("%e", *a);
+    printf("%f", *a);
 }
 
 #define TYPE double
