@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define __overload(name, type) name ## _ ## type 
-#define __overload2(name, type) __overload(name, type)
-#define OVERLOAD(name) __overload2(name, TYPE)
+#include "stack.h"
+
+//------------------------------------------
 
 #define __sharp(a) #a
 #define __lit_pair(a, b) __sharp(a) __sharp(b)
@@ -19,55 +19,40 @@
     }                                               \
 }
 
-#define SECURITY_MARKER 0xABADBABE
-
-typedef enum
-{
-    STACK_OK,
-    STACK_EMPTY,
-    STACK_ERROR,
-    STACK_FATAL,
-    STACK_SHRINK_DENIED,
-    STACK_CORRUPTED
-} stack_status_t;
-
-typedef struct
-{
-    size_t security_marker1;
-
-    size_t size;
-    size_t capacity;
-    elem_t *data;
-
-    size_t security_marker2;
-} OVERLOAD(my_stack);
-
-       stack_status_t OVERLOAD(stack_construct)(OVERLOAD(my_stack) *self, size_t initial_capacity);
-       stack_status_t OVERLOAD(stack_push     )(OVERLOAD(my_stack) *self, elem_t elem);
-       stack_status_t OVERLOAD(stack_pop      )(OVERLOAD(my_stack) *self);
-       stack_status_t OVERLOAD(stack_size     )(OVERLOAD(my_stack) *self, size_t *size);
-       stack_status_t OVERLOAD(stack_top      )(OVERLOAD(my_stack) *self, elem_t *elem);
-       stack_status_t OVERLOAD(stack_destruct )(OVERLOAD(my_stack) *self);
+//---приватный интерфейс------------------------------
 
 static stack_status_t OVERLOAD(stack_expand   )(OVERLOAD(my_stack) *self);
 static stack_status_t OVERLOAD(stack_shrink   )(OVERLOAD(my_stack) *self);
 static stack_status_t OVERLOAD(stack_validate )(OVERLOAD(my_stack) *self);
 static           void OVERLOAD(stack_dump     )(OVERLOAD(my_stack) *self);
+#ifdef STACK_SEC_HASHING
+static         size_t OVERLOAD(stack_calc_struct_hash)(OVERLOAD(my_stack) *self);
+static         size_t OVERLOAD(stack_calc_data_hash  )(OVERLOAD(my_stack) *self);
+#endif
+
+//---реализация--------------------------------------
 
 stack_status_t OVERLOAD(stack_construct)(OVERLOAD(my_stack) *self, size_t initial_capacity)
 {
-    self->size = 0;
-    self->security_marker1 = SECURITY_MARKER;
-    self->security_marker2 = SECURITY_MARKER;
-
     self->data = (elem_t*)calloc(initial_capacity, sizeof(elem_t));
     if (self->data == NULL)
         return STACK_ERROR;
 
     self->capacity = initial_capacity;
-    for (int i = 0; i < self->capacity; i++)
-        self->data[i] = POISON;
+    self->size = 0;
 
+#ifdef STACK_SEC_CANARY
+    self->security_marker1 = SECURITY_MARKER;
+    self->security_marker2 = SECURITY_MARKER;
+#endif
+#ifdef STACK_SEC_POISON
+    for (int i = 0; i < self->capacity; i++)
+        self->data[i] = OVERLOAD(POISON);
+#endif
+#ifdef STACK_SEC_HASHING
+    self->struct_hash = OVERLOAD(stack_calc_struct_hash)(self);
+    self->data_hash   = OVERLOAD(stack_calc_data_hash  )(self);
+#endif
     return STACK_OK;
 }
 
@@ -81,6 +66,11 @@ stack_status_t OVERLOAD(stack_push)(OVERLOAD(my_stack) *self, elem_t elem)
     
     self->data[self->size++] = elem;
 
+#ifdef STACK_SEC_HASHING
+    self->struct_hash = OVERLOAD(stack_calc_struct_hash)(self);
+    self->data_hash   = OVERLOAD(stack_calc_data_hash  )(self);
+#endif
+
     STACK_ASSERT(self);
     return STACK_OK;
 }
@@ -93,7 +83,15 @@ stack_status_t OVERLOAD(stack_pop)(OVERLOAD(my_stack) *self)
         return STACK_EMPTY;
 
     self->size--;
-    self->data[self->size] = POISON;
+
+#ifdef STACK_SEC_POISON
+    self->data[self->size] = OVERLOAD(POISON);
+#endif
+#ifdef STACK_SEC_HASHING
+    self->struct_hash = OVERLOAD(stack_calc_struct_hash)(self);
+    self->data_hash   = OVERLOAD(stack_calc_data_hash  )(self);
+#endif
+
     OVERLOAD(stack_shrink)(self);
 
     STACK_ASSERT(self);
@@ -141,10 +139,17 @@ static stack_status_t OVERLOAD(stack_expand)(OVERLOAD(my_stack) *self)
 
     self->data = new_data;
 
+#ifdef STACK_SEC_POISON
     for (size_t i = self->capacity; i < self->capacity * 2; i++)
-        self->data[i] = POISON;
+        self->data[i] = OVERLOAD(POISON);
+#endif
 
     self->capacity *= 2;
+
+#ifdef STACK_SEC_HASHING
+    self->struct_hash = OVERLOAD(stack_calc_struct_hash)(self);
+    self->data_hash   = OVERLOAD(stack_calc_data_hash  )(self);
+#endif
 
     STACK_ASSERT(self);
     return STACK_OK;
@@ -154,26 +159,86 @@ static stack_status_t OVERLOAD(stack_shrink)(OVERLOAD(my_stack) *self)
 {
     STACK_ASSERT(self);
 
-    if (self->capacity / 2 < self->size + 10)
+    if (self->capacity / 2 < self->size + SHRINK_THRESHOLD)
         return STACK_SHRINK_DENIED;
     
-    elem_t *new_data = (elem_t*)realloc(self->data, sizeof(elem_t) * (self->capacity / 2 - 10));
+    elem_t *new_data = (elem_t*)realloc(self->data,
+                                        sizeof(elem_t) * (self->capacity / 2));
     if (new_data == NULL)
         return STACK_ERROR;
 
     self->data = new_data;
-    self->capacity = self->capacity / 2 - 10;
+    self->capacity = self->capacity / 2;
+
+#ifdef STACK_SEC_HASHING
+    self->struct_hash = OVERLOAD(stack_calc_struct_hash)(self);
+    self->data_hash   = OVERLOAD(stack_calc_data_hash  )(self);
+#endif
 
     STACK_ASSERT(self);
     return STACK_OK;
 }
 
+#ifdef STACK_SEC_HASHING
+static size_t OVERLOAD(stack_calc_struct_hash)(OVERLOAD(my_stack) *self)
+{
+    size_t old_struct_hash = self->struct_hash;
+    size_t old_data_hash   = self->data_hash;
+    self->struct_hash = 0;
+    self->data_hash   = 0;
+    
+    size_t hash = 0;
+
+    char *mem = (char*)self;
+    for (int i = 0; i < sizeof(OVERLOAD(my_stack)); i++)
+        hash = ((hash * HASH_BASE) % HASH_MOD + mem[i]) % HASH_MOD;
+
+    self->struct_hash = old_struct_hash;
+    self->data_hash   = old_data_hash;
+    return hash;
+}
+
+static size_t OVERLOAD(stack_calc_data_hash)(OVERLOAD(my_stack) *self)
+{
+    size_t old_struct_hash = self->struct_hash;
+    size_t old_data_hash   = self->data_hash;
+    self->struct_hash = 0;
+    self->data_hash   = 0;
+    
+    size_t hash = 0;
+
+    char *mem = (char*)self->data;
+    for (int i = 0; i < self->capacity * sizeof(elem_t); i++)
+        hash = ((hash * HASH_BASE) % HASH_MOD + mem[i]) % HASH_MOD;
+
+    self->struct_hash = old_struct_hash;
+    self->data_hash   = old_data_hash;
+    return hash;
+}
+#endif
+
 static stack_status_t OVERLOAD(stack_validate)(OVERLOAD(my_stack) *self)
 {
+    if (self == NULL)
+            return STACK_NULL_POINTER;
+
+#ifdef STACK_SEC_HASHING
     if (self->security_marker1 != SECURITY_MARKER)
-        return STACK_CORRUPTED;
+        return STACK_CANARY_FAULT;
     if (self->security_marker2 != SECURITY_MARKER)
-        return STACK_CORRUPTED;
+        return STACK_CANARY_FAULT;
+#endif
+#ifdef STACK_SEC_POISON
+    for (int i = self->size; i < self->capacity; i++)
+        if (self->data[i] != OVERLOAD(POISON))
+            return STACK_POISON_FAULT;
+#endif
+#ifdef STACK_SEC_HASHING
+    if (self->struct_hash != OVERLOAD(stack_calc_struct_hash)(self))
+        return STACK_HASH_MISMATCH;
+    if (self->data_hash   != OVERLOAD(stack_calc_data_hash  )(self))
+        return STACK_HASH_MISMATCH;
+#endif
     return STACK_OK;
 }
 
@@ -182,18 +247,53 @@ static void OVERLOAD(stack_dump)(OVERLOAD(my_stack) *self)
     stack_status_t status = OVERLOAD(stack_validate)(self);
 
     printf(STACK_NAME_LIT() "[%s] at %p\n",
-            (status == STACK_OK) ? "ok" : "ERROR!", self);
+            stack_status_text[status], self);
 
+    if (status == STACK_NULL_POINTER)
+    {
+        printf("{ null pointer! }\n");
+        return;
+    }
+       
     printf("{\n"
            "    size = %zu\n"
-           "    capacity = %zu\n"
-           "    data[%p]\n"
+           "    capacity = %zu\n",
+            self->size, self->capacity);
+
+#ifdef STACK_SEC_HASHING
+    size_t real_struct_hash = OVERLOAD(stack_calc_struct_hash)(self);
+    if (self->struct_hash == real_struct_hash)
+    {
+        printf("    struct_hash = %zu\n"
+               "    real_struct_hash = %zu\n"
+               "    data_hash = %zu\n"
+               "    real_data_hash = %zu\n",
+                self->struct_hash, real_struct_hash,
+                self->data_hash  , OVERLOAD(stack_calc_data_hash)(self));
+    }   
+    else
+    {
+        printf("    struct_hash = %zu\n"
+               "    real_struct_hash = %zu\n"
+               "    data_hash is not calculated due the trashed struct\n"
+               "    data[%p] is not displayed due the trashed struct\n",
+                self->struct_hash, real_struct_hash, self->data);
+        printf("}\n");
+        return;
+    }
+#endif
+    
+    printf("    data[%p]\n"
            "    {\n",
-           self->size, self->capacity, self->data);
+            self->data);
     for (size_t i = 0; i < self->capacity; i++)
     {
-        printf("   %c[%zu] = %d %s\n", (i < self->size) ? '*' : ' ', i, self->data[i],
-                                        (self->data[i] == POISON) ? "[poison value]" : "");
+        printf("   %c[%zu] = ", (i < self->size) ? '*' : ' ', i);
+        OVERLOAD(stack_print)(&self->data[i]);
+#ifdef STACK_SEC_POISON
+        printf(" %s", (self->data[i] == OVERLOAD(POISON)) ? "[poison value]" : "");
+#endif
+        printf("\n");
     }
     printf("    }\n}\n");
 }

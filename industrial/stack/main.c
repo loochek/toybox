@@ -2,6 +2,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "stack_common.h"
+
+// переключатели защиты
+#define STACK_SEC_HASHING
+#define STACK_SEC_CANARY
+#define STACK_SEC_POISON
+
 // int
 #define TYPE int
 typedef int elem_t;
@@ -11,11 +18,11 @@ typedef int elem_t;
 int main()
 {
     my_stack_int stack = {};
-    char cmd_buf[11];
+    char cmd_buf[21];
     stack_construct_int(&stack, 4);
     for (;;)
     {
-        scanf("%10s", cmd_buf);
+        scanf("%20s", cmd_buf);
         if (strcmp(cmd_buf, "push") == 0)
         {
             int elem = 0;
@@ -73,6 +80,15 @@ int main()
         {
             const char* trash = "           haha";
             memcpy(cmd_buf, trash, 16);
+        }
+        else if (strcmp(cmd_buf, "corrupt_data") == 0)
+        {
+            stack.data[6] = 123;
+        }
+        else if (strcmp(cmd_buf, "corrupt_struct") == 0)
+        {
+            stack.size = -1;
+            stack.capacity = -2;
         }
     }
     stack_destruct_int(&stack);
