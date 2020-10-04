@@ -103,8 +103,6 @@ stack_status_t OVERLOAD(stack_size)(OVERLOAD(my_stack) *self, size_t *size)
     STACK_ASSERT(self);
 
     *size = self->size;
-
-    STACK_ASSERT(self);
     return STACK_OK;
 }
 
@@ -116,8 +114,6 @@ stack_status_t OVERLOAD(stack_top)(OVERLOAD(my_stack) *self, elem_t *elem)
         return STACK_EMPTY;
 
     *elem = self->data[self->size - 1];
-
-    STACK_ASSERT(self);
     return STACK_OK;
 }
 
