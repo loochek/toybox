@@ -30,7 +30,7 @@ const TYPE OVERLOAD(POISON) = 0xDEAD;
 // double
 static void stack_print_double(double *a)
 {
-    printf("%f", *a);
+    printf("%lf", *a);
 }
 
 #define TYPE double
