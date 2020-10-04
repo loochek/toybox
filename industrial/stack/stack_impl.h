@@ -25,16 +25,20 @@ static stack_status_t OVERLOAD(stack_expand   )(OVERLOAD(my_stack) *self);
 static stack_status_t OVERLOAD(stack_shrink   )(OVERLOAD(my_stack) *self);
 static stack_status_t OVERLOAD(stack_validate )(OVERLOAD(my_stack) *self);
 static           void OVERLOAD(stack_dump     )(OVERLOAD(my_stack) *self);
+
 #ifdef STACK_SEC_HASHING
-static         size_t OVERLOAD(stack_calc_struct_hash)(OVERLOAD(my_stack) *self);
-static         size_t OVERLOAD(stack_calc_data_hash  )(OVERLOAD(my_stack) *self);
+static size_t OVERLOAD(stack_calc_struct_hash)(OVERLOAD(my_stack) *self);
+static size_t OVERLOAD(stack_calc_data_hash  )(OVERLOAD(my_stack) *self);
 #endif
+
+// должна быть реализована в stack_impl.c
+static void OVERLOAD(stack_print)(TYPE *a);
 
 //---реализация--------------------------------------
 
 stack_status_t OVERLOAD(stack_construct)(OVERLOAD(my_stack) *self, size_t initial_capacity)
 {
-    self->data = (elem_t*)calloc(initial_capacity, sizeof(elem_t));
+    self->data = (TYPE*)calloc(initial_capacity, sizeof(TYPE));
     if (self->data == NULL)
         return STACK_ERROR;
 
@@ -56,7 +60,7 @@ stack_status_t OVERLOAD(stack_construct)(OVERLOAD(my_stack) *self, size_t initia
     return STACK_OK;
 }
 
-stack_status_t OVERLOAD(stack_push)(OVERLOAD(my_stack) *self, elem_t elem)
+stack_status_t OVERLOAD(stack_push)(OVERLOAD(my_stack) *self, TYPE elem)
 {
     STACK_ASSERT(self);
 
@@ -106,7 +110,7 @@ stack_status_t OVERLOAD(stack_size)(OVERLOAD(my_stack) *self, size_t *size)
     return STACK_OK;
 }
 
-stack_status_t OVERLOAD(stack_top)(OVERLOAD(my_stack) *self, elem_t *elem)
+stack_status_t OVERLOAD(stack_top)(OVERLOAD(my_stack) *self, TYPE *elem)
 {
     STACK_ASSERT(self);
 
@@ -129,7 +133,7 @@ static stack_status_t OVERLOAD(stack_expand)(OVERLOAD(my_stack) *self)
 {
     STACK_ASSERT(self);
 
-    elem_t *new_data = (elem_t*)realloc(self->data, sizeof(elem_t) * self->capacity * 2);
+    TYPE *new_data = (TYPE*)realloc(self->data, sizeof(TYPE) * self->capacity * 2);
     if (new_data == NULL)
         return STACK_ERROR;
 
@@ -158,8 +162,8 @@ static stack_status_t OVERLOAD(stack_shrink)(OVERLOAD(my_stack) *self)
     if (self->capacity / 2 < self->size + SHRINK_THRESHOLD)
         return STACK_SHRINK_DENIED;
     
-    elem_t *new_data = (elem_t*)realloc(self->data,
-                                        sizeof(elem_t) * (self->capacity / 2));
+    TYPE *new_data = (TYPE*)realloc(self->data,
+                                        sizeof(TYPE) * (self->capacity / 2));
     if (new_data == NULL)
         return STACK_ERROR;
 
@@ -204,7 +208,7 @@ static size_t OVERLOAD(stack_calc_data_hash)(OVERLOAD(my_stack) *self)
     size_t hash = 0;
 
     char *mem = (char*)self->data;
-    for (int i = 0; i < self->capacity * sizeof(elem_t); i++)
+    for (int i = 0; i < self->capacity * sizeof(TYPE); i++)
         hash = ((hash * HASH_BASE) % HASH_MOD + mem[i]) % HASH_MOD;
 
     self->struct_hash = old_struct_hash;

@@ -12,7 +12,7 @@ typedef struct
 
     size_t size;
     size_t capacity;
-    elem_t *data;
+    TYPE *data;
 
 #ifdef STACK_SEC_CANARY
     size_t security_marker2;
@@ -20,8 +20,8 @@ typedef struct
 } OVERLOAD(my_stack);
 
 stack_status_t OVERLOAD(stack_construct)(OVERLOAD(my_stack) *self, size_t initial_capacity);
-stack_status_t OVERLOAD(stack_push     )(OVERLOAD(my_stack) *self, elem_t elem);
+stack_status_t OVERLOAD(stack_push     )(OVERLOAD(my_stack) *self, TYPE elem);
 stack_status_t OVERLOAD(stack_pop      )(OVERLOAD(my_stack) *self);
 stack_status_t OVERLOAD(stack_size     )(OVERLOAD(my_stack) *self, size_t *size);
-stack_status_t OVERLOAD(stack_top      )(OVERLOAD(my_stack) *self, elem_t *elem);
+stack_status_t OVERLOAD(stack_top      )(OVERLOAD(my_stack) *self, TYPE *elem);
 stack_status_t OVERLOAD(stack_destruct )(OVERLOAD(my_stack) *self);

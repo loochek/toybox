@@ -11,7 +11,6 @@
 
 // int
 #define TYPE int
-typedef int elem_t;
 #include "stack.h"
 #undef TYPE
 
