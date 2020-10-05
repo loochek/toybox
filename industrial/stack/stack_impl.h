@@ -9,7 +9,7 @@
 #define __lit_pair(a, b) __sharp(a) __sharp(b)
 #define STACK_NAME_LIT() __lit_pair(my_stack_, TYPE)
 
-#define STACK_ASSERT(self)                          \
+#define STACK_CHECK(self)                          \
 {                                                   \
     if (OVERLOAD(stack_validate)(self) != STACK_OK) \
     {                                               \
@@ -78,7 +78,7 @@ stack_status_t OVERLOAD(stack_construct)(OVERLOAD(my_stack) *self, size_t initia
 
 stack_status_t OVERLOAD(stack_push)(OVERLOAD(my_stack) *self, TYPE elem)
 {
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
 
     if (self->size == self->capacity)
         if (OVERLOAD(stack_expand)(self) != STACK_OK)
@@ -91,13 +91,13 @@ stack_status_t OVERLOAD(stack_push)(OVERLOAD(my_stack) *self, TYPE elem)
     self->data_hash   = OVERLOAD(stack_calc_data_hash  )(self);
 #endif
 
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
     return STACK_OK;
 }
 
 stack_status_t OVERLOAD(stack_pop)(OVERLOAD(my_stack) *self)
 {
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
 
     if (self->size == 0)
         return STACK_EMPTY;
@@ -114,13 +114,13 @@ stack_status_t OVERLOAD(stack_pop)(OVERLOAD(my_stack) *self)
 
     OVERLOAD(stack_shrink)(self);
 
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
     return STACK_OK;
 }
 
 stack_status_t OVERLOAD(stack_size)(OVERLOAD(my_stack) *self, size_t *size)
 {
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
 
     *size = self->size;
     return STACK_OK;
@@ -128,7 +128,7 @@ stack_status_t OVERLOAD(stack_size)(OVERLOAD(my_stack) *self, size_t *size)
 
 stack_status_t OVERLOAD(stack_top)(OVERLOAD(my_stack) *self, TYPE *elem)
 {
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
 
     if (self->size == 0)
         return STACK_EMPTY;
@@ -139,7 +139,7 @@ stack_status_t OVERLOAD(stack_top)(OVERLOAD(my_stack) *self, TYPE *elem)
 
 stack_status_t OVERLOAD(stack_destruct)(OVERLOAD(my_stack) *self)
 {
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
 
     free(self->data);
     return STACK_OK;
@@ -147,7 +147,7 @@ stack_status_t OVERLOAD(stack_destruct)(OVERLOAD(my_stack) *self)
 
 static stack_status_t OVERLOAD(stack_expand)(OVERLOAD(my_stack) *self)
 {
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
 
     TYPE *new_data = (TYPE*)realloc(self->data, sizeof(TYPE) * self->capacity * 2);
     if (new_data == NULL)
@@ -167,13 +167,13 @@ static stack_status_t OVERLOAD(stack_expand)(OVERLOAD(my_stack) *self)
     self->data_hash   = OVERLOAD(stack_calc_data_hash  )(self);
 #endif
 
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
     return STACK_OK;
 }
 
 static stack_status_t OVERLOAD(stack_shrink)(OVERLOAD(my_stack) *self)
 {
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
 
     if (self->capacity / 2 < self->size + SHRINK_THRESHOLD)
         return STACK_SHRINK_DENIED;
@@ -191,7 +191,7 @@ static stack_status_t OVERLOAD(stack_shrink)(OVERLOAD(my_stack) *self)
     self->data_hash   = OVERLOAD(stack_calc_data_hash  )(self);
 #endif
 
-    STACK_ASSERT(self);
+    STACK_CHECK(self);
     return STACK_OK;
 }
 
