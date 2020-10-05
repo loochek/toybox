@@ -23,7 +23,7 @@ static void stack_print_int(int *a)
 }
 
 #define TYPE int
-const TYPE OVERLOAD(POISON) = 0xDEAD;
+static const TYPE OVERLOAD(POISON) = 0xDEAD;
 #include "stack_impl.h"
 #undef TYPE
 
@@ -34,6 +34,6 @@ static void stack_print_double(double *a)
 }
 
 #define TYPE double
-const TYPE OVERLOAD(POISON) = 0xDEAD;
+static const TYPE OVERLOAD(POISON) = 0xDEAD;
 #include "stack_impl.h"
 #undef TYPE

@@ -31,8 +31,18 @@ static size_t OVERLOAD(stack_calc_struct_hash)(OVERLOAD(my_stack) *self);
 static size_t OVERLOAD(stack_calc_data_hash  )(OVERLOAD(my_stack) *self);
 #endif
 
-// должна быть реализована в stack_impl.c
+// должно быть реализовано в stack_impl.c
+
+// функция печати
 static void OVERLOAD(stack_print)(TYPE *a);
+
+// константы настроек
+extern const size_t SECURITY_MARKER;
+extern const size_t HASH_BASE;
+extern const size_t HASH_MOD;
+extern const size_t SHRINK_THRESHOLD;
+
+extern const TYPE   OVERLOAD(POISON);
 
 //---реализация--------------------------------------
 
