@@ -37,9 +37,15 @@ static size_t OVERLOAD(stack_calc_data_hash  )(OVERLOAD(my_stack) *self);
 static void OVERLOAD(stack_print)(TYPE *a);
 
 // константы настроек
+#ifdef STACK_SEC_CANARY
 extern const size_t SECURITY_MARKER;
+#endif
+
+#ifdef STACK_SEC_HASHING
 extern const size_t HASH_BASE;
 extern const size_t HASH_MOD;
+#endif
+
 extern const size_t SHRINK_THRESHOLD;
 
 extern const TYPE   OVERLOAD(POISON);
