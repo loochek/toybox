@@ -60,7 +60,7 @@ stack_status_t OVERLOAD(stack_construct)(OVERLOAD(my_stack) *self, size_t initia
     self->security_marker2 = SECURITY_MARKER;
 #endif
 #ifdef STACK_SEC_POISON
-    for (int i = 0; i < self->capacity; i++)
+    for (size_t i = 0; i < self->capacity; i++)
         self->data[i] = OVERLOAD(POISON);
 #endif
 #ifdef STACK_SEC_HASHING
@@ -200,7 +200,7 @@ static size_t OVERLOAD(stack_calc_struct_hash)(OVERLOAD(my_stack) *self)
     size_t hash = 0;
 
     char *mem = (char*)self;
-    for (int i = 0; i < sizeof(OVERLOAD(my_stack)); i++)
+    for (size_t i = 0; i < sizeof(OVERLOAD(my_stack)); i++)
         hash = ((hash * HASH_BASE) % HASH_MOD + mem[i]) % HASH_MOD;
 
     self->struct_hash = old_struct_hash;
@@ -218,7 +218,7 @@ static size_t OVERLOAD(stack_calc_data_hash)(OVERLOAD(my_stack) *self)
     size_t hash = 0;
 
     char *mem = (char*)self->data;
-    for (int i = 0; i < self->capacity * sizeof(TYPE); i++)
+    for (size_t i = 0; i < self->capacity * sizeof(TYPE); i++)
         hash = ((hash * HASH_BASE) % HASH_MOD + mem[i]) % HASH_MOD;
 
     self->struct_hash = old_struct_hash;
@@ -239,7 +239,7 @@ static stack_status_t OVERLOAD(stack_validate)(OVERLOAD(my_stack) *self)
         return STACK_CANARY_FAULT;
 #endif
 #ifdef STACK_SEC_POISON
-    for (int i = self->size; i < self->capacity; i++)
+    for (size_t i = self->size; i < self->capacity; i++)
         if (self->data[i] != OVERLOAD(POISON))
             return STACK_POISON_FAULT;
 #endif
