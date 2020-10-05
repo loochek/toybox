@@ -1,5 +1,0 @@
-<map id="custom_strcmp" name="custom_strcmp">
-<area shape="rect" id="node1" title="свой strcmp для соответствия ТЗ" alt="" coords="140,31,263,57"/>
-<area shape="rect" id="node2" href="$main_8c.html#a07ccac96539f158b9215a7ce3855b035" title="компаратор строк" alt="" coords="19,5,78,32"/>
-<area shape="rect" id="node3" href="$main_8c.html#acfd04b7bd8bc77809eda43ac4c6121f1" title="перевернутый компаратор" alt="" coords="5,56,92,83"/>
-</map>

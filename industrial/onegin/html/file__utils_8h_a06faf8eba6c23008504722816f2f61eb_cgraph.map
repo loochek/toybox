@@ -1,4 +1,0 @@
-<map id="create_string_from_file" name="create_string_from_file">
-<area shape="rect" id="node1" title="выдает нуль&#45;терминированную строку с пробелом в начале и гарантированным &#160;&#160;в конце" alt="" coords="5,5,177,32"/>
-<area shape="rect" id="node2" href="$file__utils_8c.html#a84971169ba9cdc9a21ebadfafd39b2a0" title=" " alt="" coords="225,5,328,32"/>
-</map>

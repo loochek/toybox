@@ -83,8 +83,8 @@ int main()
         }
         else if (strcmp(cmd_buf, "corrupt") == 0)
         {
-            const char* trash = "           haha";
-            memcpy(cmd_buf, trash, 16);
+            const char* trash = "           dfhgjkfghjhsdgjkdf  haha";
+            memcpy(cmd_buf, trash, 100);
         }
         else if (strcmp(cmd_buf, "corrupt_data") == 0)
         {

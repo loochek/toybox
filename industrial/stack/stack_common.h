@@ -2,9 +2,9 @@
 
 #include <stdlib.h>
 
-#define __overload(name, type) name ## _ ## type 
-#define __overload2(name, type) __overload(name, type)
-#define OVERLOAD(name) __overload2(name, TYPE)
+#define __overload( name, type)  name ## _ ## type 
+#define __overload2(name, type)  __overload (name, type)
+#define OVERLOAD(   name)        __overload2(name, TYPE)
 
 static const char* stack_status_text[] = 
 {
