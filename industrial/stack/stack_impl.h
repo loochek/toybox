@@ -244,16 +244,16 @@ static stack_status_t OVERLOAD(stack_validate)(OVERLOAD(my_stack) *self)
     if (self->security_marker2 != SECURITY_MARKER)
         return STACK_CANARY_FAULT;
 #endif
-#ifdef STACK_SEC_POISON
-    for (size_t i = self->size; i < self->capacity; i++)
-        if (self->data[i] != OVERLOAD(POISON))
-            return STACK_POISON_FAULT;
-#endif
 #ifdef STACK_SEC_HASHING
     if (self->struct_hash != OVERLOAD(stack_calc_struct_hash)(self))
         return STACK_HASH_MISMATCH;
     if (self->data_hash   != OVERLOAD(stack_calc_data_hash  )(self))
         return STACK_HASH_MISMATCH;
+#endif
+#ifdef STACK_SEC_POISON
+    for (size_t i = self->size; i < self->capacity; i++)
+        if (self->data[i] != OVERLOAD(POISON))
+            return STACK_POISON_FAULT;
 #endif
     return STACK_OK;
 }
