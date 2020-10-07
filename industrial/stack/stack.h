@@ -10,9 +10,9 @@ typedef struct
     size_t data_hash;
 #endif
 
+    TYPE *data;
     size_t size;
     size_t capacity;
-    TYPE *data;
 
 #ifdef STACK_SEC_CANARY
     size_t security_marker2;
