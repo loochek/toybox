@@ -22,20 +22,22 @@ int main()
 {
     // пример:
     my_stack_int stack = {};
-    
-    stack_construct_int(&stack, 4);
-    
-    stack_push_int(&stack, 1);
-    stack_push_int(&stack, 2);
-    stack_push_int(&stack, 3);
-    stack_push_int(&stack, 4);
-    size_t size = 0;
-    stack_size_int(&stack, &size); // size1 = 4
-    stack_pop_int(&stack);
-    int elem = 0;
-    stack_top_int(&stack, &elem); // elem = 3
 
-    printf("%zu %d\n", size, elem); // 4 3 
-    stack_destruct_int(&stack);
+    printf("%d", sizeof(size_t));
+    
+    // stack_construct_int(&stack, 4);
+    
+    // stack_push_int(&stack, 1);
+    // stack_push_int(&stack, 2);
+    // stack_push_int(&stack, 3);
+    // stack_push_int(&stack, 4);
+    // size_t size = 0;
+    // stack_size_int(&stack, &size); // size1 = 4
+    // stack_pop_int(&stack);
+    // int elem = 0;
+    // stack_top_int(&stack, &elem); // elem = 3
+
+    // printf("%zu %d\n", size, elem); // 4 3 
+    // stack_destruct_int(&stack);
     return 0;
 }
