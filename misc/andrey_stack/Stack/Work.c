@@ -44,7 +44,7 @@ typedef int ElemS;
 
 void stack_protect(Stack *s)
 {
-	static cnt = 1000;
+	static int cnt = 1000;
 	cnt--;
 	if (cnt == 0)
 	{
@@ -67,7 +67,9 @@ int main() {
 		Stack_P **ptr = (char*)&s - i;
 		size_t size = -1;
 		size_t capacity = -1;
-		if (is_pointer_valid(*ptr) && is_pointer_valid(&(*ptr)->size) && is_pointer_valid(&(*ptr)->capacity))
+		if (is_pointer_valid(  *ptr) && 
+		    is_pointer_valid(&(*ptr)->size) && 
+			is_pointer_valid(&(*ptr)->capacity))
 		{
 			size = (*ptr)->size;
 			capacity = (*ptr)->capacity;
