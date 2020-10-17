@@ -1,0 +1,22 @@
+Opcode is 1 byte
+Arithmetics (operations, in/out, %d) - 4-byte signed fixed-point number, 3 decimal digits after point (a.k.a Number)
+rax, rbx, rcx, rdx - 4-byte registers
+
+OPCODE  MNEMONIC   DESCRIPTION                                                     ARGUMENTS             SIZE
+00      nop        No operation                                                                          1
+01      push %d    Push immediate Number into stack                                4-byte Number         5
+02      push rax   Push value from rax into stack                                                        1
+03      push rbx   Push value from rbx into stack                                                        1
+04      push rcx   Push value from rcx into stack                                                        1
+05      push rdx   Push value from rdx into stack                                                        1
+06      pop  rax   Pop  value from stack into register rax                                               1
+07      pop  rbx   Pop  value from stack into register rbx                                               1
+08      pop  rcx   Pop  value from stack into register rcx                                               1
+09      pop  rdx   Pop  value from stack into register rdx                                               1
+0A      in         Push Number from keyboard into stack                                                  1
+0B      out        Print Number from stack                                                               1
+0C      add        Add two Numbers from stack and push result into Stack                                 1
+0D      sub        Substract two Numbers from stack and push result into Stack                           1
+0E      mul        Multiple two Numbers from stack and push result into Stack                            1
+0F      div        Divide two Numbers from stack and push result into Stack                              1
+10      hlt        Stop execution                                                                        1

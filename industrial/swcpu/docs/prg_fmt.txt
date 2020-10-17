@@ -1,0 +1,11 @@
+prg file format:
+
+struct header
+{
+    char signature[4];  // LPRG
+    uint32_t format_ver;
+    char program_name[20];
+    uint32_t code_size;
+}
+
+code: unit8_t[code_size]
