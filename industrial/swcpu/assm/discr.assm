@@ -7,10 +7,10 @@ pop rcx
 pop rbx
 pop rax
 nop
-push rbx
+push rbx   ; just for test
 push rbx
 mul
-push 4  ; Test comment
+push 4
 push rax
 push rcx
 mul

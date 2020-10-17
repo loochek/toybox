@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "headers/lerror.h"
 #include "headers/arithm.h"
 
 int32_t str_to_num(const char str[])
@@ -23,8 +24,13 @@ int32_t str_to_num(const char str[])
         num += str[i] - '0';
         i++;
     }
-    if (str[i] != '.')
+    if (str[i] == '\0')
         return num * 1000 * sign;
+    if (str[i] != '.')
+    {
+        LERR(LERR_NAN, "Not a number");
+        return 0;
+    }
     i++;
     int rcnt = 0;
     while (isdigit(str[i]) && rcnt <= 2)
@@ -36,6 +42,11 @@ int32_t str_to_num(const char str[])
     }
     if (3 - rcnt > 0)
         num *= 10 * (3 - rcnt);
+    if (str[i] != '\0')
+    {
+        LERR(LERR_NAN, "Not a number");
+        return 0;
+    }
     return num * sign;
 }
 
