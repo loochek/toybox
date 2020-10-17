@@ -166,7 +166,7 @@ int main()
                 printf("CPU fatal error: tryng to pop from empty stack\n");
                 return 0;
             }
-            stack_push_cpuval(&cpu_state.stack, imm_val2 / imm_val1 * 1000);
+            stack_push_cpuval(&cpu_state.stack, imm_val2 * 1000 / imm_val1);
             break;
 
         case OPCODE_HLT:

@@ -1,0 +1,16 @@
+; Reshaem pyatiklassmy primer
+push 14.068
+push 15.78
+add
+push 1.875
+push 0.175
+add
+div
+push 0.325
+push 0.195
+add
+push 4
+mul
+div
+out
+hlt
