@@ -162,16 +162,34 @@ static void compile(string_index_t *prg_text, char *output_buf)
     }
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    string_index_t *prg_text  = create_index_from_file("discr.assm");
+    char* src_file_name = NULL;
+    char* prg_name      = NULL;
+    if (argc < 2)
+    {
+        printf("Usage: assm <source file> [<output program file>]\n");
+        return 0;
+    }
+    else if (argc == 2)
+    {
+        src_file_name = argv[1];
+        prg_name      = "a.out";
+    } 
+    else if (argc == 3)
+    {
+        src_file_name = argv[1];
+        prg_name      = argv[2];
+    }
+        
+    string_index_t *prg_text  = create_index_from_file(src_file_name);
     if (prg_text == NULL)
     {
         LERRPRINT();
         destroy_index(prg_text);
         return -1;
     }
-    string_index_t *prg_text2  = create_index_from_file("discr.assm");
+    string_index_t *prg_text2  = create_index_from_file(src_file_name);
     size_t byte_cnt = syntax_check(prg_text, prg_text2);
     destroy_index(prg_text);
     
@@ -193,7 +211,7 @@ int main()
     strcpy(prg_header.program_name, "COMPILIER_DEFAULT");
     prg_header.code_size = byte_cnt;
 
-    FILE *output_file = fopen("a.prg", "wb");
+    FILE *output_file = fopen(prg_name, "wb");
     if (output_file == NULL)
     {
         fprintf(stderr, "Unable to open output file\n");

@@ -23,16 +23,33 @@ static inline uint32_t prg_read_dword(program_t *prg, size_t addr)
     return dword;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    program_t *prg = load_program_from_file("discr.prg");
+    char* src_file_name = NULL;
+    char* prg_name      = NULL;
+    if (argc < 2)
+    {
+        printf("Usage: disassm <input program file> [<output source file>]\n");
+        return 0;
+    }
+    else if (argc == 2)
+    {
+        prg_name      = argv[1];
+        src_file_name = "src.assm";
+    } 
+    else if (argc == 3)
+    {
+        prg_name      = argv[1];
+        src_file_name = argv[2];
+    }
+    program_t *prg = load_program_from_file(prg_name);
     if (prg == NULL)
     {
         LERRPRINT();
         return -1;
     }
     
-    FILE *disassm_file = fopen("discr.assm", "w");
+    FILE *disassm_file = fopen(src_file_name, "w");
     if (disassm_file == NULL)
     {
         fprintf(stderr, "Can't open output file\n");

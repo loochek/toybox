@@ -42,8 +42,17 @@ static inline uint32_t cpu_read_dword(cpu_state_t *cpu_state, program_t *prg)
     return dword;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    char* prg_name = NULL;
+    if (argc < 2)
+    {
+        printf("Usage: cpu <program file>\n");
+        return 0;
+    }
+    else if (argc == 2)
+        prg_name = argv[1];
+        
     cpu_state_t cpu_state = {0};
     if (stack_construct_cpuval(&cpu_state.stack, 10) != STACK_OK)
     {
@@ -51,7 +60,7 @@ int main()
         return -1;
     }
 
-    program_t *prg = load_program_from_file("discr.prg");
+    program_t *prg = load_program_from_file(prg_name);
     if (prg == NULL)
     {
         LERRPRINT();
