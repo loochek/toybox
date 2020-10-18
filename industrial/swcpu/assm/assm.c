@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
     else if (argc == 2)
     {
         src_file_name = argv[1];
-        prg_name      = "a.out";
+        prg_name      = "a.prg";
     } 
     else if (argc == 3)
     {
