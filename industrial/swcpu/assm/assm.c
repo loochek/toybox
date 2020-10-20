@@ -155,24 +155,21 @@ static void compile(string_index_t *prg_text, char *output_buf)
 int main(int argc, char* argv[])
 {
     char* src_file_name = NULL;
-    char* prg_name      = NULL;
+    char prg_name[100] = "COMPILIER_DEFAULT";
     if (argc < 2)
     {
-        printf("Usage: assm <source file> [<output program file>]\n");
+        printf("Usage: assm <source file> [<output program name>]\n");
         return 0;
     }
     else if (argc == 2)
-    {
         src_file_name = argv[1];
-        prg_name      = "a.prg";
-    } 
     else if (argc == 3)
     {
         src_file_name = argv[1];
-        prg_name      = argv[2];
+        strcpy(prg_name, argv[2]);
+        strcat(prg_name, ".prg");
     }
-    
-    // 
+
     string_index_t *prg_text  = create_index_from_file(src_file_name);
     if (prg_text == NULL)
     {
@@ -200,10 +197,10 @@ int main(int argc, char* argv[])
     prg_header.signature[2] = 'R';
     prg_header.signature[3] = 'G';
     prg_header.format_ver = 1;
-    strcpy(prg_header.program_name, "COMPILIER_DEFAULT");
+    strcpy(prg_header.program_name, prg_name);
     prg_header.code_size = byte_cnt;
 
-    FILE *output_file = fopen(prg_name, "wb");
+    FILE *output_file = fopen(argc == 3 ? prg_name : "a.prg", "wb");
     if (output_file == NULL)
     {
         fprintf(stderr, "Unable to open output file\n");
