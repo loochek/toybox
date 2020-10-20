@@ -9,6 +9,8 @@
 #include "../common/headers/arithm.h"
 #include "stack/stack_common.h"
 
+// The CPU
+
 #define STACK_SEC_HASHING
 #define STACK_SEC_CANARY
 #define STACK_SEC_POISON
@@ -42,6 +44,55 @@ static inline uint32_t cpu_read_dword(cpu_state_t *cpu_state, program_t *prg)
     return dword;
 }
 
+// I'm sorry about this overheaded if mess instead of switch, but I couldn't implement DSL with swith
+
+// INSTRUCTION definition for cpu
+#define INSTRUCTION(mnemonic, base_opcode, argument_type, IMPL) \
+if ((argument_type) == ARG_TYPE_NO_ARGS)                        \
+{                                                               \
+    if (opcode == base_opcode)                                  \
+    {                                                           \
+        IMPL                                                    \
+        continue;                                               \
+    }                                                           \
+}                                                               \
+if (((argument_type) & ARG_TYPE_REGISTER) != 0)                 \
+{                                                               \
+    if (opcode == base_opcode)                                  \
+    {                                                           \
+        ARG = 0;                                                \
+        IMPL                                                    \
+        continue;                                               \
+    }                                                           \
+    else if (opcode == base_opcode + 1)                         \
+    {                                                           \
+        ARG = 1;                                                \
+        IMPL                                                    \
+        continue;                                               \
+    }                                                           \
+    else if (opcode == base_opcode + 2)                         \
+    {                                                           \
+        ARG = 2;                                                \
+        IMPL                                                    \
+        continue;                                               \
+    }                                                           \
+    else if (opcode == base_opcode + 3)                         \
+    {                                                           \
+        ARG = 3;                                                \
+        IMPL                                                    \
+        continue;                                               \
+    }                                                           \
+}                                                               \
+if (((argument_type) & ARG_TYPE_IMMEDIATE) != 0)                \
+{                                                               \
+    if (opcode == base_opcode + 4)                              \
+    {                                                           \
+        ARG = 4;                                                \
+        IMPL                                                    \
+        continue;                                               \
+    }                                                           \
+}
+
 int main(int argc, char* argv[])
 {
     char* prg_name = NULL;
@@ -71,124 +122,16 @@ int main(int argc, char* argv[])
 
     while (!cpu_state.halted)
     {
-        int32_t imm_val1 = 0, imm_val2 = 0;
-        stack_status_t status1 = STACK_ERROR, status2 = STACK_ERROR;
-        char num_buf[21] = {0};
-
         uint8_t opcode = cpu_read_byte(&cpu_state, prg);
+        int ARG = -1;
+        #include "../cpu_def.h"
 
-        switch (opcode)
-        {
-        case OPCODE_NOP:
-            break;
-
-        case OPCODE_PUSH_IMM:
-            stack_push_cpuval(&cpu_state.stack, cpu_read_dword(&cpu_state, prg));
-            break;
-
-        case OPCODE_PUSH_RAX:
-        case OPCODE_PUSH_RBX:
-        case OPCODE_PUSH_RCX:
-        case OPCODE_PUSH_RDX:
-            stack_push_cpuval(&cpu_state.stack, cpu_state.registers[opcode - OPCODE_PUSH_RAX]);
-            break;
-
-        case OPCODE_POP_RAX:
-        case OPCODE_POP_RBX:
-        case OPCODE_POP_RCX:
-        case OPCODE_POP_RDX:
-            status1 = stack_top_cpuval(&cpu_state.stack,
-                                       &cpu_state.registers[opcode - OPCODE_POP_RAX]);
-            stack_pop_cpuval(&cpu_state.stack);
-            if (status1 == STACK_EMPTY)
-            {
-                printf("CPU fatal error: tryng to pop from empty stack\n");
-                return 0;
-            }
-            break;
-
-        case OPCODE_IN:
-            printf("CPU asked you for a number:");
-            scanf("%s", num_buf);
-            stack_push_cpuval(&cpu_state.stack, str_to_num(num_buf));
-            break;
-
-        case OPCODE_OUT:
-            status1 = stack_top_cpuval(&cpu_state.stack, &imm_val1);
-            stack_pop_cpuval(&cpu_state.stack);
-            if (status1 == STACK_EMPTY)
-            {
-                printf("CPU fatal error: tryng to pop from empty stack\n");
-                return 0;
-            }
-
-            num_to_str(imm_val1, num_buf);
-            printf("CPU told you the number: %s\n", num_buf);
-            break;
-
-        case OPCODE_ADD:
-            status1 = stack_top_cpuval(&cpu_state.stack, &imm_val1);
-            stack_pop_cpuval(&cpu_state.stack);
-            status2 = stack_top_cpuval(&cpu_state.stack, &imm_val2);
-            stack_pop_cpuval(&cpu_state.stack);
-            if (status1 == STACK_EMPTY || status2 == STACK_EMPTY)
-            {
-                printf("CPU fatal error: tryng to pop from empty stack\n");
-                return 0;
-            }
-            stack_push_cpuval(&cpu_state.stack, imm_val1 + imm_val2);
-            break;
-
-        case OPCODE_SUB:
-            status1 = stack_top_cpuval(&cpu_state.stack, &imm_val1);
-            stack_pop_cpuval(&cpu_state.stack);
-            status2 = stack_top_cpuval(&cpu_state.stack, &imm_val2);
-            stack_pop_cpuval(&cpu_state.stack);
-            if (status1 == STACK_EMPTY || status2 == STACK_EMPTY)
-            {
-                printf("CPU fatal error: tryng to pop from empty stack\n");
-                return 0;
-            }
-            stack_push_cpuval(&cpu_state.stack, imm_val2 - imm_val1);
-            break;
-
-        case OPCODE_MUL:
-            status1 = stack_top_cpuval(&cpu_state.stack, &imm_val1);
-            stack_pop_cpuval(&cpu_state.stack);
-            status2 = stack_top_cpuval(&cpu_state.stack, &imm_val2);
-            stack_pop_cpuval(&cpu_state.stack);
-            if (status1 == STACK_EMPTY || status2 == STACK_EMPTY)
-            {
-                printf("CPU fatal error: tryng to pop from empty stack\n");
-                return 0;
-            }
-            stack_push_cpuval(&cpu_state.stack, (int32_t)((int64_t)imm_val1 * imm_val2 / 1000));
-            break;
-
-        case OPCODE_DIV:
-            status1 = stack_top_cpuval(&cpu_state.stack, &imm_val1);
-            stack_pop_cpuval(&cpu_state.stack);
-            status2 = stack_top_cpuval(&cpu_state.stack, &imm_val2);
-            stack_pop_cpuval(&cpu_state.stack);
-            if (status1 == STACK_EMPTY || status2 == STACK_EMPTY)
-            {
-                printf("CPU fatal error: tryng to pop from empty stack\n");
-                return 0;
-            }
-            stack_push_cpuval(&cpu_state.stack, imm_val2 * 1000 / imm_val1);
-            break;
-
-        case OPCODE_HLT:
-            cpu_state.halted = true;
-            break;
-
-        default:
-            printf("CPU fatal error: unknown opcode %02x\n", opcode);
-            return 0;
-            break;
-        }
+        printf("CPU fatal error: unknown opcode %02x\n", opcode);
+        program_unload(prg);
+        stack_destruct_cpuval(&cpu_state.stack);
+        return 0;
     }
-
+    
     program_unload(prg);
     stack_destruct_cpuval(&cpu_state.stack);
     return 0;

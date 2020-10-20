@@ -8,6 +8,53 @@
 #include "../common/headers/opcodes.h"
 #include "../common/headers/arithm.h"
 
+// The simplest part of the toolchain
+
+// INSTRUCTION definition for disassm
+#define INSTRUCTION(mnemonic, base_opcode, argument_type, IMPL) \
+if ((argument_type) == ARG_TYPE_NO_ARGS)                        \
+{                                                               \
+    if (opcode == base_opcode)                                  \
+    {                                                           \
+        fprintf(disassm_file, #mnemonic "\n");                  \
+        continue;                                               \
+    }                                                           \
+}                                                               \
+if (((argument_type) & ARG_TYPE_REGISTER) != 0)                 \
+{                                                               \
+    if (opcode == base_opcode)                                  \
+    {                                                           \
+        fprintf(disassm_file, #mnemonic " rax\n");              \
+        continue;                                               \
+    }                                                           \
+    else if (opcode == base_opcode + 1)                         \
+    {                                                           \
+        fprintf(disassm_file, #mnemonic " rbx\n");              \
+        continue;                                               \
+    }                                                           \
+    else if (opcode == base_opcode + 2)                         \
+    {                                                           \
+        fprintf(disassm_file, #mnemonic " rcx\n");              \
+        continue;                                               \
+    }                                                           \
+    else if (opcode == base_opcode + 3)                         \
+    {                                                           \
+        fprintf(disassm_file, #mnemonic " rdx\n");              \
+        continue;                                               \
+    }                                                           \
+}                                                               \
+if (((argument_type) & ARG_TYPE_IMMEDIATE) != 0)                \
+{                                                               \
+    if (opcode == base_opcode + 4)                              \
+    {                                                           \
+        char num_buf[21] = {0};                                 \
+        num_to_str(prg_read_dword(prg, pc), num_buf);           \
+        pc += 4;                                                \
+        fprintf(disassm_file, #mnemonic " %s\n", num_buf);      \
+        continue;                                               \
+    }                                                           \
+}   
+
 static inline uint8_t prg_read_byte(program_t *prg, size_t addr)
 {
     return prg->code[addr];
@@ -62,90 +109,16 @@ int main(int argc, char* argv[])
     size_t pc = 0;
     while (pc < prg->prg_header->code_size)
     {
-        char num_buf[21] = {0};
-
         uint8_t opcode = prg_read_byte(prg, pc);
         pc++;
 
-        switch (opcode)
-        {
-        case OPCODE_NOP:
-            fprintf(disassm_file, "nop\n");
-            break;
-
-        case OPCODE_PUSH_IMM:
-            num_to_str(prg_read_dword(prg, pc), num_buf);
-            pc += 4;
-            fprintf(disassm_file, "push %s\n", num_buf);
-            break;
-
-        case OPCODE_PUSH_RAX:
-            fprintf(disassm_file, "push rax\n");
-            break;
-
-        case OPCODE_PUSH_RBX:
-            fprintf(disassm_file, "push rbx\n");
-            break;
-            
-        case OPCODE_PUSH_RCX:
-            fprintf(disassm_file, "push rcx\n");
-            break;
-            
-        case OPCODE_PUSH_RDX:
-            fprintf(disassm_file, "push rdx\n");
-            break;
-            
-        case OPCODE_POP_RAX:
-            fprintf(disassm_file, "pop rax\n");
-            break;
-
-        case OPCODE_POP_RBX:
-            fprintf(disassm_file, "pop rbx\n");
-            break;
-            
-        case OPCODE_POP_RCX:
-            fprintf(disassm_file, "pop rcx\n");
-            break;
-            
-        case OPCODE_POP_RDX:
-            fprintf(disassm_file, "pop rdx\n");
-            break;
-
-        case OPCODE_IN:
-            fprintf(disassm_file, "in\n");
-            break;
-
-        case OPCODE_OUT:
-            fprintf(disassm_file, "out\n");
-            break;
-
-        case OPCODE_ADD:
-            fprintf(disassm_file, "add\n");
-            break;
-
-        case OPCODE_SUB:
-            fprintf(disassm_file, "sub\n");
-            break;
-
-        case OPCODE_MUL:
-            fprintf(disassm_file, "mul\n");
-            break;
-
-        case OPCODE_DIV:
-            fprintf(disassm_file, "div\n");
-            break;
-
-        case OPCODE_HLT:
-            fprintf(disassm_file, "hlt\n");
-            break;
-
-        default:
-            printf("Disassm fatal error: unknown opcode %02x\n", opcode);
-            return 0;
-            break;
-        }
+        #include "../cpu_def.h"
+        
+        printf("Disassm fatal error: unknown opcode %02x\n", opcode);
+        fclose(disassm_file);
+        program_unload(prg);
+        return 0;
     }
-
     fclose(disassm_file);
     program_unload(prg);
     return 0;

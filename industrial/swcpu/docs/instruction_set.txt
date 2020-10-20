@@ -4,11 +4,11 @@ rax, rbx, rcx, rdx - 4-byte registers
 
 OPCODE  MNEMONIC   DESCRIPTION                                                     ARGUMENTS             SIZE
 00      nop        No operation                                                                          1
-01      push %d    Push immediate Number into stack                                4-byte Number         5
-02      push rax   Push value from rax into stack                                                        1
-03      push rbx   Push value from rbx into stack                                                        1
-04      push rcx   Push value from rcx into stack                                                        1
-05      push rdx   Push value from rdx into stack                                                        1
+01      push rax   Push value from rax into stack                                                        1
+02      push rbx   Push value from rbx into stack                                                        1
+03      push rcx   Push value from rcx into stack                                                        1
+04      push rdx   Push value from rdx into stack                                                        1
+05      push %d    Push immediate Number into stack                                4-byte Number         5
 06      pop  rax   Pop  value from stack into register rax                                               1
 07      pop  rbx   Pop  value from stack into register rbx                                               1
 08      pop  rcx   Pop  value from stack into register rcx                                               1
