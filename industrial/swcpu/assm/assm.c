@@ -167,7 +167,6 @@ int main(int argc, char* argv[])
     {
         src_file_name = argv[1];
         strcpy(prg_name, argv[2]);
-        strcat(prg_name, ".prg");
     }
 
     string_index_t *prg_text  = create_index_from_file(src_file_name);
@@ -200,6 +199,7 @@ int main(int argc, char* argv[])
     strcpy(prg_header.program_name, prg_name);
     prg_header.code_size = byte_cnt;
 
+    strcat(prg_name, ".prg");
     FILE *output_file = fopen(argc == 3 ? prg_name : "a.prg", "wb");
     if (output_file == NULL)
     {
