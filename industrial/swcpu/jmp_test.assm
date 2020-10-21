@@ -1,0 +1,16 @@
+; haha
+init:
+    push 1
+    pop rax
+
+loop:
+    push rax
+    push rax
+    mul
+    out
+
+    push 1
+    push rax
+    add
+    pop rax
+    jmp loop

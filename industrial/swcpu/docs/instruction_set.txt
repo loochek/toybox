@@ -14,9 +14,10 @@ OPCODE  MNEMONIC   DESCRIPTION                                                  
 08      pop  rcx   Pop  value from stack into register rcx                                               1
 09      pop  rdx   Pop  value from stack into register rdx                                               1
 0A      in         Push Number from keyboard into stack                                                  1
-0B      out        Print Number from stack                                                               1
+0B      out        Pop Number from stackand print it                                                     1
 0C      add        Add two Numbers from stack and push result into Stack                                 1
 0D      sub        Substract two Numbers from stack and push result into Stack                           1
 0E      mul        Multiple two Numbers from stack and push result into Stack                            1
 0F      div        Divide two Numbers from stack and push result into Stack                              1
 10      hlt        Stop execution                                                                        1
+11      jmp %d     Set instruction pointer to immediate offset                     4-byte integer        5

@@ -48,7 +48,8 @@ static inline uint32_t cpu_read_dword(cpu_state_t *cpu_state, program_t *prg)
 
 // INSTRUCTION definition for cpu
 #define INSTRUCTION(mnemonic, base_opcode, argument_type, IMPL) \
-if ((argument_type) == ARG_TYPE_NO_ARGS)                        \
+if ((argument_type) == ARG_TYPE_NO_ARGS ||                      \
+    (argument_type) == ARG_TYPE_LABEL)                          \
 {                                                               \
     if (opcode == base_opcode)                                  \
     {                                                           \
@@ -91,7 +92,7 @@ if (((argument_type) & ARG_TYPE_IMMEDIATE) != 0)                \
         IMPL                                                    \
         continue;                                               \
     }                                                           \
-}
+}                                                               \
 
 int main(int argc, char* argv[])
 {
