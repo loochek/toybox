@@ -13,4 +13,10 @@ loop:
     push rax
     add
     pop rax
-    jmp loop
+
+    push rax
+    push 100
+    jle loop
+    
+end:
+    hlt

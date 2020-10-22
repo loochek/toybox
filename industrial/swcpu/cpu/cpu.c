@@ -5,7 +5,6 @@
 
 #include "../common/headers/lerror.h"
 #include "../common/headers/prg.h"
-#include "../common/headers/opcodes.h"
 #include "../common/headers/arithm.h"
 #include "stack/stack_common.h"
 

@@ -1,6 +1,7 @@
 Opcode is 1 byte
 Arithmetics (operations, in/out, %d) - 4-byte signed fixed-point number, 3 decimal digits after point (a.k.a Number)
 rax, rbx, rcx, rdx - 4-byte registers
+If the instruction takes two operands from the stack, then the one that is deeper is considered the first
 
 OPCODE  MNEMONIC   DESCRIPTION                                                     ARGUMENTS             SIZE
 00      nop        No operation                                                                          1
@@ -20,4 +21,10 @@ OPCODE  MNEMONIC   DESCRIPTION                                                  
 0E      mul        Multiple two Numbers from stack and push result into Stack                            1
 0F      div        Divide two Numbers from stack and push result into Stack                              1
 10      hlt        Stop execution                                                                        1
-11      jmp %d     Set instruction pointer to immediate offset                     4-byte integer        5
+11      jmp  %d    Set instruction pointer to immediate offset                     4-byte integer        5
+12      je   %d    jmp if first operand == second operand from stack, else nop     4-byte integer        5
+13      jne  %d    jmp if first operand != second operand from stack, else nop     4-byte integer        5
+14      jg   %d    jmp if first operand >  second operand from stack, else nop     4-byte integer        5
+15      jge  %d    jmp if first operand >= second operand from stack, else nop     4-byte integer        5
+16      jl   %d    jmp if first operand <  second operand from stack, else nop     4-byte integer        5
+17      jle  %d    jmp if first operand <= second operand from stack, else nop     4-byte integer        5

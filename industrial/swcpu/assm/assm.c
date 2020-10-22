@@ -5,7 +5,6 @@
 
 #include "../common/headers/string_lib.h"
 #include "../common/headers/arithm.h"
-#include "../common/headers/opcodes.h"
 #include "../common/headers/lerror.h"
 #include "../common/headers/prg.h"
 

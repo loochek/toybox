@@ -97,4 +97,27 @@ INSTRUCTION(div, 0x0F, ARG_TYPE_NO_ARGS, BINARY_OPERATOR(imm_val2 * 1000 / imm_v
 INSTRUCTION(hlt, 0x10, ARG_TYPE_NO_ARGS, {cpu_state.halted = true;})
 
 INSTRUCTION(jmp, 0x11, ARG_TYPE_LABEL, { cpu_state.pc = READ_DWORD(); })
-// INSTRUCTION(je , 0x12, ARG_TYPE_LABEL, { cpu_state.pc = READ_DWORD(); })
+
+#define CONDITIONAL_JUMP(condition)                                         \
+{                                                                           \
+    int32_t imm_val1 = 0, imm_val2 = 0;                                     \
+    stack_status_t status1 = stack_top_cpuval(&cpu_state.stack, &imm_val1); \
+    stack_pop_cpuval(&cpu_state.stack);                                     \
+    stack_status_t status2 = stack_top_cpuval(&cpu_state.stack, &imm_val2); \
+    stack_pop_cpuval(&cpu_state.stack);                                     \
+    if (status1 == STACK_EMPTY || status2 == STACK_EMPTY)                   \
+    {                                                                       \
+        printf("CPU fatal error: tryng to pop from empty stack\n");         \
+        return 0;                                                           \
+    }                                                                       \
+    int32_t jump_addr = READ_DWORD();                                       \
+    if (condition)                                                          \
+        cpu_state.pc = jump_addr;                                           \
+}
+
+INSTRUCTION(je , 0x12, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 == imm_val1))
+INSTRUCTION(jne, 0x13, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 != imm_val1))
+INSTRUCTION(jg , 0x14, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 >  imm_val1))
+INSTRUCTION(jge, 0x15, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 >= imm_val1))
+INSTRUCTION(jl , 0x16, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 <  imm_val1))
+INSTRUCTION(jle, 0x17, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 <= imm_val1))

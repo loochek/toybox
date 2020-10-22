@@ -5,7 +5,6 @@
 
 #include "../common/headers/lerror.h"
 #include "../common/headers/prg.h"
-#include "../common/headers/opcodes.h"
 #include "../common/headers/arithm.h"
 
 // The simplest part of the toolchain
@@ -53,7 +52,17 @@ if (((argument_type) & ARG_TYPE_IMMEDIATE) != 0)                \
         fprintf(disassm_file, #mnemonic " %s\n", num_buf);      \
         continue;                                               \
     }                                                           \
-}   
+}                                                               \
+if (((argument_type) & ARG_TYPE_LABEL) != 0)                    \
+{                                                               \
+    if (opcode == base_opcode)                                  \
+    {                                                           \
+        int32_t addr = prg_read_dword(prg, pc);                 \
+        pc += 4;                                                \
+        fprintf(disassm_file, #mnemonic " 0x%x\n", addr);       \
+        continue;                                               \
+    }                                                           \
+}
 
 static inline uint8_t prg_read_byte(program_t *prg, size_t addr)
 {
