@@ -31,6 +31,8 @@ string_index_t *create_index_from_file(const char* file_name)
 
 void destroy_index(string_index_t *index)
 {
+    if (index == NULL)
+        return;
     free(index->buf);
     free(index->string_entries);
     free(index);

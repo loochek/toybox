@@ -105,6 +105,9 @@ line_parsed:
         curr_tok = strtok(NULL, " ");
         if (curr_tok != NULL)
         {
+            // if the token is the start of the comment
+            if (strncmp(curr_tok, ";", 1) == 0)
+                continue;
             printf("Error on line %zu: extra tokens:\n%s\n", line + 1,
                             prg_text_immut->string_entries[line].begin);
             return -1;
@@ -226,27 +229,28 @@ int main(int argc, char* argv[])
     if (prg_text == NULL)
     {
         LERRPRINT();
-        destroy_index(prg_text);
         return -1;
     }
 
-    string_index_t *prg_text2  = create_index_from_file(src_file_name);
-    label_entry_t *labels = calloc(100, sizeof(label_entry_t));
-    size_t label_cnt = 0;
+    string_index_t *prg_text2 = create_index_from_file(src_file_name);
+    label_entry_t  *labels    = calloc(100, sizeof(label_entry_t));
+    size_t          label_cnt = 0;
+    
     size_t byte_cnt = syntax_check(prg_text, prg_text2, labels, &label_cnt);
     destroy_index(prg_text);
     
     if (byte_cnt == -1)
     {
         destroy_index(prg_text2);
+        free(labels);
         return -1;
     }
 
     char *code = calloc(byte_cnt, sizeof(char));
-    int status = compile(prg_text2, code, labels, label_cnt);
+    int compile_status = compile(prg_text2, code, labels, label_cnt);
     free(labels);
     destroy_index(prg_text2);
-    if (status == -1)
+    if (compile_status == -1)
     {
         free(code);
         return 0;
@@ -269,14 +273,10 @@ int main(int argc, char* argv[])
         free(code);
         return -1;
     }
-    if (fwrite(&prg_header, sizeof(prg_header_t), 1, output_file) != 1)
-    {
-        fprintf(stderr, "Unable to write to output file\n");
-        free(code);
-        fclose(output_file);
-        return -1;
-    }
-    if (fwrite(code, sizeof(char), byte_cnt, output_file) != byte_cnt)
+
+    int write_status = (fwrite(&prg_header, sizeof(prg_header_t), 1, output_file) != 1) ||
+                 (fwrite(code, sizeof(char), byte_cnt, output_file) != byte_cnt);
+    if (write_status)
     {
         fprintf(stderr, "Unable to write to output file\n");
         free(code);

@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
         int ARG = -1;
         #include "../cpu_def.h"
 
-        printf("CPU fatal error: unknown opcode %02x\n", opcode);
+        printf("CPU execution error: unknown opcode %02x\n", opcode);
         program_unload(prg);
         stack_destruct_cpuval(&cpu_state.stack);
         return 0;

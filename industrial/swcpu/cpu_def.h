@@ -1,10 +1,42 @@
-#define ARG_TYPE_NO_ARGS   0
-#define ARG_TYPE_REGISTER  1
-#define ARG_TYPE_IMMEDIATE 2
-#define ARG_TYPE_LABEL     4
+// It can be useful for writing implementation
+
+#define REG(n)  cpu_state.registers[n]
+#define REG_RAX REG(0)
+#define REG_RBX REG(1)
+#define REG_RCX REG(2)
+#define REG_RDX REG(3)
 
 #define READ_BYTE()  cpu_read_byte (&cpu_state, prg)
 #define READ_DWORD() cpu_read_dword(&cpu_state, prg)
+
+#define STACK_PUSH(val)                                       \
+{                                                             \
+    if (stack_push_cpuval(&cpu_state.stack, val) != STACK_OK) \
+    {                                                         \
+        fprintf(stderr, "Stack error\n");                     \
+        return -1;                                            \
+    }                                                         \
+}
+
+#define STACK_POP(ptr)                                                  \
+{                                                                       \
+    stack_status_t status = stack_top_cpuval(&cpu_state.stack, ptr);    \
+    if (status == STACK_EMPTY)                                          \
+    {                                                                   \
+        printf("CPU execution error: tryng to pop from empty stack\n"); \
+        return 0;                                                       \
+    }                                                                   \
+    else if (status != STACK_OK)                                        \
+    {                                                                   \
+        fprintf(stderr, "Stack error\n");                               \
+        return -1;                                                      \
+    }                                                                   \
+    if (stack_pop_cpuval(&cpu_state.stack) != STACK_OK)                 \
+    {                                                                   \
+        fprintf(stderr, "Stack error\n");                               \
+        return -1;                                                      \
+    }                                                                   \
+}
 
 /*
 
@@ -31,63 +63,62 @@ ARG_TYPE_LABEL                         - special type for jumps and subroutines 
 
 // INSTRUCTION(mnemonic, base_opcode, argument_type, impl)
 
+#define ARG_TYPE_NO_ARGS   0
+#define ARG_TYPE_REGISTER  1
+#define ARG_TYPE_IMMEDIATE 2
+#define ARG_TYPE_LABEL     4
+
 INSTRUCTION(nop, 0x00, ARG_TYPE_NO_ARGS,{})
 
 INSTRUCTION(push, 0x01, ARG_TYPE_REGISTER | ARG_TYPE_IMMEDIATE,
 {
     if (ARG == 4)
-        stack_push_cpuval(&cpu_state.stack, READ_DWORD());
+    {
+        STACK_PUSH(READ_DWORD());
+    }
     else
-        stack_push_cpuval(&cpu_state.stack, cpu_state.registers[ARG]);  
+    {
+        STACK_PUSH(REG(ARG));
+    }
 })
 
 INSTRUCTION(pop, 0x06, ARG_TYPE_REGISTER,
 {
-    stack_status_t status1 = stack_top_cpuval(&cpu_state.stack, &cpu_state.registers[ARG]);
-    stack_pop_cpuval(&cpu_state.stack);
-    if (status1 == STACK_EMPTY)
-    {
-        printf("CPU fatal error: tryng to pop from empty stack\n");
-        return 0;
-    }
+    STACK_POP(&REG(ARG));
 })
 
 INSTRUCTION(in, 0x0A, ARG_TYPE_NO_ARGS,
 {
-    char num_buf[21] = {0};
-    printf("CPU asked you for a number:");
-    scanf("%s", num_buf);
-    stack_push_cpuval(&cpu_state.stack, str_to_num(num_buf));
+    for (;;)
+    {
+        char num_buf[21] = {0};
+        printf("CPU asked you for a number:");
+        scanf("%s", num_buf);
+        int32_t num = str_to_num(num_buf);
+        if (__lerrno != LERR_NAN)
+        {
+            STACK_PUSH(num);
+            break;
+        }
+        printf("Not a number, try again\n");
+    }
 })
 
 INSTRUCTION(out, 0x0B, ARG_TYPE_NO_ARGS,
 {
     char num_buf[21] = {0};
-    int32_t imm_val = 0;
-    stack_status_t status1 = stack_top_cpuval(&cpu_state.stack, &imm_val);
-    stack_pop_cpuval(&cpu_state.stack);
-    if (status1 == STACK_EMPTY)
-    {
-        printf("CPU fatal error: tryng to pop from empty stack\n");
-        return 0;
-    }
-    num_to_str(imm_val, num_buf);
+    int32_t out_val = 0;
+    STACK_POP(&out_val);
+    num_to_str(out_val, num_buf);
     printf("CPU told you the number: %s\n", num_buf);
 })
 
 #define BINARY_OPERATOR(what_to_push)                                       \
 {                                                                           \
     int32_t imm_val1 = 0, imm_val2 = 0;                                     \
-    stack_status_t status1 = stack_top_cpuval(&cpu_state.stack, &imm_val1); \
-    stack_pop_cpuval(&cpu_state.stack);                                     \
-    stack_status_t status2 = stack_top_cpuval(&cpu_state.stack, &imm_val2); \
-    stack_pop_cpuval(&cpu_state.stack);                                     \
-    if (status1 == STACK_EMPTY || status2 == STACK_EMPTY)                   \
-    {                                                                       \
-        printf("CPU fatal error: tryng to pop from empty stack\n");         \
-        return 0;                                                           \
-    }                                                                       \
-    stack_push_cpuval(&cpu_state.stack, what_to_push);                      \
+    STACK_POP(&imm_val1);                                                   \
+    STACK_POP(&imm_val2);                                                   \
+    STACK_PUSH(what_to_push);                                               \
 }
 
 INSTRUCTION(add, 0x0C, ARG_TYPE_NO_ARGS, BINARY_OPERATOR(imm_val1 + imm_val2))
@@ -101,15 +132,8 @@ INSTRUCTION(jmp, 0x11, ARG_TYPE_LABEL, { cpu_state.pc = READ_DWORD(); })
 #define CONDITIONAL_JUMP(condition)                                         \
 {                                                                           \
     int32_t imm_val1 = 0, imm_val2 = 0;                                     \
-    stack_status_t status1 = stack_top_cpuval(&cpu_state.stack, &imm_val1); \
-    stack_pop_cpuval(&cpu_state.stack);                                     \
-    stack_status_t status2 = stack_top_cpuval(&cpu_state.stack, &imm_val2); \
-    stack_pop_cpuval(&cpu_state.stack);                                     \
-    if (status1 == STACK_EMPTY || status2 == STACK_EMPTY)                   \
-    {                                                                       \
-        printf("CPU fatal error: tryng to pop from empty stack\n");         \
-        return 0;                                                           \
-    }                                                                       \
+    STACK_POP(&imm_val1);                                                   \
+    STACK_POP(&imm_val2);                                                   \
     int32_t jump_addr = READ_DWORD();                                       \
     if (condition)                                                          \
         cpu_state.pc = jump_addr;                                           \
