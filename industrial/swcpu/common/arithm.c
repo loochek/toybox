@@ -8,6 +8,7 @@
 
 int32_t str_to_num(const char str[])
 {
+    __lerrno = LERR_NO_ERROR;
     int32_t sign = 1;
     int32_t num = 0;
     size_t i = 0;
