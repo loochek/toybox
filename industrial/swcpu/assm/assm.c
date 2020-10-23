@@ -211,19 +211,19 @@ success:
 int main(int argc, char* argv[])
 {
     char* src_file_name = NULL;
-    char prg_name[100] = "COMPILIER_DEFAULT";
+    char* out_file_name = "a.prg";
+    char* prg_name = "ASSM_DEFAULT_NAME";
     if (argc < 2)
     {
-        printf("Usage: assm <source file> [<output program name>]\n");
+        printf("Usage: assm <source file> [<output file name>] [<program name>]\n");
         return 0;
     }
-    else if (argc == 2)
+    if (argc >= 2)
         src_file_name = argv[1];
-    else if (argc == 3)
-    {
-        src_file_name = argv[1];
-        strcpy(prg_name, argv[2]);
-    }
+    if (argc >= 3)
+        out_file_name = argv[2];
+    if (argc >= 4)
+        prg_name      = argv[3];
 
     string_index_t *prg_text  = create_index_from_file(src_file_name);
     if (prg_text == NULL)
@@ -262,11 +262,10 @@ int main(int argc, char* argv[])
     prg_header.signature[2] = 'R';
     prg_header.signature[3] = 'G';
     prg_header.format_ver = 1;
-    strcpy(prg_header.program_name, prg_name);
     prg_header.code_size = byte_cnt;
+    strncpy(prg_header.program_name, prg_name, 19);
 
-    strcat(prg_name, ".prg");
-    FILE *output_file = fopen(argc == 3 ? prg_name : "a.prg", "wb");
+    FILE *output_file = fopen(out_file_name, "wb");
     if (output_file == NULL)
     {
         fprintf(stderr, "Unable to open output file\n");

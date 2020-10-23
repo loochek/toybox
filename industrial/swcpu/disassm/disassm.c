@@ -81,23 +81,18 @@ static inline uint32_t prg_read_dword(program_t *prg, size_t addr)
 
 int main(int argc, char* argv[])
 {
-    char* src_file_name = NULL;
+    char* src_file_name = "src.assm";
     char* prg_name      = NULL;
     if (argc < 2)
     {
         printf("Usage: disassm <input program file> [<output source file>]\n");
         return 0;
     }
-    else if (argc == 2)
-    {
+    if (argc >= 2)
         prg_name      = argv[1];
-        src_file_name = "src.assm";
-    } 
-    else if (argc == 3)
-    {
-        prg_name      = argv[1];
+    if (argc >= 3)
         src_file_name = argv[2];
-    }
+
     program_t *prg = load_program_from_file(prg_name);
     if (prg == NULL)
     {
