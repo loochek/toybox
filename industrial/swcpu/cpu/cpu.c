@@ -24,6 +24,7 @@ typedef struct
 {
     int32_t registers[4]; // 4 Number registers
     int32_t pc;           // current instruction pointer
+    int32_t mem[16384];   // RAM
     bool halted;
     my_stack_cpuval stack;
 } cpu_state_t;
@@ -43,55 +44,84 @@ static inline uint32_t cpu_read_dword(cpu_state_t *cpu_state, program_t *prg)
     return dword;
 }
 
-// I'm sorry about this overheaded if mess instead of switch, but I couldn't implement DSL with swith
+#define ARG_MASK_REGISTER  1
+#define ARG_MASK_IMMEDIATE 2
+#define ARG_MASK_RAM       4
+
+static inline int32_t get_rvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg)
+{
+    int32_t rvalue = 0;
+    if ((arg_mask & ARG_MASK_REGISTER) != 0)
+    {
+        uint8_t reg_num = cpu_read_byte(cpu_state, prg);
+        if (reg_num >= 4)
+        {
+            printf("CPU execution error: bad register number: %d\n", reg_num);
+            // TODO
+            return 0;
+        }
+        rvalue += cpu_state->registers[reg_num];
+    }
+
+    if ((arg_mask & ARG_MASK_IMMEDIATE) != 0)
+        rvalue += cpu_read_dword(cpu_state, prg);
+
+    if ((arg_mask & ARG_MASK_RAM) != 0)
+        rvalue = cpu_state->mem[rvalue];
+
+    return rvalue;
+}
+
+static inline int32_t* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg)
+{
+    int32_t *lvalue = NULL;
+    if ((arg_mask & ARG_MASK_RAM) == 0)
+    {
+        if (((arg_mask & ARG_MASK_REGISTER) != 0) && ((arg_mask & ARG_MASK_IMMEDIATE) == 0))
+        {
+            uint8_t reg_num = cpu_read_byte(cpu_state, prg);
+            if (reg_num >= 4)
+            {
+                printf("CPU execution error: bad register number: %d\n", reg_num);
+                // TODO
+                return 0;
+            }
+            lvalue = &cpu_state->registers[reg_num];
+        }
+        else
+        {
+            printf("CPU execution error: can't use rvalue as lvalue\n");
+            // TODO
+            return 0;
+        }   
+    }
+    else
+    {
+        int32_t addr = 0;
+        if ((arg_mask & ARG_MASK_REGISTER) != 0)
+        {
+            uint8_t reg_num = cpu_read_byte(cpu_state, prg);
+            if (reg_num >= 4)
+            {
+                printf("CPU execution error: bad register number: %d\n", reg_num);
+                // TODO
+                return 0;
+            }
+            addr += cpu_state->registers[reg_num];
+        }
+
+        if ((arg_mask & ARG_MASK_IMMEDIATE) != 0)
+            addr += cpu_read_dword(cpu_state, prg);
+
+        return &cpu_state->mem[addr];
+    }
+}
 
 // INSTRUCTION definition for cpu
-#define INSTRUCTION(mnemonic, base_opcode, argument_type, IMPL) \
-if ((argument_type) == ARG_TYPE_NO_ARGS ||                      \
-    (argument_type) == ARG_TYPE_LABEL)                          \
-{                                                               \
-    if (opcode == base_opcode)                                  \
-    {                                                           \
-        IMPL                                                    \
-        continue;                                               \
-    }                                                           \
-}                                                               \
-if (((argument_type) & ARG_TYPE_REGISTER) != 0)                 \
-{                                                               \
-    if (opcode == base_opcode)                                  \
-    {                                                           \
-        ARG = 0;                                                \
-        IMPL                                                    \
-        continue;                                               \
-    }                                                           \
-    else if (opcode == base_opcode + 1)                         \
-    {                                                           \
-        ARG = 1;                                                \
-        IMPL                                                    \
-        continue;                                               \
-    }                                                           \
-    else if (opcode == base_opcode + 2)                         \
-    {                                                           \
-        ARG = 2;                                                \
-        IMPL                                                    \
-        continue;                                               \
-    }                                                           \
-    else if (opcode == base_opcode + 3)                         \
-    {                                                           \
-        ARG = 3;                                                \
-        IMPL                                                    \
-        continue;                                               \
-    }                                                           \
-}                                                               \
-if (((argument_type) & ARG_TYPE_IMMEDIATE) != 0)                \
-{                                                               \
-    if (opcode == base_opcode + 4)                              \
-    {                                                           \
-        ARG = 4;                                                \
-        IMPL                                                    \
-        continue;                                               \
-    }                                                           \
-}                                                               \
+#define INSTRUCTION(MNEMONIC, BASE_OPCODE, ARG_TYPE, IMPL) \
+case BASE_OPCODE:                                          \
+    IMPL;                                                  \
+    break;
 
 int main(int argc, char* argv[])
 {
@@ -101,7 +131,7 @@ int main(int argc, char* argv[])
         printf("Usage: cpu <program file>\n");
         return 0;
     }
-    else if (argc == 2)
+    else if (argc >= 2)
         prg_name = argv[1];
         
     cpu_state_t cpu_state = {0};
@@ -122,14 +152,19 @@ int main(int argc, char* argv[])
 
     while (!cpu_state.halted)
     {
-        uint8_t opcode = cpu_read_byte(&cpu_state, prg);
-        int ARG = -1;
+        uint8_t opcode   = cpu_read_byte(&cpu_state, prg);
+        uint8_t arg_mask = opcode & 7;
+        switch (opcode & 248) // 11111000
+        {
         #include "../cpu_def.h"
 
-        printf("CPU execution error: unknown opcode %02x\n", opcode);
-        program_unload(prg);
-        stack_destruct_cpuval(&cpu_state.stack);
-        return 0;
+        default:
+            printf("CPU execution error: unknown base opcode %02x\n", opcode & 248);
+            program_unload(prg);
+            stack_destruct_cpuval(&cpu_state.stack);
+            return 0;
+            break;
+        }
     }
     
     program_unload(prg);

@@ -4,7 +4,7 @@ export CC, CFLAGS
 
 build:
 	make -C assm/
-	make -C disassm/
+#	make -C disassm/
 	make -C cpu/
 
 clean:

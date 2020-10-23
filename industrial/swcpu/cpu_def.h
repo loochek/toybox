@@ -1,14 +1,5 @@
 // It can be useful for writing implementation
 
-#define REG(n)  cpu_state.registers[n]
-#define REG_RAX REG(0)
-#define REG_RBX REG(1)
-#define REG_RCX REG(2)
-#define REG_RDX REG(3)
-
-#define READ_BYTE()  cpu_read_byte (&cpu_state, prg)
-#define READ_DWORD() cpu_read_dword(&cpu_state, prg)
-
 #define STACK_PUSH(val)                                       \
 {                                                             \
     if (stack_push_cpuval(&cpu_state.stack, val) != STACK_OK) \
@@ -38,56 +29,57 @@
     }                                                                   \
 }
 
+#define GET_RVALUE() get_rvalue(arg_mask, &cpu_state, prg)
+#define GET_LVALUE() get_lvalue(arg_mask, &cpu_state, prg)
+
+typedef enum
+{
+    ARG_NONE,
+    ARG_RVALUE,
+    ARG_LVALUE
+} arg_t;
+
 /*
 
 INSTRUCTION macro is kinda DSL
 It implements the CPU's functionality
 
-If the instruction has an argument,
-it can be converted into several opcodes: for example, different registers or immediate value as
-argument of push instruction. Argument types are controlled by ARG_TYPE macros.
-For example, PUSH instruction is converted to 0x01..0x05 opcodes - for each register and immediate
-value as argument.
-
-If you want to use an immediate value as an argument, then you must also allow registers.
-(but it makes sense)
-So you can't use ARG_TYPE_IMMEDIATE without ARG_TYPE_REGISTER
-
-It's safe to use this combinations:
-ARG_TYPE_NO_ARGS
-ARG_TYPE_REGISTER                      - as "lvalue" or "rvalue"
-ARG_TYPE_REGISTER | ARG_TYPE_IMMEDIATE - as "lvalue"
-ARG_TYPE_LABEL                         - special type for jumps and subroutines calls
+Each each instruction can take no arguments, "lvalue" or "rvalue"
+Lvalue is writeable memory cell (i.e. pointer), rvalue is calculated constant
+Every opcode must be a multiple of 8,
+because 3 least significant bits is the argument mask
+MIR   Argument  Applicability
+000 - none      Neither
+001 - rax       LR
+010 - 10        Only as rvalue
+011 - rax+10    Only as rvalue
+100 - none      Neither
+101 - [rax]     LR
+110 - [10]      LR
+111 - [rax+10]  LR
+(MIR - memory, immediate, register)
+However, you don't need to worry about this when implementing opcodes
+(see GET_RVALUE() and GET_LVALUE())
 
 */
 
 // INSTRUCTION(mnemonic, base_opcode, argument_type, impl)
 
-#define ARG_TYPE_NO_ARGS   0
-#define ARG_TYPE_REGISTER  1
-#define ARG_TYPE_IMMEDIATE 2
-#define ARG_TYPE_LABEL     4
+INSTRUCTION(nop, 0x00, ARG_NONE, {})
 
-INSTRUCTION(nop, 0x00, ARG_TYPE_NO_ARGS,{})
+INSTRUCTION(hlt, 0x08, ARG_NONE, { cpu_state.halted = true; })
 
-INSTRUCTION(push, 0x01, ARG_TYPE_REGISTER | ARG_TYPE_IMMEDIATE,
+INSTRUCTION(push, 0x10, ARG_RVALUE,
 {
-    if (ARG == 4)
-    {
-        STACK_PUSH(READ_DWORD());
-    }
-    else
-    {
-        STACK_PUSH(REG(ARG));
-    }
+    STACK_PUSH(GET_RVALUE());
 })
 
-INSTRUCTION(pop, 0x06, ARG_TYPE_REGISTER,
+INSTRUCTION(pop, 0x18, ARG_LVALUE,
 {
-    STACK_POP(&REG(ARG));
+    STACK_POP(GET_LVALUE());
 })
 
-INSTRUCTION(in, 0x0A, ARG_TYPE_NO_ARGS,
+INSTRUCTION(in, 0x20, ARG_NONE,
 {
     for (;;)
     {
@@ -104,7 +96,7 @@ INSTRUCTION(in, 0x0A, ARG_TYPE_NO_ARGS,
     }
 })
 
-INSTRUCTION(out, 0x0B, ARG_TYPE_NO_ARGS,
+INSTRUCTION(out, 0x28, ARG_NONE,
 {
     char num_buf[21] = {0};
     int32_t out_val = 0;
@@ -112,6 +104,25 @@ INSTRUCTION(out, 0x0B, ARG_TYPE_NO_ARGS,
     num_to_str(out_val, num_buf);
     printf("CPU told you the number: %s\n", num_buf);
 })
+
+INSTRUCTION(jmp, 0x30, ARG_RVALUE, { cpu_state.pc = GET_RVALUE(); })
+
+#define CONDITIONAL_JUMP(condition)                                         \
+{                                                                           \
+    int32_t imm_val1 = 0, imm_val2 = 0;                                     \
+    STACK_POP(&imm_val1);                                                   \
+    STACK_POP(&imm_val2);                                                   \
+    int32_t jump_addr = GET_RVALUE();                                       \
+    if (condition)                                                          \
+        cpu_state.pc = jump_addr;                                           \
+}
+
+INSTRUCTION(je , 0x38, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 == imm_val1))
+INSTRUCTION(jne, 0x40, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 != imm_val1))
+INSTRUCTION(jg , 0x48, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 >  imm_val1))
+INSTRUCTION(jge, 0x50, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 >= imm_val1))
+INSTRUCTION(jl , 0x58, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 <  imm_val1))
+INSTRUCTION(jle, 0x60, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 <= imm_val1))
 
 #define BINARY_OPERATOR(what_to_push)                                       \
 {                                                                           \
@@ -121,27 +132,7 @@ INSTRUCTION(out, 0x0B, ARG_TYPE_NO_ARGS,
     STACK_PUSH(what_to_push);                                               \
 }
 
-INSTRUCTION(add, 0x0C, ARG_TYPE_NO_ARGS, BINARY_OPERATOR(imm_val1 + imm_val2))
-INSTRUCTION(sub, 0x0D, ARG_TYPE_NO_ARGS, BINARY_OPERATOR(imm_val2 - imm_val1))
-INSTRUCTION(mul, 0x0E, ARG_TYPE_NO_ARGS, BINARY_OPERATOR((int32_t)((int64_t)imm_val1 * imm_val2 / 1000)))
-INSTRUCTION(div, 0x0F, ARG_TYPE_NO_ARGS, BINARY_OPERATOR(imm_val2 * 1000 / imm_val1))
-INSTRUCTION(hlt, 0x10, ARG_TYPE_NO_ARGS, {cpu_state.halted = true;})
-
-INSTRUCTION(jmp, 0x11, ARG_TYPE_LABEL, { cpu_state.pc = READ_DWORD(); })
-
-#define CONDITIONAL_JUMP(condition)                                         \
-{                                                                           \
-    int32_t imm_val1 = 0, imm_val2 = 0;                                     \
-    STACK_POP(&imm_val1);                                                   \
-    STACK_POP(&imm_val2);                                                   \
-    int32_t jump_addr = READ_DWORD();                                       \
-    if (condition)                                                          \
-        cpu_state.pc = jump_addr;                                           \
-}
-
-INSTRUCTION(je , 0x12, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 == imm_val1))
-INSTRUCTION(jne, 0x13, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 != imm_val1))
-INSTRUCTION(jg , 0x14, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 >  imm_val1))
-INSTRUCTION(jge, 0x15, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 >= imm_val1))
-INSTRUCTION(jl , 0x16, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 <  imm_val1))
-INSTRUCTION(jle, 0x17, ARG_TYPE_LABEL, CONDITIONAL_JUMP(imm_val2 <= imm_val1))
+INSTRUCTION(add, 0x68, ARG_NONE, BINARY_OPERATOR(imm_val1 + imm_val2))
+INSTRUCTION(sub, 0x70, ARG_NONE, BINARY_OPERATOR(imm_val2 - imm_val1))
+INSTRUCTION(mul, 0x78, ARG_NONE, BINARY_OPERATOR((int32_t)((int64_t)imm_val1 * imm_val2 / 1000)))
+INSTRUCTION(div, 0x80, ARG_NONE, BINARY_OPERATOR(imm_val2 * 1000 / imm_val1))

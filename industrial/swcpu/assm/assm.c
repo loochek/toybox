@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "../common/headers/string_lib.h"
@@ -17,46 +18,121 @@ and the size of binary code is calculated. On the second, binary code is generat
 
 */
 
+typedef enum
+{
+    ARG_NONE,
+    ARG_RVALUE,
+    ARG_LVALUE
+} arg_t;
+
+#define ARG_MASK_REGISTER  1
+#define ARG_MASK_IMMEDIATE 2
+#define ARG_MASK_RAM       4
+
 typedef struct
 {
     char label[21];
     size_t offset;
 } label_entry_t;
 
+typedef struct
+{
+    uint8_t  arg_mask;
+    uint8_t  reg_num;
+    bool     is_label_used;
+    uint32_t imm_val;
+    char     imm_label[21];
+} parsing_result_t;
+
+
+static parsing_result_t parse_argument(char *curr_tok, arg_t arg_type, size_t line_num)
+{
+    parsing_result_t res = {0};
+    if (curr_tok == NULL)
+    {
+        printf("Error on line %zu: expected argument:\n%s\n", line_num, curr_tok);
+        return res;
+    }
+    // get argument substring
+    char arg_token[51] = {0};
+    strncpy(arg_token, curr_tok, 50);
+    int arg_len = strlen(arg_token);
+    
+    char *curr_arg_tok = arg_token;
+    // if in brackets
+    if (arg_token[0] == '[' && arg_token[arg_len - 1] == ']')
+    {
+        res.arg_mask |= ARG_MASK_RAM;
+        arg_token[0] = '\0';
+        arg_token[arg_len - 1] = '\0';
+        curr_arg_tok++;
+    }
+    // start parsing
+    // check for register
+    curr_arg_tok = strtok(curr_arg_tok, " +");
+    if (strlen(curr_arg_tok) == 3 && curr_arg_tok[0] == 'r' && curr_arg_tok[2] == 'x')
+    {
+        res.arg_mask |= ARG_MASK_REGISTER;
+        res.reg_num = curr_arg_tok[1] - 'a';
+        curr_arg_tok = strtok(NULL, " +");
+    }
+    // check for immediate number
+    int32_t imm_val = str_to_num(curr_arg_tok);
+    if (__lerrno != LERR_NAN)
+    {
+        res.arg_mask |= ARG_MASK_IMMEDIATE;
+        res.imm_val = imm_val;
+        curr_arg_tok = strtok(NULL, " +");
+    }
+    // if label
+    if (curr_arg_tok != NULL)
+    {
+        strcpy(res.imm_label, curr_arg_tok);
+        curr_arg_tok = strtok(NULL, " ");
+        if (curr_arg_tok != NULL)
+        {
+            res.arg_mask = 0;
+            printf("Error on line %zu: can't parse argument string:\n%s\n", line_num, curr_tok);
+            return res;
+        }
+        else
+        {
+            res.arg_mask |= ARG_MASK_IMMEDIATE;
+            res.is_label_used = true;
+        }
+    }
+    if (arg_type == ARG_RVALUE)
+        if (res.arg_mask == 0 || res.arg_mask == 4)
+        {
+            res.arg_mask = 0;
+            printf("Error on line %zu: argument is not rvalue:\n%s\n", line_num, curr_tok);
+            return res;
+        }
+    else if (arg_type == ARG_LVALUE)
+        if (res.arg_mask == 0 || res.arg_mask == 4 || res.arg_mask == 2 || res.arg_mask == 3)
+        {
+            res.arg_mask = 0;
+            printf("Error on line %zu: argument is not lvalue:\n%s\n", line_num, curr_tok);
+            return res;
+        }
+    return res;
+}
+
 // INSTRUCTION definition for syntax_check
 #define INSTRUCTION(mnemonic, base_opcode, argument_type, impl)                            \
 if (strcmp(curr_tok, #mnemonic) == 0)                                                      \
 {                                                                                          \
     byte_cnt += 1;                                                                         \
-    if ((argument_type) != ARG_TYPE_NO_ARGS)                                               \
+    if ((argument_type) != ARG_NONE)                                                       \
     {                                                                                      \
         curr_tok = strtok(NULL, " ");                                                      \
-        if (curr_tok == NULL)                                                              \
-        {                                                                                  \
-            printf("Error on line %zu: " #mnemonic " expected argument:\n%s\n", line + 1,  \
-                        prg_text_immut->string_entries[line].begin);                       \
-            return -1;                                                                     \
-        }                                                                                  \
-        if (((argument_type) & ARG_TYPE_REGISTER) != 0)                                    \
-        {                                                                                  \
-            if (strcmp(curr_tok, "rax") == 0 ||                                            \
-                strcmp(curr_tok, "rbx") == 0 ||                                            \
-                strcmp(curr_tok, "rcx") == 0 ||                                            \
-                strcmp(curr_tok, "rdx") == 0)                                              \
-                goto line_parsed;                                                          \
-        }                                                                                  \
-        byte_cnt += 4;                                                                     \
-        if (((argument_type) & ARG_TYPE_IMMEDIATE) != 0)                                   \
-        {                                                                                  \
-            str_to_num(curr_tok);                                                          \
-            if (__lerrno != LERR_NAN)                                                      \
-                goto line_parsed;                                                          \
-        }                                                                                  \
-        if (((argument_type) & ARG_TYPE_LABEL) != 0)                                       \
-            goto line_parsed;                                                              \
-        printf("Error on line %zu: bad argument for " #mnemonic ":\n%s\n", line + 1,       \
-                        prg_text_immut->string_entries[line].begin);                       \
-        return -1;                                                                         \
+        parsing_result_t res = parse_argument(curr_tok, argument_type, line + 1);          \
+        if (res.arg_mask == 0)                                                             \
+           return -1;                                                                      \
+        if ((res.arg_mask & ARG_MASK_REGISTER) != 0)                                       \
+            byte_cnt += 1;                                                                 \
+        if ((res.arg_mask & ARG_MASK_IMMEDIATE) != 0)                                      \
+            byte_cnt += 4;                                                                 \
     }                                                                                      \
     goto line_parsed;                                                                      \
 }
@@ -115,73 +191,54 @@ line_parsed:
     }
     return byte_cnt;
 }
-
 #undef INSTRUCTION
 
 // INSTRUCTION definition for compile
 #define INSTRUCTION(mnemonic, base_opcode, argument_type, impl)                            \
 if (strcmp(curr_tok, #mnemonic) == 0)                                                      \
 {                                                                                          \
-    if ((argument_type) == ARG_TYPE_NO_ARGS)                                               \
-    {                                                                                      \
+    if ((argument_type) == ARG_NONE)                                                       \
         output_buf[pc++] = base_opcode;                                                    \
-        goto success;                                                                      \
-    }                                                                                      \
     else                                                                                   \
     {                                                                                      \
         curr_tok = strtok(NULL, " ");                                                      \
-        if (((argument_type) & ARG_TYPE_REGISTER) != 0)                                    \
+        parsing_result_t res = parse_argument(curr_tok, argument_type, line + 1);          \
+        output_buf[pc++] = base_opcode | res.arg_mask;                                     \
+        if ((res.arg_mask & ARG_MASK_REGISTER) != 0)                                       \
+            output_buf[pc++] = res.reg_num;                                                \
+        if ((res.arg_mask & ARG_MASK_IMMEDIATE) != 0)                                      \
         {                                                                                  \
-            if (strcmp(curr_tok, "rax") == 0)                                              \
+            if (res.is_label_used)                                                         \
             {                                                                              \
-                output_buf[pc++] = base_opcode;                                            \
-                goto success;                                                              \
-            }                                                                              \
-            else if (strcmp(curr_tok, "rbx") == 0)                                         \
-            {                                                                              \
-                output_buf[pc++] = base_opcode + 1;                                        \
-                goto success;                                                              \
-            }                                                                              \
-            else if (strcmp(curr_tok, "rcx") == 0)                                         \
-            {                                                                              \
-                output_buf[pc++] = base_opcode + 2;                                        \
-                goto success;                                                              \
-            }                                                                              \
-            else if (strcmp(curr_tok, "rdx") == 0)                                         \
-            {                                                                              \
-                output_buf[pc++] = base_opcode + 3;                                        \
-                goto success;                                                              \
-            }                                                                              \
-        }                                                                                  \
-        if (((argument_type) & ARG_TYPE_IMMEDIATE) != 0)                                   \
-        {                                                                                  \
-            int32_t imm_val = str_to_num(curr_tok);                                        \
-            output_buf[pc++] = base_opcode + 4;                                            \
-            output_buf[pc++] =  imm_val        & 0xFF;                                     \
-            output_buf[pc++] = (imm_val >>  8) & 0xFF;                                     \
-            output_buf[pc++] = (imm_val >> 16) & 0xFF;                                     \
-            output_buf[pc++] = (imm_val >> 24) & 0xFF;                                     \
-            goto success;                                                                  \
-        }                                                                                  \
-        if (((argument_type) & ARG_TYPE_LABEL) != 0)                                       \
-        {                                                                                  \
-            for (size_t i = 0; i < label_cnt; i++)                                         \
-            {                                                                              \
-                if (strcmp(labels[i].label, curr_tok) == 0)                                \
+                bool wrote = false;                                                        \
+                for (size_t i = 0; i < label_cnt; i++)                                     \
                 {                                                                          \
-                    int32_t imm_val = labels[i].offset;                                    \
-                    output_buf[pc++] = base_opcode;                                        \
-                    output_buf[pc++] =  imm_val        & 0xFF;                             \
-                    output_buf[pc++] = (imm_val >>  8) & 0xFF;                             \
-                    output_buf[pc++] = (imm_val >> 16) & 0xFF;                             \
-                    output_buf[pc++] = (imm_val >> 24) & 0xFF;                             \
-                    goto success;                                                          \
+                    if (strcmp(labels[i].label, res.imm_label) == 0)                       \
+                    {                                                                      \
+                        int32_t imm_val = labels[i].offset;                                \
+                        output_buf[pc++] =  imm_val        & 0xFF;                         \
+                        output_buf[pc++] = (imm_val >>  8) & 0xFF;                         \
+                        output_buf[pc++] = (imm_val >> 16) & 0xFF;                         \
+                        output_buf[pc++] = (imm_val >> 24) & 0xFF;                         \
+                        wrote = true;                                                      \
+                    }                                                                      \
+                }                                                                          \
+                if (!wrote)                                                                \
+                {                                                                          \
+                    printf("Error on line %zu: unknown label %s\n", line + 1, res.imm_label); \
+                    return -1;                                                             \
                 }                                                                          \
             }                                                                              \
-            printf("Error on line %zu: unknown label %s\n", line + 1, curr_tok);           \
-            return -1;                                                                     \
+            else                                                                           \
+            {                                                                              \
+                output_buf[pc++] =  res.imm_val        & 0xFF;                             \
+                output_buf[pc++] = (res.imm_val >>  8) & 0xFF;                             \
+                output_buf[pc++] = (res.imm_val >> 16) & 0xFF;                             \
+                output_buf[pc++] = (res.imm_val >> 24) & 0xFF;                             \
+            }                                                                              \
         }                                                                                  \
     }                                                                                      \
+    continue;                                                                              \
 }
 
 // generates binary output
@@ -200,9 +257,6 @@ static int compile(string_index_t *prg_text, char *output_buf,
             continue;
 
         #include "../cpu_def.h"
-
-success:
-        continue;
     }
 }
 

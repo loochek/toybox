@@ -1,0 +1,18 @@
+push 1
+push 2
+push 3
+pop [0.002]
+pop [0.001]
+pop [0]
+
+push 0.001
+pop rax
+
+push [rax]
+out
+push [rax+0.001] dfg
+out
+push [rax+-0.001]
+out
+
+hlt
