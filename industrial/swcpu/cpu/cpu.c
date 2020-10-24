@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <math.h>
 #include <stdbool.h>
 
 #include "../common/headers/lerror.h"
@@ -15,16 +16,16 @@
 #define STACK_SEC_POISON
 
 #define TYPE cpuval
-#define elem_t int32_t
+#define elem_t double
 #include "stack/stack.h"
 #undef elem_t
 #undef TYPE
 
 typedef struct
 {
-    int32_t registers[4]; // 4 Number registers
-    int32_t pc;           // current instruction pointer
-    int32_t mem[16384];   // RAM
+    double registers[4]; // 4 Number registers
+    size_t pc;           // current instruction pointer
+    double mem[16384];   // RAM
     bool halted;
     my_stack_cpuval stack;
 } cpu_state_t;
@@ -34,23 +35,29 @@ static inline uint8_t cpu_read_byte(cpu_state_t *cpu_state, program_t *prg)
     return prg->code[cpu_state->pc++];
 }
 
-static inline uint32_t cpu_read_dword(cpu_state_t *cpu_state, program_t *prg)
+static inline double cpu_read_double(cpu_state_t *cpu_state, program_t *prg)
 {
     // SWCPU is little-endian
-    uint32_t dword = prg->code[cpu_state->pc++];
-    dword |= prg->code[cpu_state->pc++] << 8;
-    dword |= prg->code[cpu_state->pc++] << 16;
-    dword |= prg->code[cpu_state->pc++] << 24;
-    return dword;
+    uint64_t qword = (int64_t)prg->code[cpu_state->pc++];
+    qword |= (int64_t)prg->code[cpu_state->pc++] << 8;
+    qword |= (int64_t)prg->code[cpu_state->pc++] << 16;
+    qword |= (int64_t)prg->code[cpu_state->pc++] << 24;
+    qword |= (int64_t)prg->code[cpu_state->pc++] << 32;
+    qword |= (int64_t)prg->code[cpu_state->pc++] << 40;
+    qword |= (int64_t)prg->code[cpu_state->pc++] << 48;
+    qword |= (int64_t)prg->code[cpu_state->pc++] << 56;
+    double to_ret = 0;
+    memcpy(&to_ret, &qword, sizeof(double));
+    return to_ret;
 }
 
 #define ARG_MASK_REGISTER  1
 #define ARG_MASK_IMMEDIATE 2
 #define ARG_MASK_RAM       4
 
-static inline int32_t get_rvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg)
+static inline double get_rvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg)
 {
-    int32_t rvalue = 0;
+    double rvalue = 0;
     if ((arg_mask & ARG_MASK_REGISTER) != 0)
     {
         uint8_t reg_num = cpu_read_byte(cpu_state, prg);
@@ -64,17 +71,17 @@ static inline int32_t get_rvalue(uint8_t arg_mask, cpu_state_t *cpu_state, progr
     }
 
     if ((arg_mask & ARG_MASK_IMMEDIATE) != 0)
-        rvalue += cpu_read_dword(cpu_state, prg);
+        rvalue += cpu_read_double(cpu_state, prg);
 
     if ((arg_mask & ARG_MASK_RAM) != 0)
-        rvalue = cpu_state->mem[rvalue];
+        rvalue = cpu_state->mem[(size_t)rvalue];
 
     return rvalue;
 }
 
-static inline int32_t* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg)
+static inline double* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg)
 {
-    int32_t *lvalue = NULL;
+    double *lvalue = NULL;
     if ((arg_mask & ARG_MASK_RAM) == 0)
     {
         if (((arg_mask & ARG_MASK_REGISTER) != 0) && ((arg_mask & ARG_MASK_IMMEDIATE) == 0))
@@ -97,7 +104,7 @@ static inline int32_t* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, prog
     }
     else
     {
-        int32_t addr = 0;
+        size_t addr = 0;
         if ((arg_mask & ARG_MASK_REGISTER) != 0)
         {
             uint8_t reg_num = cpu_read_byte(cpu_state, prg);
@@ -111,7 +118,7 @@ static inline int32_t* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, prog
         }
 
         if ((arg_mask & ARG_MASK_IMMEDIATE) != 0)
-            addr += cpu_read_dword(cpu_state, prg);
+            addr += cpu_read_double(cpu_state, prg);
 
         return &cpu_state->mem[addr];
     }

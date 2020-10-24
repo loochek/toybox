@@ -1,9 +1,9 @@
-; This program will guess your number in range [-1000; 1000]
+; This program will guess your number in range [-1000000; 1000000]
 ; (even fractional!)
 
 init:
-    push -1000
-    push  1000.001
+    push -1000000
+    push  1000000.001
     pop rdx
     pop rcx
     

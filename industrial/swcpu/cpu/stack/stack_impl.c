@@ -18,7 +18,7 @@ static const size_t SHRINK_THRESHOLD = 5;
 
 // тут ваши включения стеков
 
-#define elem_t int32_t
+#define elem_t double
 
 static void stack_print_cpuval(elem_t *elem)
 {

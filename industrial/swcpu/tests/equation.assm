@@ -1,0 +1,241 @@
+; Equation solver
+; Output:
+; first number: 0,1,2 - number of solutions, 99999 - infinity solutions
+; other numbers: solutions
+
+call main
+hlt
+
+main:
+    in
+    in
+    in
+    pop rcx
+    pop rbx
+    pop rax
+    push rax
+    push rbx
+    push rcx
+
+    push rax
+    push 0
+    call is_equal
+    push 1
+    je linear
+    jmp quadratic
+    
+linear:
+    pop rcx
+    pop rbx
+    push rbx
+    push rcx
+    
+    push rbx
+    push 0
+    call is_equal
+    
+    push 1
+    je b_is_zero
+; b is not zero
+    
+    pop rcx
+    pop rbx
+    push rbx
+    push rcx
+    
+    push rcx
+    push -1
+    mul
+    push rbx
+    div
+    push 1
+    out
+    out
+    jmp end
+    
+b_is_zero:
+    pop rcx
+    pop rbx
+    push rbx
+    push rcx
+    push rcx
+    push 0
+    call is_equal
+    push 1
+    je c_is_also_zero
+    jmp c_is_not_zero
+    
+c_is_also_zero:
+    push 99999
+    out
+    jmp end
+
+c_is_not_zero:
+    push 0
+    out
+    jmp end
+    
+quadratic:
+    pop rcx
+    pop rbx
+    pop rax
+    push rax
+    push rbx
+    push rcx
+    
+    push rax
+    push rbx
+    push rcx
+    call discr
+    
+    pop rax
+    push rax
+    push rax
+    push 0
+    call is_equal
+    push 1
+    je discr_ez
+    
+    pop rax
+    push rax
+    
+    push rax
+    push 0
+    jl discr_lz
+    push rax
+    push 0
+    jg discr_gz
+    hlt
+    
+discr_lz:
+    pop rax
+    push 0
+    out
+    jmp end
+    
+discr_ez:
+    pop rax
+    
+    pop rcx
+    pop rbx
+    pop rax
+    push rax
+    push rbx
+    push rcx
+    
+    push rbx
+    push -1
+    mul
+    push 2
+    push rax
+    mul
+    div
+    push 1
+    out
+    out
+    jmp end
+    
+discr_gz:
+    push 2
+    out
+    
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    
+    push rbx
+    push -1
+    mul
+    push rdx
+    sqrt
+    add
+    push rax
+    push 2
+    mul
+    div
+    out
+    
+    push rbx
+    push -1
+    mul
+    push rdx
+    sqrt
+    sub
+    push rax
+    push 2
+    mul
+    div
+    out
+    
+    pop rdx
+    jmp end
+    
+end:
+    pop rax
+    pop rax
+    pop rax
+    ret
+
+; function is_equal - checks values from stack, result (0, 1) in rax
+is_equal:
+    pop rdx
+    pop rcx
+    pop rbx
+    push rdx
+    push rbx
+    push rcx
+    sub
+    call abs
+    pop rax
+    pop rdx
+    push rax
+    push 0.00001
+    jle eq_yes
+    
+eq_no:
+    push 0
+    push rdx
+    jmp eq_ret
+
+eq_yes:
+    push 1
+    push rdx
+    jmp eq_ret
+
+eq_ret:
+    ret
+    
+; func abs
+abs:
+    pop rdx
+    pop rax
+    push rax
+    push rax
+    mul
+    sqrt
+    push rdx
+    ret
+    
+
+; func discr
+discr:
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    push rbx
+    push rbx
+    mul
+    push 4
+    push rax
+    push rcx
+    mul
+    mul
+    sub
+    push rdx
+    ret

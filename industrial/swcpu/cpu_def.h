@@ -86,7 +86,7 @@ INSTRUCTION(in, 0x20, ARG_NONE,
         char num_buf[21] = {0};
         printf("CPU asked you for a number:");
         scanf("%s", num_buf);
-        int32_t num = str_to_num(num_buf);
+        double num = str_to_num(num_buf);
         if (__lerrno != LERR_NAN)
         {
             STACK_PUSH(num);
@@ -99,7 +99,7 @@ INSTRUCTION(in, 0x20, ARG_NONE,
 INSTRUCTION(out, 0x28, ARG_NONE,
 {
     char num_buf[21] = {0};
-    int32_t out_val = 0;
+    double out_val = 0;
     STACK_POP(&out_val);
     num_to_str(out_val, num_buf);
     printf("CPU told you the number: %s\n", num_buf);
@@ -109,12 +109,12 @@ INSTRUCTION(jmp, 0x30, ARG_RVALUE, { cpu_state.pc = GET_RVALUE(); })
 
 #define CONDITIONAL_JUMP(condition)                                         \
 {                                                                           \
-    int32_t imm_val1 = 0, imm_val2 = 0;                                     \
+    double imm_val1 = 0, imm_val2 = 0;                                      \
     STACK_POP(&imm_val1);                                                   \
     STACK_POP(&imm_val2);                                                   \
-    int32_t jump_addr = GET_RVALUE();                                       \
+    double jump_addr = GET_RVALUE();                                        \
     if (condition)                                                          \
-        cpu_state.pc = jump_addr;                                           \
+        cpu_state.pc = (size_t)jump_addr;                                   \
 }
 
 INSTRUCTION(je , 0x38, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 == imm_val1))
@@ -124,15 +124,37 @@ INSTRUCTION(jge, 0x50, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 >= imm_val1))
 INSTRUCTION(jl , 0x58, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 <  imm_val1))
 INSTRUCTION(jle, 0x60, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 <= imm_val1))
 
+INSTRUCTION(call, 0x68, ARG_RVALUE,
+{
+    double jump_addr = GET_RVALUE();
+    STACK_PUSH(cpu_state.pc);
+    cpu_state.pc = (size_t)jump_addr;
+})
+
+INSTRUCTION(ret, 0x70, ARG_NONE,
+{
+    double jump_addr = 0;
+    STACK_POP(&jump_addr);
+    cpu_state.pc = (size_t)jump_addr;
+})
+
 #define BINARY_OPERATOR(what_to_push)                                       \
 {                                                                           \
-    int32_t imm_val1 = 0, imm_val2 = 0;                                     \
+    double imm_val1 = 0, imm_val2 = 0;                                     \
     STACK_POP(&imm_val1);                                                   \
     STACK_POP(&imm_val2);                                                   \
     STACK_PUSH(what_to_push);                                               \
 }
 
-INSTRUCTION(add, 0x68, ARG_NONE, BINARY_OPERATOR(imm_val1 + imm_val2))
-INSTRUCTION(sub, 0x70, ARG_NONE, BINARY_OPERATOR(imm_val2 - imm_val1))
-INSTRUCTION(mul, 0x78, ARG_NONE, BINARY_OPERATOR((int32_t)((int64_t)imm_val1 * imm_val2 / 1000)))
-INSTRUCTION(div, 0x80, ARG_NONE, BINARY_OPERATOR(imm_val2 * 1000 / imm_val1))
+INSTRUCTION(add, 0x78, ARG_NONE, BINARY_OPERATOR(imm_val1 + imm_val2))
+INSTRUCTION(sub, 0x80, ARG_NONE, BINARY_OPERATOR(imm_val2 - imm_val1))
+INSTRUCTION(mul, 0x88, ARG_NONE, BINARY_OPERATOR(imm_val1 * imm_val2))
+INSTRUCTION(div, 0x90, ARG_NONE, BINARY_OPERATOR(imm_val2 / imm_val1))
+
+INSTRUCTION(sqrt, 0x98, ARG_NONE,
+{
+    double imm_val = 0;
+    STACK_POP(&imm_val);
+    imm_val = sqrt(imm_val);
+    STACK_PUSH(imm_val);
+})
