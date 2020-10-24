@@ -8,6 +8,7 @@
 #include "../common/headers/arithm.h"
 #include "../common/headers/lerror.h"
 #include "../common/headers/prg.h"
+#include "../common/headers/global_constants.h"
 
 /*
 
@@ -107,17 +108,6 @@ int main(int argc, char* argv[])
     free(code);
     return 0;
 }
-
-typedef enum
-{
-    ARG_NONE,
-    ARG_RVALUE,
-    ARG_LVALUE
-} arg_t;
-
-#define ARG_MASK_REGISTER  1
-#define ARG_MASK_IMMEDIATE 2
-#define ARG_MASK_RAM       4
 
 typedef struct
 {

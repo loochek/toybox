@@ -9,7 +9,8 @@ typedef enum
     LERR_FILE_IO,
     LERR_MALLOC,
     LERR_INVALID_PRG,
-    LERR_NAN
+    LERR_NAN,
+    LERR_BAD_ARG
 } lerror_t;
 
 extern lerror_t __lerrno;

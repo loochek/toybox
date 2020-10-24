@@ -5,6 +5,8 @@
     if (stack_push_cpuval(&cpu_state.stack, val) != STACK_OK) \
     {                                                         \
         fprintf(stderr, "Stack error\n");                     \
+        program_unload(prg);                                  \
+        stack_destruct_cpuval(&cpu_state.stack);              \
         return -1;                                            \
     }                                                         \
 }
@@ -15,22 +17,49 @@
     if (status == STACK_EMPTY)                                          \
     {                                                                   \
         printf("CPU execution error: tryng to pop from empty stack\n"); \
+        program_unload(prg);                                            \
+        stack_destruct_cpuval(&cpu_state.stack);                        \
         return 0;                                                       \
     }                                                                   \
     else if (status != STACK_OK)                                        \
     {                                                                   \
         fprintf(stderr, "Stack error\n");                               \
+        program_unload(prg);                                            \
+        stack_destruct_cpuval(&cpu_state.stack);                        \
         return -1;                                                      \
     }                                                                   \
     if (stack_pop_cpuval(&cpu_state.stack) != STACK_OK)                 \
     {                                                                   \
         fprintf(stderr, "Stack error\n");                               \
+        program_unload(prg);                                            \
+        stack_destruct_cpuval(&cpu_state.stack);                        \
         return -1;                                                      \
     }                                                                   \
 }
 
-#define GET_RVALUE() get_rvalue(arg_mask, &cpu_state, prg)
-#define GET_LVALUE() get_lvalue(arg_mask, &cpu_state, prg)
+#define GET_RVALUE()                                        \
+({                                                          \
+    double rvalue = get_rvalue(arg_mask, &cpu_state, prg);  \
+    if (__lerrno == LERR_BAD_ARG)                           \
+    {                                                       \
+        program_unload(prg);                                \
+        stack_destruct_cpuval(&cpu_state.stack);            \
+        return 0;                                           \
+    }                                                       \
+    rvalue;                                                 \
+})
+
+#define GET_LVALUE()                                        \
+({                                                          \
+    double *lvalue = get_lvalue(arg_mask, &cpu_state, prg); \
+    if (__lerrno == LERR_BAD_ARG)                           \
+    {                                                       \
+        program_unload(prg);                                \
+        stack_destruct_cpuval(&cpu_state.stack);            \
+        return 0;                                           \
+    }                                                       \
+    lvalue;                                                 \
+})
 
 typedef enum
 {
