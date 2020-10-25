@@ -16,7 +16,7 @@ double str_to_num(const char str[])
     __lerrno = LERR_NO_ERROR;
     double num = 0;
     int cnt = 0;
-    sscanf(str, "%lf%n", &num, &cnt);
+    sscanf(str, "%lg%n", &num, &cnt);
     if (cnt != strlen(str))
     {
         LERR(LERR_NAN, "Not a number");
@@ -27,5 +27,5 @@ double str_to_num(const char str[])
 
 void num_to_str(double num, char str[])
 {
-    sprintf(str, "%lf", num);
+    sprintf(str, "%lg", num);
 }

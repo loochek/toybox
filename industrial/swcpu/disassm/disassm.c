@@ -6,78 +6,26 @@
 #include "../common/headers/lerror.h"
 #include "../common/headers/prg.h"
 #include "../common/headers/arithm.h"
+#include "../common/headers/global_constants.h"
 
-// The simplest part of the toolchain
+static inline uint8_t prg_read_byte(size_t *pc, program_t *prg);
+static inline double prg_read_double(size_t *pc, program_t *prg);
+static void construct_argument(uint8_t arg_mask, size_t *pc, char* arg_buf, program_t *prg);
 
 // INSTRUCTION definition for disassm
-#define INSTRUCTION(mnemonic, base_opcode, argument_type, IMPL) \
-if ((argument_type) == ARG_TYPE_NO_ARGS)                        \
-{                                                               \
-    if (opcode == base_opcode)                                  \
-    {                                                           \
-        fprintf(disassm_file, #mnemonic "\n");                  \
-        continue;                                               \
-    }                                                           \
-}                                                               \
-if (((argument_type) & ARG_TYPE_REGISTER) != 0)                 \
-{                                                               \
-    if (opcode == base_opcode)                                  \
-    {                                                           \
-        fprintf(disassm_file, #mnemonic " rax\n");              \
-        continue;                                               \
-    }                                                           \
-    else if (opcode == base_opcode + 1)                         \
-    {                                                           \
-        fprintf(disassm_file, #mnemonic " rbx\n");              \
-        continue;                                               \
-    }                                                           \
-    else if (opcode == base_opcode + 2)                         \
-    {                                                           \
-        fprintf(disassm_file, #mnemonic " rcx\n");              \
-        continue;                                               \
-    }                                                           \
-    else if (opcode == base_opcode + 3)                         \
-    {                                                           \
-        fprintf(disassm_file, #mnemonic " rdx\n");              \
-        continue;                                               \
-    }                                                           \
-}                                                               \
-if (((argument_type) & ARG_TYPE_IMMEDIATE) != 0)                \
-{                                                               \
-    if (opcode == base_opcode + 4)                              \
-    {                                                           \
-        char num_buf[21] = {0};                                 \
-        num_to_str(prg_read_dword(prg, pc), num_buf);           \
-        pc += 4;                                                \
-        fprintf(disassm_file, #mnemonic " %s\n", num_buf);      \
-        continue;                                               \
-    }                                                           \
-}                                                               \
-if (((argument_type) & ARG_TYPE_LABEL) != 0)                    \
-{                                                               \
-    if (opcode == base_opcode)                                  \
-    {                                                           \
-        int32_t addr = prg_read_dword(prg, pc);                 \
-        pc += 4;                                                \
-        fprintf(disassm_file, #mnemonic " 0x%x\n", addr);       \
-        continue;                                               \
-    }                                                           \
-}
-
-static inline uint8_t prg_read_byte(program_t *prg, size_t addr)
-{
-    return prg->code[addr];
-}
-
-static inline uint32_t prg_read_dword(program_t *prg, size_t addr)
-{
-    // SWCPU is little-endian
-    uint32_t dword = prg->code[addr];
-    dword |= prg->code[addr + 1] << 8;
-    dword |= prg->code[addr + 2] << 16;
-    dword |= prg->code[addr + 3] << 24;
-    return dword;
-}
+#define INSTRUCTION(MNEMONIC, BASE_OPCODE, ARG_TYPE, IMPL) \
+case BASE_OPCODE:                                          \
+{                                                          \
+    fprintf(disassm_file, #MNEMONIC);                      \
+    if (arg_mask != ARG_NONE)                              \
+    {                                                      \
+        char arg_buf[41] = {0};                            \
+        construct_argument(arg_mask, &pc, arg_buf, prg);   \
+        fprintf(disassm_file, " %s", arg_buf);             \
+    }                                                      \
+    fprintf(disassm_file, "\n");                           \
+}                                                          \
+break;
 
 int main(int argc, char* argv[])
 {
@@ -113,17 +61,64 @@ int main(int argc, char* argv[])
     size_t pc = 0;
     while (pc < prg->prg_header->code_size)
     {
-        uint8_t opcode = prg_read_byte(prg, pc);
-        pc++;
+        uint8_t opcode = prg_read_byte(&pc, prg);
+        uint8_t arg_mask = opcode & 7;
 
+        switch (opcode & 248) // 11111000
+        {
         #include "../cpu_def.h"
-        
-        printf("Disassm fatal error: unknown opcode %02x\n", opcode);
-        fclose(disassm_file);
-        program_unload(prg);
-        return 0;
+
+        default:
+            printf("Disassm fatal error: unknown base opcode %02x\n", opcode & 248);
+            fclose(disassm_file);
+            program_unload(prg);
+            return 0;
+        }
     }
     fclose(disassm_file);
     program_unload(prg);
     return 0;
+}
+
+static inline uint8_t prg_read_byte(size_t *pc, program_t *prg)
+{ 
+    return prg->code[(*pc)++];
+}
+
+static inline double prg_read_double(size_t *pc, program_t *prg)
+{
+    // SWCPU is little-endian
+    uint64_t qword = (int64_t)prg->code[(*pc)++];
+    qword |= (int64_t)prg->code[(*pc)++] << 8;
+    qword |= (int64_t)prg->code[(*pc)++] << 16;
+    qword |= (int64_t)prg->code[(*pc)++] << 24;
+    qword |= (int64_t)prg->code[(*pc)++] << 32;
+    qword |= (int64_t)prg->code[(*pc)++] << 40;
+    qword |= (int64_t)prg->code[(*pc)++] << 48;
+    qword |= (int64_t)prg->code[(*pc)++] << 56;
+    double to_ret = 0;
+    memcpy(&to_ret, &qword, sizeof(double));
+    return to_ret;
+}
+
+static void construct_argument(uint8_t arg_mask, size_t *pc, char* arg_buf, program_t *prg)
+{
+    if ((arg_mask & ARG_MASK_RAM) != 0)
+        strcat(arg_buf, "[");
+    if ((arg_mask & ARG_MASK_REGISTER) != 0)
+    {
+        char reg_name[] = "r_x";
+        reg_name[1] = 'a' + prg_read_byte(pc, prg);
+        strcat(arg_buf, reg_name);
+    }
+    if ((arg_mask & ARG_MASK_REGISTER) != 0 && (arg_mask & ARG_MASK_IMMEDIATE) != 0)
+        strcat(arg_buf, "+");
+    if ((arg_mask & ARG_MASK_IMMEDIATE) != 0)
+    {
+        char num_buf[20] = {0};
+        num_to_str(prg_read_double(pc, prg), num_buf);
+        strcat(arg_buf, num_buf);
+    }
+    if ((arg_mask & ARG_MASK_RAM) != 0)
+        strcat(arg_buf, "]");
 }

@@ -31,6 +31,66 @@ typedef struct
     my_stack_cpuval stack;
 } cpu_state_t;
 
+static inline uint8_t cpu_read_byte(cpu_state_t *cpu_state, program_t *prg);
+static inline double  cpu_read_double(cpu_state_t *cpu_state, program_t *prg);
+static inline double  get_rvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg);
+static inline double* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg);
+
+// INSTRUCTION definition for cpu
+#define INSTRUCTION(MNEMONIC, BASE_OPCODE, ARG_TYPE, IMPL) \
+case BASE_OPCODE:                                          \
+    IMPL;                                                  \
+    break;
+
+int main(int argc, char* argv[])
+{
+    char* prg_name = NULL;
+    if (argc < 2)
+    {
+        printf("Usage: cpu <program file>\n");
+        return 0;
+    }
+    else if (argc >= 2)
+        prg_name = argv[1];
+        
+    cpu_state_t cpu_state = {0};
+    if (stack_construct_cpuval(&cpu_state.stack, 10) != STACK_OK)
+    {
+        fprintf(stderr, "Stack error\n");
+        return -1;
+    }
+
+    program_t *prg = load_program_from_file(prg_name);
+    if (prg == NULL)
+    {
+        LERRPRINT();
+        return -1;
+    }
+
+    printf("Program %s\n", prg->prg_header->program_name);
+
+    while (!cpu_state.halted)
+    {
+        uint8_t opcode   = cpu_read_byte(&cpu_state, prg);
+        uint8_t arg_mask = opcode & 7;
+        switch (opcode & 248) // 11111000
+        {
+        #include "../cpu_def.h"
+
+        default:
+            printf("CPU execution error: unknown base opcode %02x\n", opcode & 248);
+            program_unload(prg);
+            stack_destruct_cpuval(&cpu_state.stack);
+            return 0;
+            break;
+        }
+    }
+    
+    program_unload(prg);
+    stack_destruct_cpuval(&cpu_state.stack);
+    return 0;
+}
+
 static inline uint8_t cpu_read_byte(cpu_state_t *cpu_state, program_t *prg)
 {
     return prg->code[cpu_state->pc++];
@@ -119,59 +179,4 @@ static inline double* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, progr
 
         return &cpu_state->mem[addr];
     }
-}
-
-// INSTRUCTION definition for cpu
-#define INSTRUCTION(MNEMONIC, BASE_OPCODE, ARG_TYPE, IMPL) \
-case BASE_OPCODE:                                          \
-    IMPL;                                                  \
-    break;
-
-int main(int argc, char* argv[])
-{
-    char* prg_name = NULL;
-    if (argc < 2)
-    {
-        printf("Usage: cpu <program file>\n");
-        return 0;
-    }
-    else if (argc >= 2)
-        prg_name = argv[1];
-        
-    cpu_state_t cpu_state = {0};
-    if (stack_construct_cpuval(&cpu_state.stack, 10) != STACK_OK)
-    {
-        fprintf(stderr, "Stack error\n");
-        return -1;
-    }
-
-    program_t *prg = load_program_from_file(prg_name);
-    if (prg == NULL)
-    {
-        LERRPRINT();
-        return -1;
-    }
-
-    printf("Program %s\n", prg->prg_header->program_name);
-
-    while (!cpu_state.halted)
-    {
-        uint8_t opcode   = cpu_read_byte(&cpu_state, prg);
-        uint8_t arg_mask = opcode & 7;
-        switch (opcode & 248) // 11111000
-        {
-        #include "../cpu_def.h"
-
-        default:
-            printf("CPU execution error: unknown base opcode %02x\n", opcode & 248);
-            program_unload(prg);
-            stack_destruct_cpuval(&cpu_state.stack);
-            return 0;
-            break;
-        }
-    }
-    
-    program_unload(prg);
-    stack_destruct_cpuval(&cpu_state.stack);
-    return 0;
 }
