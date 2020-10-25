@@ -1,0 +1,71 @@
+; Fibonacci
+
+call main
+hlt
+
+recursion:
+    pop rdx
+    pop rax
+    push rdx
+    push rax
+    push 2
+    jle base
+    jmp rec
+
+base:
+    pop rdx
+    push 1
+    push rdx
+    ret
+    
+rec:
+    push [rax+-1]
+    push -1
+    je calc
+    pop rdx
+    push [rax+-1]
+    push rdx
+    ret
+
+calc:
+    push rax
+    push rax+-1
+    call recursion
+    pop rbx
+    pop rax
+    push rax
+    push rbx
+    push rax+-2
+    call recursion
+    add
+    pop rcx
+    pop rax
+    pop rdx
+    push rcx
+    push rcx
+    pop [rax+-1]
+    push rdx
+    ret
+    
+main:
+    in
+    pop rbx
+    
+    push 0
+    pop rax
+    
+init_loop:
+    push -1
+    pop [rax]
+    push rax
+    push 1
+    add
+    pop rax
+    push rax
+    push rbx
+    jl init_loop
+    
+    push rbx
+    call recursion
+    out
+    ret
