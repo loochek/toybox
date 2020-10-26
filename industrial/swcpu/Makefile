@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-g -fsanitize=address
+CFLAGS=-O2
 export CC, CFLAGS
 
 build:

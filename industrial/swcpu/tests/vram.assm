@@ -1,0 +1,74 @@
+
+call main
+hlt
+
+main:
+    push 0
+    pop ryx
+
+loopy:
+    push 0
+    pop rxx
+    
+loopx:
+    ; ryx, rxx here
+    ; circle
+    
+    push rxx
+    push 64
+    sub
+    pop rax
+    push rax
+    push rax
+    mul
+    
+    push ryx
+    push 64
+    sub
+    pop rax
+    push rax
+    push rax
+    mul
+    
+    add
+    push 3600
+    jle draw
+    jmp anyway
+    
+draw:
+    push 49152
+    push ryx
+    push 128
+    mul
+    push rxx
+    add
+    add
+    pop rax
+    push ryx
+    push 256
+    mul
+    push rxx
+    add
+    pop [rax]
+    jmp anyway
+    ; end circle
+    
+anyway:
+    push rxx
+    push 1
+    add
+    pop rxx
+    push rxx
+    push 128
+    jl loopx
+    
+    push ryx
+    push 1
+    add
+    pop ryx
+    push ryx
+    push 128
+    jl loopy
+    
+    fbupd
+    ret

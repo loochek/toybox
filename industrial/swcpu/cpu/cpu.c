@@ -9,6 +9,7 @@
 #include "../common/headers/arithm.h"
 #include "../common/headers/global_constants.h"
 #include "stack/stack_common.h"
+#include "fblib/fblib.h"
 
 // The CPU
 
@@ -26,7 +27,7 @@ typedef struct
 {
     double registers[REGISTERS_COUNT]; // 26 Number registers
     size_t pc;           // current instruction pointer
-    double mem[16384];   // RAM
+    double mem[65536];   // RAM, higher 16384 is 128x128 VRAM
     bool halted;
     my_stack_cpuval stack;
 } cpu_state_t;
@@ -60,6 +61,8 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    fb_init();
+
     program_t *prg = load_program_from_file(prg_name);
     if (prg == NULL)
     {
@@ -86,6 +89,7 @@ int main(int argc, char* argv[])
         }
     }
     
+    fb_close();
     program_unload(prg);
     stack_destruct_cpuval(&cpu_state.stack);
     return 0;
@@ -118,7 +122,7 @@ static inline double get_rvalue(uint8_t arg_mask, cpu_state_t *cpu_state, progra
     if ((arg_mask & ARG_MASK_REGISTER) != 0)
     {
         uint8_t reg_num = cpu_read_byte(cpu_state, prg);
-        if (reg_num >= 4)
+        if (reg_num >= REGISTERS_COUNT)
         {
             printf("CPU execution error: bad register number: %d\n", reg_num);
             LERR(LERR_BAD_ARG, "");
@@ -138,7 +142,6 @@ static inline double get_rvalue(uint8_t arg_mask, cpu_state_t *cpu_state, progra
 
 static inline double* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg)
 {
-    double *lvalue = NULL;
     if ((arg_mask & ARG_MASK_RAM) == 0)
     {
         if (((arg_mask & ARG_MASK_REGISTER) != 0) && ((arg_mask & ARG_MASK_IMMEDIATE) == 0))
@@ -150,7 +153,7 @@ static inline double* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, progr
                 LERR(LERR_BAD_ARG, "");
                 return 0;
             }
-            lvalue = &cpu_state->registers[reg_num];
+            return &cpu_state->registers[reg_num];
         }
         else
         {

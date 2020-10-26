@@ -124,7 +124,7 @@ static parsing_result_t parse_argument(char *arg_string_orig, arg_t arg_type, si
     parsing_result_t res = {0};
     if (arg_string_orig == NULL)
     {
-        printf("Error on line %zu: expected argument:\n%s\n", line_num, arg_string_orig);
+        printf("Error on line %zu: expected argument\n", line_num);
         return res;
     }
     // create copy

@@ -187,3 +187,19 @@ INSTRUCTION(sqrt, 0x98, ARG_NONE,
     imm_val = sqrt(imm_val);
     STACK_PUSH(imm_val);
 })
+
+INSTRUCTION(fbupd, 0xA0, ARG_NONE,
+{
+    for (size_t y = 0; y < 128; y++)
+        for (size_t x = 0; x < 128; x++)
+            if (cpu_state.mem[49152 + y * 128 + x] > 0)
+            {
+                int color = cpu_state.mem[49152 + y * 128 + x];
+                int r = color % 256;
+                color /= 256;
+                int g = color % 256;
+                color /= 256;
+                int b =color % 256;
+                put_pixel(x + 900, y + 10, b, g, r, 255);
+            }
+})
