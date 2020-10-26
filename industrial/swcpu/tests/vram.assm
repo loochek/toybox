@@ -44,10 +44,17 @@ draw:
     add
     add
     pop rax
+    
     push ryx
     push 256
+    push 256
+    mul
     mul
     push rxx
+    push 256
+    mul
+    add
+    push 117
     add
     pop [rax]
     jmp anyway
