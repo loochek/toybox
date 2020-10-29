@@ -1,0 +1,33 @@
+loop:
+    in ; y
+    in ; x
+    pop rxx
+    pop ryx
+    push 49152
+    push ryx
+    push 128
+    mul
+    push rxx
+    add
+    add
+    pop rcx
+    in ; r
+    in ; g
+    in ; b
+    pop rbx
+    pop rgx
+    pop rrx
+    push rbx
+    push 256
+    push 256
+    mul
+    mul
+    push rgx
+    push 256
+    mul
+    push rrx
+    add
+    add
+    pop [rcx]
+    fbupd
+    jmp loop
