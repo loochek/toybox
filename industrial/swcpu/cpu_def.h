@@ -188,18 +188,26 @@ INSTRUCTION(sqrt, 0x98, ARG_NONE,
     STACK_PUSH(imm_val);
 })
 
+#ifdef FRAMEBUFFER_ENABLE
 INSTRUCTION(fbupd, 0xA0, ARG_NONE,
 {
-    for (size_t y = 0; y < 128; y++)
-        for (size_t x = 0; x < 128; x++)
-            if (cpu_state.mem[49152 + y * 128 + x] > 0)
+    if (graphics_enabled)
+    {
+        for (size_t y = 0; y < 128; y++)
+            for (size_t x = 0; x < 128; x++)
             {
-                int color = cpu_state.mem[49152 + y * 128 + x];
+                // (RAM_SIZE - 128 * 128) - VRAM offset
+                int color = fabs(cpu_state.mem[(RAM_SIZE - 128 * 128) + y * 128 + x]);
+                // color is represented as a three-digit base 256 number gbr
                 int r = color % 256;
                 color /= 256;
                 int g = color % 256;
                 color /= 256;
-                int b =color % 256;
-                put_pixel(x + 900, y + 10, b, g, r, 255);
+                int b = color % 256;
+                // the "display" is located almost in the right upper corner of the framebuffer
+                put_pixel((fb_width - 138) + x, 10 + y, r, g, b, 255);
             }
+        update();
+    }
 })
+#endif

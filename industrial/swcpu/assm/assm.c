@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
     }
 
     int write_status = (fwrite(&prg_header, sizeof(prg_header_t), 1, output_file) != 1) ||
-                 (fwrite(code, sizeof(char), byte_cnt, output_file) != byte_cnt);
+                       (fwrite(code, sizeof(char), byte_cnt, output_file) != byte_cnt);
     if (write_status)
     {
         fprintf(stderr, "Unable to write to output file\n");
@@ -210,7 +210,7 @@ if (strcmp(curr_tok, #mnemonic) == 0)                                           
         if ((res.arg_mask & ARG_MASK_REGISTER) != 0)                                       \
             byte_cnt += 1;                                                                 \
         if ((res.arg_mask & ARG_MASK_IMMEDIATE) != 0)                                      \
-            byte_cnt += 8;                                                                 \
+            byte_cnt += IMM_SIZE;                                                          \
     }                                                                                      \
     goto line_parsed;                                                                      \
 }
@@ -294,17 +294,9 @@ if (strcmp(curr_tok, #mnemonic) == 0)                                           
                 {                                                                          \
                     if (strcmp(labels[i].label, res.imm_label) == 0)                       \
                     {                                                                      \
-                        int64_t imm_val = 0;                                               \
-                        double off_double = labels[i].offset;                              \
-                        memcpy(&imm_val, &off_double, sizeof(double));                     \
-                        output_buf[pc++] =  imm_val        & 0xFF;                         \
-                        output_buf[pc++] = (imm_val >>  8) & 0xFF;                         \
-                        output_buf[pc++] = (imm_val >> 16) & 0xFF;                         \
-                        output_buf[pc++] = (imm_val >> 24) & 0xFF;                         \
-                        output_buf[pc++] = (imm_val >> 32) & 0xFF;                         \
-                        output_buf[pc++] = (imm_val >> 40) & 0xFF;                         \
-                        output_buf[pc++] = (imm_val >> 48) & 0xFF;                         \
-                        output_buf[pc++] = (imm_val >> 56) & 0xFF;                         \
+                        double offset_d = labels[i].offset;                                \
+                        memcpy(&output_buf[pc], &offset_d, IMM_SIZE);                      \
+                        pc += IMM_SIZE;                                                    \
                         wrote = true;                                                      \
                     }                                                                      \
                 }                                                                          \
@@ -316,16 +308,8 @@ if (strcmp(curr_tok, #mnemonic) == 0)                                           
             }                                                                              \
             else                                                                           \
             {                                                                              \
-                int64_t imm_val = 0;                                                   \
-                memcpy(&imm_val, &res.imm_val, sizeof(double));                        \
-                output_buf[pc++] =  imm_val        & 0xFF;                             \
-                output_buf[pc++] = (imm_val >>  8) & 0xFF;                             \
-                output_buf[pc++] = (imm_val >> 16) & 0xFF;                             \
-                output_buf[pc++] = (imm_val >> 24) & 0xFF;                             \
-                output_buf[pc++] = (imm_val >> 32) & 0xFF;                             \
-                output_buf[pc++] = (imm_val >> 40) & 0xFF;                             \
-                output_buf[pc++] = (imm_val >> 48) & 0xFF;                             \
-                output_buf[pc++] = (imm_val >> 56) & 0xFF;                             \
+                memcpy(&output_buf[pc], &res.imm_val, IMM_SIZE);                           \
+                pc += IMM_SIZE;                                                            \
             }                                                                              \
         }                                                                                  \
     }                                                                                      \

@@ -87,17 +87,9 @@ static inline uint8_t prg_read_byte(size_t *pc, program_t *prg)
 
 static inline double prg_read_double(size_t *pc, program_t *prg)
 {
-    // SWCPU is little-endian
-    uint64_t qword = (int64_t)prg->code[(*pc)++];
-    qword |= (int64_t)prg->code[(*pc)++] << 8;
-    qword |= (int64_t)prg->code[(*pc)++] << 16;
-    qword |= (int64_t)prg->code[(*pc)++] << 24;
-    qword |= (int64_t)prg->code[(*pc)++] << 32;
-    qword |= (int64_t)prg->code[(*pc)++] << 40;
-    qword |= (int64_t)prg->code[(*pc)++] << 48;
-    qword |= (int64_t)prg->code[(*pc)++] << 56;
     double to_ret = 0;
-    memcpy(&to_ret, &qword, sizeof(double));
+    memcpy(&to_ret, &prg->code[*pc], IMM_SIZE);
+    (*pc) += IMM_SIZE;
     return to_ret;
 }
 

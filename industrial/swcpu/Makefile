@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-g -fsanitize=address
+CFLAGS=-g -fsanitize=address -DFRAMEBUFFER_ENABLE
 export CC, CFLAGS
 
 build:

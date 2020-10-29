@@ -9,7 +9,10 @@
 #include "../common/headers/arithm.h"
 #include "../common/headers/global_constants.h"
 #include "stack/stack_common.h"
+
+#ifdef FRAMEBUFFER_ENABLE
 #include "fblib/fblib.h"
+#endif
 
 // The CPU
 
@@ -26,8 +29,8 @@
 typedef struct
 {
     double registers[REGISTERS_COUNT]; // 26 Number registers
-    size_t pc;           // current instruction pointer
-    double mem[65536];   // RAM, higher 16384 is 128x128 VRAM
+    size_t pc;                         // current instruction pointer
+    double mem[RAM_SIZE];              // RAM, higher 16384 is 128x128 VRAM
     bool halted;
     my_stack_cpuval stack;
 } cpu_state_t;
@@ -58,15 +61,27 @@ int main(int argc, char* argv[])
     if (stack_construct_cpuval(&cpu_state.stack, 10) != STACK_OK)
     {
         fprintf(stderr, "Stack error\n");
+        stack_destruct_cpuval(&cpu_state.stack);
         return -1;
     }
 
-    fb_init();
+#ifdef FRAMEBUFFER_ENABLE
+    bool graphics_enabled = true;
+    size_t fb_width = 0, fb_height = 0;
+    if (fb_init() != 0)
+    {
+        printf("Framebuffer initialization failed, graphical output disabled\n");
+        graphics_enabled = false;
+    }
+    else
+        get_resolution(&fb_width, &fb_height);
+#endif
 
     program_t *prg = load_program_from_file(prg_name);
     if (prg == NULL)
     {
         LERRPRINT();
+        stack_destruct_cpuval(&cpu_state.stack);
         return -1;
     }
 
@@ -88,8 +103,10 @@ int main(int argc, char* argv[])
             break;
         }
     }
-    
-    fb_close();
+#ifdef FRAMEBUFFER_ENABLE
+    if (graphics_enabled)
+        fb_close();
+#endif
     program_unload(prg);
     stack_destruct_cpuval(&cpu_state.stack);
     return 0;
@@ -102,17 +119,9 @@ static inline uint8_t cpu_read_byte(cpu_state_t *cpu_state, program_t *prg)
 
 static inline double cpu_read_double(cpu_state_t *cpu_state, program_t *prg)
 {
-    // SWCPU is little-endian
-    uint64_t qword = (int64_t)prg->code[cpu_state->pc++];
-    qword |= (int64_t)prg->code[cpu_state->pc++] << 8;
-    qword |= (int64_t)prg->code[cpu_state->pc++] << 16;
-    qword |= (int64_t)prg->code[cpu_state->pc++] << 24;
-    qword |= (int64_t)prg->code[cpu_state->pc++] << 32;
-    qword |= (int64_t)prg->code[cpu_state->pc++] << 40;
-    qword |= (int64_t)prg->code[cpu_state->pc++] << 48;
-    qword |= (int64_t)prg->code[cpu_state->pc++] << 56;
     double to_ret = 0;
-    memcpy(&to_ret, &qword, sizeof(double));
+    memcpy(&to_ret, &prg->code[cpu_state->pc], IMM_SIZE);
+    cpu_state->pc += IMM_SIZE;
     return to_ret;
 }
 
