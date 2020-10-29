@@ -24,6 +24,7 @@ The grammar is as follows:
 > [rax]    ; both lvalue and rvalue  
 > [10]     ; both lvalue and rvalue  
 * The argument cannot contain spaces (a compromise to simplify assembler)
+* There are labels: assembler-time calculated values. The most common use case is jumps
 ## Instruction set:
 * push rvalue - push value on the stack
 * pop  lvalue - pop value from the stack to lvalue
