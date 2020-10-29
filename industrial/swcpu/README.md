@@ -4,25 +4,25 @@ Here is an assembly language and a toolchain for it: an assembler, a disassemble
 The grammar is as follows:
 * One instruction - one line
 * The line can be empty, contain an instruction, a comment after an instruction, contain only a comment
-> ; Line with comment only
-> pop rax
-> ; ^^^ Line with instruction only
-> pop rax ; Line with both instruction and comment
->
-> ; ^^^ Empty line
+> ; Line with comment only  
+> pop rax  
+> ; ^^^ Line with instruction only  
+> pop rax ; Line with both instruction and comment  
+>  
+> ; ^^^ Empty line  
 * The instruction can take one argument.
-> nop     ; Without argument
-> pop rax ; With argument
+> nop     ; Without argument  
+> pop rax ; With argument  
 * The argument can be "lvalue" or rvalue". "Rvalue" is a calculated constant. "Lvalue" is some kind of memory cell, like a register or a RAM cell
-> push rax ; Push value from register rax - great!
-> pop  15  ; Pop value from 15 - what?
+> push rax ; Push value from register rax - great!  
+> pop  15  ; Pop value from 15 - what?  
 * Argument is a combination of memory, register, immediate modifiers
-> rax      ; both lvalue and rvalue
-> rax+5    ; rvalue
-> 5        ; rvalue
-> [rax+-5] ; both lvalue and rvalue
-> [rax]    ; both lvalue and rvalue
-> [10]     ; both lvalue and rvalue
+> rax      ; both lvalue and rvalue  
+> rax+5    ; rvalue  
+> 5        ; rvalue  
+> [rax+-5] ; both lvalue and rvalue  
+> [rax]    ; both lvalue and rvalue  
+> [10]     ; both lvalue and rvalue  
 * The argument cannot contain spaces (a compromise to simplify assembler)
 ## Instruction set:
 * push rvalue - push value on the stack
