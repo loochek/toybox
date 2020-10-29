@@ -74,9 +74,9 @@ void put_pixel(int x, int y, int r, int g, int b, int a)
 		return;
 	
 	int location = x * (vinfo.bits_per_pixel / 8) + y * finfo.line_length;
-	*(fbp + location    ) = (*(fbp + location    ) * (255 - a) + r * a) / 255;
+	*(fbp + location    ) = (*(fbp + location    ) * (255 - a) + b * a) / 255;
 	*(fbp + location + 1) = (*(fbp + location + 1) * (255 - a) + g * a) / 255;
-	*(fbp + location + 2) = (*(fbp + location + 2) * (255 - a) + b * a) / 255;
+	*(fbp + location + 2) = (*(fbp + location + 2) * (255 - a) + r * a) / 255;
 	*(fbp + location + 3) = 0;
 }
 
