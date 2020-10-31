@@ -10,7 +10,9 @@ typedef enum
     LERR_MALLOC,
     LERR_INVALID_PRG,
     LERR_NAN,
-    LERR_BAD_ARG
+    LERR_BAD_ARG,
+    LERR_PARSING_FAILED,
+    LERR_UNKNOWN_LABEL
 } lerror_t;
 
 extern lerror_t __lerrno;
