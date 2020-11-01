@@ -12,6 +12,8 @@ static inline uint8_t prg_read_byte(size_t *pc, program_t *prg);
 static inline double prg_read_double(size_t *pc, program_t *prg);
 static void construct_argument(uint8_t arg_mask, size_t *pc, char* arg_buf, program_t *prg);
 
+#define LISTING_SPACE 30
+
 // INSTRUCTION definition for disassm
 #define INSTRUCTION(MNEMONIC, BASE_OPCODE, ARG_TYPE, IMPL) \
 case BASE_OPCODE:                                          \
@@ -20,11 +22,11 @@ case BASE_OPCODE:                                          \
     char_cnt += fprintf(disassm_file, #MNEMONIC);          \
     if (arg_mask != ARG_NONE)                              \
     {                                                      \
-        char arg_buf[41] = {0};                            \
+        char arg_buf[MAX_ARG_SIZE + 1] = {0};              \
         construct_argument(arg_mask, &pc, arg_buf, prg);   \
         char_cnt += fprintf(disassm_file, " %s", arg_buf); \
     }                                                      \
-    for (int i = 0; i < 30 - char_cnt; i++)                \
+    for (int i = 0; i < LISTING_SPACE - char_cnt; i++)     \
         fprintf(disassm_file, " ");                        \
     fprintf(disassm_file, "; %04zu  ", old_pc);            \
     for (size_t i = old_pc; i < pc; i++)                   \
@@ -33,20 +35,8 @@ case BASE_OPCODE:                                          \
 }                                                          \
 break;
 
-int main(int argc, char* argv[])
+int disassm(const char* prg_name, const char* src_file_name)
 {
-    char* src_file_name = "src.assm";
-    char* prg_name      = NULL;
-    if (argc < 2)
-    {
-        printf("Usage: disassm <input program file> [<output source file>]\n");
-        return 0;
-    }
-    if (argc >= 2)
-        prg_name      = argv[1];
-    if (argc >= 3)
-        src_file_name = argv[2];
-
     program_t *prg = load_program_from_file(prg_name);
     if (prg == NULL)
     {
@@ -72,7 +62,7 @@ int main(int argc, char* argv[])
         uint8_t opcode = prg_read_byte(&pc, prg);
         uint8_t arg_mask = opcode & 7;
 
-        switch (opcode & 248) // 11111000
+        switch (opcode & 248) // 11111000 - base opcode mask
         {
         #include "../cpu_def.h"
 
@@ -85,7 +75,23 @@ int main(int argc, char* argv[])
     }
     fclose(disassm_file);
     program_unload(prg);
-    return 0;
+}
+
+int main(int argc, char* argv[])
+{
+    char* src_file_name = "src.assm";
+    char* prg_name      = NULL;
+    if (argc < 2)
+    {
+        printf("Usage: disassm <input program file> [<output source file>]\n");
+        return 0;
+    }
+    if (argc >= 2)
+        prg_name      = argv[1];
+    if (argc >= 3)
+        src_file_name = argv[2];
+
+    return disassm(prg_name, src_file_name);
 }
 
 static inline uint8_t prg_read_byte(size_t *pc, program_t *prg)
@@ -115,7 +121,7 @@ static void construct_argument(uint8_t arg_mask, size_t *pc, char* arg_buf, prog
         strcat(arg_buf, "+");
     if ((arg_mask & ARG_MASK_IMMEDIATE) != 0)
     {
-        char num_buf[20] = {0};
+        char num_buf[MAX_ARG_SIZE + 1] = {0};
         num_to_str(prg_read_double(pc, prg), num_buf);
         strcat(arg_buf, num_buf);
     }

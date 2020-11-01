@@ -156,14 +156,15 @@ static arg_parsing_result_t parse_argument(const char *arg_string)
     int delim_pos = strchr_rng(arg_string, '+', left_ptr, right_ptr);
     if (delim_pos != -1)
     {
-        char subarg1[21] = {0}, subarg2[21] = {0}; // TODO
+        char subarg1[MAX_ARG_SIZE + 1] = {0},
+             subarg2[MAX_ARG_SIZE + 1] = {0};
         strncpy(subarg1, arg_string + left_ptr     , delim_pos - left_ptr);
         strncpy(subarg2, arg_string + delim_pos + 1, right_ptr - delim_pos);
         res = merge_results(parse_subarg(subarg1), parse_subarg(subarg2));
     }
     else
     {
-        char subarg[51] = {0}; // TODO
+        char subarg[MAX_ARG_SIZE + 1] = {0};
         strncpy(subarg, arg_string + left_ptr, right_ptr - left_ptr + 1);
         res = parse_subarg(subarg);
     }
@@ -202,12 +203,14 @@ if (strcmp(curr_tok, #mnemonic) == 0)                                           
     {                                                                                      \
         curr_tok = next_token(&tokenizer_state);                                           \
         arg_parsing_result_t res = parse_argument(curr_tok);                               \
-        if (res.arg_mask & 3 == 0)                                                         \
+        if (res.arg_mask & (ARG_MASK_IMMEDIATE | ARG_MASK_RAM) == 0)                       \
         {                                                                                  \
             LERR(LERR_PARSING_FAILED, "bad or missing argument");                          \
             return -1;                                                                     \
         }                                                                                  \
-        if (argument_type == ARG_LVALUE && (res.arg_mask == 3 || res.arg_mask == 2))       \
+        if (argument_type == ARG_LVALUE &&                                                 \
+            (res.arg_mask == (ARG_MASK_IMMEDIATE | ARG_MASK_REGISTER) ||                   \
+             res.arg_mask == ARG_MASK_IMMEDIATE))                                          \
         {                                                                                  \
             LERR(LERR_PARSING_FAILED, "expected lvalue");                                  \
             return -1;                                                                     \

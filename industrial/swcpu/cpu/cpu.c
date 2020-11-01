@@ -26,6 +26,8 @@
 #undef elem_t
 #undef TYPE
 
+#define INITIAL_STACK_CAPACITY 10
+
 typedef struct
 {
     double registers[REGISTERS_COUNT]; // 26 Number registers
@@ -58,7 +60,7 @@ int main(int argc, char* argv[])
         prg_name = argv[1];
         
     cpu_state_t cpu_state = {0};
-    if (stack_construct_cpuval(&cpu_state.stack, 10) != STACK_OK)
+    if (stack_construct_cpuval(&cpu_state.stack, INITIAL_STACK_CAPACITY) != STACK_OK)
     {
         fprintf(stderr, "Stack error\n");
         stack_destruct_cpuval(&cpu_state.stack);
