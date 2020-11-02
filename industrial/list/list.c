@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "list.h"
 
@@ -273,6 +274,10 @@ static list_status_t list_expand(list_t *list)
     list->prev = new_prev;
     list->next = new_next;
 
+    memset(list->data + list->arr_size, 0, list->arr_size * sizeof(elem_t));
+    memset(list->next + list->arr_size, 0, list->arr_size * sizeof(size_t));
+    memset(list->prev + list->arr_size, 0, list->arr_size * sizeof(size_t));
+        
     for (size_t i = list->arr_size; i < list->arr_size * 2 - 1; i++)
         list->next[i] = i + 1;
     list->next[list->arr_size * 2 - 1] = 0;

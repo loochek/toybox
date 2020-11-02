@@ -31,5 +31,13 @@ int main()
     list_visualise(&list);
     list_push_back (&list, 10);
     list_visualise(&list);
+    list_push_back (&list, 11);
+    list_visualise(&list);
+    list_push_back (&list, 12);
+    list_visualise(&list);
+    list_push_back (&list, 13);
+    list_visualise(&list);
+
+    list_destruct(&list);
     return 0;
 }
