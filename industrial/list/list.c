@@ -195,6 +195,60 @@ void list_print(list_t *list)
     printf("\n");
 }
 
+#define HEAD_LABEL_ID      10000
+#define TAIL_LABEL_ID      10001
+#define HEAD_FREE_LABEL_ID 10002
+
+void list_visualise(list_t *list)
+{
+    FILE *dot_file = fopen("list.dot", "w");
+
+    fprintf(dot_file, "digraph G\n{\n");
+
+    fprintf(dot_file, "0 [label=0];\n");
+
+    // unite used cells
+    fprintf(dot_file, "{rank=same\n;");
+    size_t cur_pos = list->tail;
+    while (cur_pos != list->head)
+    {
+        fprintf(dot_file, "%zu [label=%d];\n", cur_pos, list->data[cur_pos]);
+        cur_pos = list->next[cur_pos];
+    }
+    fprintf(dot_file, "%zu [label=%d];\n", list->head, list->data[list->head]);
+    fprintf(dot_file, "}\n;");
+
+    // unite free cells
+    fprintf(dot_file, "{rank=same\n;");
+    cur_pos = list->head_free;
+    while (list->prev[cur_pos] != 0)
+    {
+        fprintf(dot_file, "%zu [label=%d];\n", cur_pos, list->data[cur_pos]);
+        cur_pos = list->prev[cur_pos];
+    }
+    fprintf(dot_file, "%zu [label=%d];\n", cur_pos, list->data[cur_pos]);
+    fprintf(dot_file, "}\n;");
+
+    fprintf(dot_file, "{%d [label=\"head\"];}\n"     , HEAD_LABEL_ID);
+    fprintf(dot_file, "{%d [label=\"tail\"];}\n"     , TAIL_LABEL_ID);
+    fprintf(dot_file, "{%d [label=\"head_free\"];}\n", HEAD_FREE_LABEL_ID);
+
+    for (size_t i = 0; i < list->arr_size; i++)
+    {
+        fprintf(dot_file, "{edge[color=red]  %zu->%zu}\n", i, list->next[i]);
+        fprintf(dot_file, "{edge[color=blue] %zu->%zu}\n", i, list->prev[i]);
+    }
+
+    fprintf(dot_file, "{edge[color=cyan]  %d->%zu}\n", HEAD_LABEL_ID     , list->head);
+    fprintf(dot_file, "{edge[color=cyan]  %d->%zu}\n", TAIL_LABEL_ID     , list->tail);
+    fprintf(dot_file, "{edge[color=cyan]  %d->%zu}\n", HEAD_FREE_LABEL_ID, list->head_free);
+    fprintf(dot_file, "}\n");
+    fclose(dot_file);
+
+    system("dot list.dot -Tpng > img.png");
+    system("gwenview img.png");
+}
+
 void list_destruct(list_t *list)
 {
     free(list->data);
