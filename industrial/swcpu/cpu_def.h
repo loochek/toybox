@@ -188,8 +188,20 @@ INSTRUCTION(sqrt, 0x98, ARG_NONE,
     STACK_PUSH(imm_val);
 })
 
+INSTRUCTION(dump, 0xA0, ARG_NONE,
+{
+    printf("CPU state:\n"
+           "PC: %zu\n"
+           "Registers:\n", cpu_state.pc);
+    for (int i = 0; i < REGISTERS_COUNT; i++)
+        printf("r%cx: %lg\n", 'a' + i, cpu_state.registers[i]);
+    printf("Stack:\n");
+    stack_dump_cpuval(&cpu_state.stack);
+    printf("\n");
+})
+
 #ifdef FRAMEBUFFER_ENABLE
-INSTRUCTION(fbupd, 0xA0, ARG_NONE,
+INSTRUCTION(fbupd, 0xA8, ARG_NONE,
 {
     if (graphics_enabled)
     {
