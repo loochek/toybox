@@ -75,6 +75,7 @@ int disassm(const char* prg_name, const char* src_file_name)
     }
     fclose(disassm_file);
     program_unload(prg);
+    return 0;
 }
 
 static inline uint8_t prg_read_byte(size_t *pc, program_t *prg)

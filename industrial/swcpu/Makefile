@@ -1,6 +1,7 @@
 CC=clang
 CFLAGS=-g -fsanitize=address -DFRAMEBUFFER_ENABLE
-export CC, CFLAGS
+export CC
+export CFLAGS
 
 build:
 	make -C assm/
