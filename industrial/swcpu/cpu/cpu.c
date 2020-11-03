@@ -42,23 +42,14 @@ static inline double  cpu_read_double(cpu_state_t *cpu_state, program_t *prg);
 static inline double  get_rvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg);
 static inline double* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, program_t *prg);
 
-// INSTRUCTION definition for cpu
+// INSTRUCTION definition for execcute_program
 #define INSTRUCTION(MNEMONIC, BASE_OPCODE, ARG_TYPE, IMPL) \
 case BASE_OPCODE:                                          \
     IMPL;                                                  \
     break;
 
-int main(int argc, char* argv[])
+int execute_program(const char prg_name[])
 {
-    char* prg_name = NULL;
-    if (argc < 2)
-    {
-        printf("Usage: cpu <program file>\n");
-        return 0;
-    }
-    else if (argc >= 2)
-        prg_name = argv[1];
-        
     cpu_state_t cpu_state = {0};
     if (stack_construct_cpuval(&cpu_state.stack, INITIAL_STACK_CAPACITY) != STACK_OK)
     {
@@ -95,6 +86,7 @@ int main(int argc, char* argv[])
         uint8_t arg_mask = opcode & 7;
         switch (opcode & 248) // 11111000
         {
+            
         #include "../cpu_def.h"
 
         default:
@@ -133,12 +125,6 @@ static inline double get_rvalue(uint8_t arg_mask, cpu_state_t *cpu_state, progra
     if ((arg_mask & ARG_MASK_REGISTER) != 0)
     {
         uint8_t reg_num = cpu_read_byte(cpu_state, prg);
-        if (reg_num >= REGISTERS_COUNT)
-        {
-            printf("CPU execution error: bad register number: %d\n", reg_num);
-            LERR(LERR_BAD_ARG, "");
-            return 0;
-        }
         rvalue += cpu_state->registers[reg_num];
     }
 
@@ -155,36 +141,16 @@ static inline double* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, progr
 {
     if ((arg_mask & ARG_MASK_RAM) == 0)
     {
-        if (((arg_mask & ARG_MASK_REGISTER) != 0) && ((arg_mask & ARG_MASK_IMMEDIATE) == 0))
-        {
-            uint8_t reg_num = cpu_read_byte(cpu_state, prg);
-            if (reg_num >= REGISTERS_COUNT)
-            {
-                printf("CPU execution error: bad register number: %d\n", reg_num);
-                LERR(LERR_BAD_ARG, "");
-                return 0;
-            }
-            return &cpu_state->registers[reg_num];
-        }
-        else
-        {
-            printf("CPU execution error: can't use rvalue as lvalue\n");
-            LERR(LERR_BAD_ARG, "");
-            return 0;
-        }   
+        uint8_t reg_num = cpu_read_byte(cpu_state, prg);
+        return &cpu_state->registers[reg_num];
     }
     else
     {
         size_t addr = 0;
+
         if ((arg_mask & ARG_MASK_REGISTER) != 0)
         {
             uint8_t reg_num = cpu_read_byte(cpu_state, prg);
-            if (reg_num >= REGISTERS_COUNT)
-            {
-                printf("CPU execution error: bad register number: %d\n", reg_num);
-                LERR(LERR_BAD_ARG, "");
-                return 0;
-            }
             addr += cpu_state->registers[reg_num];
         }
 
@@ -193,4 +159,17 @@ static inline double* get_lvalue(uint8_t arg_mask, cpu_state_t *cpu_state, progr
 
         return &cpu_state->mem[addr];
     }
+}
+
+int main(int argc, char* argv[])
+{
+    char* prg_name = NULL;
+    if (argc < 2)
+    {
+        printf("Usage: cpu <program file>\n");
+        return 0;
+    }
+    else if (argc >= 2)
+        prg_name = argv[1];
+    return execute_program(prg_name);
 }

@@ -77,23 +77,6 @@ int disassm(const char* prg_name, const char* src_file_name)
     program_unload(prg);
 }
 
-int main(int argc, char* argv[])
-{
-    char* src_file_name = "src.assm";
-    char* prg_name      = NULL;
-    if (argc < 2)
-    {
-        printf("Usage: disassm <input program file> [<output source file>]\n");
-        return 0;
-    }
-    if (argc >= 2)
-        prg_name      = argv[1];
-    if (argc >= 3)
-        src_file_name = argv[2];
-
-    return disassm(prg_name, src_file_name);
-}
-
 static inline uint8_t prg_read_byte(size_t *pc, program_t *prg)
 { 
     return prg->code[(*pc)++];
@@ -127,4 +110,21 @@ static void construct_argument(uint8_t arg_mask, size_t *pc, char* arg_buf, prog
     }
     if ((arg_mask & ARG_MASK_RAM) != 0)
         strcat(arg_buf, "]");
+}
+
+int main(int argc, char* argv[])
+{
+    char* src_file_name = "src.assm";
+    char* prg_name      = NULL;
+    if (argc < 2)
+    {
+        printf("Usage: disassm <input program file> [<output source file>]\n");
+        return 0;
+    }
+    if (argc >= 2)
+        prg_name      = argv[1];
+    if (argc >= 3)
+        src_file_name = argv[2];
+
+    return disassm(prg_name, src_file_name);
 }

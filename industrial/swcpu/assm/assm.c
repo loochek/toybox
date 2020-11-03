@@ -143,7 +143,10 @@ static inline arg_parsing_result_t merge_results(const arg_parsing_result_t a,
 static arg_parsing_result_t parse_argument(const char *arg_string)
 {
     arg_parsing_result_t res = {0};
-    
+
+    if (*arg_string == '\0')
+        return res;
+
     size_t left_ptr = 0, right_ptr = strlen(arg_string) - 1;
     // check for brackets
     uint8_t ram = 0;
@@ -203,7 +206,7 @@ if (strcmp(curr_tok, #mnemonic) == 0)                                           
     {                                                                                      \
         curr_tok = next_token(&tokenizer_state);                                           \
         arg_parsing_result_t res = parse_argument(curr_tok);                               \
-        if (res.arg_mask & (ARG_MASK_IMMEDIATE | ARG_MASK_RAM) == 0)                       \
+        if ((res.arg_mask & (ARG_MASK_IMMEDIATE | ARG_MASK_REGISTER)) == 0)                \
         {                                                                                  \
             LERR(LERR_PARSING_FAILED, "bad or missing argument");                          \
             return -1;                                                                     \
