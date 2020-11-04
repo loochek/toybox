@@ -2,3 +2,5 @@
 *.out
 *.exe
 *.vscode/
+*.png
+*.dot

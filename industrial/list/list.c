@@ -3,9 +3,20 @@
 
 #include "list.h"
 
+// poison for data
+static elem_t POISON = 0xDEAD;
+
 static list_status_t list_expand(list_t *list);
-static int claim_cell(list_t *list);
-static void free_cell(list_t *list, size_t pos);
+static list_status_t list_validate(list_t *list);
+
+static int  claim_cell(list_t *list);
+static void free_cell (list_t *list, size_t pos);
+
+#define LIST_CHECK_COND list_validate(list) == LIST_OK
+
+#define LIST_CHECK(list) \
+if (!(LIST_CHECK_COND))  \
+    return LIST_ERROR;
 
 list_status_t list_construct(list_t *list, size_t capacity)
 {
@@ -23,6 +34,9 @@ list_status_t list_construct(list_t *list, size_t capacity)
         return LIST_ERROR;
     }
 
+    for (size_t i = 0; i < list->arr_size; i++)
+        list->data[i] = POISON;
+
     list->head = 1;
     list->tail = 1;
 
@@ -39,11 +53,15 @@ list_status_t list_construct(list_t *list, size_t capacity)
 
     list->head_free = list->arr_size - 1;
 
+    LIST_CHECK(list);
+
     return LIST_OK;
 }
 
 list_status_t list_push_front(list_t *list, elem_t elem)
 {
+    LIST_CHECK(list);
+
     int claimed_pos = claim_cell(list);
     if (claimed_pos == -1)
     {
@@ -59,11 +77,15 @@ list_status_t list_push_front(list_t *list, elem_t elem)
     list->next[claimed_pos] = 0;
     list->head              = claimed_pos;
 
+    LIST_CHECK(list);
+
     return LIST_OK;
 }
 
 list_status_t list_push_back(list_t *list, elem_t elem)
 {
+    LIST_CHECK(list);
+
     int claimed_pos = claim_cell(list);
     if (claimed_pos == -1)
     {
@@ -79,11 +101,15 @@ list_status_t list_push_back(list_t *list, elem_t elem)
     
     list->data[list->tail] = elem;
 
+    LIST_CHECK(list);
+
     return LIST_OK;
 }
 
 list_status_t list_pop_front(list_t *list)
 {
+    LIST_CHECK(list);
+
     if (list->head == list->tail)
         return LIST_EMPTY;
 
@@ -93,11 +119,15 @@ list_status_t list_pop_front(list_t *list)
     list->next[list->prev[list->head]] = 0;
     list->head = list->prev[list->head];
 
+    LIST_CHECK(list);
+
     return LIST_OK;
 }
 
 list_status_t list_pop_back(list_t *list)
 {
+    LIST_CHECK(list);
+
     if (list->head == list->tail)
         return LIST_EMPTY;
 
@@ -108,11 +138,15 @@ list_status_t list_pop_back(list_t *list)
     list->prev[new_tail] = 0;
     list->tail = new_tail;
 
+    LIST_CHECK(list);
+
     return LIST_OK;
 }
 
 list_status_t list_insert(list_t *list, size_t index, elem_t elem)
 {
+    LIST_CHECK(list);
+
     int current_pos = list->tail;
     for (size_t i = 0; i < index; i++)
     {
@@ -138,11 +172,15 @@ list_status_t list_insert(list_t *list, size_t index, elem_t elem)
     list->prev[list->next[current_pos]] = claimed_pos;
     list->next[current_pos]             = claimed_pos;
 
+    LIST_CHECK(list);
+
     return LIST_OK;
 }
 
 list_status_t list_remove(list_t *list, size_t index)
 {
+    LIST_CHECK(list);
+
     int current_pos = list->tail;
     for (size_t i = 0; i < index; i++)
     {
@@ -163,11 +201,16 @@ list_status_t list_remove(list_t *list, size_t index)
 
     free_cell(list, current_pos);
 
+    LIST_CHECK(list);
+
     return LIST_OK;
 }
 
 elem_t *list_at(list_t *list, size_t index)
 {
+    if (!(LIST_CHECK_COND))
+        return NULL;
+
     size_t current_pos = list->tail;
     for (size_t i = 0; i < index; i++)
     {
@@ -180,43 +223,48 @@ elem_t *list_at(list_t *list, size_t index)
 
 void list_print(list_t *list)
 {
-    printf("\n");
+    printf("List dump:\n");
     printf("data: ");
     for (size_t i = 0; i < list->arr_size; i++)
         printf("%4d ", list->data[i]);
-    printf("\n");
     printf("next: ");
     for (size_t i = 0; i < list->arr_size; i++)
         printf("%4zu ", list->next[i]);
-    printf("\n");
     printf("prev: ");
     for (size_t i = 0; i < list->arr_size; i++)
         printf("%4zu ", list->prev[i]);
     printf("\nhead: %zu\ntail: %zu\nhead_free: %zu\n\n", list->head, list->tail, list->head_free);
-    printf("\n");
 }
 
 #define HEAD_LABEL_ID      10000
 #define TAIL_LABEL_ID      10001
 #define HEAD_FREE_LABEL_ID 10002
 
+static inline void emit_node(FILE* dot_file, list_t * list, size_t id)
+{
+    if (list->data[id] == POISON)
+        fprintf(dot_file, "%zu [label=\"&#9762;\" xlabel=%zu];\n", id, id);
+    else
+        fprintf(dot_file, "%zu [label=%d xlabel=%zu];\n", id, list->data[id], id);
+}
+
 void list_visualise(list_t *list)
 {
     FILE *dot_file = fopen("list.dot", "w");
 
-    fprintf(dot_file, "digraph G\n{\n");
+    fprintf(dot_file, "digraph G\n{\nnode [shape=box];\n");
 
-    fprintf(dot_file, "0 [label=0];\n");
+    emit_node(dot_file, list, 0);
 
     // unite used cells
     fprintf(dot_file, "{rank=same\n;");
     size_t cur_pos = list->tail;
     while (cur_pos != list->head)
     {
-        fprintf(dot_file, "%zu [label=%d];\n", cur_pos, list->data[cur_pos]);
+        emit_node(dot_file, list, cur_pos);
         cur_pos = list->next[cur_pos];
     }
-    fprintf(dot_file, "%zu [label=%d];\n", list->head, list->data[list->head]);
+    emit_node(dot_file, list, cur_pos);
     fprintf(dot_file, "}\n;");
 
     // unite free cells
@@ -224,10 +272,10 @@ void list_visualise(list_t *list)
     cur_pos = list->head_free;
     while (list->prev[cur_pos] != 0)
     {
-        fprintf(dot_file, "%zu [label=%d];\n", cur_pos, list->data[cur_pos]);
+        emit_node(dot_file, list, cur_pos);
         cur_pos = list->prev[cur_pos];
     }
-    fprintf(dot_file, "%zu [label=%d];\n", cur_pos, list->data[cur_pos]);
+    emit_node(dot_file, list, cur_pos);
     fprintf(dot_file, "}\n;");
 
     fprintf(dot_file, "{%d [label=\"head\"];}\n"     , HEAD_LABEL_ID);
@@ -236,18 +284,18 @@ void list_visualise(list_t *list)
 
     for (size_t i = 0; i < list->arr_size; i++)
     {
-        fprintf(dot_file, "{edge[color=red]  %zu->%zu}\n", i, list->next[i]);
-        fprintf(dot_file, "{edge[color=blue] %zu->%zu}\n", i, list->prev[i]);
+        fprintf(dot_file, "{edge[color=tomato2]     %zu->%zu}\n", i, list->next[i]);
+        fprintf(dot_file, "{edge[color=dodgerblue2] %zu->%zu}\n", i, list->prev[i]);
     }
 
-    fprintf(dot_file, "{edge[color=cyan]  %d->%zu}\n", HEAD_LABEL_ID     , list->head);
-    fprintf(dot_file, "{edge[color=cyan]  %d->%zu}\n", TAIL_LABEL_ID     , list->tail);
-    fprintf(dot_file, "{edge[color=cyan]  %d->%zu}\n", HEAD_FREE_LABEL_ID, list->head_free);
+    fprintf(dot_file, "{edge[color=darkgreen]  %d->%zu}\n", HEAD_LABEL_ID     , list->head);
+    fprintf(dot_file, "{edge[color=darkgreen]  %d->%zu}\n", TAIL_LABEL_ID     , list->tail);
+    fprintf(dot_file, "{edge[color=darkgreen]  %d->%zu}\n", HEAD_FREE_LABEL_ID, list->head_free);
     fprintf(dot_file, "}\n");
     fclose(dot_file);
 
-    system("dot list.dot -Tpng > img.png");
-    system("gwenview img.png");
+    system("dot list.dot -Tpng > out.png");
+    system("gwenview out.png");
 }
 
 void list_destruct(list_t *list)
@@ -259,6 +307,8 @@ void list_destruct(list_t *list)
 
 static list_status_t list_expand(list_t *list)
 {
+    LIST_CHECK(list);
+
     elem_t *new_data = (elem_t*)realloc(list->data, sizeof(elem_t) * list->arr_size * 2);
     size_t *new_prev = (size_t*)realloc(list->prev, sizeof(size_t) * list->arr_size * 2);
     size_t *new_next = (size_t*)realloc(list->next, sizeof(size_t) * list->arr_size * 2);
@@ -277,18 +327,23 @@ static list_status_t list_expand(list_t *list)
     memset(list->data + list->arr_size, 0, list->arr_size * sizeof(elem_t));
     memset(list->next + list->arr_size, 0, list->arr_size * sizeof(size_t));
     memset(list->prev + list->arr_size, 0, list->arr_size * sizeof(size_t));
+
+    for (size_t i = list->arr_size; i < list->arr_size * 2; i++)
+        list->data[i] = POISON;
         
     for (size_t i = list->arr_size; i < list->arr_size * 2 - 1; i++)
         list->next[i] = i + 1;
     list->next[list->arr_size * 2 - 1] = 0;
+    list->next[list->head_free] = list->arr_size;
 
     for (size_t i = list->arr_size + 1; i < list->arr_size * 2; i++)
         list->prev[i] = i - 1;
     list->prev[list->arr_size] = list->head_free;
-    list->next[list->head_free] = list->arr_size;
-    list->head_free = list->arr_size * 2 - 1;
 
+    list->head_free = list->arr_size * 2 - 1;
     list->arr_size *= 2;
+
+    LIST_CHECK(list);
 
     return LIST_OK;
 }
@@ -299,6 +354,7 @@ static void free_cell(list_t *list, size_t pos)
     list->prev[pos]             = list->head_free;
     list->next[list->head_free] = pos;
     list->head_free             = pos;
+    list->data[list->head_free] = POISON;
 }
 
 static int claim_cell(list_t *list)
@@ -311,4 +367,74 @@ static int claim_cell(list_t *list)
     list->next[list->head_free] = 0;
 
     return to_ret;
+}
+
+#define ASSERT_CONDITION(cond, msg, ...)                          \
+if (!(cond))                                                      \
+{                                                                 \
+    printf("List validation failed:\n" #msg "\n", ##__VA_ARGS__); \
+    list_print(list);                                             \
+    return LIST_ERROR;                                            \
+}
+
+#define CHECK_POISON(id) ASSERT_CONDITION(list->data[id] == POISON, "Expected poison at cell %zu", id)
+
+static list_status_t list_validate(list_t *list)
+{
+    CHECK_POISON((size_t)0);
+    CHECK_POISON(list->head);
+    CHECK_POISON(list->head_free);
+
+    ASSERT_CONDITION(list->next[list->head]      == 0, "next[head] is not zero");
+    ASSERT_CONDITION(list->prev[list->tail]      == 0, "prev[tail] is not zero");
+    ASSERT_CONDITION(list->next[list->head_free] == 0, "next[head_free] is not zero");
+    ASSERT_CONDITION(list->next[0]               == 0, "next[0] is not zero");
+    ASSERT_CONDITION(list->prev[0]               == 0, "prev[0] is not zero");
+
+    size_t cnt_real = 0;
+    size_t cur_pos  = list->tail;
+    size_t prev_pos = 0;
+    while (cur_pos != list->head)
+    {
+        if (prev_pos != 0)
+        {
+            ASSERT_CONDITION(prev_pos == list->prev[cur_pos],
+                         "prev-next misconnect between %zu and %zu: connectivity seems to be broken",
+                         prev_pos, cur_pos);
+        }
+
+        cnt_real++;
+        ASSERT_CONDITION(cnt_real < list->arr_size,
+                         "Too many real elements: connectivity seems to be broken\n");
+
+        prev_pos = cur_pos;
+        cur_pos = list->next[cur_pos];
+    }
+    cnt_real++;
+
+    size_t cnt_free = 0;
+    prev_pos = 0;
+    cur_pos = list->head_free;
+    while (cur_pos != 0)
+    {
+        if (cur_pos != list->head_free && list->prev[cur_pos] != 0)
+        {
+            ASSERT_CONDITION(prev_pos == list->next[cur_pos],
+                         "prev-next misconnect between %zu and %zu: connectivity seems to be broken",
+                         cur_pos, prev_pos);
+        }
+
+        CHECK_POISON(cur_pos);
+
+        cnt_free++;
+        ASSERT_CONDITION(cnt_free < list->arr_size,
+                         "Too many free elements: connectivity seems to be broken");
+
+        prev_pos = cur_pos;
+        cur_pos = list->prev[cur_pos];
+    }
+
+    ASSERT_CONDITION(cnt_real + cnt_free + 1 == list->arr_size, "Element count mismatch");
+
+    return LIST_OK;
 }
