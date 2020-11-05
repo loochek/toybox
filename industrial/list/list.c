@@ -6,6 +6,8 @@
 // poison for data
 static elem_t POISON = 0xDEAD;
 
+static elem_t CANARY = 0xBEEF;
+
 static list_status_t list_expand(list_t *list);
 static list_status_t list_validate(list_t *list);
 
@@ -41,17 +43,22 @@ list_status_t list_construct(list_t *list, size_t capacity)
     list->tail = 1;
 
     for (size_t i = 2; i < list->arr_size - 1; i++)
-        list->next[i] = i + 1;
-    list->next[list->arr_size - 1] = 0;
+        list->prev[i] = i + 1;
+    list->prev[list->arr_size - 1] = 0;
 
     for (size_t i = 3; i < list->arr_size; i++)
-        list->prev[i] = i - 1;
-    list->prev[2] = 0;
+        list->next[i] = i - 1;
+    list->next[2] = 0;
 
     list->prev[1] = 0;
     list->next[1] = 0;
 
-    list->head_free = list->arr_size - 1;
+    list->head_free = 2;
+
+    list->linear = true;
+
+    list->canary1 = CANARY;
+    list->canary2 = CANARY;
 
     LIST_CHECK(list);
 
@@ -94,6 +101,8 @@ list_status_t list_push_back(list_t *list, elem_t elem)
         claimed_pos = claim_cell(list);
     }
 
+    list->linear = false;
+
     list->next[claimed_pos] = list->tail;
     list->prev[list->tail]  = claimed_pos;
     list->prev[claimed_pos] = 0;
@@ -113,11 +122,12 @@ list_status_t list_pop_front(list_t *list)
     if (list->head == list->tail)
         return LIST_EMPTY;
 
-    list->data[list->prev[list->head]] = 0;
-    free_cell(list, list->head);
-
-    list->next[list->prev[list->head]] = 0;
+    size_t to_remove = list->head;
     list->head = list->prev[list->head];
+    list->next[list->head] = 0;
+    list->data[list->head] = POISON;
+
+    free_cell(list, to_remove);
 
     LIST_CHECK(list);
 
@@ -130,6 +140,8 @@ list_status_t list_pop_back(list_t *list)
 
     if (list->head == list->tail)
         return LIST_EMPTY;
+
+    list->linear = false;
 
     list->data[list->tail] = 0;
     size_t new_tail = list->next[list->tail];
@@ -166,6 +178,8 @@ list_status_t list_insert(list_t *list, size_t index, elem_t elem)
         claimed_pos = claim_cell(list);
     }
 
+    list->linear = false;
+
     list->data[claimed_pos]             = elem;
     list->prev[claimed_pos]             = current_pos;
     list->next[claimed_pos]             = list->next[current_pos];
@@ -188,10 +202,14 @@ list_status_t list_remove(list_t *list, size_t index)
         if (current_pos == list->head)
             return LIST_OUT_OF_BOUNDS;
     }
-    if (current_pos == list->tail)
-        return list_pop_back(list);
+
     if (current_pos == list->prev[list->head])
         return list_pop_front(list);
+
+    list->linear = false;
+
+    if (current_pos == list->tail)
+        return list_pop_back(list);
 
     list->data[current_pos] = 0;
     size_t left       = list->prev[current_pos];
@@ -206,10 +224,59 @@ list_status_t list_remove(list_t *list, size_t index)
     return LIST_OK;
 }
 
+list_status_t list_linearize(list_t *list)
+{
+    LIST_CHECK(list);
+
+    int size = list_size(list);
+    if (size == -1)
+        return LIST_ERROR;
+
+    list_t new_list;
+    if (list_construct(&new_list, size) != LIST_OK)
+        return LIST_ERROR;
+
+    size_t cur_pos = list->tail;
+    while (cur_pos != list->head)
+    {
+        if (list_push_front(&new_list, list->data[cur_pos]) != LIST_OK)
+        {
+            list_destruct(&new_list);
+            return LIST_ERROR;
+        }
+        cur_pos = list->next[cur_pos];
+    }
+
+    list_destruct(list);
+    *list = new_list;
+
+    LIST_CHECK(list);
+
+    return LIST_OK;
+}
+
+int list_size(list_t *list)
+{
+    if (!(LIST_CHECK_COND))
+        return -1;
+
+    size_t size = 0;
+    size_t cur_pos = list->tail;
+    while (cur_pos != list->head)
+    {
+        size++;
+        cur_pos = list->next[cur_pos];
+    }
+    return size;
+}
+
 elem_t *list_at(list_t *list, size_t index)
 {
     if (!(LIST_CHECK_COND))
         return NULL;
+
+    if (list->linear)
+        return &list->data[index + 1];
 
     size_t current_pos = list->tail;
     for (size_t i = 0; i < index; i++)
@@ -226,14 +293,15 @@ void list_print(list_t *list)
     printf("List dump:\n");
     printf("data: ");
     for (size_t i = 0; i < list->arr_size; i++)
-        printf("%4d ", list->data[i]);
-    printf("next: ");
+        printf("%7d ", list->data[i]);
+    printf("\nnext: ");
     for (size_t i = 0; i < list->arr_size; i++)
-        printf("%4zu ", list->next[i]);
-    printf("prev: ");
+        printf("%7zu ", list->next[i]);
+    printf("\nprev: ");
     for (size_t i = 0; i < list->arr_size; i++)
-        printf("%4zu ", list->prev[i]);
-    printf("\nhead: %zu\ntail: %zu\nhead_free: %zu\n\n", list->head, list->tail, list->head_free);
+        printf("%7zu ", list->prev[i]);
+    printf("\nhead: %zu\ntail: %zu\nhead_free: %zu\nlinear: %d\n\n",
+            list->head, list->tail, list->head_free, list->linear);
 }
 
 #define HEAD_LABEL_ID      10000
@@ -332,15 +400,14 @@ static list_status_t list_expand(list_t *list)
         list->data[i] = POISON;
         
     for (size_t i = list->arr_size; i < list->arr_size * 2 - 1; i++)
-        list->next[i] = i + 1;
-    list->next[list->arr_size * 2 - 1] = 0;
-    list->next[list->head_free] = list->arr_size;
+        list->prev[i] = i + 1;
+    list->prev[list->arr_size * 2 - 1] = 0;
+    list->prev[list->arr_size - 1] = list->arr_size;
 
     for (size_t i = list->arr_size + 1; i < list->arr_size * 2; i++)
-        list->prev[i] = i - 1;
-    list->prev[list->arr_size] = list->head_free;
+        list->next[i] = i - 1;
+    list->next[list->arr_size] = list->arr_size - 1;
 
-    list->head_free = list->arr_size * 2 - 1;
     list->arr_size *= 2;
 
     LIST_CHECK(list);
@@ -381,6 +448,9 @@ if (!(cond))                                                      \
 
 static list_status_t list_validate(list_t *list)
 {
+    ASSERT_CONDITION(list->canary1 == CANARY, "canary1 fault");
+    ASSERT_CONDITION(list->canary2 == CANARY, "canary2 fault");
+
     CHECK_POISON((size_t)0);
     CHECK_POISON(list->head);
     CHECK_POISON(list->head_free);
