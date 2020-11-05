@@ -5,9 +5,6 @@ int main()
 {
     list_t list;
     list_construct(&list, 5);
-
-    list_construct(&list, 10);
-    list_visualise(&list);
     
     list_push_back(&list, 1);
     list_visualise(&list);
