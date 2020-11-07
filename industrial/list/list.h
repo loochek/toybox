@@ -29,16 +29,17 @@ typedef enum
     LIST_OUT_OF_BOUNDS
 } list_status_t;
 
-list_status_t list_construct (list_t *list, size_t capacity);
-list_status_t list_push_front(list_t *list, elem_t elem);
-list_status_t list_push_back (list_t *list, elem_t elem);
-list_status_t list_pop_front (list_t *list);
-list_status_t list_pop_back  (list_t *list);
-list_status_t list_insert    (list_t *list, size_t index, elem_t elem);
-list_status_t list_remove    (list_t *list, size_t index);
-list_status_t list_linearize (list_t *list);
-int           list_size      (list_t *list);
-elem_t       *list_at        (list_t *list, size_t index);
-void          list_print     (list_t *list);
-void          list_destruct  (list_t *list);
-void          list_visualise (list_t *list);
+list_status_t  list_construct      (list_t *list, size_t capacity);
+list_status_t  list_push_front     (list_t *list, elem_t elem);
+list_status_t  list_push_back      (list_t *list, elem_t elem);
+list_status_t  list_pop_front      (list_t *list);
+list_status_t  list_pop_back       (list_t *list);
+list_status_t  list_insert         (list_t *list, size_t index, elem_t elem);
+list_status_t  list_remove         (list_t *list, size_t index);
+list_status_t  list_linearize      (list_t *list);
+int            list_size           (list_t *list);
+elem_t        *list_at             (list_t *list, size_t index);
+void           list_print          (list_t *list);
+void           list_destruct       (list_t *list);
+void           list_visualise_safe (list_t *list);
+list_status_t  list_visualise_fancy(list_t *list);

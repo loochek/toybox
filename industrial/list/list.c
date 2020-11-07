@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "lerror.h"
 #include "list.h"
 
 // poison for data
@@ -16,9 +17,13 @@ static void free_cell (list_t *list, size_t pos);
 
 #define LIST_CHECK_COND list_validate(list) == LIST_OK
 
-#define LIST_CHECK(list) \
-if (!(LIST_CHECK_COND))  \
-    return LIST_ERROR;
+#define LIST_CHECK(list)                                \
+if (!(LIST_CHECK_COND))                                 \
+{                                                       \
+    printf("List validation failed: %s\n", __lerr_str); \
+    list_print(list);                                   \
+    return LIST_ERROR;                                  \
+}   
 
 list_status_t list_construct(list_t *list, size_t capacity)
 {
@@ -316,8 +321,45 @@ static inline void emit_node(FILE* dot_file, list_t * list, size_t id)
         fprintf(dot_file, "%zu [label=%d xlabel=%zu];\n", id, list->data[id], id);
 }
 
-void list_visualise(list_t *list)
+void list_visualise_safe(list_t *list)
 {
+    FILE *dot_file = fopen("list.dot", "w");
+
+    fprintf(dot_file, "digraph G\n{\nnode [shape=box];\n");
+
+    emit_node(dot_file, list, 0);
+
+    fprintf(dot_file, "{\nrank=same;\n");
+    for (size_t i = 1; i < list->arr_size; i++)
+        emit_node(dot_file, list, i);
+    fprintf(dot_file, "}\n");
+
+    fprintf(dot_file, "{\nrank=same; rankdir=LR\n");
+    fprintf(dot_file, "{%d [label=\"tail\"];}\n"     , TAIL_LABEL_ID);
+    fprintf(dot_file, "{%d [label=\"head\"];}\n"     , HEAD_LABEL_ID);
+    fprintf(dot_file, "{%d [label=\"head_free\"];}\n", HEAD_FREE_LABEL_ID);
+    fprintf(dot_file, "}\n");
+
+    for (size_t i = 0; i < list->arr_size; i++)
+    {
+        fprintf(dot_file, "{edge[color=tomato2]     %zu->%zu}\n", i, list->next[i]);
+        fprintf(dot_file, "{edge[color=dodgerblue2] %zu->%zu}\n", i, list->prev[i]);
+    }
+
+    fprintf(dot_file, "{edge[color=darkgreen]  %d->%zu}\n", HEAD_LABEL_ID     , list->head);
+    fprintf(dot_file, "{edge[color=darkgreen]  %d->%zu}\n", TAIL_LABEL_ID     , list->tail);
+    fprintf(dot_file, "{edge[color=darkgreen]  %d->%zu}\n", HEAD_FREE_LABEL_ID, list->head_free);
+    fprintf(dot_file, "}\n");
+    fclose(dot_file);
+
+    system("dot list.dot -Tpng > out.png");
+    system("gwenview out.png");
+}
+
+list_status_t list_visualise_fancy(list_t *list)
+{
+    LIST_CHECK(list);
+
     FILE *dot_file = fopen("list.dot", "w");
 
     fprintf(dot_file, "digraph G\n{\nnode [shape=box];\n");
@@ -364,7 +406,10 @@ void list_visualise(list_t *list)
 
     system("dot list.dot -Tpng > out.png");
     system("gwenview out.png");
+
+    return LIST_OK;
 }
+
 
 void list_destruct(list_t *list)
 {
@@ -436,18 +481,19 @@ static int claim_cell(list_t *list)
     return to_ret;
 }
 
-#define ASSERT_CONDITION(cond, msg, ...)                          \
-if (!(cond))                                                      \
-{                                                                 \
-    printf("List validation failed:\n" #msg "\n", ##__VA_ARGS__); \
-    list_print(list);                                             \
-    return LIST_ERROR;                                            \
+#define ASSERT_CONDITION(cond, msg, ...)                                              \
+if (!(cond))                                                                          \
+{                                                                                     \
+    LERR(LERR_LIST_VALIDATION, #msg, ##__VA_ARGS__);                                  \
+    return LIST_ERROR;                                                                \
 }
 
 #define CHECK_POISON(id) ASSERT_CONDITION(list->data[id] == POISON, "Expected poison at cell %zu", id)
 
 static list_status_t list_validate(list_t *list)
 {
+    __lerrno = LERR_NO_ERROR;
+    
     ASSERT_CONDITION(list->canary1 == CANARY, "canary1 fault");
     ASSERT_CONDITION(list->canary2 == CANARY, "canary2 fault");
 
