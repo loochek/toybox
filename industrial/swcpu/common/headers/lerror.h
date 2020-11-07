@@ -9,23 +9,32 @@ typedef enum
     LERR_FILE_IO,
     LERR_MALLOC,
     LERR_INVALID_PRG,
+    LERR_VERSION_MISMATCH,
     LERR_NAN,
     LERR_BAD_ARG,
     LERR_PARSING_FAILED,
     LERR_UNKNOWN_LABEL,
+    LERR_LABEL_COUNT,
     LERR_FB,
     LERR_CPU_INTERNAL,
     LERR_CPU_EXECUTION,
     LERR_DISASSM
 } lerror_t;
 
+#define MAX_LERR_MSG_LEN 100
+
 extern lerror_t __lerrno;
 extern char __lerr_str[];
 extern char __lerr_func_name[];
 #define LERR_RETURN_NULL(err, err_string) { LERR(err, err_string); return NULL; }
 #define LERR_RETURN_MINUS_ONE(err, err_string) { LERR(err, err_string); return -1; }
-#define LERR(err, err_string) { LERRNO(err); LERRSTR(err_string); }
+#define LERR(err, err_string, ...) { LERRNO(err); LERRSTR(err_string, ##__VA_ARGS__); }
 #define LERRNO(err) { __lerrno = (err); strcpy(__lerr_func_name,  __func__); }
-#define LERRSTR(err_str) strcpy(__lerr_str, err_str)
+#define LERRSTR(err_str, ...)                       \
+{                                                   \
+    char tmp_buf[MAX_LERR_MSG_LEN + 1];             \
+    sprintf(tmp_buf, err_str, ##__VA_ARGS__);       \
+    strncpy(__lerr_str, tmp_buf, MAX_LERR_MSG_LEN); \
+}
 #define LERRPRINT() fprintf(stderr, "An error occured in function %s: %s\n", \
                                         __lerr_func_name, __lerr_str)

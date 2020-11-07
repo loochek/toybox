@@ -68,7 +68,12 @@ int main(int argc, char* argv[])
 
     cpu_t cpu = {0};
     cpu_construct(&cpu, prg_name);
-    if (__lerrno != LERR_NO_ERROR)
+    if (__lerrno == LERR_VERSION_MISMATCH)
+    {
+        printf("Error: program version is different from toolchain version\n");
+        return 0;
+    }
+    else if (__lerrno != LERR_NO_ERROR)
     {
         LERRPRINT();
         return -1;
@@ -121,7 +126,7 @@ static inline void cpu_construct(cpu_t *cpu, const char prg_name[])
 #endif
 
     cpu->prg = load_program_from_file(prg_name);
-    if (cpu->prg == NULL)
+    if (__lerrno != LERR_NO_ERROR)
     {
         stack_destruct_cpuval(&cpu->stack);
         // forward LERR from load_program_from_file

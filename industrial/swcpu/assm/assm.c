@@ -59,7 +59,7 @@ static char* next_token(tokenizer_state_t *state)
     return curr_token;
 }
 
-static inline int strchr_rng(const char *str, char c, size_t l, size_t r)
+static int strchr_rng(const char *str, char c, size_t l, size_t r)
 {
     for (int i = l; i < r; i++)
         if (str[i] == c)
@@ -76,7 +76,7 @@ typedef struct
     char     imm_label[MAX_LABEL_SIZE + 1];
 } arg_parsing_result_t;
 
-static inline arg_parsing_result_t parse_subarg(const char subarg[])
+static arg_parsing_result_t parse_subarg(const char subarg[])
 {
     arg_parsing_result_t res = {0};
     if (strlen(subarg) == 0)
@@ -102,13 +102,14 @@ static inline arg_parsing_result_t parse_subarg(const char subarg[])
     }
     else
     {
+        __lerrno = LERR_NO_ERROR;
         res.is_label_used = true;
         strncpy(res.imm_label, subarg, MAX_LABEL_SIZE); 
         return res;
     }
 }
 
-static inline arg_parsing_result_t merge_results(const arg_parsing_result_t a,
+static arg_parsing_result_t merge_results(const arg_parsing_result_t a,
                                                  const arg_parsing_result_t b)
 {
     arg_parsing_result_t res = {0};
@@ -140,7 +141,7 @@ static inline arg_parsing_result_t merge_results(const arg_parsing_result_t a,
     return res;
 }
 
-static arg_parsing_result_t parse_argument(const char *arg_string)
+static inline arg_parsing_result_t parse_argument(const char *arg_string)
 {
     arg_parsing_result_t res = {0};
 
@@ -177,24 +178,23 @@ static arg_parsing_result_t parse_argument(const char *arg_string)
 
 static void create_label(const char name[], size_t offset, label_list_t *labels)
 {
+    __lerrno = LERR_NO_ERROR;
+    if (labels->count >= MAX_LABEL_COUNT)
+    {
+        LERR(LERR_LABEL_COUNT, "reached MAX_LABEL_COUNT");
+        return;
+    }
     strncpy(labels->list[labels->count].label, name, MAX_LABEL_SIZE);
     labels->list[labels->count].offset = offset;
     labels->count++;
 }
 
-static int check_for_extra_tokens(tokenizer_state_t *tokenizer_state)
+static inline void check_for_extra_tokens(tokenizer_state_t *tokenizer_state)
 {
     __lerrno = LERR_NO_ERROR;
     char* curr_tok = next_token(tokenizer_state);
     if (*curr_tok != '\0')
-    {
-        if (strncmp(curr_tok, ";", 1) != 0)
-        {
-            LERR(LERR_PARSING_FAILED, "extra tokens");
-            return -1;
-        }
-    }
-    return 0;
+        LERR(LERR_PARSING_FAILED, "extra tokens");
 }
 
 // INSTRUCTION definition for syntax_check
@@ -223,17 +223,21 @@ if (strcmp(curr_tok, #mnemonic) == 0)                                           
         if ((res.arg_mask & ARG_MASK_IMMEDIATE) != 0)                                      \
             byte_cnt += IMM_SIZE;                                                          \
     }                                                                                      \
-    if (check_for_extra_tokens(&tokenizer_state) != 0)                                     \
-    {                                                                                      \
+    check_for_extra_tokens(&tokenizer_state);                                              \
+    if (__lerrno != LERR_NO_ERROR)                                                         \
         return -1;                                                                         \
-    }                                                                                      \
     return byte_cnt;                                                                       \
 }
 
-static int parse_line(char *line, size_t byte_offset, label_list_t* labels)
+static inline int parse_line(char *line, size_t byte_offset, label_list_t* labels)
 {
     __lerrno = LERR_NO_ERROR;
     int byte_cnt = 0;
+
+    // remove comments
+    char *comment_begin = strchr(line, ';');
+    if (comment_begin != NULL)
+        *comment_begin = '\0';
 
     tokenizer_state_t tokenizer_state = {0};
     tokenizer_init(line, &tokenizer_state);
@@ -242,11 +246,10 @@ static int parse_line(char *line, size_t byte_offset, label_list_t* labels)
     // if line is empty
     if (*curr_tok == '\0')
         return 0;
-    // if whole line is the comment
-    if (strncmp(curr_tok, ";", 1) == 0)
-        return 0;
+   
     // actual CPU commands
     #include "../cpu_def.h"
+
     // if anything didn't match, test for label:
     size_t tok_len = strlen(curr_tok);
     if (curr_tok[tok_len - 1] == ':')
@@ -254,7 +257,10 @@ static int parse_line(char *line, size_t byte_offset, label_list_t* labels)
         char label[MAX_LABEL_SIZE + 1] = {0};
         strncpy(label, curr_tok, tok_len - 1);
         create_label(label, byte_offset, labels);
-        if (check_for_extra_tokens(&tokenizer_state) != 0)
+        if (__lerrno != LERR_NO_ERROR)
+            return -1;
+        check_for_extra_tokens(&tokenizer_state);
+        if (__lerrno != LERR_NO_ERROR)
             return -1;
         return byte_cnt;
     }
@@ -262,16 +268,18 @@ static int parse_line(char *line, size_t byte_offset, label_list_t* labels)
     return -1;
 }
 
-static int parse_program(string_index_t *prg_text, label_list_t* labels)
+static inline int parse_program(string_index_t *prg_text, label_list_t* labels)
 {
+    __lerrno = LERR_NO_ERROR;
     int byte_cnt = 0;
     for (size_t line = 0; line < prg_text->str_cnt; line++)
     {
         byte_cnt += parse_line(prg_text->string_entries[line].begin, byte_cnt, labels);
-        if (__lerrno == LERR_PARSING_FAILED)
+        if (__lerrno != LERR_NO_ERROR)
         {
-            printf("Error on line %zu: %s\n%s\n", line + 1, __lerr_str,
-                                                  prg_text->string_entries[line].begin);
+            // extend and rethrow error
+            LERR(__lerrno, "Error on line %zu: %s\n%s", line + 1, __lerr_str,
+                prg_text->string_entries[line].begin);
             return -1;
         }
     }
@@ -309,7 +317,7 @@ if (strcmp(curr_tok, #mnemonic) == 0)                                           
                 }                                                                          \
                 if (!wrote)                                                                \
                 {                                                                          \
-                    LERR(LERR_UNKNOWN_LABEL, res.imm_label);                               \
+                    LERR(LERR_UNKNOWN_LABEL, "unknown label %s", res.imm_label);           \
                     return -1;                                                             \
                 }                                                                          \
             }                                                                              \
@@ -323,7 +331,7 @@ if (strcmp(curr_tok, #mnemonic) == 0)                                           
     return byte_cnt;                                                                       \
 }
 
-static int compile_line(char *line, size_t byte_offset, label_list_t* labels, char *code)
+static inline int compile_line(char *line, size_t byte_offset, label_list_t* labels, char *code)
 {
     __lerrno = LERR_NO_ERROR;
     int byte_cnt = byte_offset;
@@ -335,32 +343,31 @@ static int compile_line(char *line, size_t byte_offset, label_list_t* labels, ch
     // if line is empty
     if (*curr_tok == '\0')
         return byte_cnt;
-    // if whole line is the comment
-    if (strncmp(curr_tok, ";", 1) == 0)
-        return byte_cnt;
+
     // actual CPU commands
     #include "../cpu_def.h"
 
     return byte_cnt;
 }
 
-static int compile(string_index_t *prg_text, label_list_t* labels, char *code)
+static inline void compile(string_index_t *prg_text, label_list_t* labels, char *code)
 {
+    __lerrno = LERR_NO_ERROR;
     size_t byte_cnt = 0;
     for (size_t line = 0; line < prg_text->str_cnt; line++)
     {
         byte_cnt = compile_line(prg_text->string_entries[line].begin, byte_cnt, labels, code);
-        if (__lerrno == LERR_UNKNOWN_LABEL)
+        if (__lerrno != LERR_NO_ERROR)
         {
-            printf("Error on line %zu: unknown label %s\n%s\n", line + 1, __lerr_str,
-                                                  prg_text->string_entries[line].begin);
-            return -1;
+            // extend and rethrow error
+            LERR(__lerrno, "Error on line %zu: %s\n%s", line + 1, __lerr_str,
+                prg_text->string_entries[line].begin);
+            return;
         }
     }
-    return byte_cnt;
 }
 
-static inline int write_binary(const char *code, size_t code_size,
+static inline void write_binary(const char *code, size_t code_size,
                                const char *file_name, const char *prg_name)
 {
     prg_header_t prg_header = {0};
@@ -375,39 +382,38 @@ static inline int write_binary(const char *code, size_t code_size,
     FILE *output_file = fopen(file_name, "wb");
     if (output_file == NULL)
     {
-        fprintf(stderr, "Unable to open output file\n");
-        return -1;
+        LERR(LERR_FILE_IO, "Unable to open output file");
+        return;
     }
 
     int write_status = (fwrite(&prg_header, sizeof(prg_header_t), 1, output_file) != 1) ||
                        (fwrite(code, sizeof(char), code_size, output_file) != code_size);
     if (write_status)
     {
-        fprintf(stderr, "Unable to write to output file\n");
+        LERR(LERR_FILE_IO, "Unable to write to output file");
         fclose(output_file);
-        return -1;
+        return;
     }
     fclose(output_file);
-    return 0;
 }
 
-int create_binary(string_index_t *prg_text, char** code)
+static inline int create_binary(string_index_t *prg_text, char** code)
 {
     label_list_t labels = {0};
     labels.list = calloc(MAX_LABEL_COUNT, sizeof(label_entry_t));
     
     int byte_cnt = parse_program(prg_text, &labels);
-    if (byte_cnt == -1)
+    if (__lerrno != LERR_NO_ERROR)
     {
         free(labels.list);
         return -1;
     }
 
     *code = calloc(byte_cnt, sizeof(char));
-    int compile_status = compile(prg_text, &labels, *code);
-
+    compile(prg_text, &labels, *code);
     free(labels.list);
-    if (compile_status == -1)
+
+    if (__lerrno != LERR_NO_ERROR)
     {
         free(*code);
         return -1;
@@ -434,7 +440,7 @@ int main(int argc, char* argv[])
         prg_name      = argv[3];
 
     string_index_t *prg_text  = create_index_from_file(src_file_name);
-    if (prg_text == NULL)
+    if (__lerrno != LERR_NO_ERROR)
     {
         LERRPRINT();
         return -1;
@@ -443,11 +449,16 @@ int main(int argc, char* argv[])
     char *code = NULL;
     int byte_cnt = create_binary(prg_text, &code);
     destroy_index(prg_text);
-    if (byte_cnt == -1)
-        return -1;
-
-    if (write_binary(code, byte_cnt, out_file_name, prg_name) == -1)
+    if (__lerrno != LERR_NO_ERROR)
     {
+        printf("assm: %s\n", __lerr_str);
+        return -1;
+    }
+        
+    write_binary(code, byte_cnt, out_file_name, prg_name);
+    if (__lerrno != LERR_NO_ERROR)
+    {
+        printf("assm: %s\n", __lerr_str);
         free(code);
         return -1;
     }

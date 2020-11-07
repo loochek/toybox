@@ -32,7 +32,7 @@ program_t* load_program_from_file(const char *file_name)
 
     if (prg_header->format_ver != BUILD_NUMBER)
     {
-        LERR(LERR_INVALID_PRG, "Version number mismatch");
+        LERR(LERR_VERSION_MISMATCH, "Version number mismatch");
         goto error_handler;
     }
     

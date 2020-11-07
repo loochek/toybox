@@ -28,7 +28,12 @@ int main(int argc, char* argv[])
         src_file_name = argv[2];
 
     program_t *prg = load_program_from_file(prg_name);
-    if (prg == NULL)
+    if (__lerrno == LERR_VERSION_MISMATCH)
+    {
+        printf("Disassm error: program version is different from toolchain version\n");
+        return 0;
+    }
+    else if (__lerrno != LERR_NO_ERROR)
     {
         LERRPRINT();
         return -1;
@@ -112,7 +117,8 @@ static inline void disassm(program_t *prg, const char* src_file_name)
         #include "../cpu_def.h"
 
         default:
-            LERR(LERR_DISASSM, "unknown base opcode");
+            LERR(LERR_DISASSM, "unknown base opcode %02x at offset %zu",
+                                opcode & OPCODE_INSTRUCTION_MASK, old_pc);
             fclose(disassm_file);
             return;
         }
