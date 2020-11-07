@@ -26,3 +26,4 @@ stack_status_t OVERLOAD(stack_size     )(OVERLOAD(my_stack) *self, size_t *size)
 stack_status_t OVERLOAD(stack_top      )(OVERLOAD(my_stack) *self, elem_t *elem);
 stack_status_t OVERLOAD(stack_destruct )(OVERLOAD(my_stack) *self);
 void           OVERLOAD(stack_dump     )(OVERLOAD(my_stack) *self);
+stack_status_t OVERLOAD(stack_validate )(OVERLOAD(my_stack) *self);

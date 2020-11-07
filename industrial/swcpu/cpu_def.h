@@ -2,62 +2,46 @@
 
 #define STACK_PUSH(val)                                       \
 {                                                             \
-    if (stack_push_cpuval(&cpu_state.stack, val) != STACK_OK) \
+    if (stack_push_cpuval(&cpu->stack, val) != STACK_OK)      \
     {                                                         \
-        fprintf(stderr, "Stack error\n");                     \
-        program_unload(prg);                                  \
-        stack_destruct_cpuval(&cpu_state.stack);              \
-        return -1;                                            \
+        LERR(LERR_CPU_INTERNAL, "stack fault");               \
+        return;                                               \
     }                                                         \
 }
 
 #define STACK_POP(ptr)                                                  \
 {                                                                       \
-    stack_status_t status = stack_top_cpuval(&cpu_state.stack, ptr);    \
+    stack_status_t status = stack_top_cpuval(&cpu->stack, ptr);         \
     if (status == STACK_EMPTY)                                          \
     {                                                                   \
-        printf("CPU execution error: tryng to pop from empty stack\n"); \
-        program_unload(prg);                                            \
-        stack_destruct_cpuval(&cpu_state.stack);                        \
-        return 0;                                                       \
+        LERR(LERR_CPU_EXECUTION, "tryng to pop from empty stack");      \
+        return;                                                         \
     }                                                                   \
     else if (status != STACK_OK)                                        \
     {                                                                   \
-        fprintf(stderr, "Stack error\n");                               \
-        program_unload(prg);                                            \
-        stack_destruct_cpuval(&cpu_state.stack);                        \
-        return -1;                                                      \
+        LERR(LERR_CPU_INTERNAL, "stack fault");                         \
+        return;                                                         \
     }                                                                   \
-    if (stack_pop_cpuval(&cpu_state.stack) != STACK_OK)                 \
+    if (stack_pop_cpuval(&cpu->stack) != STACK_OK)                      \
     {                                                                   \
-        fprintf(stderr, "Stack error\n");                               \
-        program_unload(prg);                                            \
-        stack_destruct_cpuval(&cpu_state.stack);                        \
-        return -1;                                                      \
+        LERR(LERR_CPU_INTERNAL, "stack fault");                         \
+        return;                                                         \
     }                                                                   \
 }
 
 #define GET_RVALUE()                                        \
 ({                                                          \
-    double rvalue = get_rvalue(arg_mask, &cpu_state, prg);  \
-    if (__lerrno == LERR_BAD_ARG)                           \
-    {                                                       \
-        program_unload(prg);                                \
-        stack_destruct_cpuval(&cpu_state.stack);            \
-        return 0;                                           \
-    }                                                       \
+    double rvalue = cpu_get_rvalue(cpu, arg_mask);          \
+    if (__lerrno != LERR_NO_ERROR)                          \
+        return;                                             \
     rvalue;                                                 \
 })
 
 #define GET_LVALUE()                                        \
 ({                                                          \
-    double *lvalue = get_lvalue(arg_mask, &cpu_state, prg); \
-    if (__lerrno == LERR_BAD_ARG)                           \
-    {                                                       \
-        program_unload(prg);                                \
-        stack_destruct_cpuval(&cpu_state.stack);            \
-        return 0;                                           \
-    }                                                       \
+    double *lvalue = cpu_get_lvalue(cpu, arg_mask);         \
+    if (__lerrno != LERR_NO_ERROR)                          \
+        return;                                             \
     lvalue;                                                 \
 })
 
@@ -96,7 +80,7 @@ However, you don't need to worry about this when implementing opcodes
 
 INSTRUCTION(nop, 0x00, ARG_NONE, {})
 
-INSTRUCTION(hlt, 0x08, ARG_NONE, { cpu_state.halted = true; })
+INSTRUCTION(hlt, 0x08, ARG_NONE, { cpu->halted = true; })
 
 INSTRUCTION(push, 0x10, ARG_RVALUE,
 {
@@ -134,7 +118,7 @@ INSTRUCTION(out, 0x28, ARG_NONE,
     printf("CPU told you the number: %s\n", num_buf);
 })
 
-INSTRUCTION(jmp, 0x30, ARG_RVALUE, { cpu_state.pc = GET_RVALUE(); })
+INSTRUCTION(jmp, 0x30, ARG_RVALUE, { cpu->pc = GET_RVALUE(); })
 
 #define CONDITIONAL_JUMP(condition)                                         \
 {                                                                           \
@@ -143,7 +127,7 @@ INSTRUCTION(jmp, 0x30, ARG_RVALUE, { cpu_state.pc = GET_RVALUE(); })
     STACK_POP(&imm_val2);                                                   \
     double jump_addr = GET_RVALUE();                                        \
     if (condition)                                                          \
-        cpu_state.pc = (size_t)jump_addr;                                   \
+        cpu->pc = (size_t)jump_addr;                                        \
 }
 
 INSTRUCTION(je , 0x38, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 == imm_val1))
@@ -156,20 +140,20 @@ INSTRUCTION(jle, 0x60, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 <= imm_val1))
 INSTRUCTION(call, 0x68, ARG_RVALUE,
 {
     double jump_addr = GET_RVALUE();
-    STACK_PUSH(cpu_state.pc);
-    cpu_state.pc = (size_t)jump_addr;
+    STACK_PUSH(cpu->pc);
+    cpu->pc = (size_t)jump_addr;
 })
 
 INSTRUCTION(ret, 0x70, ARG_NONE,
 {
     double jump_addr = 0;
     STACK_POP(&jump_addr);
-    cpu_state.pc = (size_t)jump_addr;
+    cpu->pc = (size_t)jump_addr;
 })
 
 #define BINARY_OPERATOR(what_to_push)                                       \
 {                                                                           \
-    double imm_val1 = 0, imm_val2 = 0;                                     \
+    double imm_val1 = 0, imm_val2 = 0;                                      \
     STACK_POP(&imm_val1);                                                   \
     STACK_POP(&imm_val2);                                                   \
     STACK_PUSH(what_to_push);                                               \
@@ -190,26 +174,25 @@ INSTRUCTION(sqrt, 0x98, ARG_NONE,
 
 INSTRUCTION(dump, 0xA0, ARG_NONE,
 {
-    printf("CPU state:\n"
-           "PC: %zu\n"
-           "Registers:\n", cpu_state.pc);
-    for (int i = 0; i < REGISTERS_COUNT; i++)
-        printf("r%cx: %lg\n", 'a' + i, cpu_state.registers[i]);
-    printf("Stack:\n");
-    stack_dump_cpuval(&cpu_state.stack);
-    printf("\n");
+    cpu_dump(cpu);
 })
 
-#ifdef FRAMEBUFFER_ENABLE
-INSTRUCTION(fbupd, 0xA8, ARG_NONE,
+// causes internal error
+INSTRUCTION(crash, 0xA8, ARG_NONE,
 {
-    if (graphics_enabled)
+    cpu->stack.data = (double*)0xBAD;
+})
+
+#ifdef FRAMEBUFFER
+INSTRUCTION(fbupd, 0xB0, ARG_NONE,
+{
+    if (cpu->graphics_enabled)
     {
         for (size_t y = 0; y < 128; y++)
             for (size_t x = 0; x < 128; x++)
             {
                 // (RAM_SIZE - 128 * 128) - VRAM offset
-                int color = fabs(cpu_state.mem[(RAM_SIZE - 128 * 128) + y * 128 + x]);
+                int color = fabs(cpu->mem[(RAM_SIZE - 128 * 128) + y * 128 + x]);
                 // color is represented as a three-digit base 256 number gbr
                 int r = color % 256;
                 color /= 256;
@@ -217,9 +200,12 @@ INSTRUCTION(fbupd, 0xA8, ARG_NONE,
                 color /= 256;
                 int b = color % 256;
                 // the "display" is located almost in the right upper corner of the framebuffer
-                put_pixel((fb_width - 138) + x, 10 + y, r, g, b, 255);
+                size_t fb_width = 0;
+                size_t fb_height = 0;
+                fb_get_resolution(&cpu->fb, &fb_width, &fb_height);
+                fb_put_pixel(&cpu->fb, (fb_width - 138) + x, 10 + y, r, g, b, 255);
             }
-        update();
+        fb_update(&cpu->fb);
     }
 })
 #endif

@@ -23,7 +23,6 @@
 
 static stack_status_t OVERLOAD(stack_expand   )(OVERLOAD(my_stack) *self);
 static stack_status_t OVERLOAD(stack_shrink   )(OVERLOAD(my_stack) *self);
-static stack_status_t OVERLOAD(stack_validate )(OVERLOAD(my_stack) *self);
 
 #ifdef STACK_SEC_HASHING
 static size_t OVERLOAD(stack_calc_struct_hash)(OVERLOAD(my_stack) *self);
@@ -232,7 +231,7 @@ static size_t OVERLOAD(stack_calc_data_hash)(OVERLOAD(my_stack) *self)
 }
 #endif
 
-static stack_status_t OVERLOAD(stack_validate)(OVERLOAD(my_stack) *self)
+stack_status_t OVERLOAD(stack_validate)(OVERLOAD(my_stack) *self)
 {
     if (self == NULL)
             return STACK_NULL_POINTER;

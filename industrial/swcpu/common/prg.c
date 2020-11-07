@@ -30,6 +30,12 @@ program_t* load_program_from_file(const char *file_name)
           prg_header->signature[3] == 'G'))
         goto prg_header_error;
 
+    if (prg_header->format_ver != BUILD_NUMBER)
+    {
+        LERR(LERR_INVALID_PRG, "Version number mismatch");
+        goto error_handler;
+    }
+    
     if (prg_header->program_name[19] != '\0')
         goto prg_header_error;
 

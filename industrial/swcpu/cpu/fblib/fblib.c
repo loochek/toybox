@@ -8,80 +8,93 @@
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 
+#include "../../common/headers/lerror.h"
+
 #include "fblib.h"
 
-static int fbfd;
-static char* fbp;
-static struct fb_var_screeninfo vinfo;
-static struct fb_fix_screeninfo finfo;
-static int screensize;
-
-int fb_init()
+int fb_init(framebuffer_t *fb)
 {
+    __lerrno = LERR_NO_ERROR;
+
+    if (fb == NULL)
+    {
+        LERR(LERR_FB, "null pointer was passed");
+        return -1;
+    }
+
 	// Open the file for reading and writing
 #ifdef __ANDROID__
-	fbfd = open("/dev/graphics/fb0", O_RDWR, 0);
+	fb->fbfd = open("/dev/graphics/fb0", O_RDWR, 0);
 #else
-	fbfd = open("/dev/fb0", O_RDWR, 0);
+	fb->fbfd = open("/dev/fb0", O_RDWR, 0);
 #endif
-    if (fbfd < 0)
+    if (fb->fbfd < 0)
 	{
-        printf("fblib: cannot open framebuffer device\n");
+        LERR(LERR_FB, "can't open framebuffer device");
         return -1;
     }
 
     // Get fixed screen information  
-    if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo))
+    if (ioctl(fb->fbfd, FBIOGET_FSCREENINFO, &fb->finfo))
 	{
-        printf("fblib: reading fixed information failed\n");
-        return -2;
+        LERR(LERR_FB, "reading fixed information failed");
+        return -1;
     }
 
     // Get variable screen information  
-    if (ioctl(fbfd, FBIOGET_VSCREENINFO, & vinfo))
+    if (ioctl(fb->fbfd, FBIOGET_VSCREENINFO, &fb->vinfo))
 	{
-        printf("fblib: reading variable information failed\n");
-        return -3;
+        LERR(LERR_FB, "reading variable information failed");
+        return -1;
     }
 
-    screensize = finfo.line_length * vinfo.yres_virtual;
+    fb->screensize = fb->finfo.line_length * fb->vinfo.yres_virtual;
     // Map the device to memory
-    fbp = (char*)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
-    if (fbp == (void*)-1)
+    fb->fbptr = (char*)mmap(0, fb->screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fb->fbfd, 0);
+    if (fb->fbptr == (void*)-1)
 	{
-        printf("fblib: failed to map framebuffer device to memory\n");
-        return -4;
+        LERR(LERR_FB, "failed to map framebuffer device to memory");
+        return -1;
     }
 	return 0;
 }
 
-void fb_close()
+void fb_deinit(framebuffer_t *fb)
 {
-	munmap(fbp, screensize);
-    close(fbfd);
+    if (fb == NULL)
+        return;
+
+	munmap(fb->fbptr, fb->screensize);
+    close(fb->fbfd);
 }
 
-int update()
+int fb_update(framebuffer_t *fb)
 {
-	if (ioctl(fbfd, FBIOPAN_DISPLAY, &vinfo))
+    if (fb == NULL)
+        return -1;
+
+	if (ioctl(fb->fbfd, FBIOPAN_DISPLAY, &fb->vinfo))
         return -1;
 	return 0;
 }
 
-void put_pixel(int x, int y, int r, int g, int b, int a)
+void fb_put_pixel(framebuffer_t *fb, int x, int y, int r, int g, int b, int a)
 {
-	if (x >= vinfo.xres || y >= vinfo.yres)
+    if (fb == NULL)
+        return;
+        
+	if (x >= fb->vinfo.xres || y >= fb->vinfo.yres)
 		return;
 	
-	int location = x * (vinfo.bits_per_pixel / 8) + y * finfo.line_length;
-	*(fbp + location    ) = (*(fbp + location    ) * (255 - a) + b * a) / 255;
-	*(fbp + location + 1) = (*(fbp + location + 1) * (255 - a) + g * a) / 255;
-	*(fbp + location + 2) = (*(fbp + location + 2) * (255 - a) + r * a) / 255;
-	*(fbp + location + 3) = 0;
+	int location = x * (fb->vinfo.bits_per_pixel / 8) + y * fb->finfo.line_length;
+	*(fb->fbptr + location    ) = (*(fb->fbptr + location    ) * (255 - a) + b * a) / 255;
+	*(fb->fbptr + location + 1) = (*(fb->fbptr + location + 1) * (255 - a) + g * a) / 255;
+	*(fb->fbptr + location + 2) = (*(fb->fbptr + location + 2) * (255 - a) + r * a) / 255;
+	*(fb->fbptr + location + 3) = 0;
 }
 
-void get_resolution(size_t *width, size_t *height)
+void fb_get_resolution(framebuffer_t *fb, size_t *width, size_t *height)
 {
-	*width  = vinfo.xres;
-	*height = vinfo.yres;
+	*width  = fb->vinfo.xres;
+	*height = fb->vinfo.yres;
 }

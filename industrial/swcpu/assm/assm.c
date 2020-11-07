@@ -368,7 +368,7 @@ static inline int write_binary(const char *code, size_t code_size,
     prg_header.signature[1] = 'P';
     prg_header.signature[2] = 'R';
     prg_header.signature[3] = 'G';
-    prg_header.format_ver = 1;
+    prg_header.format_ver = BUILD_NUMBER;
     prg_header.code_size = code_size;
     strncpy(prg_header.program_name, prg_name, MAX_PROGRAM_NAME_SIZE);
 

@@ -12,7 +12,11 @@ typedef enum
     LERR_NAN,
     LERR_BAD_ARG,
     LERR_PARSING_FAILED,
-    LERR_UNKNOWN_LABEL
+    LERR_UNKNOWN_LABEL,
+    LERR_FB,
+    LERR_CPU_INTERNAL,
+    LERR_CPU_EXECUTION,
+    LERR_DISASSM
 } lerror_t;
 
 extern lerror_t __lerrno;

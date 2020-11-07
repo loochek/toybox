@@ -5,11 +5,21 @@
 
 #include <linux/fb.h>
 
-// returns 0 if succesful
-int fb_init();
-int update();
+typedef struct
+{
+    int                      fbfd;
+    char*                    fbptr;
+    struct fb_var_screeninfo vinfo;
+    struct fb_fix_screeninfo finfo;
+    int                      screensize;
+} framebuffer_t;
 
-void get_resolution(size_t *width, size_t *height);
-void put_pixel(int x, int y, int r, int g, int b, int a);
-void fb_close();
+// returns 0 if succesful, else writes lerror
+int  fb_init          (framebuffer_t *fb);
+// returns 0 if succesful
+int  fb_update        (framebuffer_t *fb);
+
+void fb_get_resolution(framebuffer_t *fb, size_t *width, size_t *height);
+void fb_put_pixel     (framebuffer_t *fb, int x, int y, int r, int g, int b, int a);
+void fb_deinit        (framebuffer_t *fb);
 #endif
