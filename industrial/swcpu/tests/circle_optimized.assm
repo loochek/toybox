@@ -1,0 +1,168 @@
+call main
+hlt
+
+main:
+    push 0
+    pop rxx
+    push 60  ; radius
+    pop rrx
+    
+loop:
+    ; for (rxx; rxx <= rrx * sin(45); rxx++)
+    ; {
+    push rxx
+    push rrx
+    push 0.7071 ; sin(45)
+    mul
+    jg loop_end
+    
+    ; calculate y
+    push rrx
+    push rrx
+    mul
+    push rxx
+    push rxx
+    mul
+    sub
+    sqrt
+    pop ryx
+    
+    ; draw 1/2
+    
+    push rxx
+    push ryx
+    
+    push ryx
+    push rxx
+    call draw_square
+    
+    pop ryx
+    pop rxx
+    
+    ; draw 2/2
+    
+    push rxx
+    push ryx
+    
+    push rxx
+    push ryx
+    call draw_square
+    
+    pop ryx
+    pop rxx
+    
+    ; draw end
+
+    push rxx
+    push 1
+    add
+    pop rxx
+    jmp loop
+    ; }
+    
+loop_end:
+    fbupd
+    ret
+    
+draw_square:
+    pop rdx
+    pop rxx
+    pop ryx
+    push rdx
+    
+    ; draw 1/4
+    
+    push ryx
+    push rxx
+    
+    push ryx
+    push rxx
+    call draw
+    
+    pop rxx
+    pop ryx
+    
+    ; draw 2/4
+    
+    push ryx
+    push rxx
+    
+    push ryx
+    push -1
+    mul
+    push rxx
+    call draw
+    
+    pop rxx
+    pop ryx
+    
+    ; draw 3/4
+    
+    push ryx
+    push rxx
+    
+    push ryx
+    push rxx
+    push -1
+    mul
+    call draw
+    
+    pop rxx
+    pop ryx
+    
+    ; draw 4/4
+    
+    push ryx
+    push rxx
+    
+    push ryx
+    push -1
+    mul
+    push rxx
+    push -1
+    mul
+    call draw
+    
+    pop rxx
+    pop ryx
+    
+    ; draw end
+    
+    ret
+
+draw:
+    pop rdx
+    pop rxx
+    pop ryx
+    push rdx
+    
+    push 49152
+    push ryx
+    round
+    push 64
+    add
+    push 128
+    mul
+    push rxx
+    round
+    push 64
+    add
+    add
+    add
+    pop rax
+    
+    push 255
+    push 256
+    push 256
+    mul
+    mul
+    push 255
+    push 256
+    mul
+    push 255
+    add
+    add
+    
+    pop [rax]
+    
+    ret

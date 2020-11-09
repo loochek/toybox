@@ -174,6 +174,8 @@ static inline void cpu_execute(cpu_t *cpu)
     CPU_CHECK();
 }
 
+#undef INSTRUCTION
+
 static inline uint8_t cpu_read_byte(cpu_t *cpu)
 {
     __lerrno = LERR_NO_ERROR;

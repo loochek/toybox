@@ -172,19 +172,27 @@ INSTRUCTION(sqrt, 0x98, ARG_NONE,
     STACK_PUSH(imm_val);
 })
 
-INSTRUCTION(dump, 0xA0, ARG_NONE,
+INSTRUCTION(round, 0xA0, ARG_NONE,
+{
+    double imm_val = 0;
+    STACK_POP(&imm_val);
+    imm_val = round(imm_val);
+    STACK_PUSH(imm_val);
+})
+
+INSTRUCTION(dump, 0xA8, ARG_NONE,
 {
     cpu_dump(cpu);
 })
 
 // causes internal error
-INSTRUCTION(crash, 0xA8, ARG_NONE,
+INSTRUCTION(crash, 0xB0, ARG_NONE,
 {
     cpu->stack.data = (double*)0xBAD;
 })
 
 #ifdef FRAMEBUFFER
-INSTRUCTION(fbupd, 0xB0, ARG_NONE,
+INSTRUCTION(fbupd, 0xB8, ARG_NONE,
 {
     if (cpu->graphics_enabled)
     {
