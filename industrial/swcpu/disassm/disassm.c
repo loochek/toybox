@@ -8,7 +8,8 @@
 #include "../common/headers/arithm.h"
 #include "../common/headers/global_constants.h"
 
-static inline void    disassm           (program_t *prg, const char* src_file_name);
+void disassm(program_t *prg, const char* src_file_name);
+
 static inline uint8_t prg_read_byte     (program_t *prg, size_t *pc);
 static inline double  prg_read_double   (program_t *prg, size_t *pc);
 static inline void    construct_argument(program_t *prg, size_t *pc, uint8_t arg_mask, char* arg_buf);
@@ -85,7 +86,7 @@ case BASE_OPCODE:                                          \
 }                                                          \
 break;
 
-static inline void disassm(program_t *prg, const char* src_file_name)
+void disassm(program_t *prg, const char* src_file_name)
 {
     __lerrno = LERR_NO_ERROR;
 

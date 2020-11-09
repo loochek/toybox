@@ -176,7 +176,7 @@ static inline arg_parsing_result_t parse_argument(const char *arg_string)
     return res;
 }
 
-static void create_label(const char name[], size_t offset, label_list_t *labels)
+static inline void create_label(const char name[], size_t offset, label_list_t *labels)
 {
     __lerrno = LERR_NO_ERROR;
     if (labels->count >= MAX_LABEL_COUNT)
@@ -229,7 +229,7 @@ if (strcmp(curr_tok, #mnemonic) == 0)                                           
     return byte_cnt;                                                                       \
 }
 
-static inline int parse_line(char *line, size_t byte_offset, label_list_t* labels)
+int parse_line(char *line, size_t byte_offset, label_list_t* labels)
 {
     __lerrno = LERR_NO_ERROR;
     int byte_cnt = 0;
@@ -268,7 +268,7 @@ static inline int parse_line(char *line, size_t byte_offset, label_list_t* label
     return -1;
 }
 
-static inline int parse_program(string_index_t *prg_text, label_list_t* labels)
+int parse_program(string_index_t *prg_text, label_list_t* labels)
 {
     __lerrno = LERR_NO_ERROR;
     int byte_cnt = 0;
@@ -331,7 +331,7 @@ if (strcmp(curr_tok, #mnemonic) == 0)                                           
     return byte_cnt;                                                                       \
 }
 
-static inline int compile_line(char *line, size_t byte_offset, label_list_t* labels, char *code)
+int compile_line(char *line, size_t byte_offset, label_list_t* labels, char *code)
 {
     __lerrno = LERR_NO_ERROR;
     int byte_cnt = byte_offset;
@@ -350,7 +350,7 @@ static inline int compile_line(char *line, size_t byte_offset, label_list_t* lab
     return byte_cnt;
 }
 
-static inline void compile(string_index_t *prg_text, label_list_t* labels, char *code)
+void compile(string_index_t *prg_text, label_list_t* labels, char *code)
 {
     __lerrno = LERR_NO_ERROR;
     size_t byte_cnt = 0;
@@ -367,7 +367,7 @@ static inline void compile(string_index_t *prg_text, label_list_t* labels, char 
     }
 }
 
-static inline void write_binary(const char *code, size_t code_size,
+void write_binary(const char *code, size_t code_size,
                                const char *file_name, const char *prg_name)
 {
     prg_header_t prg_header = {0};
@@ -397,7 +397,7 @@ static inline void write_binary(const char *code, size_t code_size,
     fclose(output_file);
 }
 
-static inline int create_binary(string_index_t *prg_text, char** code)
+int create_binary(string_index_t *prg_text, char** code)
 {
     label_list_t labels = {0};
     labels.list = calloc(MAX_LABEL_COUNT, sizeof(label_entry_t));

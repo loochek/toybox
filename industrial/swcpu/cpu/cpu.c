@@ -44,16 +44,17 @@ typedef struct
 #endif
 } cpu_t;
 
-static inline void    cpu_construct  (cpu_t *cpu, const char prg_name[]);
-static inline void    cpu_execute    (cpu_t *cpu);
+void cpu_construct(cpu_t *cpu, const char prg_name[]);
+void cpu_execute  (cpu_t *cpu);
+void cpu_destruct (cpu_t *cpu);
+void cpu_validate (cpu_t *cpu);
+void cpu_dump     (cpu_t *cpu);
+
 static inline uint8_t cpu_read_byte  (cpu_t *cpu);
 static inline double  cpu_read_double(cpu_t *cpu);
 static inline double *cpu_access_ram (cpu_t *cpu, size_t addr);
 static inline double  cpu_get_rvalue (cpu_t *cpu, uint8_t arg_mask);
 static inline double* cpu_get_lvalue (cpu_t *cpu, uint8_t arg_mask);
-static inline void    cpu_destruct   (cpu_t *cpu);
-static inline void    cpu_validate   (cpu_t *cpu);
-static inline void    cpu_dump       (cpu_t *cpu);
 
 int main(int argc, char* argv[])
 {
@@ -105,7 +106,7 @@ int main(int argc, char* argv[])
     }                                                \
 }
 
-static inline void cpu_construct(cpu_t *cpu, const char prg_name[])
+void cpu_construct(cpu_t *cpu, const char prg_name[])
 {
     __lerrno = LERR_NO_ERROR;
     if (stack_construct_cpuval(&cpu->stack, INITIAL_STACK_CAPACITY) != STACK_OK)
@@ -147,7 +148,7 @@ case BASE_OPCODE:                                          \
     IMPL;                                                  \
     break;
 
-static inline void cpu_execute(cpu_t *cpu)
+void cpu_execute(cpu_t *cpu)
 {
     __lerrno = LERR_NO_ERROR;
     CPU_CHECK();
@@ -175,6 +176,49 @@ static inline void cpu_execute(cpu_t *cpu)
 }
 
 #undef INSTRUCTION
+
+void cpu_destruct(cpu_t *cpu)
+{
+    __lerrno = LERR_NO_ERROR;
+    CPU_CHECK();
+
+    program_unload(cpu->prg);
+    stack_destruct_cpuval(&cpu->stack);
+
+#ifdef FRAMEBUFFER
+    if (cpu->graphics_enabled)
+        fb_deinit(&cpu->fb);
+#endif
+}
+
+void cpu_validate(cpu_t *cpu)
+{
+    __lerrno = LERR_NO_ERROR;
+    if (stack_validate_cpuval(&cpu->stack) != STACK_OK)
+    {
+        LERR(LERR_CPU_INTERNAL, "stack fault");
+        return;
+    }
+
+    if (cpu->prg == NULL)
+    {
+        LERR(LERR_CPU_INTERNAL, "program is not loaded");
+        return;
+    }
+}
+
+void cpu_dump(cpu_t *cpu)
+{
+    cpu_validate(cpu);
+    printf("CPU [%s]:\n"
+           "PC: %zu\n"
+           "Registers:\n", __lerrno == LERR_NO_ERROR ? "OK" : __lerr_str, cpu->pc);
+    for (int i = 0; i < REGISTERS_COUNT; i++)
+        printf("r%cx: %lg\n", 'a' + i, cpu->registers[i]);
+    printf("Stack:\n");
+    stack_dump_cpuval(&cpu->stack);
+    printf("\n");
+}
 
 static inline uint8_t cpu_read_byte(cpu_t *cpu)
 {
@@ -289,47 +333,4 @@ static inline double* cpu_get_lvalue(cpu_t *cpu, uint8_t arg_mask)
             return NULL;
         return mem_cell;
     }
-}
-
-static inline void cpu_destruct(cpu_t *cpu)
-{
-    __lerrno = LERR_NO_ERROR;
-    CPU_CHECK();
-
-    program_unload(cpu->prg);
-    stack_destruct_cpuval(&cpu->stack);
-
-#ifdef FRAMEBUFFER
-    if (cpu->graphics_enabled)
-        fb_deinit(&cpu->fb);
-#endif
-}
-
-static inline void cpu_validate(cpu_t *cpu)
-{
-    __lerrno = LERR_NO_ERROR;
-    if (stack_validate_cpuval(&cpu->stack) != STACK_OK)
-    {
-        LERR(LERR_CPU_INTERNAL, "stack fault");
-        return;
-    }
-
-    if (cpu->prg == NULL)
-    {
-        LERR(LERR_CPU_INTERNAL, "program is not loaded");
-        return;
-    }
-}
-
-static inline void cpu_dump(cpu_t *cpu)
-{
-    cpu_validate(cpu);
-    printf("CPU [%s]:\n"
-           "PC: %zu\n"
-           "Registers:\n", __lerrno == LERR_NO_ERROR ? "OK" : __lerr_str, cpu->pc);
-    for (int i = 0; i < REGISTERS_COUNT; i++)
-        printf("r%cx: %lg\n", 'a' + i, cpu->registers[i]);
-    printf("Stack:\n");
-    stack_dump_cpuval(&cpu->stack);
-    printf("\n");
 }
