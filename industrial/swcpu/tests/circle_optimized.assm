@@ -3,18 +3,66 @@ hlt
 
 main:
     push 0
-    pop rxx
-    push 60  ; radius
     pop rrx
     
-loop:
+rad_loop:
+    push rrx
+    push 60
+    jg loop_end
+    
+    ; push radius
+    push rrx
+    ;push color
+    push rrx
+    push rrx
+    push 10
+    push 256
+    push 256
+    mul
+    mul
+    mul
+    push rrx
+    push 20
+    push 256
+    mul
+    mul
+    push rrx
+    push 30
+    mul
+    add
+    add
+    call draw_circle
+    
+    pop rrx
+    
+    push rrx
+    push 1
+    add
+    pop rrx
+    jmp rad_loop
+    
+loop_end:
+    fbupd
+    ret
+    
+
+draw_circle:
+    pop rdx
+    pop rcx
+    pop rrx
+    push rdx
+    
+    push 0
+    pop rxx
+    
+draw_loop:
     ; for (rxx; rxx <= rrx * sin(45); rxx++)
     ; {
     push rxx
     push rrx
     push 0.7071 ; sin(45)
     mul
-    jg loop_end
+    jg draw_loop_end
     
     ; calculate y
     push rrx
@@ -57,11 +105,10 @@ loop:
     push 1
     add
     pop rxx
-    jmp loop
+    jmp draw_loop
     ; }
     
-loop_end:
-    fbupd
+draw_loop_end:
     ret
     
 draw_square:
@@ -151,18 +198,7 @@ draw:
     add
     pop rax
     
-    push 255
-    push 256
-    push 256
-    mul
-    mul
-    push 255
-    push 256
-    mul
-    push 255
-    add
-    add
-    
+    push rcx
     pop [rax]
     
     ret
