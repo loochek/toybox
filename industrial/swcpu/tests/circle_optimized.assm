@@ -2,46 +2,16 @@ call main
 hlt
 
 main:
-    push 0
-    pop rrx
-    
-rad_loop:
-    push rrx
-    push 60
-    jg loop_end
-    
     ; push radius
-    push rrx
+    push 60
     ;push color
-    push rrx
-    push rrx
-    push 10
-    push 256
+    push 255
     push 256
     mul
-    mul
-    mul
-    push rrx
-    push 20
-    push 256
-    mul
-    mul
-    push rrx
-    push 30
-    mul
-    add
+    push 255
     add
     call draw_circle
     
-    pop rrx
-    
-    push rrx
-    push 1
-    add
-    pop rrx
-    jmp rad_loop
-    
-loop_end:
     fbupd
     ret
     
