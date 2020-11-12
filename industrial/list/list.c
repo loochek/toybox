@@ -237,7 +237,7 @@ list_status_t list_linearize(list_t *list)
     if (size == -1)
         return LIST_ERROR;
 
-    list_t new_list;
+    list_t new_list = {0};
     if (list_construct(&new_list, size) != LIST_OK)
         return LIST_ERROR;
 
@@ -316,34 +316,38 @@ void list_print(list_t *list)
 static inline void emit_node(FILE* dot_file, list_t * list, size_t id)
 {
     if (list->data[id] == POISON)
-        fprintf(dot_file, "%zu [label=\"&#9762;\" xlabel=%zu];\n", id, id);
+        fprintf(dot_file, "{rank=%zu; %zu [label=\"&#9762;\" xlabel=%zu];}\n", list->arr_size - id,
+                                                                                id, id);
     else
-        fprintf(dot_file, "%zu [label=%d xlabel=%zu];\n", id, list->data[id], id);
+        fprintf(dot_file, "{rank=%zu; %zu [label=%d xlabel=%zu];}\n", list->arr_size - id,
+                                                                        id, list->data[id], id);
 }
 
-void list_visualise_safe(list_t *list)
+void list_visualise_phys(list_t *list)
 {
     FILE *dot_file = fopen("list.dot", "w");
 
-    fprintf(dot_file, "digraph G\n{\nnode [shape=box];\n");
+    fprintf(dot_file, "digraph G\n{\nnode [shape=box]; rankdir=LR;\n");
 
+    fprintf(dot_file, "{\n");
     emit_node(dot_file, list, 0);
-
-    fprintf(dot_file, "{\nrank=same;\n");
     for (size_t i = 1; i < list->arr_size; i++)
         emit_node(dot_file, list, i);
     fprintf(dot_file, "}\n");
 
-    fprintf(dot_file, "{\nrank=same; rankdir=LR\n");
+    fprintf(dot_file, "{\n");
     fprintf(dot_file, "{%d [label=\"tail\"];}\n"     , TAIL_LABEL_ID);
     fprintf(dot_file, "{%d [label=\"head\"];}\n"     , HEAD_LABEL_ID);
     fprintf(dot_file, "{%d [label=\"head_free\"];}\n", HEAD_FREE_LABEL_ID);
     fprintf(dot_file, "}\n");
 
+    for (size_t i = 0; i < list->arr_size - 1; i++)
+        fprintf(dot_file, "{edge[style=invis, weight=1000] %zu->%zu}\n", i, i + 1);
+
     for (size_t i = 0; i < list->arr_size; i++)
     {
-        fprintf(dot_file, "{edge[color=tomato2]     %zu->%zu}\n", i, list->next[i]);
-        fprintf(dot_file, "{edge[color=dodgerblue2] %zu->%zu}\n", i, list->prev[i]);
+        fprintf(dot_file, "{edge[constraint=false, arrowhead=vee, color=\"#%02X%02X%02X\"]  %zu->%zu}\n", rand() % 128 + 64, rand() % 128 + 64, rand() % 128 + 64, i, list->next[i]);
+        fprintf(dot_file, "{edge[constraint=false, arrowhead=crow, color=\"#%02X%02X%02X\"] %zu->%zu}\n", rand() % 128 + 64, rand() % 128 + 64, rand() % 128 + 64, i, list->prev[i]);
     }
 
     fprintf(dot_file, "{edge[color=darkgreen]  %d->%zu}\n", HEAD_LABEL_ID     , list->head);
@@ -409,7 +413,6 @@ list_status_t list_visualise_fancy(list_t *list)
 
     return LIST_OK;
 }
-
 
 void list_destruct(list_t *list)
 {
