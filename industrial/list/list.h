@@ -41,5 +41,6 @@ int            list_size           (list_t *list);
 elem_t        *list_at             (list_t *list, size_t index);
 void           list_print          (list_t *list);
 void           list_destruct       (list_t *list);
-void           list_visualise_phys (list_t *list);
-list_status_t  list_visualise_fancy(list_t *list);
+void           list_visualise_phys (list_t *list, const char *img_file_name);
+list_status_t  list_visualise_fancy(list_t *list, const char *img_file_name);
+int            list_html_dump      (list_t *list);

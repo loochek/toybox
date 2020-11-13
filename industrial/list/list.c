@@ -4,6 +4,8 @@
 #include "lerror.h"
 #include "list.h"
 
+#define MAX_CMD_LINE_LENGTH 100
+
 // poison for data
 static elem_t POISON = 0xDEAD;
 
@@ -17,13 +19,17 @@ static void free_cell (list_t *list, size_t pos);
 
 #define LIST_CHECK_COND list_validate(list) == LIST_OK
 
-#define LIST_CHECK(list)                                \
-if (!(LIST_CHECK_COND))                                 \
-{                                                       \
-    printf("List validation failed: %s\n", __lerr_str); \
-    list_print(list);                                   \
-    return LIST_ERROR;                                  \
-}   
+#define LIST_CHECK(list, to_ret)           \
+if (!(LIST_CHECK_COND))                    \
+{                                          \
+    int dump_id = list_html_dump(list);    \
+    printf("List validation failed: %s\n"  \
+           "See more in log.html\n"        \
+           "Dump id: %d\n",                  \
+           __lerr_str, dump_id);           \
+                                           \
+    return to_ret;                         \
+}  
 
 list_status_t list_construct(list_t *list, size_t capacity)
 {
@@ -65,14 +71,14 @@ list_status_t list_construct(list_t *list, size_t capacity)
     list->canary1 = CANARY;
     list->canary2 = CANARY;
 
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     return LIST_OK;
 }
 
 list_status_t list_push_front(list_t *list, elem_t elem)
 {
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     int claimed_pos = claim_cell(list);
     if (claimed_pos == -1)
@@ -89,14 +95,14 @@ list_status_t list_push_front(list_t *list, elem_t elem)
     list->next[claimed_pos] = 0;
     list->head              = claimed_pos;
 
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     return LIST_OK;
 }
 
 list_status_t list_push_back(list_t *list, elem_t elem)
 {
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     int claimed_pos = claim_cell(list);
     if (claimed_pos == -1)
@@ -115,14 +121,14 @@ list_status_t list_push_back(list_t *list, elem_t elem)
     
     list->data[list->tail] = elem;
 
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     return LIST_OK;
 }
 
 list_status_t list_pop_front(list_t *list)
 {
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     if (list->head == list->tail)
         return LIST_EMPTY;
@@ -134,14 +140,14 @@ list_status_t list_pop_front(list_t *list)
 
     free_cell(list, to_remove);
 
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     return LIST_OK;
 }
 
 list_status_t list_pop_back(list_t *list)
 {
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     if (list->head == list->tail)
         return LIST_EMPTY;
@@ -155,14 +161,14 @@ list_status_t list_pop_back(list_t *list)
     list->prev[new_tail] = 0;
     list->tail = new_tail;
 
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     return LIST_OK;
 }
 
 list_status_t list_insert(list_t *list, size_t index, elem_t elem)
 {
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     int current_pos = list->tail;
     for (size_t i = 0; i < index; i++)
@@ -191,14 +197,14 @@ list_status_t list_insert(list_t *list, size_t index, elem_t elem)
     list->prev[list->next[current_pos]] = claimed_pos;
     list->next[current_pos]             = claimed_pos;
 
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     return LIST_OK;
 }
 
 list_status_t list_remove(list_t *list, size_t index)
 {
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     int current_pos = list->tail;
     for (size_t i = 0; i < index; i++)
@@ -224,14 +230,14 @@ list_status_t list_remove(list_t *list, size_t index)
 
     free_cell(list, current_pos);
 
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     return LIST_OK;
 }
 
 list_status_t list_linearize(list_t *list)
 {
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     int size = list_size(list);
     if (size == -1)
@@ -255,15 +261,14 @@ list_status_t list_linearize(list_t *list)
     list_destruct(list);
     *list = new_list;
 
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     return LIST_OK;
 }
 
 int list_size(list_t *list)
 {
-    if (!(LIST_CHECK_COND))
-        return -1;
+    LIST_CHECK(list, -1);
 
     size_t size = 0;
     size_t cur_pos = list->tail;
@@ -277,8 +282,7 @@ int list_size(list_t *list)
 
 elem_t *list_at(list_t *list, size_t index)
 {
-    if (!(LIST_CHECK_COND))
-        return NULL;
+    LIST_CHECK(list, NULL);
 
     if (list->linear)
         return &list->data[index + 1];
@@ -291,22 +295,6 @@ elem_t *list_at(list_t *list, size_t index)
             return NULL;
     }
     return &list->data[current_pos];
-}
-
-void list_print(list_t *list)
-{
-    printf("List dump:\n");
-    printf("data: ");
-    for (size_t i = 0; i < list->arr_size; i++)
-        printf("%7d ", list->data[i]);
-    printf("\nnext: ");
-    for (size_t i = 0; i < list->arr_size; i++)
-        printf("%7zu ", list->next[i]);
-    printf("\nprev: ");
-    for (size_t i = 0; i < list->arr_size; i++)
-        printf("%7zu ", list->prev[i]);
-    printf("\nhead: %zu\ntail: %zu\nhead_free: %zu\nlinear: %d\n\n",
-            list->head, list->tail, list->head_free, list->linear);
 }
 
 #define HEAD_LABEL_ID      10000
@@ -323,7 +311,7 @@ static inline void emit_node(FILE* dot_file, list_t * list, size_t id)
                                                                         id, list->data[id], id);
 }
 
-void list_visualise_phys(list_t *list)
+void list_visualise_phys(list_t *list, const char *img_file_name)
 {
     FILE *dot_file = fopen("list.dot", "w");
 
@@ -356,13 +344,16 @@ void list_visualise_phys(list_t *list)
     fprintf(dot_file, "}\n");
     fclose(dot_file);
 
-    system("dot list.dot -Tpng > out.png");
-    system("gwenview out.png");
+    char cmd_buf[MAX_CMD_LINE_LENGTH + 1];
+    sprintf(cmd_buf, "dot list.dot -Tpng > %s", img_file_name);
+    system(cmd_buf);
 }
 
-list_status_t list_visualise_fancy(list_t *list)
+list_status_t list_visualise_fancy(list_t *list, const char *img_file_name)
 {
-    LIST_CHECK(list);
+    // we don't use LIST_CHECK macro because dump function depends on this function
+    if (!(LIST_CHECK_COND))
+        return LIST_ERROR;
 
     FILE *dot_file = fopen("list.dot", "w");
 
@@ -408,10 +399,63 @@ list_status_t list_visualise_fancy(list_t *list)
     fprintf(dot_file, "}\n");
     fclose(dot_file);
 
-    system("dot list.dot -Tpng > out.png");
-    system("gwenview out.png");
+    char cmd_buf[MAX_CMD_LINE_LENGTH + 1] = {0};
+    snprintf(cmd_buf, MAX_CMD_LINE_LENGTH, "dot list.dot -Tpng > %s", img_file_name);
+    system(cmd_buf);
 
     return LIST_OK;
+}
+
+int list_html_dump(list_t *list)
+{
+    FILE *html_file = fopen("log.html", "a");
+
+    int dump_id = rand();
+
+    fprintf(html_file, "<hr><pre>\n"
+                       "List dump No. %d:\n"
+                       "Validation result: %s\n",
+                       dump_id, list_validate(list) == LIST_OK ? "OK" : __lerr_str);
+
+    fprintf(html_file, "data: ");
+    for (size_t i = 0; i < list->arr_size; i++)
+        fprintf(html_file, "%7d ", list->data[i]);
+
+    fprintf(html_file, "\nnext: ");
+    for (size_t i = 0; i < list->arr_size; i++)
+        fprintf(html_file, "%7zu ", list->next[i]);
+
+    fprintf(html_file, "\nprev: ");
+    for (size_t i = 0; i < list->arr_size; i++)
+        fprintf(html_file, "%7zu ", list->prev[i]);
+
+    fprintf(html_file, "\n\n"
+                       "head:      %4zu\n"
+                       "tail:      %4zu\n"
+                       "head_free: %4zu\n"
+                       "linear:    %4d\n\n",
+                        list->head, list->tail, list->head_free, list->linear);
+    
+    char img_file_name[MAX_CMD_LINE_LENGTH + 1];
+
+    snprintf(img_file_name, MAX_CMD_LINE_LENGTH, "images/fancy_img_%d.png", dump_id);
+    if (list_visualise_fancy(list, img_file_name) == LIST_OK)
+        fprintf(html_file, "Fancy visualization:\n"
+                           "<img src=\"%s\" width=\"40%%\">\n",
+                            img_file_name);
+    else
+        fprintf(html_file, "Fancy visualization can't be displayed because of validation fail\n");
+
+    snprintf(img_file_name, MAX_CMD_LINE_LENGTH, "images/phys_img_%d.png", dump_id);
+    list_visualise_phys(list, img_file_name);
+    fprintf(html_file, "Physical visualization:\n"
+                       "<img src=\"%s\" width=\"60%%\">\n",
+                        img_file_name);
+
+    fprintf(html_file, "</pre>\n");
+    fclose(html_file);
+
+    return dump_id;
 }
 
 void list_destruct(list_t *list)
@@ -423,7 +467,7 @@ void list_destruct(list_t *list)
 
 static list_status_t list_expand(list_t *list)
 {
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     elem_t *new_data = (elem_t*)realloc(list->data, sizeof(elem_t) * list->arr_size * 2);
     size_t *new_prev = (size_t*)realloc(list->prev, sizeof(size_t) * list->arr_size * 2);
@@ -458,7 +502,7 @@ static list_status_t list_expand(list_t *list)
 
     list->arr_size *= 2;
 
-    LIST_CHECK(list);
+    LIST_CHECK(list, LIST_ERROR);
 
     return LIST_OK;
 }
