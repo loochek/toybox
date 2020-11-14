@@ -25,7 +25,7 @@ if (!(LIST_CHECK_COND))                    \
     int dump_id = list_html_dump(list);    \
     printf("List validation failed: %s\n"  \
            "See more in log.html\n"        \
-           "Dump id: %d\n",                  \
+           "Dump id: %d\n",                \
            __lerr_str, dump_id);           \
                                            \
     return to_ret;                         \
@@ -166,19 +166,11 @@ list_status_t list_pop_back(list_t *list)
     return LIST_OK;
 }
 
-list_status_t list_insert(list_t *list, size_t index, elem_t elem)
+list_status_t list_insert_after(list_t *list, size_t physical_index, elem_t elem)
 {
     LIST_CHECK(list, LIST_ERROR);
 
-    int current_pos = list->tail;
-    for (size_t i = 0; i < index; i++)
-    {
-        current_pos = list->next[current_pos];
-        if (current_pos == list->head)
-            return LIST_OUT_OF_BOUNDS;
-    }
-
-    if (current_pos == list->prev[list->head])
+    if (physical_index == list->prev[list->head])
         return list_push_front(list, elem);
 
     int claimed_pos = claim_cell(list);
@@ -191,44 +183,46 @@ list_status_t list_insert(list_t *list, size_t index, elem_t elem)
 
     list->linear = false;
 
-    list->data[claimed_pos]             = elem;
-    list->prev[claimed_pos]             = current_pos;
-    list->next[claimed_pos]             = list->next[current_pos];
-    list->prev[list->next[current_pos]] = claimed_pos;
-    list->next[current_pos]             = claimed_pos;
+    list->data[claimed_pos]                = elem;
+    list->prev[claimed_pos]                = physical_index;
+    list->next[claimed_pos]                = list->next[physical_index];
+    list->prev[list->next[physical_index]] = claimed_pos;
+    list->next[physical_index]             = claimed_pos;
 
     LIST_CHECK(list, LIST_ERROR);
 
     return LIST_OK;
 }
 
-list_status_t list_remove(list_t *list, size_t index)
+list_status_t list_insert_before(list_t *list, size_t physical_index, elem_t elem)
 {
     LIST_CHECK(list, LIST_ERROR);
 
-    int current_pos = list->tail;
-    for (size_t i = 0; i < index; i++)
-    {
-        current_pos = list->next[current_pos];
-        if (current_pos == list->head)
-            return LIST_OUT_OF_BOUNDS;
-    }
+    if (physical_index == list->tail)
+        return list_push_back(list, elem);
 
-    if (current_pos == list->prev[list->head])
+    return list_insert_after(list, list->prev[physical_index], elem);
+}
+
+list_status_t list_remove(list_t *list, size_t physical_index)
+{
+    LIST_CHECK(list, LIST_ERROR);
+
+    if (physical_index == list->prev[list->head])
         return list_pop_front(list);
 
     list->linear = false;
 
-    if (current_pos == list->tail)
+    if (physical_index == list->tail)
         return list_pop_back(list);
 
-    list->data[current_pos] = 0;
-    size_t left       = list->prev[current_pos];
-    size_t right      = list->next[current_pos];
+    list->data[physical_index] = 0;
+    size_t left       = list->prev[physical_index];
+    size_t right      = list->next[physical_index];
     list->next[left]  = right;
     list->prev[right] = left;
 
-    free_cell(list, current_pos);
+    free_cell(list, physical_index);
 
     LIST_CHECK(list, LIST_ERROR);
 
@@ -280,21 +274,33 @@ int list_size(list_t *list)
     return size;
 }
 
-elem_t *list_at(list_t *list, size_t index)
+int list_logic_to_phys(list_t *list, size_t logical_index)
 {
-    LIST_CHECK(list, NULL);
+    LIST_CHECK(list, -1);
 
     if (list->linear)
-        return &list->data[index + 1];
+        return logical_index + 1;
 
     size_t current_pos = list->tail;
-    for (size_t i = 0; i < index; i++)
+    for (size_t i = 0; i < logical_index; i++)
     {
         current_pos = list->next[current_pos];
         if (current_pos == list->head)
-            return NULL;
+            return -1;
     }
-    return &list->data[current_pos];
+
+    return current_pos;
+}
+
+elem_t *list_linear_access(list_t *list, size_t logical_index)
+{
+    LIST_CHECK(list, NULL);
+
+    int phys_idx = list_logic_to_phys(list, logical_index);
+    if (phys_idx == -1)
+        return NULL;
+
+    return &list->data[phys_idx];
 }
 
 #define HEAD_LABEL_ID      10000
@@ -311,7 +317,7 @@ static inline void emit_node(FILE* dot_file, list_t * list, size_t id)
                                                                         id, list->data[id], id);
 }
 
-void list_visualise_phys(list_t *list, const char *img_file_name)
+void list_visualize_phys(list_t *list, const char *img_file_name)
 {
     FILE *dot_file = fopen("list.dot", "w");
 
@@ -345,11 +351,11 @@ void list_visualise_phys(list_t *list, const char *img_file_name)
     fclose(dot_file);
 
     char cmd_buf[MAX_CMD_LINE_LENGTH + 1];
-    sprintf(cmd_buf, "dot list.dot -Tpng > %s", img_file_name);
+    snprintf(cmd_buf, MAX_CMD_LINE_LENGTH, "dot list.dot -Tpng > %s", img_file_name);
     system(cmd_buf);
 }
 
-list_status_t list_visualise_fancy(list_t *list, const char *img_file_name)
+list_status_t list_visualize_fancy(list_t *list, const char *img_file_name)
 {
     // we don't use LIST_CHECK macro because dump function depends on this function
     if (!(LIST_CHECK_COND))
@@ -439,7 +445,7 @@ int list_html_dump(list_t *list)
     char img_file_name[MAX_CMD_LINE_LENGTH + 1];
 
     snprintf(img_file_name, MAX_CMD_LINE_LENGTH, "images/fancy_img_%d.png", dump_id);
-    if (list_visualise_fancy(list, img_file_name) == LIST_OK)
+    if (list_visualize_fancy(list, img_file_name) == LIST_OK)
         fprintf(html_file, "Fancy visualization:\n"
                            "<img src=\"%s\" width=\"40%%\">\n",
                             img_file_name);
@@ -447,7 +453,7 @@ int list_html_dump(list_t *list)
         fprintf(html_file, "Fancy visualization can't be displayed because of validation fail\n");
 
     snprintf(img_file_name, MAX_CMD_LINE_LENGTH, "images/phys_img_%d.png", dump_id);
-    list_visualise_phys(list, img_file_name);
+    list_visualize_phys(list, img_file_name);
     fprintf(html_file, "Physical visualization:\n"
                        "<img src=\"%s\" width=\"60%%\">\n",
                         img_file_name);

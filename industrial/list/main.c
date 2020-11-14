@@ -13,7 +13,6 @@ int main()
     list_html_dump(&list);
 
     list_push_front(&list, 2);
-    list.next[4] = 7;
     list_html_dump(&list);
 
     list_push_back(&list, 3);
