@@ -274,33 +274,64 @@ int list_size(list_t *list)
     return size;
 }
 
-int list_logic_to_phys(list_t *list, size_t logical_index)
-{
-    LIST_CHECK(list, -1);
-
-    if (list->linear)
-        return logical_index + 1;
-
-    size_t current_pos = list->tail;
-    for (size_t i = 0; i < logical_index; i++)
-    {
-        current_pos = list->next[current_pos];
-        if (current_pos == list->head)
-            return -1;
-    }
-
-    return current_pos;
-}
-
-elem_t *list_linear_access(list_t *list, size_t logical_index)
+elem_t *list_data(list_t *list, size_t physical_index)
 {
     LIST_CHECK(list, NULL);
 
-    int phys_idx = list_logic_to_phys(list, logical_index);
-    if (phys_idx == -1)
+    if (physical_index >= list->arr_size)
         return NULL;
+    
+    return &list->data[physical_index];
+}
 
-    return &list->data[phys_idx];
+elem_t *list_at(list_t *list, size_t index)
+{
+    LIST_CHECK(list, NULL);
+
+    if (list->linear)
+        return &list->data[index + 1];
+
+    size_t current_pos = list->tail;
+    for (size_t i = 0; i < index; i++)
+    {
+        current_pos = list->next[current_pos];
+        if (current_pos == list->head)
+            return NULL;
+    }
+
+    return list_data(list, current_pos);
+}
+
+int list_next(list_t *list, size_t physical_index)
+{
+    LIST_CHECK(list, -1);
+
+    if (list->next[physical_index] == 0)
+        return -1;
+
+    return list->next[physical_index];
+}
+
+int list_prev(list_t *list, size_t physical_index)
+{
+    LIST_CHECK(list, -1);
+
+    if (list->prev[physical_index] == 0)
+        return -1;
+        
+    return list->prev[physical_index];
+}
+
+int list_begin(list_t *list)
+{
+    LIST_CHECK(list, -1);
+    return list->tail;
+}
+
+int list_end(list_t *list)
+{
+    LIST_CHECK(list, -1);
+    return list->head;
 }
 
 #define HEAD_LABEL_ID      10000
