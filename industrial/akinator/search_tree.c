@@ -11,6 +11,8 @@ static void parse_node_branches(const char *buf, size_t buf_size, size_t *curr_p
                                 tree_node_t **node_ptr);
 static tree_node_t *parse_node(const char *buf, size_t buf_size, size_t *curr_pos);
 
+// utils
+
 static inline bool is_key_symbol(char c)
 {
     return c == '"' || c == '[' || c == ']';
@@ -206,6 +208,8 @@ static void tree_dump_recursive(FILE *file, tree_node_t *node)
 void tree_dump(tree_node_t *tree_root, const char *file_name)
 {
     LERR_RESET();
+    TREE_CHECK(tree_root,);
+
     FILE *file = fopen(file_name, "w");
     if (file == NULL)
     {
@@ -214,4 +218,29 @@ void tree_dump(tree_node_t *tree_root, const char *file_name)
     }
     tree_dump_recursive(file, tree_root);
     fclose(file);
+}
+
+int tree_validate(tree_node_t *tree_root)
+{
+    LERR_RESET();
+    if (tree_root == NULL)
+        return 0;
+
+    if (tree_root->yes_branch == NULL && tree_root->no_branch == NULL)
+        return 0;
+
+    if (tree_root->yes_branch != NULL && tree_root->no_branch != NULL)
+    {
+        tree_validate(tree_root->yes_branch);
+        if (LERR_PRESENT())
+            return -1;
+        tree_validate(tree_root->no_branch);
+        if (LERR_PRESENT())
+            return -1;
+            
+        return 0;
+    }
+
+    LERR(LERR_AKINATOR_VALIDATION, "only one child is present");
+    return -1;
 }

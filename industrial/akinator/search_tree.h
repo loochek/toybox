@@ -15,3 +15,12 @@ void tree_destruct(tree_node_t *tree_root);
 
 // Throws LERR
 void tree_dump(tree_node_t *tree_root, const char *file_name);
+// Throws LERR
+int tree_validate(tree_node_t *tree_root);
+
+#define TREE_CHECK(tree, to_ret) \
+{                                \
+    tree_validate(tree);         \
+    if (LERR_PRESENT())          \
+        return to_ret;           \
+}

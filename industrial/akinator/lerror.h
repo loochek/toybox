@@ -11,7 +11,8 @@ typedef enum
     LERR_ALLOC,
     LERR_AKINATOR_PARSE,
     LERR_AKINATOR_BRANCH,
-    LERR_AKINATOR_END
+    LERR_AKINATOR_END,
+    LERR_AKINATOR_VALIDATION
 } lerror_t;
 
 extern lerror_t __lerrno;
