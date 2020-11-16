@@ -40,6 +40,9 @@ void test_basic()
     }
     assert(cnt2 == 20);
 
+    for (int i = 0; i < list_size(&list); i++)
+        assert(*list_at(&list, i) == correct2[i]);
+
     for (int i = 0; i < 10; i++)
         assert(list_pop_back(&list) == LIST_OK);
 
