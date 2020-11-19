@@ -27,11 +27,7 @@ int main(int argc, char* argv[])
 
     if (strcmp(argv[1], "add") == 0)
     {
-        char thing[MAX_NODE_NAME_LENGTH + 1] = {0};
-        printf("What do you want to add?\n");
-        fgets(thing, MAX_NODE_NAME_LENGTH, stdin);
-        thing[strlen(thing) - 1] = '\0';
-        tree_root = akinator_add(tree_root, thing);
+        tree_root = akinator_add(tree_root);
         if (LERR_PRESENT())
         {
             printf("Adding failed!\n"
