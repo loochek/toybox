@@ -8,15 +8,15 @@
 
 #define MAX_SENTENCE_LENGTH MAX_NODE_NAME_LENGTH + 30
 
-static tree_node_t *akinator_add_recursive  (tree_node_t *node, const char *thing);
-static tree_node_t *akinator_guess_recursive(tree_node_t *node);
-static tree_node_t *akinator_put_thing      (tree_node_t *node, const char *thing);
+static tree_node_t *akinator_add_recursive  (tree_node_t *node, const char *thing, memory_pool_t *pool);
+static tree_node_t *akinator_guess_recursive(tree_node_t *node, memory_pool_t *pool);
+static tree_node_t *akinator_put_thing      (tree_node_t *node, const char *thing, memory_pool_t *pool);
 
 void               speak        (const char *sentence);
 static inline bool akinator_ask (const char *question);
 static inline void akinator_tell(const char *sentence);
 
-tree_node_t *akinator_add(tree_node_t *node)
+tree_node_t *akinator_add(tree_node_t *node, memory_pool_t *pool)
 {
     TREE_CHECK(node, NULL);
 
@@ -27,16 +27,16 @@ tree_node_t *akinator_add(tree_node_t *node)
     fgets(thing, MAX_NODE_NAME_LENGTH, stdin);
     thing[strlen(thing) - 1] = '\0';
 
-    return akinator_add_recursive(node, thing);
+    return akinator_add_recursive(node, thing, pool);
 }
 
-void akinator_guess(tree_node_t *node)
+void akinator_guess(tree_node_t *node, memory_pool_t *pool)
 {
     TREE_CHECK(node,);
-    akinator_guess_recursive(node);
+    akinator_guess_recursive(node, pool);
 }
 
-static tree_node_t *akinator_guess_recursive(tree_node_t *node)
+static tree_node_t *akinator_guess_recursive(tree_node_t *node, memory_pool_t *pool)
 {
     if (node == NULL)
     {
@@ -52,9 +52,9 @@ static tree_node_t *akinator_guess_recursive(tree_node_t *node)
                                                 node->node_name);
         
         if (akinator_ask(sentence))
-            node->yes_branch = akinator_guess_recursive(node->yes_branch);
+            node->yes_branch = akinator_guess_recursive(node->yes_branch, pool);
         else
-            node->no_branch  = akinator_guess_recursive(node->no_branch);
+            node->no_branch  = akinator_guess_recursive(node->no_branch, pool);
 
         return node;
     }
@@ -73,15 +73,15 @@ static tree_node_t *akinator_guess_recursive(tree_node_t *node)
         scanf("\n");
         fgets(thing, MAX_NODE_NAME_LENGTH, stdin);
         thing[strlen(thing) - 1] = '\0';
-        return akinator_put_thing(node, thing);
+        return akinator_put_thing(node, thing, pool);
     }
     return node;
 }
 
-static tree_node_t *akinator_add_recursive(tree_node_t *node, const char *thing)
+static tree_node_t *akinator_add_recursive(tree_node_t *node, const char *thing, memory_pool_t *pool)
 {
     if (node == NULL)
-        return akinator_put_thing(node, thing);
+        return akinator_put_thing(node, thing, pool);
 
     char sentence[MAX_SENTENCE_LENGTH + 1] = {0};
 
@@ -90,21 +90,22 @@ static tree_node_t *akinator_add_recursive(tree_node_t *node, const char *thing)
         snprintf(sentence, MAX_SENTENCE_LENGTH, "Is it correct that %s %s",
                                                 thing, node->node_name);
         if (akinator_ask(sentence))
-            node->yes_branch = akinator_add_recursive(node->yes_branch, thing);
+            node->yes_branch = akinator_add_recursive(node->yes_branch, thing, pool);
         else
-            node->no_branch  = akinator_add_recursive(node->no_branch , thing);
+            node->no_branch  = akinator_add_recursive(node->no_branch , thing, pool);
 
         return node;
     }
 
-    return akinator_put_thing(node, thing);
+    return akinator_put_thing(node, thing, pool);
 }
 
-static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing)
+static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing, memory_pool_t *pool)
 {
     if (node == NULL)
     {
-        tree_node_t *to_ret = calloc(1, sizeof(tree_node_t));
+        tree_node_t *to_ret = calloc_custom(1, sizeof(tree_node_t), pool);
+        to_ret->node_name = calloc_custom(MAX_NODE_NAME_LENGTH + 1, sizeof(tree_node_t), pool);
         strncpy(to_ret->node_name, thing, MAX_NODE_NAME_LENGTH);
         return to_ret;
     }
@@ -120,13 +121,16 @@ static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing)
 
     akinator_tell(sentence);
     
-    tree_node_t *new_branch_node = calloc(1, sizeof(tree_node_t));
+    tree_node_t *new_branch_node = calloc_custom(1, sizeof(tree_node_t), pool);
+
+    char *node_name = calloc_custom(MAX_NODE_NAME_LENGTH + 1, sizeof(tree_node_t), pool);
 
     scanf("\n");
-    fgets(new_branch_node->node_name, MAX_NODE_NAME_LENGTH, stdin);
-    new_branch_node->node_name[strlen(new_branch_node->node_name) - 1] = '\0';
+    fgets(node_name, MAX_NODE_NAME_LENGTH, stdin);
+    node_name[strlen(node_name) - 1] = '\0';
 
-    new_branch_node->yes_branch = akinator_put_thing(new_branch_node->yes_branch, thing);
+    new_branch_node->node_name = node_name;
+    new_branch_node->yes_branch = akinator_put_thing(new_branch_node->yes_branch, thing, pool);
     new_branch_node->no_branch  = node;
 
     return new_branch_node;
@@ -150,8 +154,10 @@ static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing)
 void speak(const char *sentence)
 {
     char speak_cmd[MAX_SENTENCE_LENGTH + 31];
-    snprintf(speak_cmd, MAX_SENTENCE_LENGTH + 31, "echo \"%s\" | festival --tts", sentence);
+    snprintf(speak_cmd, MAX_SENTENCE_LENGTH + 31,
+             "echo \"%s\" | text2wave -o speech.wav >>/dev/null 2>>/dev/null", sentence);
     system(speak_cmd);
+    system("play speech.wav speed 1.2 >>/dev/null 2>>/dev/null");
 }
 
 static inline bool akinator_ask(const char *question)

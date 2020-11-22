@@ -1,17 +1,19 @@
+#include "allocator.h"
+
 #define MAX_NODE_NAME_LENGTH 100
 
 typedef struct tree_node_t
 {
-    char node_name[MAX_NODE_NAME_LENGTH + 1];
+    char *node_name;
     
     struct tree_node_t *yes_branch;
     struct tree_node_t *no_branch;
 } tree_node_t;
 
 // Throws LERR
-tree_node_t *tree_create_from_file(const char *file_name);
-
-void tree_destruct(tree_node_t *tree_root);
+// Method messes passed buffer. Created tree depends on the buffer. 
+// So keep buffer while using the tree
+tree_node_t *tree_create_from_buffer(char *buf, size_t buf_size, memory_pool_t *pool);
 
 // Throws LERR
 void tree_dump(tree_node_t *tree_root, const char *file_name);
