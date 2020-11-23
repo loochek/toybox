@@ -5,6 +5,8 @@
 #include "list.h"
 
 #define MAX_CMD_LINE_LENGTH 100
+
+// comment it before releasing
 #define LIST_DEBUG
 
 static elem_t POISON = 0xDEAD;
