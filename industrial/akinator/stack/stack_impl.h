@@ -135,6 +135,18 @@ stack_status_t OVERLOAD(stack_top)(OVERLOAD(my_stack) *self, elem_t *elem)
     return STACK_OK;
 }
 
+stack_status_t OVERLOAD(stack_at)(OVERLOAD(my_stack) *self, elem_t *elem, size_t pos)
+{
+    STACK_CHECK(self);
+
+    if (pos >= self->size)
+        return STACK_EMPTY;
+
+    *elem = self->data[pos];
+    return STACK_OK;
+}
+
+
 stack_status_t OVERLOAD(stack_destruct)(OVERLOAD(my_stack) *self)
 {
     STACK_CHECK(self);

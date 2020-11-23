@@ -214,7 +214,12 @@ static tree_node_t* tree_search_recursive(tree_node_t* node, const char *thing, 
     if (!(node->no_branch != NULL && node->yes_branch != NULL))
     {
         if (strcmp(node->node_name, thing) == 0)
+        {
+            if (stack_push_node(stack, node) != STACK_OK)
+                return NULL;
+                
             return node;
+        }
         else
             return NULL;
     }

@@ -5,7 +5,6 @@
 
 #include "lerror.h"
 #include "akinator.h"
-//#include "list/list.h"
 
 #define MAX_SENTENCE_LENGTH MAX_NODE_NAME_LENGTH + 30
 
@@ -37,39 +36,49 @@ void akinator_guess(tree_node_t *node, memory_pool_t *pool)
     akinator_guess_recursive(node, pool);
 }
 
-// void akinator_find(tree_node_t *node)
-// {
-//     TREE_CHECK(node,);
+void akinator_find(tree_node_t *node)
+{
+    TREE_CHECK(node,);
 
-//     char thing[MAX_NODE_NAME_LENGTH + 1] = {0};
+    char thing[MAX_NODE_NAME_LENGTH + 1] = {0};
 
-//     akinator_tell("What do you want to get information about?");
-//     scanf("\n");
-//     fgets(thing, MAX_NODE_NAME_LENGTH, stdin);
-//     thing[strlen(thing) - 1] = '\0';
+    akinator_tell("What do you want to get information about?");
+    scanf("\n");
+    fgets(thing, MAX_NODE_NAME_LENGTH, stdin);
+    thing[strlen(thing) - 1] = '\0';
 
-//     my_stack_node stack = {0};
-//     stack_construct_node(&stack, 5);
-//     tree_node_t *result = tree_search(node, thing, &stack);
-//     if (result != NULL)
-//     {
-//         akinator_tell(thing);
-//         size_t size = 0;
-//         stack_size_node(&stack, &size);
-//         while (size > 0)
-//         {
-//             tree_node_t *ptr = NULL;
-//             stack_top_node(&stack, &ptr);
-//             akinator_tell(ptr->node_name);
-//             stack_pop_node(&stack);
-//             stack_size_node(&stack, &size);
-//         }
-//     }
-//     else
-//         akinator_tell("I don't know about it");
+    my_stack_node stack = {0};
+    stack_construct_node(&stack, 5);
+    tree_node_t *result = tree_search(node, thing, &stack);
+    if (result != NULL)
+    {
+        size_t size = 0;
+        stack_size_node(&stack, &size);
 
-//     stack_destruct_node(&stack);
-// }
+        tree_node_t *prev_node = NULL;
+        stack_at_node(&stack, &prev_node, 0);
+
+        for (size_t i = 1; i < size; i++)
+        {
+            tree_node_t *node = NULL;
+            stack_at_node(&stack, &node, i);
+
+            char sentence[MAX_SENTENCE_LENGTH + 1] = {0};
+            if (node == prev_node->yes_branch)
+                snprintf(sentence, MAX_SENTENCE_LENGTH, "It's true that %s %s", thing, prev_node->node_name);
+            else
+                snprintf(sentence, MAX_SENTENCE_LENGTH, "It's false that %s %s", thing, prev_node->node_name);
+
+            akinator_tell(sentence);
+
+            prev_node = node;
+        }
+    }
+    else
+        akinator_tell("I don't know about it");
+
+    stack_destruct_node(&stack);
+}
 
 static tree_node_t *akinator_guess_recursive(tree_node_t *node, memory_pool_t *pool)
 {
@@ -177,7 +186,7 @@ void speak(const char *sentence)
     snprintf(speak_cmd, MAX_SENTENCE_LENGTH + 31,
              "echo \"%s\" | text2wave -o speech.wav >>/dev/null 2>>/dev/null", sentence);
     system(speak_cmd);
-    system("play speech.wav speed 1.2 >>/dev/null 2>>/dev/null");
+    system("play speech.wav speed 8 >>/dev/null 2>>/dev/null");
 }
 
 static inline bool akinator_ask(const char *question)
