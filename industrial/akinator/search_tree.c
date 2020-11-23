@@ -5,12 +5,17 @@
 #include "lerror.h"
 #include "search_tree.h"
 
+#define TYPE int
+#define elem_t int
+#include "stack/stack.h"
+#undef elem_t
+#undef TYPE
+
 static void parse_node_name    (char *buf, size_t buf_size, size_t *curr_pos, char **node_name);
 static tree_node_t *parse_node (char *buf, size_t buf_size, size_t *curr_pos, memory_pool_t *pool);
 static void parse_node_branches(char *buf, size_t buf_size, size_t *curr_pos,
                                             tree_node_t **node_ptr, memory_pool_t *pool);
 
-static tree_node_t* tree_search_recursive(tree_node_t* node, const char *thing, my_stack_node *stack);
 static void         tree_dump_recursive  (FILE *file, tree_node_t *node, size_t current_level);
 
 static inline void tab           (FILE *file, size_t level);
@@ -41,10 +46,72 @@ tree_node_t *tree_create_from_buffer(char *buf, size_t buf_size, memory_pool_t *
     return NULL;
 }
 
-tree_node_t* tree_search(tree_node_t* node, const char *thing, my_stack_node *stack)
+#define STACK_SEC(method) if ((method) != STACK_OK) return NULL
+
+tree_node_t* tree_search(tree_node_t* tree_root, const char *thing, my_stack_node *stack_path)
 {
-    TREE_CHECK(node, NULL);
-    return tree_search_recursive(node, thing, stack);
+    TREE_CHECK(tree_root, NULL);
+    
+    my_stack_int stack_rec = {0};
+    STACK_SEC(stack_construct_int(&stack_rec, 5));
+    STACK_SEC(stack_push_node    (stack_path, tree_root));
+    STACK_SEC(stack_push_int     (&stack_rec, 1));
+
+    tree_node_t *ret_val = NULL;
+
+    size_t stack_size = 0;
+    while (({STACK_SEC(stack_size_int(&stack_rec, &stack_size));  stack_size > 0;}))
+    {
+        tree_node_t *curr_node = NULL;
+        STACK_SEC(stack_top_node(stack_path, &curr_node));
+        int curr_branch = 0;
+        STACK_SEC(stack_top_int(&stack_rec, &curr_branch));
+
+        if (ret_val != NULL)
+        {
+            STACK_SEC(stack_pop_int(&stack_rec));
+            continue;
+        }
+
+        if (curr_branch == 3)
+        {
+            STACK_SEC(stack_pop_int(&stack_rec));
+            STACK_SEC(stack_pop_node(stack_path));
+            continue;
+        }
+        if (curr_branch == 1)
+        {
+            if (curr_node->no_branch != NULL && curr_node->yes_branch != NULL)
+            {
+                STACK_SEC(stack_pop_int  (&stack_rec));
+                STACK_SEC(stack_push_int (&stack_rec, 2));
+                STACK_SEC(stack_push_node(stack_path, curr_node->yes_branch));
+                STACK_SEC(stack_push_int (&stack_rec, 1));
+                continue;
+            }
+
+            if (strcmp(curr_node->node_name, thing) == 0)
+                ret_val = curr_node;
+            else
+                STACK_SEC(stack_pop_node(stack_path));
+
+            STACK_SEC(stack_pop_int(&stack_rec));
+
+            continue;
+        }
+        if (curr_branch == 2)
+        {
+            STACK_SEC(stack_pop_int  (&stack_rec));
+            STACK_SEC(stack_push_int (&stack_rec, 3));
+            STACK_SEC(stack_push_node(stack_path, curr_node->no_branch));
+            STACK_SEC(stack_push_int (&stack_rec, 1));
+            continue;
+        }
+    }
+
+    STACK_SEC(stack_destruct_int(&stack_rec));
+
+    return ret_val;
 }
 
 void tree_dump(tree_node_t *tree_root, const char *file_name)
@@ -204,39 +271,6 @@ static tree_node_t *parse_node(char *buf, size_t buf_size, size_t *curr_pos, mem
         return NULL;
 
     return node;
-}
-
-static tree_node_t* tree_search_recursive(tree_node_t* node, const char *thing, my_stack_node *stack)
-{
-    if (node == NULL)
-        return NULL;
-    
-    if (!(node->no_branch != NULL && node->yes_branch != NULL))
-    {
-        if (strcmp(node->node_name, thing) == 0)
-        {
-            if (stack_push_node(stack, node) != STACK_OK)
-                return NULL;
-                
-            return node;
-        }
-        else
-            return NULL;
-    }
-
-    if (stack_push_node(stack, node) != STACK_OK)
-        return NULL;
-    
-    tree_node_t *find = tree_search_recursive(node->yes_branch, thing, stack);
-    if (find != NULL)
-        return find;
-
-    find = tree_search_recursive(node->no_branch, thing, stack);
-    if (find != NULL)
-        return find;
-
-    stack_pop_node(stack);
-    return NULL;
 }
 
 // utils

@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     }
     if (strcmp(argv[1], "guess") == 0)
     {
-        akinator_guess(tree_root, &pool);
+        tree_root = akinator_guess(tree_root, &pool);
         if (LERR_PRESENT())
         {
             printf("Guessing failed!\n"

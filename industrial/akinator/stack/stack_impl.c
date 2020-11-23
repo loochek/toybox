@@ -25,6 +25,19 @@ static void stack_print_node(elem_t *elem)
 }
 
 #define TYPE node
+static const elem_t OVERLOAD(POISON) = (void*)0xDEAD;
+#include "stack_impl.h"
+#undef TYPE
+#undef elem_t
+
+#define elem_t int
+
+static void stack_print_int(elem_t *elem)
+{
+    // TODO
+}
+
+#define TYPE int
 static const elem_t OVERLOAD(POISON) = 0xDEAD;
 #include "stack_impl.h"
 #undef TYPE
