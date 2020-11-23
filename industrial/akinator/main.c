@@ -16,7 +16,8 @@ int main(int argc, char* argv[])
     {
         printf("Usage: akinator {add|guess}\n"
                "add   - teach me with new things\n"
-               "guess - let me guess something\n");
+               "guess - let me guess something\n"
+               "find  - get information about thing\n");
         return 0;
     }
 
@@ -62,6 +63,16 @@ int main(int argc, char* argv[])
         if (LERR_PRESENT())
         {
             printf("Guessing failed!\n"
+                "Info: %s\n", __lerr_str);
+            ERROR_HANDLER();
+        }
+    }
+    if (strcmp(argv[1], "find") == 0)
+    {
+        akinator_find(tree_root);
+        if (LERR_PRESENT())
+        {
+            printf("Finding failed!\n"
                 "Info: %s\n", __lerr_str);
             ERROR_HANDLER();
         }

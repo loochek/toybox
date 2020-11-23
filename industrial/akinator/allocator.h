@@ -1,3 +1,6 @@
+#ifndef ALLOCATOR_H
+#define ALLOCATOR_H
+
 #include <stdlib.h>
 
 /*
@@ -24,3 +27,5 @@ void* calloc_custom(size_t cnt, size_t size, memory_pool_t *pool);
 void pool_construct(memory_pool_t *pool);
 void pool_destruct (memory_pool_t *pool);
 void pool_validate (memory_pool_t *pool);
+
+#endif

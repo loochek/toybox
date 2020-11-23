@@ -1,3 +1,6 @@
+#ifndef LERROR_H
+#define LERROR_H
+
 #include <stdio.h>
 #include <string.h>
 
@@ -9,6 +12,7 @@ typedef enum
     LERR_NO_ERROR = 0,
     LERR_FILE_IO,
     LERR_ALLOC,
+    LERR_LIST_VALIDATION,
     LERR_POOL_VALIDATION,
     LERR_AKINATOR_PARSE,
     LERR_AKINATOR_BRANCH,
@@ -43,3 +47,5 @@ extern char     __lerr_func_name[];
 
 #define LERRPRINT() fprintf(stderr, "An error occured in function %s: %s\n", \
                                         __lerr_func_name, __lerr_str)
+
+#endif
