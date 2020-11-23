@@ -4,7 +4,6 @@
 typedef int    elem_t;
 
 // as "iterator" i mean index in physical buffer
-// 0 is an invalid iterator
 typedef size_t list_iter_t;
 
 typedef struct
@@ -43,6 +42,7 @@ list_status_t  list_push_back      (list_t *list, elem_t elem);
 list_status_t  list_pop_front      (list_t *list);
 list_status_t  list_pop_back       (list_t *list);
 // returns -1 if failed
+// 0 is an invalid iterator
 int            list_size           (list_t *list);
 
 // iterators
