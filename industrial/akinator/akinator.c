@@ -6,14 +6,16 @@
 #include "lerror.h"
 #include "akinator.h"
 
-#define MAX_SENTENCE_LENGTH MAX_NODE_NAME_LENGTH + 30
-
-static tree_node_t *akinator_put_thing       (tree_node_t *node, const char *thing, memory_pool_t *pool);
+#define MAX_CMD_LINE_LENGTH 100
+#define MAX_SENTENCE_LENGTH 30 + MAX_NODE_NAME_LENGTH
 
 void               speak        (const char *sentence);
 static inline bool akinator_ask (const char *question);
 static inline void akinator_tell(const char *sentence);
 static inline void read_line     (char *buffer, size_t max_length);
+
+static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing, memory_pool_t *pool);
+
 
 tree_node_t *akinator_add(tree_node_t *tree_root, memory_pool_t *pool)
 {
@@ -96,6 +98,8 @@ tree_node_t *akinator_guess(tree_node_t *tree_root, memory_pool_t *pool)
     return tree_root;
 }
 
+#define STACK_SEC(method) if ((method) != STACK_OK) return
+
 void akinator_find(tree_node_t *node)
 {
     TREE_CHECK(node,);
@@ -106,25 +110,24 @@ void akinator_find(tree_node_t *node)
     read_line(thing, MAX_NODE_NAME_LENGTH);
 
     my_stack_node stack = {0};
-    stack_construct_node(&stack, 5);
+    STACK_SEC(stack_construct_node(&stack, 5));
 
     tree_node_t *result = tree_search(node, thing, &stack);
 
-    if (result != NULL)
+    if (result == NULL)
+        akinator_tell("I don't know about it");
+    else
     {
         size_t size = 0;
-        if (stack_size_node(&stack, &size) != STACK_OK)
-            return;
+        STACK_SEC(stack_size_node(&stack, &size));
 
         tree_node_t *prev_node = NULL;
-        if (stack_at_node(&stack, &prev_node, 0) != STACK_OK)
-            return;
+        STACK_SEC(stack_at_node(&stack, &prev_node, 0));
 
         for (size_t i = 1; i < size; i++)
         {
             tree_node_t *node = NULL;
-            if (stack_at_node(&stack, &node, i) != STACK_OK)
-                return;
+            STACK_SEC(stack_at_node(&stack, &node, i));
 
             char sentence[MAX_SENTENCE_LENGTH + 1] = {0};
             if (node == prev_node->yes_branch)
@@ -137,11 +140,96 @@ void akinator_find(tree_node_t *node)
             prev_node = node;
         }
     }
-    else
-        akinator_tell("I don't know about it");
-
-    stack_destruct_node(&stack);
+    
+    STACK_SEC(stack_destruct_node(&stack));
 }
+
+#undef STACK_SEC
+
+#define STACK_SEC(method) if ((method) != STACK_OK) goto cleanup;
+
+void akinator_compare(tree_node_t *tree_root)
+{
+    TREE_CHECK(tree_root,);
+
+    char  first_thing[MAX_NODE_NAME_LENGTH + 1] = {0};
+    char second_thing[MAX_NODE_NAME_LENGTH + 1] = {0};
+
+    akinator_tell("What do you want to compare?");
+    read_line(first_thing, MAX_NODE_NAME_LENGTH);
+    akinator_tell("What do you want to compare with?");
+    read_line(second_thing, MAX_NODE_NAME_LENGTH);
+
+    my_stack_node  first_path = {0};
+    my_stack_node second_path = {0};
+    STACK_SEC(stack_construct_node(&first_path , 5));
+    STACK_SEC(stack_construct_node(&second_path, 5));
+
+    tree_node_t *first_result  = tree_search(tree_root, first_thing, &first_path);
+    tree_node_t *second_result = tree_search(tree_root, second_thing, &second_path);
+
+    if (first_result == NULL || second_result == NULL)
+    {
+        akinator_tell("I don't know about these things");
+        stack_destruct_node(&first_path);
+        stack_destruct_node(&second_path);
+        return;
+    }
+
+    size_t first_size = 0, second_size = 0;
+    STACK_SEC(stack_size_node(&first_path,  &first_size));
+    STACK_SEC(stack_size_node(&second_path, &second_size));
+
+    tree_node_t *common_parent = tree_root;
+    for (size_t i = 1; i < first_size && i < second_size; i++)
+    {
+        tree_node_t *first_node = NULL, *second_node = NULL;
+        STACK_SEC(stack_at_node(&first_path , &first_node , i));
+        STACK_SEC(stack_at_node(&second_path, &second_node, i));
+
+        char sentence[MAX_SENTENCE_LENGTH * 3] = {0};
+
+        if (first_node == second_node)
+        {
+            // enough to check only one
+            if (first_node == common_parent->yes_branch)
+            {
+                snprintf(sentence, MAX_SENTENCE_LENGTH, "It's true that both %s", common_parent->node_name);
+                akinator_tell(sentence);
+            }
+            else
+            {
+                snprintf(sentence, MAX_SENTENCE_LENGTH, "It's false that both %s", common_parent->node_name);
+                akinator_tell(sentence);
+            }
+
+            common_parent = first_node;
+        }
+        else
+        {
+            if (second_node == common_parent->yes_branch)
+            {
+                tree_node_t *tmp = second_result;
+                second_result = first_result;
+                first_result = tmp;
+            }
+            snprintf(sentence, MAX_SENTENCE_LENGTH,
+                    "It's true for %s that it %s, which is false for %s", 
+                    first_result->node_name, common_parent->node_name, second_result->node_name);
+            akinator_tell(sentence);
+
+            break;
+        }
+    }
+
+cleanup:
+    stack_destruct_node(&first_path);
+    stack_destruct_node(&second_path);
+
+    return;
+}
+
+#undef STACK_SEC
 
 static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing, memory_pool_t *pool)
 {
@@ -176,15 +264,13 @@ static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing, mem
     return new_branch_node;
 }
 
-#define MAX_CMD_LINE_LENGTH 100
-
 void speak(const char *sentence)
 {
     char speak_cmd[MAX_SENTENCE_LENGTH + MAX_CMD_LINE_LENGTH + 1];
     snprintf(speak_cmd, MAX_SENTENCE_LENGTH + MAX_CMD_LINE_LENGTH + 1,
              "echo \"%s\" | text2wave -o speech.wav >>/dev/null 2>>/dev/null", sentence);
     system(speak_cmd);
-    system("play speech.wav speed 8 >>/dev/null 2>>/dev/null");
+    system("play speech.wav speed 4 >>/dev/null 2>>/dev/null");
 }
 
 static inline bool akinator_ask(const char *question)

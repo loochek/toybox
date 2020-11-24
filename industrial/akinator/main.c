@@ -15,9 +15,11 @@ int main(int argc, char* argv[])
     if (argc == 1)
     {
         printf("Usage: akinator {add|guess}\n"
-               "add   - teach me with new things\n"
-               "guess - let me guess something\n"
-               "find  - get information about thing\n");
+               "add     - teach me with new things\n"
+               "guess   - let me guess something\n"
+               "find    - get information about thing\n"
+               "compare - compare things\n"
+               "show    - show visualized database\n");
         return 0;
     }
 
@@ -73,6 +75,26 @@ int main(int argc, char* argv[])
         if (LERR_PRESENT())
         {
             printf("Finding failed!\n"
+                "Info: %s\n", __lerr_str);
+            ERROR_HANDLER();
+        }
+    }
+    if (strcmp(argv[1], "compare") == 0)
+    {
+        akinator_compare(tree_root);
+        if (LERR_PRESENT())
+        {
+            printf("Comparing failed!\n"
+                "Info: %s\n", __lerr_str);
+            ERROR_HANDLER();
+        }
+    }
+    if (strcmp(argv[1], "show") == 0)
+    {
+        tree_visualize(tree_root);
+        if (LERR_PRESENT())
+        {
+            printf("Show failed!\n"
                 "Info: %s\n", __lerr_str);
             ERROR_HANDLER();
         }

@@ -20,18 +20,15 @@ typedef struct tree_node_t
 #undef elem_t
 #undef TYPE
 
-// Throws LERR
+// these functions throws LERR
+
 // Method messes passed buffer. Created tree depends on the buffer. 
 // So keep buffer while using the tree
 tree_node_t *tree_create_from_buffer(char *buf, size_t buf_size, memory_pool_t *pool);
-
-// Throws LERR
-void tree_dump(tree_node_t *tree_root, const char *file_name);
-// Throws LERR
-int tree_validate(tree_node_t *tree_root);
-
-// throws LERR
-tree_node_t* tree_search(tree_node_t* node, const char *thing, my_stack_node *stack);
+void         tree_dump              (tree_node_t *tree_root, const char *file_name);
+void         tree_visualize         (tree_node_t *tree_root);
+int          tree_validate          (tree_node_t *tree_root);
+tree_node_t* tree_search            (tree_node_t* node, const char *thing, my_stack_node *stack);
 
 #define TREE_CHECK(tree, to_ret) \
 {                                \
