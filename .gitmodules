@@ -1,0 +1,3 @@
+[submodule "industrial/akinator/AkinatorDB"]
+	path = industrial/akinator/AkinatorDB
+	url = https://github.com/MIPTGroup/AkinatorDB
