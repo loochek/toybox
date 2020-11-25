@@ -6,3 +6,4 @@ build:
 
 clean:
 	rm -f akinator speech.wav tree.dot tree.svg
+	cp AkinatorDB/akinator.db akinator.db
