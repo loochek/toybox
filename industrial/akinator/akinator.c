@@ -236,7 +236,7 @@ static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing, mem
     if (node == NULL)
     {
         tree_node_t *to_ret = calloc_custom(1, sizeof(tree_node_t), pool);
-        if (node == NULL)
+        if (to_ret == NULL)
             return NULL;
 
         to_ret->node_name = calloc_custom(MAX_NODE_NAME_LENGTH + 1, sizeof(char), pool);
