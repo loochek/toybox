@@ -8,6 +8,7 @@ int main()
 
     list_t list;
     list_construct(&list, 5);
+    list_html_dump(&list);
     
     list_push_back(&list, 1);
     list_html_dump(&list);

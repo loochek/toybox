@@ -5,7 +5,7 @@
 void check(list_t *list, int correct_arr[], size_t correct_size)
 {
     size_t cnt = 0;
-    for (list_iter_t i = list_begin(list); i != list_end(list); i = list_next(list, i))
+    for (list_iter_t i = list_begin(list); !list_iter_cmp(i, list_end(list)); i = list_next(list, i))
     {
         assert(*list_data(list, i) == correct_arr[cnt]);
         cnt++;
@@ -68,7 +68,8 @@ void test_advanced()
     }
 
     int cnt = 1;
-    for (int i = list_begin(&list); i != list_end(&list); i = list_next(&list, list_next(&list, i)))
+    for (list_iter_t i = list_begin(&list); !list_iter_cmp(i, list_end(&list));
+         i = list_next(&list, list_next(&list, i)))
     {
         assert(list_insert_after(&list, i, cnt) == LIST_OK);
         cnt++;
@@ -77,12 +78,12 @@ void test_advanced()
     int correct1[] = {10, 1, 8, 2, 6, 3, 4, 4, 2, 5, 1, 6, 3, 7, 5, 8, 7, 9, 9, 10};
     check(&list, correct1, 20);
     
-    for (int i = list_next(&list, list_begin(&list)); i != list_end(&list);)
+    for (list_iter_t i = list_next(&list, list_begin(&list)); !list_iter_cmp(i, list_end(&list));)
     {
-        int old_i = i;
+        list_iter_t old_i = i;
         i = list_next(&list, list_next(&list, i));
         assert(list_remove(&list, old_i) == LIST_OK);
-        if (i == 0)
+        if (list_iter_cmp(i, list_end(&list)))
             break;
     }
 
@@ -97,7 +98,7 @@ void test_advanced()
     assert(list.linear == true);
 
     list_iter_t iter = list_iter_lookup(&list, 4);
-    assert(iter != 0);
+    assert(!list_iter_cmp(iter, NULLITER));
     assert(list_insert_after (&list, iter, 103) == LIST_OK);
     assert(list.linear == false);
     assert(list_insert_before(&list, iter, 101) == LIST_OK);
@@ -107,7 +108,7 @@ void test_advanced()
 
     list_iter_t iter103 = list_next(&list, iter);
     list_iter_t iter101 = list_prev(&list, iter);
-    assert(iter101 != 0 && iter101 != 0);
+    assert(!list_iter_cmp(iter101, NULLITER) && !list_iter_cmp(iter103, NULLITER));
     assert(list_remove(&list, iter101) == LIST_OK);
     assert(list_remove(&list, iter103) == LIST_OK);
 

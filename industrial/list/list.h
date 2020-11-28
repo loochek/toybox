@@ -3,20 +3,33 @@
 
 typedef int    elem_t;
 
-// as "iterator" i mean index in physical buffer
-typedef size_t list_iter_t;
+/**
+ * "Iterator" is the index in the physical buffer
+ *  It's wrapped into struct to hide internals from the user in public interface
+ *  (especially to avoid confusion between the physical index in the buffer
+ *  and the logical position of the element in the list)
+ */
+typedef struct
+{
+    size_t value;
+} list_iter_t;
+
+typedef struct
+{
+    elem_t data;
+    size_t next;
+    size_t prev;
+} list_node_t;
 
 typedef struct
 {
     size_t       canary1;
 
-    elem_t      *data;
-    list_iter_t *next;
-    list_iter_t *prev;
+    list_node_t *buffer;
 
-    list_iter_t  head;
-    list_iter_t  tail;
-    list_iter_t  head_free;
+    size_t       head;
+    size_t       tail;
+    size_t       head_free;
 
     size_t       buffer_size;
     size_t       used_size;
@@ -46,10 +59,14 @@ list_status_t  list_pop_back       (list_t *list);
 int            list_size           (list_t *list);
 
 // iterators
+
+#define NULLITER (list_iter_t){0}
+
 list_iter_t    list_next           (list_t *list, list_iter_t iter);
 list_iter_t    list_prev           (list_t *list, list_iter_t iter);
 list_iter_t    list_begin          (list_t *list);
 list_iter_t    list_end            (list_t *list);
+bool           list_iter_cmp       (list_iter_t iter1, list_iter_t iter2);
 
 // iteration methods
 elem_t        *list_data           (list_t *list, list_iter_t iter);
