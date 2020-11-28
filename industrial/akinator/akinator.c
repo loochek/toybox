@@ -7,7 +7,7 @@
 #include "akinator.h"
 
 #define MAX_CMD_LINE_LENGTH 100
-#define MAX_SENTENCE_LENGTH 30 + MAX_NODE_NAME_LENGTH
+#define MAX_SENTENCE_LENGTH MAX_NODE_NAME_LENGTH * 3
 
 void               speak        (const char *sentence);
 static inline bool akinator_ask (const char *question);
@@ -19,7 +19,7 @@ static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing, mem
 
 tree_node_t *akinator_add(tree_node_t *tree_root, memory_pool_t *pool)
 {
-    TREE_CHECK(tree_root, NULL);
+    TREE_CHECK_RET(tree_root, NULL);
 
     char thing   [MAX_NODE_NAME_LENGTH + 1] = {0};
     char sentence[MAX_SENTENCE_LENGTH  + 1] = {0};
@@ -53,7 +53,7 @@ tree_node_t *akinator_add(tree_node_t *tree_root, memory_pool_t *pool)
 
 tree_node_t *akinator_guess(tree_node_t *tree_root, memory_pool_t *pool)
 {
-    TREE_CHECK(tree_root, NULL);
+    TREE_CHECK_RET(tree_root, NULL);
 
     if (tree_root == NULL)
     {
@@ -100,9 +100,9 @@ tree_node_t *akinator_guess(tree_node_t *tree_root, memory_pool_t *pool)
 
 #define STACK_SEC(method) if ((method) != STACK_OK) return
 
-void akinator_find(tree_node_t *node)
+void akinator_find(tree_node_t *tree_root)
 {
-    TREE_CHECK(node,);
+    TREE_CHECK_RET(tree_root,);
 
     char thing[MAX_NODE_NAME_LENGTH + 1] = {0};
 
@@ -112,7 +112,7 @@ void akinator_find(tree_node_t *node)
     my_stack_node stack = {0};
     STACK_SEC(stack_construct_node(&stack, 5));
 
-    tree_node_t *result = tree_search(node, thing, &stack);
+    tree_node_t *result = tree_search(tree_root, thing, &stack);
 
     if (result == NULL)
         akinator_tell("I don't know about it");
@@ -146,11 +146,12 @@ void akinator_find(tree_node_t *node)
 
 #undef STACK_SEC
 
+#define CLEANUP()         goto cleanup
 #define STACK_SEC(method) if ((method) != STACK_OK) goto cleanup;
 
 void akinator_compare(tree_node_t *tree_root)
 {
-    TREE_CHECK(tree_root,);
+    TREE_CHECK_RET(tree_root,);
 
     char  first_thing[MAX_NODE_NAME_LENGTH + 1] = {0};
     char second_thing[MAX_NODE_NAME_LENGTH + 1] = {0};
@@ -171,9 +172,7 @@ void akinator_compare(tree_node_t *tree_root)
     if (first_result == NULL || second_result == NULL)
     {
         akinator_tell("I don't know about these things");
-        stack_destruct_node(&first_path);
-        stack_destruct_node(&second_path);
-        return;
+        CLEANUP();
     }
 
     size_t first_size = 0, second_size = 0;
@@ -187,7 +186,7 @@ void akinator_compare(tree_node_t *tree_root)
         STACK_SEC(stack_at_node(&first_path , &first_node , i));
         STACK_SEC(stack_at_node(&second_path, &second_node, i));
 
-        char sentence[MAX_SENTENCE_LENGTH * 3] = {0};
+        char sentence[MAX_SENTENCE_LENGTH + 1] = {0};
 
         if (first_node == second_node)
         {
@@ -230,13 +229,20 @@ cleanup:
 }
 
 #undef STACK_SEC
+#undef CLEANUP
 
 static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing, memory_pool_t *pool)
 {
     if (node == NULL)
     {
         tree_node_t *to_ret = calloc_custom(1, sizeof(tree_node_t), pool);
-        to_ret->node_name   = calloc_custom(MAX_NODE_NAME_LENGTH + 1, sizeof(char), pool);
+        if (node == NULL)
+            return NULL;
+
+        to_ret->node_name = calloc_custom(MAX_NODE_NAME_LENGTH + 1, sizeof(char), pool);
+        if (to_ret->node_name == NULL)
+            return NULL;
+
         strncpy(to_ret->node_name, thing, MAX_NODE_NAME_LENGTH);
         return to_ret;
     }
@@ -253,11 +259,15 @@ static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing, mem
     akinator_tell(sentence);
     
     tree_node_t *new_branch_node = calloc_custom(1, sizeof(tree_node_t), pool);
+    if (new_branch_node == NULL)
+        return NULL;
 
-    char *node_name = calloc_custom(MAX_NODE_NAME_LENGTH + 1, sizeof(char), pool);
-    read_line(node_name, MAX_NODE_NAME_LENGTH);
+    new_branch_node->node_name = calloc_custom(MAX_NODE_NAME_LENGTH + 1, sizeof(char), pool);
+    if (new_branch_node->node_name == NULL)
+        return NULL;
 
-    new_branch_node->node_name  = node_name;
+    read_line(new_branch_node->node_name, MAX_NODE_NAME_LENGTH);
+
     new_branch_node->yes_branch = akinator_put_thing(new_branch_node->yes_branch, thing, pool);
     new_branch_node->no_branch  = node;
 

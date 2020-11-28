@@ -1,7 +1,27 @@
 #include "search_tree.h"
 
-// these functions throws LERR
-tree_node_t *akinator_add    (tree_node_t *node, memory_pool_t *pool);
-tree_node_t *akinator_guess  (tree_node_t *node, memory_pool_t *pool);
-void         akinator_find   (tree_node_t *node);
-void         akinator_compare(tree_node_t *node);
+/**
+ * Implementations of Akinator game modes
+ */
+
+/**
+ * Returns modified tree root or NULL if error occured
+ * LERR-affecting
+ */
+tree_node_t *akinator_add(tree_node_t *tree_root, memory_pool_t *pool);
+
+/**
+ * Returns modified tree root or NULL if error occured
+ * LERR-affecting
+ */
+tree_node_t *akinator_guess(tree_node_t *tree_root, memory_pool_t *pool);
+
+/**
+ * LERR-affecting
+ */
+void akinator_find(tree_node_t *tree_root);
+
+/**
+ * LERR-affecting
+ */
+void akinator_compare(tree_node_t *tree_root);

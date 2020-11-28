@@ -1,10 +1,9 @@
 #include "allocator.h"
 #include "lerror.h"
 
-#define POOL_CHECK(pool, ret_val)                                            \
+#define POOL_CHECK_RET(pool, ret_val)                                            \
 {                                                                            \
-    pool_validate(pool);                                                     \
-    if (LERR_PRESENT())                                                      \
+    if (pool_validate(pool) != 0)                                            \
     {                                                                        \
         fprintf(stderr, "Memory pool validation failed: %s\n", __lerr_str);  \
         return ret_val;                                                      \
@@ -31,7 +30,7 @@ void pool_construct(memory_pool_t *pool)
 
 void* calloc_custom(size_t cnt, size_t size, memory_pool_t *pool)
 {
-    POOL_CHECK(pool, NULL);
+    POOL_CHECK_RET(pool, NULL);
 
     if (cnt * size > BLOCK_SIZE)
     {
@@ -54,7 +53,7 @@ void* calloc_custom(size_t cnt, size_t size, memory_pool_t *pool)
 static void pool_expand(memory_pool_t *pool)
 {
     LERR_RESET();
-    POOL_CHECK(pool,);
+    POOL_CHECK_RET(pool,);
 
     if (pool->current_block + 1 >= MAX_BLOCKS_COUNT)
     {
@@ -75,37 +74,39 @@ static void pool_expand(memory_pool_t *pool)
 
 void pool_destruct(memory_pool_t *pool)
 {
-    POOL_CHECK(pool,);
+    POOL_CHECK_RET(pool,);
 
     for (size_t i = 0; i < pool->current_block + 1; i++)
         free(pool->memory_blocks[i]);
 }
 
-void pool_validate(memory_pool_t *pool)
+int pool_validate(memory_pool_t *pool)
 {
     LERR_RESET();
 
     if (pool == NULL)
     {
         LERR(LERR_POOL_VALIDATION, "null pointer");
-        return;
+        return -1;
     }
     if (pool->current_block >= MAX_BLOCKS_COUNT)
     {
         LERR(LERR_POOL_VALIDATION, "too much blocks");
-        return;
+        return -1;
     }
     if (pool->current_offset >= BLOCK_SIZE)
     {
         LERR(LERR_POOL_VALIDATION, "offset is greater than block size");
-        return;
+        return -1;
     }
     for (size_t i = 0; i < pool->current_block + 1; i++)
     {
         if (pool->memory_blocks[i] == NULL)
         {
             LERR(LERR_POOL_VALIDATION, "null pointer to memory block");
-            return;
+            return -1;
         }
     }
+
+    return 0;
 }

@@ -1,6 +1,10 @@
 #ifndef LERROR_H
 #define LERROR_H
 
+/**
+ * Custom error handling system aka errno
+ */
+
 #include <stdio.h>
 #include <string.h>
 

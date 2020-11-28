@@ -35,8 +35,10 @@ tree_node_t *tree_create_from_buffer(char *buf, size_t buf_size, memory_pool_t *
     STACK_SEC(stack_construct_int (&stack_rec , 5));
     STACK_SEC(stack_construct_node(&stack_path, 5));
 
+    // current parsing position in the buffer
+    size_t curr_pos = 0;
+
     tree_node_t *ret_val  = NULL;
-    size_t       curr_pos = 0;
 
     STACK_SEC(stack_push_int(&stack_rec , 1));
 
@@ -51,10 +53,7 @@ tree_node_t *tree_create_from_buffer(char *buf, size_t buf_size, memory_pool_t *
             // state 1 - enter node
             tree_node_t *node = calloc_custom(1, sizeof(tree_node_t), pool);
             if (node == NULL)
-            {
-                LERR(LERR_ALLOC, "unable to allocate memory");
                 ERROR_HANDLER();
-            }
 
             // try to get node_name
             parse_node_name(buf, buf_size, &curr_pos, &node->node_name);
@@ -160,7 +159,7 @@ error_handler:
 
 tree_node_t* tree_search(tree_node_t* tree_root, const char *thing, my_stack_node *stack_path)
 {
-    TREE_CHECK(tree_root, NULL);
+    TREE_CHECK_RET(tree_root, NULL);
 
     // recursion but actually no
     // stack_rec is the recursion state in each node on the way
@@ -273,6 +272,12 @@ int tree_validate(tree_node_t *tree_root)
         }
         if (curr_branch == 1)
         {
+            if (curr_node->node_name == NULL)
+            {
+                LERR(LERR_AKINATOR_VALIDATION, "node_name is not present");
+                ERROR_HANDLER();
+            }
+
             if (curr_node->no_branch != NULL && curr_node->yes_branch != NULL)
             {
                 STACK_SEC(stack_pop_int  (&stack_rec));
@@ -317,13 +322,14 @@ error_handler:
 #undef STACK_SEC
 
 // because normal and error cleanup are the same below
+
 #define ERROR_HANDLER()   goto cleanup
 #define STACK_SEC(method) if ((method) != STACK_OK) goto cleanup
 
 void tree_dump(tree_node_t *tree_root, const char *file_name)
 {
     LERR_RESET();
-    TREE_CHECK(tree_root,);
+    TREE_CHECK_RET(tree_root,);
 
     FILE *file = fopen(file_name, "w");
     if (file == NULL)
@@ -408,7 +414,7 @@ cleanup:
 void tree_visualize(tree_node_t *tree_root)
 {
     LERR_RESET();
-    TREE_CHECK(tree_root,);
+    TREE_CHECK_RET(tree_root,);
 
     FILE *file = fopen("tree.dot", "w");
     if (file == NULL)
@@ -501,7 +507,7 @@ cleanup:
 #undef ERROR_HANDLER
 #undef STACK_SEC
 
-
+// helper function for parsing
 static void parse_node_name(char *buf, size_t buf_size, size_t *curr_pos, char **node_name)
 {
     LERR_RESET();
@@ -569,6 +575,7 @@ static void skip_until_key(const char *buf, size_t buf_size, size_t *curr_pos)
     }
 }
 
+// print 4*level spaces into file
 static inline void tab(FILE *file, size_t level)
 {
     for (size_t i = 0; i < level * 4; i++)
