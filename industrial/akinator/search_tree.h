@@ -18,8 +18,21 @@ typedef struct tree_node_t
     struct tree_node_t *no_branch;
 } tree_node_t;
 
+typedef enum
+{
+    RELATION_NONE,
+    RELATION_YES,
+    RELATION_NO,
+} relation_t;
+
+typedef struct
+{
+    tree_node_t *tree_node;
+    relation_t   relation;    
+} definition_node_t;
+
 #define TYPE node
-#define elem_t tree_node_t*
+#define elem_t definition_node_t
 #include "stack/stack.h"
 #undef elem_t
 #undef TYPE
@@ -54,7 +67,7 @@ int tree_validate(tree_node_t *tree_root);
  * You also need to provide a stack for the path to the found node
  * LERR-affecting
  */
-tree_node_t* tree_search(tree_node_t* tree_root, const char *thing, my_stack_node *stack);
+tree_node_t* tree_search(tree_node_t* tree_root, const char *thing, my_stack_node *definition);
 
 #define TREE_CHECK_RET(tree, to_ret) \
 {                                \

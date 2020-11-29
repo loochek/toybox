@@ -25,3 +25,6 @@ void akinator_find(tree_node_t *tree_root);
  * LERR-affecting
  */
 void akinator_compare(tree_node_t *tree_root);
+
+void akinator_tell(const char *sentence);
+void read_line    (char *buffer, size_t max_length);

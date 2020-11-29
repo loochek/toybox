@@ -10,19 +10,10 @@ const char *db_name = "akinator.db";
 
 #define ERROR_HANDLER() goto error_handler
 
+#define MAX_COMMAND_LENGTH 10
+
 int main(int argc, char* argv[])
 {
-    if (argc == 1)
-    {
-        printf("Usage: akinator {add|guess}\n"
-               "add     - teach me with new things\n"
-               "guess   - let me guess something\n"
-               "find    - get information about thing\n"
-               "compare - compare things\n"
-               "show    - show visualized database\n");
-        return 0;
-    }
-
     memory_pool_t pool = {0};
     pool_construct(&pool);
     if (LERR_PRESENT())
@@ -48,64 +39,81 @@ int main(int argc, char* argv[])
                "Info: %s\n", __lerr_str);
         ERROR_HANDLER();
     }
-    
-    if (strcmp(argv[1], "add") == 0)
-    {
-        tree_root = akinator_add(tree_root, &pool);
-        if (LERR_PRESENT())
-        {
-            printf("Adding failed!\n"
-                  "Info: %s\n", __lerr_str);
-            ERROR_HANDLER();
-        }
-    }
-    if (strcmp(argv[1], "guess") == 0)
-    {
-        tree_root = akinator_guess(tree_root, &pool);
-        if (LERR_PRESENT())
-        {
-            printf("Guessing failed!\n"
-                "Info: %s\n", __lerr_str);
-            ERROR_HANDLER();
-        }
-    }
-    if (strcmp(argv[1], "find") == 0)
-    {
-        akinator_find(tree_root);
-        if (LERR_PRESENT())
-        {
-            printf("Finding failed!\n"
-                "Info: %s\n", __lerr_str);
-            ERROR_HANDLER();
-        }
-    }
-    if (strcmp(argv[1], "compare") == 0)
-    {
-        akinator_compare(tree_root);
-        if (LERR_PRESENT())
-        {
-            printf("Comparing failed!\n"
-                "Info: %s\n", __lerr_str);
-            ERROR_HANDLER();
-        }
-    }
-    if (strcmp(argv[1], "show") == 0)
-    {
-        tree_visualize(tree_root);
-        if (LERR_PRESENT())
-        {
-            printf("Show failed!\n"
-                "Info: %s\n", __lerr_str);
-            ERROR_HANDLER();
-        }
-    }
 
-    tree_dump(tree_root, db_name);
-    if (LERR_PRESENT())
+    akinator_tell("Welcome to Akinator!\n");
+
+    while (true)
     {
-        printf("Can't save the database!\n"
-               "Info: %s\n", __lerr_str);
-        ERROR_HANDLER();
+        akinator_tell("How can I help you now?\n");
+        printf("[guess|add|find|compare|show|exit]\n");
+
+        char command[MAX_COMMAND_LENGTH + 1];
+        read_line(command, MAX_NODE_NAME_LENGTH);
+
+        if (strcmp(command, "add") == 0)
+        {
+            tree_root = akinator_add(tree_root, &pool);
+            if (LERR_PRESENT())
+            {
+                printf("Adding failed!\n"
+                    "Info: %s\n", __lerr_str);
+                ERROR_HANDLER();
+            }
+        }
+        if (strcmp(command, "guess") == 0)
+        {
+            tree_root = akinator_guess(tree_root, &pool);
+            if (LERR_PRESENT())
+            {
+                printf("Guessing failed!\n"
+                    "Info: %s\n", __lerr_str);
+                ERROR_HANDLER();
+            }
+        }
+        if (strcmp(command, "find") == 0)
+        {
+            akinator_find(tree_root);
+            if (LERR_PRESENT())
+            {
+                printf("Finding failed!\n"
+                    "Info: %s\n", __lerr_str);
+                ERROR_HANDLER();
+            }
+        }
+        if (strcmp(command, "compare") == 0)
+        {
+            akinator_compare(tree_root);
+            if (LERR_PRESENT())
+            {
+                printf("Comparing failed!\n"
+                    "Info: %s\n", __lerr_str);
+                ERROR_HANDLER();
+            }
+        }
+        if (strcmp(command, "show") == 0)
+        {
+            tree_visualize(tree_root);
+            if (LERR_PRESENT())
+            {
+                printf("Show failed!\n"
+                    "Info: %s\n", __lerr_str);
+                ERROR_HANDLER();
+            }
+        }
+
+        tree_dump(tree_root, db_name);
+        if (LERR_PRESENT())
+        {
+            printf("Can't save the database!\n"
+                "Info: %s\n", __lerr_str);
+            ERROR_HANDLER();
+        }
+
+        if (strcmp(command, "exit") == 0)
+        {
+            akinator_tell("Bye!\n");
+            break;
+        }
     }
     
     free(db_buffer);

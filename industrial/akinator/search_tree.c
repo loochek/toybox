@@ -19,44 +19,45 @@ static void        skip_until_key(const char *buf, size_t buf_size, size_t *curr
 
 
 #define ERROR_HANDLER()   goto error_handler
-#define STACK_SEC(method) if ((method) != STACK_OK) goto error_handler
+#define STACK_SEC(method) if ((method) != STACK_OK) ERROR_HANDLER()
 
 tree_node_t *tree_create_from_buffer(char *buf, size_t buf_size, memory_pool_t *pool)
 {
     LERR_RESET();
 
     // recursion but actually no
-    // stack_rec is the recursion state in each node on the way
-    // stack_path remembers nodes on the way
+    // definition stack remembers nodes on the way and contains state of recursion of each node
 
-    my_stack_int  stack_rec = {0};
-    my_stack_node stack_path = {0};
+    my_stack_node definition = {0};
 
-    STACK_SEC(stack_construct_int (&stack_rec , 5));
-    STACK_SEC(stack_construct_node(&stack_path, 5));
+    STACK_SEC(stack_construct_node(&definition, 5));
+
+    // push dummy node - it will be filled in recursion cycle
+    STACK_SEC(stack_push_node(&definition, (definition_node_t){ NULL, RELATION_NONE }));
 
     // current parsing position in the buffer
     size_t curr_pos = 0;
+    // return value of recursion cycle - useful for children handling
+    tree_node_t *ret_val = NULL;
 
-    tree_node_t *ret_val  = NULL;
-
-    STACK_SEC(stack_push_int(&stack_rec , 1));
-
-    size_t stack_size = 0;
-    while (({STACK_SEC(stack_size_int(&stack_rec, &stack_size));  stack_size > 0;}))
+    while (({size_t stack_size = 0; STACK_SEC(stack_size_node(&definition, &stack_size));  stack_size > 0;}))
     {
-        int curr_branch = 0;
-        STACK_SEC(stack_top_int(&stack_rec, &curr_branch));
+        definition_node_t curr_def_node = {0};
+        STACK_SEC(stack_top_node(&definition, &curr_def_node));
+        tree_node_t *curr_node     = curr_def_node.tree_node;
+        relation_t   curr_relation = curr_def_node.relation;
 
-        if (curr_branch == 1)
+        if (curr_relation == RELATION_NONE)
         {
             // state 1 - enter node
-            tree_node_t *node = calloc_custom(1, sizeof(tree_node_t), pool);
-            if (node == NULL)
+
+            // as we know, we must create node
+            tree_node_t *tree_node = calloc_custom(1, sizeof(tree_node_t), pool);
+            if (tree_node == NULL)
                 ERROR_HANDLER();
 
             // try to get node_name
-            parse_node_name(buf, buf_size, &curr_pos, &node->node_name);
+            parse_node_name(buf, buf_size, &curr_pos, &tree_node->node_name);
             if (LERR_PRESENT())
                 ERROR_HANDLER();
 
@@ -66,15 +67,15 @@ tree_node_t *tree_create_from_buffer(char *buf, size_t buf_size, memory_pool_t *
             if (LERR_PRESENT())
             {
                 __lerrno = LERR_NO_ERROR;
-                STACK_SEC(stack_pop_int(&stack_rec));
-                ret_val = node;
+                STACK_SEC(stack_pop_node(&definition));
+                ret_val = tree_node;
                 continue;
             }
 
             if (buf[curr_pos] != '[')
             {
-                STACK_SEC(stack_pop_int(&stack_rec));
-                ret_val = node;
+                STACK_SEC(stack_pop_node(&definition));
+                ret_val = tree_node;
                 continue;
             }
 
@@ -84,34 +85,26 @@ tree_node_t *tree_create_from_buffer(char *buf, size_t buf_size, memory_pool_t *
 
             // go to first branch
 
-            STACK_SEC(stack_pop_int  (&stack_rec));
-            STACK_SEC(stack_push_int (&stack_rec, 2));
-            STACK_SEC(stack_push_node(&stack_path, node));
-            STACK_SEC(stack_push_int (&stack_rec, 1));
+            STACK_SEC(stack_pop_node (&definition));
+            STACK_SEC(stack_push_node(&definition, (definition_node_t){ tree_node, RELATION_YES }));
+            STACK_SEC(stack_push_node(&definition, (definition_node_t){ NULL     , RELATION_NONE }));
             continue;
         }
-        if (curr_branch == 2)
+        if (curr_relation == RELATION_YES)
         {
             // returned from yes branch
-
-            tree_node_t *node = NULL;
-            STACK_SEC(stack_top_node(&stack_path, &node));
-            node->yes_branch = ret_val;
+            curr_node->yes_branch = ret_val;
 
             // go to no branch
-
-            STACK_SEC(stack_pop_int  (&stack_rec));
-            STACK_SEC(stack_push_int (&stack_rec, 3));
-            STACK_SEC(stack_push_int (&stack_rec, 1));
+            STACK_SEC(stack_pop_node (&definition));
+            STACK_SEC(stack_push_node(&definition, (definition_node_t){ curr_node, RELATION_NO }));
+            STACK_SEC(stack_push_node(&definition, (definition_node_t){ NULL     , RELATION_NONE }));
             continue;
         }
-        if (curr_branch == 3)
+        if (curr_relation == RELATION_NO)
         {
             // returned from no branch
-
-            tree_node_t *node = NULL;
-            STACK_SEC(stack_top_node(&stack_path, &node));
-            node->no_branch = ret_val;
+            curr_node->no_branch = ret_val;
 
             skip_until_key(buf, buf_size, &curr_pos);
             if (LERR_PRESENT())
@@ -126,16 +119,14 @@ tree_node_t *tree_create_from_buffer(char *buf, size_t buf_size, memory_pool_t *
             curr_pos++;
 
             // exit current node
-            STACK_SEC(stack_pop_int (&stack_rec));
-            STACK_SEC(stack_pop_node(&stack_path));
-            ret_val = node;
+            STACK_SEC(stack_pop_node(&definition));
+            ret_val = curr_node;
             
             continue;
         }
     }
 
-    STACK_SEC(stack_destruct_int (&stack_rec));
-    STACK_SEC(stack_destruct_node(&stack_path));
+    STACK_SEC(stack_destruct_node(&definition));
 
     // if extra symbols aren't presented already
     if (curr_pos >= buf_size)
@@ -152,90 +143,7 @@ tree_node_t *tree_create_from_buffer(char *buf, size_t buf_size, memory_pool_t *
     return NULL;
 
 error_handler:
-    STACK_SEC(stack_destruct_int (&stack_rec));
-    STACK_SEC(stack_destruct_node(&stack_path));
-    return NULL;
-}
-
-tree_node_t* tree_search(tree_node_t* tree_root, const char *thing, my_stack_node *stack_path)
-{
-    TREE_CHECK_RET(tree_root, NULL);
-
-    // recursion but actually no
-    // stack_rec is the recursion state in each node on the way
-    // stack_path also used to remember path to search result
-    
-    my_stack_int stack_rec = {0};
-    STACK_SEC(stack_construct_int(&stack_rec, 5));
-    STACK_SEC(stack_push_node    (stack_path, tree_root));
-    STACK_SEC(stack_push_int     (&stack_rec, 1));
-
-    tree_node_t *ret_val = NULL;
-
-    size_t stack_size = 0;
-    while (({STACK_SEC(stack_size_int(&stack_rec, &stack_size));  stack_size > 0;}))
-    {
-        tree_node_t *curr_node = NULL;
-        STACK_SEC(stack_top_node(stack_path, &curr_node));
-        int curr_branch = 0;
-        STACK_SEC(stack_top_int(&stack_rec, &curr_branch));
-
-        if (ret_val != NULL)
-        {
-            // if we found something deeper, just pass it despite current state
-            // we want to save path, so we pop only recursion state stack
-            STACK_SEC(stack_pop_int(&stack_rec));
-            continue;
-        }
-
-        if (curr_branch == 1)
-        {
-            // enter node
-
-            if (curr_node->no_branch != NULL && curr_node->yes_branch != NULL)
-            {
-                // if it is not a leaf, start to process children
-                // increment state of current node and go into left child
-                STACK_SEC(stack_pop_int  (&stack_rec));
-                STACK_SEC(stack_push_int (&stack_rec, 2));
-                STACK_SEC(stack_push_node(stack_path, curr_node->yes_branch));
-                STACK_SEC(stack_push_int (&stack_rec, 1));
-            }
-            else
-            {
-                // if we found thing, we want to stop search, else just go out from the node
-                if (strcmp(curr_node->node_name, thing) == 0)
-                    ret_val = curr_node;
-                else
-                    STACK_SEC(stack_pop_node(stack_path));
-
-                STACK_SEC(stack_pop_int(&stack_rec));
-            }
-        }
-        if (curr_branch == 2)
-        {
-            // returned from the left child
-            // increment state of current node and go into right child
-            STACK_SEC(stack_pop_int  (&stack_rec));
-            STACK_SEC(stack_push_int (&stack_rec, 3));
-            STACK_SEC(stack_push_node(stack_path, curr_node->no_branch));
-            STACK_SEC(stack_push_int (&stack_rec, 1));
-            continue;
-        }
-        if (curr_branch == 3)
-        {
-            // go out from the node
-            STACK_SEC(stack_pop_int(&stack_rec));
-            STACK_SEC(stack_pop_node(stack_path));
-            continue;
-        }
-    }
-
-    STACK_SEC(stack_destruct_int(&stack_rec));
-    return ret_val;
-
-error_handler:
-    STACK_SEC(stack_destruct_int(&stack_rec));
+    STACK_SEC(stack_destruct_node(&definition));
     return NULL;
 }
 
@@ -248,29 +156,18 @@ int tree_validate(tree_node_t *tree_root)
         return -1;
     }
     
-    my_stack_int  stack_rec = {0};
-    my_stack_node stack_path = {0};
-    STACK_SEC(stack_construct_int (&stack_rec , 5));
-    STACK_SEC(stack_construct_node(&stack_path, 5));
-    STACK_SEC(stack_push_node     (&stack_path, tree_root));
-    STACK_SEC(stack_push_int      (&stack_rec , 1));
+    my_stack_node definition = {0};
+    STACK_SEC(stack_construct_node(&definition, 5));
+    STACK_SEC(stack_push_node(&definition, (definition_node_t){ tree_root, RELATION_NONE }));
 
-    size_t stack_size = 0;
-    while (({STACK_SEC(stack_size_int(&stack_rec, &stack_size));  stack_size > 0;}))
+    while (({size_t stack_size = 0; STACK_SEC(stack_size_node(&definition, &stack_size));  stack_size > 0;}))
     {
-        tree_node_t *curr_node = NULL;
-        STACK_SEC(stack_top_node(&stack_path, &curr_node));
-        int curr_branch = 0;
-        STACK_SEC(stack_top_int (&stack_rec, &curr_branch));
+        definition_node_t curr_def_node = {0};
+        STACK_SEC(stack_top_node(&definition, &curr_def_node));
+        tree_node_t *curr_node     = curr_def_node.tree_node;
+        relation_t   curr_relation = curr_def_node.relation;
 
-        if (curr_branch == 3)
-        {
-            STACK_SEC(stack_pop_int (&stack_rec));
-            STACK_SEC(stack_pop_node(&stack_path));
-            
-            continue;
-        }
-        if (curr_branch == 1)
+        if (curr_relation == RELATION_NONE)
         {
             if (curr_node->node_name == NULL)
             {
@@ -280,16 +177,16 @@ int tree_validate(tree_node_t *tree_root)
 
             if (curr_node->no_branch != NULL && curr_node->yes_branch != NULL)
             {
-                STACK_SEC(stack_pop_int  (&stack_rec));
-                STACK_SEC(stack_push_int (&stack_rec, 2));
-                STACK_SEC(stack_push_node(&stack_path, curr_node->yes_branch));
-                STACK_SEC(stack_push_int (&stack_rec, 1));
+                STACK_SEC(stack_pop_node (&definition));
+                STACK_SEC(stack_push_node(&definition,
+                            (definition_node_t){ curr_node, RELATION_YES } ));
+                STACK_SEC(stack_push_node(&definition,
+                            (definition_node_t){ curr_node->yes_branch, RELATION_NONE } ));
                 continue;
             }
             else if (curr_node->no_branch == NULL && curr_node->yes_branch == NULL)
             {
-                STACK_SEC(stack_pop_node(&stack_path));
-                STACK_SEC(stack_pop_int (&stack_rec));
+                STACK_SEC(stack_pop_node(&definition));
                 continue;
             }
             else
@@ -298,24 +195,99 @@ int tree_validate(tree_node_t *tree_root)
                 ERROR_HANDLER();
             }
         }
-        if (curr_branch == 2)
+        if (curr_relation == RELATION_YES)
         {
-            STACK_SEC(stack_pop_int  (&stack_rec));
-            STACK_SEC(stack_push_int (&stack_rec, 3));
-            STACK_SEC(stack_push_node(&stack_path, curr_node->no_branch));
-            STACK_SEC(stack_push_int (&stack_rec, 1));
+            STACK_SEC(stack_pop_node (&definition));
+            STACK_SEC(stack_push_node(&definition,
+                        (definition_node_t){ curr_node, RELATION_NO } ));
+            STACK_SEC(stack_push_node(&definition,
+                        (definition_node_t){ curr_node->no_branch, RELATION_NONE } ));
+            continue;
+        }
+        if (curr_relation == RELATION_NO)
+        {
+            STACK_SEC(stack_pop_node(&definition));
             continue;
         }
     }
 
-    STACK_SEC(stack_destruct_int (&stack_rec));
-    STACK_SEC(stack_destruct_node(&stack_path));
+    STACK_SEC(stack_destruct_node(&definition));
     return 0;
 
 error_handler:
-    STACK_SEC(stack_destruct_int (&stack_rec));
-    STACK_SEC(stack_destruct_node(&stack_path));
+    STACK_SEC(stack_destruct_node(&definition));
     return -1;
+}
+
+#undef STACK_SEC
+
+#define STACK_SEC(method) if ((method) != STACK_OK) return NULL
+
+tree_node_t* tree_search(tree_node_t* tree_root, const char *thing, my_stack_node *definition)
+{
+    TREE_CHECK_RET(tree_root, NULL);
+
+    // recursion but actually no
+    // definition is a path to found node with relationship information
+    // definition also contains the state of recursion, so it's used widely
+    
+    STACK_SEC(stack_push_node(definition, (definition_node_t){ tree_root, RELATION_NONE } ));
+
+    while (({size_t stack_size = 0; STACK_SEC(stack_size_node(definition, &stack_size));  stack_size > 0;}))
+    {
+        definition_node_t curr_def_node = {0};
+        STACK_SEC(stack_top_node(definition, &curr_def_node));
+        tree_node_t *curr_node     = curr_def_node.tree_node;
+        relation_t   curr_relation = curr_def_node.relation;
+
+        if (curr_relation == RELATION_NONE)
+        {
+            // enter node
+
+            if (curr_node->no_branch != NULL && curr_node->yes_branch != NULL)
+            {
+                // if it is not a leaf, start to process children
+                STACK_SEC(stack_pop_node (definition));
+                STACK_SEC(stack_push_node(definition,
+                            (definition_node_t){ curr_node, RELATION_YES } ));
+                STACK_SEC(stack_push_node(definition,
+                            (definition_node_t){ curr_node->yes_branch, RELATION_NONE } ));
+            }
+            else
+            {
+                // if we found thing, we want to stop search - simply return, definition will be saved
+                // else just go out from the node
+                if (strcmp(curr_node->node_name, thing) == 0)
+                    return curr_node;
+                else
+                    STACK_SEC(stack_pop_node(definition));
+            }
+
+            continue;
+        }
+        if (curr_relation == RELATION_YES)
+        {
+            // returned from the yes branch and didn't find anything
+            // go to no branch
+            STACK_SEC(stack_pop_node (definition));
+            STACK_SEC(stack_push_node(definition,
+                        (definition_node_t){ curr_node, RELATION_NO } ));
+            STACK_SEC(stack_push_node(definition,
+                        (definition_node_t){ curr_node->no_branch, RELATION_NONE } ));
+            continue;
+        }
+        if (curr_relation == RELATION_NO)
+        {
+            // returned from the no branch and didn't find anything
+            // go out from the node
+            STACK_SEC(stack_pop_node (definition));
+            continue;
+        }
+    }
+
+    // no search result
+
+    return NULL;
 }
 
 #undef ERROR_HANDLER
@@ -340,46 +312,32 @@ void tree_dump(tree_node_t *tree_root, const char *file_name)
 
     // "kinda recursion" is the same as tree_search one, so i didn't describe it here
     
-    my_stack_int  stack_rec = {0};
-    my_stack_node stack_path = {0};
-    STACK_SEC(stack_construct_int (&stack_rec , 5));
-    STACK_SEC(stack_construct_node(&stack_path, 5));
-    STACK_SEC(stack_push_node     (&stack_path, tree_root));
-    STACK_SEC(stack_push_int      (&stack_rec , 1));
+    my_stack_node definition = {0};
+    STACK_SEC(stack_construct_node(&definition, 5));
+    STACK_SEC(stack_push_node(&definition, (definition_node_t){ tree_root, RELATION_NONE }));
 
     // used for tabbing output file
     size_t current_depth = 0;
 
-    size_t stack_size = 0;
-    while (({STACK_SEC(stack_size_int(&stack_rec, &stack_size));  stack_size > 0;}))
+    while (({size_t stack_size = 0; STACK_SEC(stack_size_node(&definition, &stack_size));  stack_size > 0;}))
     {
-        tree_node_t *curr_node = NULL;
-        STACK_SEC(stack_top_node(&stack_path, &curr_node));
-        int curr_branch = 0;
-        STACK_SEC(stack_top_int (&stack_rec, &curr_branch));
+        definition_node_t curr_def_node = {0};
+        STACK_SEC(stack_top_node(&definition, &curr_def_node));
+        tree_node_t *curr_node     = curr_def_node.tree_node;
+        relation_t   curr_relation = curr_def_node.relation;
 
-        if (curr_branch == 3)
-        {
-            STACK_SEC(stack_pop_int (&stack_rec));
-            STACK_SEC(stack_pop_node(&stack_path));
-
-            current_depth--;
-            tab(file, current_depth);
-            fprintf(file, "]\n");
-            
-            continue;
-        }
-        if (curr_branch == 1)
+        if (curr_relation == RELATION_NONE)
         {
             tab(file, current_depth);
             fprintf(file, "\"%s\"\n", curr_node->node_name);
 
             if (curr_node->no_branch != NULL && curr_node->yes_branch != NULL)
             {
-                STACK_SEC(stack_pop_int  (&stack_rec));
-                STACK_SEC(stack_push_int (&stack_rec, 2));
-                STACK_SEC(stack_push_node(&stack_path, curr_node->yes_branch));
-                STACK_SEC(stack_push_int (&stack_rec, 1));
+                STACK_SEC(stack_pop_node (&definition));
+                STACK_SEC(stack_push_node(&definition,
+                            (definition_node_t){ curr_node, RELATION_YES } ));
+                STACK_SEC(stack_push_node(&definition,
+                            (definition_node_t){ curr_node->yes_branch, RELATION_NONE } ));
 
                 tab(file, current_depth);
                 fprintf(file, "[\n");
@@ -388,17 +346,27 @@ void tree_dump(tree_node_t *tree_root, const char *file_name)
                 continue;
             }
 
-            STACK_SEC(stack_pop_node(&stack_path));
-            STACK_SEC(stack_pop_int (&stack_rec));
+            STACK_SEC(stack_pop_node(&definition));
 
             continue;
         }
-        if (curr_branch == 2)
+        if (curr_relation == RELATION_YES)
         {
-            STACK_SEC(stack_pop_int  (&stack_rec));
-            STACK_SEC(stack_push_int (&stack_rec, 3));
-            STACK_SEC(stack_push_node(&stack_path, curr_node->no_branch));
-            STACK_SEC(stack_push_int (&stack_rec, 1));
+            STACK_SEC(stack_pop_node (&definition));
+            STACK_SEC(stack_push_node(&definition,
+                        (definition_node_t){ curr_node, RELATION_NO } ));
+            STACK_SEC(stack_push_node(&definition,
+                        (definition_node_t){ curr_node->no_branch, RELATION_NONE } ));
+            continue;
+        }
+        if (curr_relation == RELATION_NO)
+        {
+            STACK_SEC(stack_pop_node(&definition));
+
+            current_depth--;
+            tab(file, current_depth);
+            fprintf(file, "]\n");
+            
             continue;
         }
     }
@@ -406,8 +374,7 @@ void tree_dump(tree_node_t *tree_root, const char *file_name)
     fclose(file);
 
 cleanup:
-    STACK_SEC(stack_destruct_int (&stack_rec));
-    STACK_SEC(stack_destruct_node(&stack_path));
+    STACK_SEC(stack_destruct_node(&definition));
     return;
 }
 
@@ -425,68 +392,67 @@ void tree_visualize(tree_node_t *tree_root)
 
     fprintf(file, "digraph\n{");
     
-    my_stack_int  stack_rec = {0};
-    my_stack_node stack_path = {0};
-    STACK_SEC(stack_construct_int (&stack_rec , 5));
-    STACK_SEC(stack_construct_node(&stack_path, 5));
-    STACK_SEC(stack_push_node     (&stack_path, tree_root));
-    STACK_SEC(stack_push_int      (&stack_rec , 1));
+    my_stack_node definition = {0};
+    STACK_SEC(stack_construct_node(&definition, 5));
+    STACK_SEC(stack_push_node(&definition, (definition_node_t){ tree_root, RELATION_NONE }));
 
     // used for tabbing output file
     size_t current_node_id = 1;
 
-    size_t stack_size = 0;
-    while (({STACK_SEC(stack_size_int(&stack_rec, &stack_size));  stack_size > 0;}))
+    while (({size_t stack_size = 0; STACK_SEC(stack_size_node(&definition, &stack_size));  stack_size > 0;}))
     {
-        tree_node_t *curr_node = NULL;
-        STACK_SEC(stack_top_node(&stack_path, &curr_node));
-        int curr_branch = 0;
-        STACK_SEC(stack_top_int (&stack_rec, &curr_branch));
+        definition_node_t curr_def_node = {0};
+        STACK_SEC(stack_top_node(&definition, &curr_def_node));
+        tree_node_t *curr_node     = curr_def_node.tree_node;
+        relation_t   curr_relation = curr_def_node.relation;
 
-        if (curr_branch == 3)
-        {
-            STACK_SEC(stack_pop_int (&stack_rec));
-            STACK_SEC(stack_pop_node(&stack_path));
-            
-            fprintf(file, "%zu->%zu [label=\"yes\"];\n", current_node_id, current_node_id * 2);
-            fprintf(file, "%zu->%zu [label=\"no\"];\n" , current_node_id, current_node_id * 2 + 1);
-
-            current_node_id /= 2;
-
-            continue;
-        }
-        if (curr_branch == 1)
-        {
-            fprintf(file, "%zu [label=\"%s\"];\n", current_node_id, curr_node->node_name);
-
+        if (curr_relation == RELATION_NONE)
+        {               
             if (curr_node->no_branch != NULL && curr_node->yes_branch != NULL)
             {
-                STACK_SEC(stack_pop_int  (&stack_rec));
-                STACK_SEC(stack_push_int (&stack_rec, 2));
-                STACK_SEC(stack_push_node(&stack_path, curr_node->yes_branch));
-                STACK_SEC(stack_push_int (&stack_rec, 1));
+                fprintf(file, "%zu [label=\"%s\", style=filled, fillcolor=\"#eba226\"];\n",
+                        current_node_id, curr_node->node_name);
+
+                STACK_SEC(stack_pop_node (&definition));
+                STACK_SEC(stack_push_node(&definition,
+                            (definition_node_t){ curr_node, RELATION_YES } ));
+                STACK_SEC(stack_push_node(&definition,
+                            (definition_node_t){ curr_node->yes_branch, RELATION_NONE } ));
 
                 current_node_id *= 2;
 
                 continue;
             }
+            
+            fprintf(file, "%zu [label=\"%s\", style=filled, fillcolor=\"#db4d73\"];\n",
+                        current_node_id, curr_node->node_name);
 
             current_node_id /= 2;
-            
-            STACK_SEC(stack_pop_node(&stack_path));
-            STACK_SEC(stack_pop_int (&stack_rec));
+            STACK_SEC(stack_pop_node(&definition));
 
             continue;
         }
-        if (curr_branch == 2)
+        if (curr_relation == RELATION_YES)
         {
-            STACK_SEC(stack_pop_int  (&stack_rec));
-            STACK_SEC(stack_push_int (&stack_rec, 3));
-            STACK_SEC(stack_push_node(&stack_path, curr_node->no_branch));
-            STACK_SEC(stack_push_int (&stack_rec, 1));
+            STACK_SEC(stack_pop_node (&definition));
+            STACK_SEC(stack_push_node(&definition,
+                        (definition_node_t){ curr_node, RELATION_NO } ));
+            STACK_SEC(stack_push_node(&definition,
+                        (definition_node_t){ curr_node->no_branch, RELATION_NONE } ));
 
             current_node_id *= 2;
             current_node_id++;
+
+            continue;
+        }
+        if (curr_relation == RELATION_NO)
+        {
+            STACK_SEC(stack_pop_node(&definition));
+            
+            fprintf(file, "%zu->%zu [label=\"yes\"];\n", current_node_id, current_node_id * 2);
+            fprintf(file, "%zu->%zu [label=\"no\"];\n" , current_node_id, current_node_id * 2 + 1);
+
+            current_node_id /= 2;
 
             continue;
         }
@@ -499,8 +465,7 @@ void tree_visualize(tree_node_t *tree_root)
     system("firefox tree.svg");
     
 cleanup:
-    STACK_SEC(stack_destruct_int (&stack_rec));
-    STACK_SEC(stack_destruct_node(&stack_path));
+    STACK_SEC(stack_destruct_node(&definition));
     return;
 }
 

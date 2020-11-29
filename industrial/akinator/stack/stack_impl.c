@@ -17,7 +17,20 @@ static const size_t SHRINK_THRESHOLD = 5;
 
 // тут ваши включения стеков
 
-#define elem_t void*
+typedef enum
+{
+    RELATION_NONE,
+    RELATION_YES,
+    RELATION_NO,
+} relation_t;
+
+typedef struct
+{
+    void       *tree_node;
+    relation_t  relation;
+} definition_node_t;
+
+#define elem_t definition_node_t
 
 static void stack_print_node(elem_t *elem)
 {
@@ -25,7 +38,7 @@ static void stack_print_node(elem_t *elem)
 }
 
 #define TYPE node
-static const elem_t OVERLOAD(POISON) = (void*)0xDEAD;
+static const elem_t OVERLOAD(POISON) = { (void*)0xDEAD, RELATION_NONE };
 #include "stack_impl.h"
 #undef TYPE
 #undef elem_t
