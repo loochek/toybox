@@ -17,9 +17,11 @@ static list_status_t list_validate(list_t *list);
 static void          free_cell    (list_t *list, size_t iter);
 static size_t        claim_cell   (list_t *list);
 
-#define LIST_DATA(iter) list->buffer[iter].data
-#define LIST_NEXT(iter) list->buffer[iter].next
-#define LIST_PREV(iter) list->buffer[iter].prev
+#define LIST_DATA(iter)  list->buffer[iter].data
+#define LIST_NEXT(iter)  list->buffer[iter].next
+#define LIST_PREV(iter)  list->buffer[iter].prev
+
+#define ITER_WRAP(value) (list_iter_t){value}
 
 #define LIST_CHECK_COND list_validate(list) == LIST_OK
 
@@ -100,7 +102,7 @@ list_status_t list_push_front(list_t *list, elem_t elem)
     LIST_NEXT(claimed_cell) = 0;
 
     if (list->head != 0)
-        LIST_NEXT(list->head)  = claimed_cell;
+        LIST_NEXT(list->head) = claimed_cell;
     
     list->head = claimed_cell;
     
@@ -285,10 +287,9 @@ list_status_t list_linearize(list_t *list)
     if (list_construct(&new_list, size) != LIST_OK)
         return LIST_ERROR;
 
-    for (list_iter_t iter = list_begin(list); !list_iter_cmp(iter, list_end(list));
-         iter = list_next(list, iter))
+    for (size_t iter = list->tail; iter != 0; iter = LIST_NEXT(iter))
     {
-        if (list_push_front(&new_list, *list_data(list, iter)) != LIST_OK)
+        if (list_push_front(&new_list, LIST_DATA(iter)) != LIST_OK)
         {
             list_destruct(&new_list);
             return LIST_ERROR;
@@ -325,44 +326,38 @@ list_iter_t list_iter_lookup(list_t *list, size_t position)
     LIST_CHECK(list, NULLITER);
 
     if (list->linear)
-        return (list_iter_t){position + 1};
+        return ITER_WRAP(position + 1);
 
-    list_iter_t iter = list_begin(list);
+    size_t iter = list->tail;
     for (size_t i = 0; i < position; i++)
     {
-        iter = list_next(list, iter);
-        if (list_iter_cmp(iter, list_end(list)))
+        iter = LIST_NEXT(iter);
+        if (iter == 0)
             return NULLITER;
     }
 
-    return iter;
+    return ITER_WRAP(iter);
 }
 
 list_iter_t list_next(list_t *list, list_iter_t iter)
 {
     LIST_CHECK(list, NULLITER);
 
-    if (LIST_NEXT(iter.value) == 0)
-        return NULLITER;
-
-    return (list_iter_t){LIST_NEXT(iter.value)};
+    return ITER_WRAP(LIST_NEXT(iter.value));
 }
 
 list_iter_t list_prev(list_t *list, list_iter_t iter)
 {
     LIST_CHECK(list, NULLITER);
 
-    if (LIST_PREV(iter.value) == 0)
-        return NULLITER;
-        
-    return (list_iter_t){LIST_PREV(iter.value)};
+    return ITER_WRAP(LIST_PREV(iter.value));
 }
 
 list_iter_t list_begin(list_t *list)
 {
     LIST_CHECK(list, NULLITER);
 
-    return (list_iter_t){list->tail};
+    return ITER_WRAP(list->tail);
 }
 
 list_iter_t list_end(list_t *list)
@@ -378,6 +373,128 @@ bool list_iter_cmp(list_iter_t iter1, list_iter_t iter2)
 void list_destruct(list_t *list)
 {
     free(list->buffer);
+}
+
+static list_status_t list_expand(list_t *list)
+{
+    LIST_CHECK(list, LIST_ERROR);
+
+    list_node_t *new_buffer = (list_node_t*)realloc(list->buffer, sizeof(list_node_t) * list->buffer_size * 2);
+    if (new_buffer == NULL)
+        return LIST_ERROR;
+    
+    list->buffer = new_buffer;
+
+    memset(list->buffer + list->buffer_size, 0, list->buffer_size * sizeof(list_node_t));
+
+    for (size_t i = list->buffer_size; i < list->buffer_size * 2; i++)
+        LIST_DATA(i) = POISON;
+        
+    for (size_t i = list->buffer_size; i < list->buffer_size * 2 - 1; i++)
+        LIST_PREV(i) = i + 1;
+    LIST_PREV(list->buffer_size * 2 - 1) = 0;
+
+    // if there were no free cells, then simply set head of free blocks
+    // else the last cell of free blocks is always last element of buffer
+    if (list->head_free == 0)
+        list->head_free = list->buffer_size;
+    else
+        LIST_PREV(list->buffer_size - 1) = list->buffer_size;
+
+    list->buffer_size *= 2;
+
+    LIST_CHECK(list, LIST_ERROR);
+
+    return LIST_OK;
+}
+
+static void free_cell(list_t *list, size_t iter)
+{
+    LIST_PREV(iter)            = list->head_free;
+    list->head_free            = iter;
+    LIST_DATA(list->head_free) = POISON;
+}
+
+static size_t claim_cell(list_t *list)
+{
+    if (list->head_free == 0)
+        return 0;
+
+    size_t claimed_cell = list->head_free;
+    list->head_free = LIST_PREV(list->head_free);
+
+    return claimed_cell;
+}
+
+#define CHECK_CONDITION(cond, msg, ...)                  \
+    if (!(cond))                                         \
+    {                                                    \
+        LERR(LERR_LIST_VALIDATION, #msg, ##__VA_ARGS__); \
+        return LIST_ERROR;                               \
+    }
+
+#define CHECK_POISON(iter) \
+    CHECK_CONDITION(LIST_DATA(iter) == POISON, "Expected poison at cell %zu", iter)
+
+static list_status_t list_validate(list_t *list)
+{
+    __lerrno = LERR_NO_ERROR;
+
+// basic checks
+    
+    CHECK_CONDITION(list->canary1 == CANARY, "canary1 fault");
+    CHECK_CONDITION(list->canary2 == CANARY, "canary2 fault");
+
+    CHECK_POISON((size_t)0);
+
+    CHECK_CONDITION(LIST_NEXT(list->head) == 0, "next[head] is not zero");
+    CHECK_CONDITION(LIST_PREV(list->tail) == 0, "prev[tail] is not zero");
+    CHECK_CONDITION(LIST_NEXT(0)          == 0, "next[0] is not zero");
+    CHECK_CONDITION(LIST_PREV(0)          == 0, "prev[0] is not zero");
+
+// connectivity check
+
+#ifdef LIST_DEBUG
+    size_t used_cnt  = 0;
+    size_t prev_iter = 0;
+
+    for (size_t cur_iter = list->tail; cur_iter != 0; cur_iter = LIST_NEXT(cur_iter))
+    {
+        if (cur_iter != list->tail && cur_iter != list->head)
+        {
+            CHECK_CONDITION(prev_iter == LIST_PREV(cur_iter) && cur_iter == LIST_NEXT(prev_iter),
+                        "prev-next misconnect between %zu and %zu: connectivity seems to be broken",
+                        prev_iter, cur_iter);
+        }
+        
+        used_cnt++;
+        CHECK_CONDITION(used_cnt < list->buffer_size,
+                         "Too many real elements: connectivity seems to be broken\n");
+
+        prev_iter = cur_iter;
+    }
+    
+    // check size
+    CHECK_CONDITION(list->used_size == used_cnt, "Used elements count mismatch");
+
+    size_t free_cnt  = 0;
+           prev_iter = 0;
+
+    for (size_t cur_iter = list->head_free; cur_iter != 0; cur_iter = LIST_PREV(cur_iter))
+    {
+        CHECK_POISON(cur_iter);
+
+        free_cnt++;
+        CHECK_CONDITION(free_cnt < list->buffer_size,
+                         "Too many free elements: connectivity seems to be broken");
+
+        prev_iter = cur_iter;
+    }
+
+    CHECK_CONDITION(used_cnt + free_cnt + 1 == list->buffer_size, "Element count mismatch");
+#endif
+
+    return LIST_OK;
 }
 
 #define HEAD_LABEL_ID      10000
@@ -542,128 +659,4 @@ int list_html_dump(list_t *list)
     fclose(html_file);
 
     return dump_id;
-}
-
-static list_status_t list_expand(list_t *list)
-{
-    LIST_CHECK(list, LIST_ERROR);
-
-    // expand only if no free cells
-    if (list->head_free != 0)
-        return LIST_OK;
-
-    list_node_t *new_buffer = (list_node_t*)realloc(list->buffer, sizeof(list_node_t) * list->buffer_size * 2);
-    if (new_buffer == NULL)
-        return LIST_ERROR;
-    
-    list->buffer = new_buffer;
-
-    memset(list->buffer + list->buffer_size, 0, list->buffer_size * sizeof(list_node_t));
-
-    for (size_t i = list->buffer_size; i < list->buffer_size * 2; i++)
-        LIST_DATA(i) = POISON;
-        
-    for (size_t i = list->buffer_size; i < list->buffer_size * 2 - 1; i++)
-        LIST_PREV(i) = i + 1;
-    LIST_PREV(list->buffer_size * 2 - 1) = 0;
-
-    list->head_free = list->buffer_size;
-
-    list->buffer_size *= 2;
-
-    LIST_CHECK(list, LIST_ERROR);
-
-    return LIST_OK;
-}
-
-static void free_cell(list_t *list, size_t iter)
-{
-    LIST_PREV(iter)            = list->head_free;
-    list->head_free            = iter;
-    LIST_DATA(list->head_free) = POISON;
-}
-
-static size_t claim_cell(list_t *list)
-{
-    if (list->head_free == 0)
-        return 0;
-
-    size_t claimed_cell = list->head_free;
-    list->head_free = LIST_PREV(list->head_free);
-
-    return claimed_cell;
-}
-
-#define CHECK_CONDITION(cond, msg, ...)                  \
-    if (!(cond))                                         \
-    {                                                    \
-        LERR(LERR_LIST_VALIDATION, #msg, ##__VA_ARGS__); \
-        return LIST_ERROR;                               \
-    }
-
-#define CHECK_POISON(iter) \
-    CHECK_CONDITION(LIST_DATA(iter) == POISON, "Expected poison at cell %zu", iter)
-
-static list_status_t list_validate(list_t *list)
-{
-    __lerrno = LERR_NO_ERROR;
-
-// basic checks
-    
-    CHECK_CONDITION(list->canary1 == CANARY, "canary1 fault");
-    CHECK_CONDITION(list->canary2 == CANARY, "canary2 fault");
-
-    CHECK_POISON((size_t)0);
-
-    CHECK_CONDITION(LIST_NEXT(list->head)      == 0, "next[head] is not zero");
-    CHECK_CONDITION(LIST_PREV(list->tail)      == 0, "prev[tail] is not zero");
-    CHECK_CONDITION(LIST_NEXT(0)               == 0, "next[0] is not zero");
-    CHECK_CONDITION(LIST_PREV(0)               == 0, "prev[0] is not zero");
-
-// connectivity check
-
-#ifdef LIST_DEBUG
-    size_t used_cnt  = 0;
-    size_t cur_iter  = list->tail;
-    size_t prev_iter = 0;
-    while (cur_iter != 0)
-    {
-        if (cur_iter != list->tail && cur_iter != list->head)
-        {
-            CHECK_CONDITION(prev_iter == LIST_PREV(cur_iter) && cur_iter == LIST_NEXT(prev_iter),
-                        "prev-next misconnect between %zu and %zu: connectivity seems to be broken",
-                        prev_iter, cur_iter);
-        }
-        
-        used_cnt++;
-        CHECK_CONDITION(used_cnt < list->buffer_size,
-                         "Too many real elements: connectivity seems to be broken\n");
-
-        prev_iter = cur_iter;
-        cur_iter = LIST_NEXT(cur_iter);
-    }
-    
-    // check size
-    CHECK_CONDITION(list->used_size == used_cnt, "Used elements count mismatch");
-
-    size_t free_cnt  = 0;
-           prev_iter = 0;
-           cur_iter  = list->head_free;
-
-    while (cur_iter != 0)
-    {
-        CHECK_POISON(cur_iter);
-
-        free_cnt++;
-        CHECK_CONDITION(free_cnt < list->buffer_size,
-                         "Too many free elements: connectivity seems to be broken");
-
-        prev_iter = cur_iter;
-        cur_iter = LIST_PREV(cur_iter);
-    }
-
-    CHECK_CONDITION(used_cnt + free_cnt + 1 == list->buffer_size, "Element count mismatch");
-#endif
-
-    return LIST_OK;
 }

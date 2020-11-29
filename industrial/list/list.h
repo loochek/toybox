@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-typedef int    elem_t;
+typedef int elem_t;
 
 /**
  * "Iterator" is the index in the physical buffer
