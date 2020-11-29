@@ -15,6 +15,7 @@ static inline void akinator_tell(const char *sentence);
 static inline void read_line     (char *buffer, size_t max_length);
 
 static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing, memory_pool_t *pool);
+static void         akinator_describe (my_stack_node *stack, const char *display_name, size_t start_depth);
 
 
 tree_node_t *akinator_add(tree_node_t *tree_root, memory_pool_t *pool)
@@ -117,29 +118,7 @@ void akinator_find(tree_node_t *tree_root)
     if (result == NULL)
         akinator_tell("I don't know about it");
     else
-    {
-        size_t size = 0;
-        STACK_SEC(stack_size_node(&stack, &size));
-
-        tree_node_t *prev_node = NULL;
-        STACK_SEC(stack_at_node(&stack, &prev_node, 0));
-
-        for (size_t i = 1; i < size; i++)
-        {
-            tree_node_t *node = NULL;
-            STACK_SEC(stack_at_node(&stack, &node, i));
-
-            char sentence[MAX_SENTENCE_LENGTH + 1] = {0};
-            if (node == prev_node->yes_branch)
-                snprintf(sentence, MAX_SENTENCE_LENGTH, "It's true that %s %s", thing, prev_node->node_name);
-            else
-                snprintf(sentence, MAX_SENTENCE_LENGTH, "It's false that %s %s", thing, prev_node->node_name);
-
-            akinator_tell(sentence);
-
-            prev_node = node;
-        }
-    }
+        akinator_describe(&stack, thing, 0);
     
     STACK_SEC(stack_destruct_node(&stack));
 }
@@ -180,11 +159,12 @@ void akinator_compare(tree_node_t *tree_root)
     STACK_SEC(stack_size_node(&second_path, &second_size));
 
     tree_node_t *common_parent = tree_root;
-    for (size_t i = 1; i < first_size && i < second_size; i++)
+    size_t depth = 1;
+    for (;; depth++)
     {
         tree_node_t *first_node = NULL, *second_node = NULL;
-        STACK_SEC(stack_at_node(&first_path , &first_node , i));
-        STACK_SEC(stack_at_node(&second_path, &second_node, i));
+        STACK_SEC(stack_at_node(&first_path , &first_node , depth));
+        STACK_SEC(stack_at_node(&second_path, &second_node, depth));
 
         char sentence[MAX_SENTENCE_LENGTH + 1] = {0};
 
@@ -206,21 +186,33 @@ void akinator_compare(tree_node_t *tree_root)
         }
         else
         {
-            if (second_node == common_parent->yes_branch)
+            if (first_node == common_parent->yes_branch)
             {
-                tree_node_t *tmp = second_result;
-                second_result = first_result;
-                first_result = tmp;
-            }
-            snprintf(sentence, MAX_SENTENCE_LENGTH,
+                snprintf(sentence, MAX_SENTENCE_LENGTH,
                     "It's true for %s that it %s, which is false for %s", 
                     first_result->node_name, common_parent->node_name, second_result->node_name);
+            }
+            else
+            {
+                snprintf(sentence, MAX_SENTENCE_LENGTH,
+                    "It's true for %s that it %s, which is false for %s", 
+                    second_result->node_name, common_parent->node_name, first_result->node_name);
+            }
+            
             akinator_tell(sentence);
 
             break;
         }
     }
 
+    if (depth < first_size - 1 || depth < second_size - 1)
+    {
+        akinator_tell("Anyway:");
+
+        akinator_describe(&first_path, first_result->node_name, depth);
+        akinator_describe(&second_path, second_result->node_name, depth);
+    }
+    
 cleanup:
     stack_destruct_node(&first_path);
     stack_destruct_node(&second_path);
@@ -273,6 +265,36 @@ static tree_node_t *akinator_put_thing(tree_node_t *node, const char *thing, mem
 
     return new_branch_node;
 }
+
+#define STACK_SEC(method) if ((method) != STACK_OK) return
+
+// helper fucction to get description from the stack
+static void akinator_describe(my_stack_node *stack, const char *display_name, size_t start_depth)
+{
+    size_t size = 0;
+    STACK_SEC(stack_size_node(stack, &size));
+
+    tree_node_t *prev_node = NULL;
+    STACK_SEC(stack_at_node(stack, &prev_node, start_depth));
+
+    for (size_t i = start_depth + 1; i < size; i++)
+    {
+        tree_node_t *node = NULL;
+        STACK_SEC(stack_at_node(stack, &node, i));
+
+        char sentence[MAX_SENTENCE_LENGTH + 1] = {0};
+        if (node == prev_node->yes_branch)
+            snprintf(sentence, MAX_SENTENCE_LENGTH, "It's true that %s %s", display_name, prev_node->node_name);
+        else
+            snprintf(sentence, MAX_SENTENCE_LENGTH, "It's false that %s %s", display_name, prev_node->node_name);
+
+        akinator_tell(sentence);
+
+        prev_node = node;
+    }
+}
+
+#undef STACK_SEC
 
 void speak(const char *sentence)
 {
