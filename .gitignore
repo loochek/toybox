@@ -5,3 +5,8 @@
 *.png
 *.dot
 *.wav
+*.aux
+*.log
+*.pdf
+*.svg
+*.tex

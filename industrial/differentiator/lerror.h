@@ -16,6 +16,7 @@ typedef enum
     LERR_NO_ERROR = 0,
     LERR_FILE_IO,
     LERR_ALLOC,
+    LERR_EXPR_TREE_VALIDATION,
     LERR_EXPR_PARSING
 } lerror_t;
 
