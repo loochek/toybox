@@ -17,6 +17,7 @@ int main()
     if (LERR_PRESENT())
     {
         printf("Error: %s\n", __lerr_str);
+        expr_destroy(tree_root);
         return 0;
     }
 
@@ -24,6 +25,7 @@ int main()
     if (LERR_PRESENT())
     {
         printf("Error: %s\n", __lerr_str);
+        expr_destroy(tree_root);
         return 0;
     }
 

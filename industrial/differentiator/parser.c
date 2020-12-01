@@ -54,12 +54,15 @@ expr_node_t *expr_load_from_file(const char *file_name)
 
 static expr_node_t *grammar_g(parser_state_t *state)
 {
+    LERR_RESET();
+
     expr_node_t *node = grammar_e(state);
     if (node == NULL)
         return NULL;
 
     if (state->text[state->curr_pos] != '\0')
     {
+        expr_destroy(node);
         LERR(LERR_EXPR_PARSING, "no null-terminator at the end");
         return NULL;
     }
@@ -71,6 +74,8 @@ static expr_node_t *grammar_g(parser_state_t *state)
 
 static expr_node_t *grammar_n(parser_state_t *state)
 {
+    LERR_RESET();
+
     int val = 0;
     bool empty = true;
     while (state->text[state->curr_pos] >= '0' && state->text[state->curr_pos] <= '9')
@@ -94,6 +99,8 @@ static expr_node_t *grammar_n(parser_state_t *state)
 
 static expr_node_t *grammar_v(parser_state_t *state)
 {
+    LERR_RESET();
+
     if (state->text[state->curr_pos] >= 'a' && state->text[state->curr_pos] <= 'z')
     {
         expr_node_t *node = calloc(1, sizeof(expr_node_t));
@@ -110,6 +117,8 @@ static expr_node_t *grammar_v(parser_state_t *state)
 
 static expr_node_t *grammar_p(parser_state_t *state)
 {
+    LERR_RESET();
+
     expr_node_type_t func_type = TYPE_NONE;
 
     const char      *keywords  [] = { "sin"   , "cos"   , "ln"   , "exp"    };
@@ -145,6 +154,7 @@ static expr_node_t *grammar_p(parser_state_t *state)
 
         if (state->text[state->curr_pos] != ')')
         {
+            expr_destroy(node);
             LERR(LERR_EXPR_PARSING, "no closing parenthesis");
             return NULL;
         }
@@ -176,6 +186,8 @@ static expr_node_t *grammar_p(parser_state_t *state)
 
 static expr_node_t *grammar_pw(parser_state_t *state)
 {
+    LERR_RESET();
+
     expr_node_t *subtree_root = grammar_p(state);
     if (subtree_root == NULL)
         return NULL;
@@ -186,7 +198,10 @@ static expr_node_t *grammar_pw(parser_state_t *state)
 
         expr_node_t *second_arg = grammar_p(state);
         if (second_arg == NULL)
+        {
+            expr_destroy(subtree_root);
             return NULL;
+        }
         
         expr_node_t *oper_node = calloc(1, sizeof(expr_node_t));
         oper_node->type       = TYPE_POW;
@@ -201,6 +216,8 @@ static expr_node_t *grammar_pw(parser_state_t *state)
 
 static expr_node_t *grammar_m(parser_state_t *state)
 {
+    LERR_RESET();
+
     expr_node_t *subtree_root = grammar_pw(state);
     if (subtree_root == NULL)
         return NULL;
@@ -212,8 +229,11 @@ static expr_node_t *grammar_m(parser_state_t *state)
 
         expr_node_t *second_arg = grammar_pw(state);
         if (second_arg == NULL)
+        {
+            expr_destroy(subtree_root);
             return NULL;
-        
+        }
+            
         expr_node_t *oper_node = calloc(1, sizeof(expr_node_t));
         oper_node->first_arg  = subtree_root;
         oper_node->second_arg = second_arg;
@@ -231,6 +251,8 @@ static expr_node_t *grammar_m(parser_state_t *state)
 
 static expr_node_t *grammar_e(parser_state_t *state)
 {
+    LERR_RESET();
+
     expr_node_t *subtree_root = grammar_m(state);
     if (subtree_root == NULL)
         return NULL;
@@ -242,7 +264,10 @@ static expr_node_t *grammar_e(parser_state_t *state)
 
         expr_node_t *second_arg = grammar_m(state);
         if (second_arg == NULL)
+        {
+            expr_destroy(subtree_root);
             return NULL;
+        }
         
         expr_node_t *oper_node = calloc(1, sizeof(expr_node_t));
         oper_node->first_arg  = subtree_root;
