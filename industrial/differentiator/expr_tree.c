@@ -125,6 +125,20 @@ void expr_destroy(expr_node_t *node)
     free(node);
 }
 
+expr_node_t *expr_deep_copy(expr_node_t *node)
+{
+    if (node == NULL)
+        return NULL;
+
+    expr_node_t *copy = calloc(1, sizeof(expr_node_t));
+
+    *copy = *node;
+    copy->first_arg  = expr_deep_copy(node->first_arg);
+    copy->second_arg = expr_deep_copy(node->second_arg);
+
+    return copy;
+}
+
 static void expr_visualize_rec(expr_node_t *node, FILE *file, size_t node_id)
 {
     if (node->type == TYPE_NUM)

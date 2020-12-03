@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "parser.h"
+#include "diff.h"
 #include "lerror.h"
 
 
@@ -13,6 +14,8 @@ int main()
         return 0;
     }
 
+    tree_root = expr_diff(tree_root);
+    
     expr_latex_dump(tree_root);
     if (LERR_PRESENT())
     {

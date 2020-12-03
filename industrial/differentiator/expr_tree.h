@@ -1,4 +1,13 @@
+#ifndef EXPR_TREE_H
+#define EXPR_TREE_H
+
 #include <stdlib.h>
+
+/*
+
+Mathematical expression tree
+
+*/
 
 typedef enum
 {
@@ -33,7 +42,24 @@ typedef struct expr_node_t
 
 #define EXPR_CHECK_RET(tree_root, to_ret) if (expr_validate(tree_root) != 0) return to_ret;
 
-void expr_visualize (expr_node_t *tree_root);
+/**
+ * Shows tree with Graphvis
+ * LERR-affecting
+ */
+void expr_visualize(expr_node_t *tree_root);
+
+/**
+ * LERR-affecting
+ */
 void expr_latex_dump(expr_node_t *tree_root);
-int  expr_validate  (expr_node_t *node);
-void expr_destroy   (expr_node_t *node);
+
+/**
+ * Returns 0 if tree is correct? else -1
+ * LERR-affecting
+ */
+int expr_validate(expr_node_t *node);
+
+expr_node_t *expr_deep_copy(expr_node_t *node);
+void         expr_destroy  (expr_node_t *node);
+
+#endif
