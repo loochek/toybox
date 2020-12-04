@@ -2,6 +2,7 @@
 #define EXPR_TREE_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 /*
 
@@ -58,6 +59,11 @@ void expr_latex_dump(expr_node_t *tree_root);
  * LERR-affecting
  */
 int expr_validate(expr_node_t *node);
+
+/**
+ * Checks is subtree a constant
+ */ 
+bool expr_is_constant(expr_node_t *node);
 
 expr_node_t *expr_deep_copy(expr_node_t *node);
 void         expr_destroy  (expr_node_t *node);

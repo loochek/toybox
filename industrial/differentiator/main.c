@@ -2,7 +2,11 @@
 
 #include "parser.h"
 #include "diff.h"
+#include "simpler.h"
 #include "lerror.h"
+
+// TODO
+// 2/x^(1/3)
 
 
 int main()
@@ -14,25 +18,16 @@ int main()
         return 0;
     }
 
-    tree_root = expr_diff(tree_root);
-    
-    expr_latex_dump(tree_root);
-    if (LERR_PRESENT())
-    {
-        printf("Error: %s\n", __lerr_str);
-        expr_destroy(tree_root);
-        return 0;
-    }
-
-    expr_visualize(tree_root);
-    if (LERR_PRESENT())
-    {
-        printf("Error: %s\n", __lerr_str);
-        expr_destroy(tree_root);
-        return 0;
-    }
-
+    expr_node_t *diff_tree = expr_diff(tree_root);
     expr_destroy(tree_root);
 
+    expr_simplify(&diff_tree);
+
+    expr_visualize(diff_tree);
+    expr_latex_dump(diff_tree);
+    
+
+    expr_destroy(diff_tree);
+    
     return 0;
 }

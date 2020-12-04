@@ -139,6 +139,26 @@ expr_node_t *expr_deep_copy(expr_node_t *node)
     return copy;
 }
 
+bool expr_is_constant(expr_node_t *node)
+{
+    if (node == NULL)
+        return true;
+
+    if (node->type == TYPE_NUM)
+        return true;
+
+    if (node->type == TYPE_VAR)
+        return false;
+
+    if (!expr_is_constant(node->first_arg))
+        return false;
+
+    if (!expr_is_constant(node->second_arg))
+        return false;
+
+    return true;
+}
+
 static void expr_visualize_rec(expr_node_t *node, FILE *file, size_t node_id)
 {
     if (node->type == TYPE_NUM)

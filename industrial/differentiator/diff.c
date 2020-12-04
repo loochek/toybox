@@ -4,21 +4,22 @@
 #define DIFF_RULE(TYPE, BODY) \
     case TYPE:                \
         BODY;                 \
-        break;                \
+        break;                
 
 expr_node_t *expr_diff(expr_node_t *CURR_NODE)
 {
     if (CURR_NODE == NULL)
         return NULL;
 
-    expr_node_t *RESULT = calloc(1, sizeof(expr_node_t));
+    expr_node_t *RESULT = NULL;
 
     switch (CURR_NODE->type)
     {
     #include "diff_rules.h"
 
     default:
-        printf("expr_diff: Unknown type!\n");
+        printf("Warning: differentiation rule is not present!!! Keep as is\n");
+        RESULT = expr_deep_copy(CURR_NODE);
         break;
     }
 
