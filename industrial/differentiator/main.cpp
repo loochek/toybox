@@ -30,9 +30,6 @@ int main()
     expr_dump(tree_root);
     printf("basic dump is done!\n");
 
-    expr_visualize(tree_root);
-    expr_latex_dump(tree_root);
-
     expr_destroy(tree_root, &pool);
     node_pool_destroy(&pool);
     
