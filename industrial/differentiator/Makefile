@@ -1,8 +1,9 @@
-CC=clang
+CC=clang++
 CFLAGS=-g -fsanitize=address
 
 build:
-	$(CC) $(CFLAGS) main.c diff.c simpler.c expr_tree.c parser.c file_utils.c lerror.c -o differ
+	$(CC) $(CFLAGS) main.cpp diff.cpp simpler.cpp expr_tree.cpp parser.cpp node_pool.cpp file_utils.cpp lerror.cpp -o differ
 
 clean:
-	rm -f differ expr.dot expr.svg expr.log expr.aux expr.pdf expr.tex 
+	rm -f differ expr.dot expr.svg expr.log expr.aux expr.pdf expr.tex dump.txt
+
