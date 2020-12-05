@@ -6,21 +6,26 @@
         BODY;                    \
         break;                   
 
-void expr_simplify(expr_node_t **node_ptr)
+static int pow(int a, int n)
 {
-    if (node_ptr == NULL)
+	int res = 1;
+	while (n)
     {
-        LERR(LERR_BAD_ARG, "null pointer passed");
-        return;
-    }
+		if (n & 1)
+			res *= a;
+		a *= a;
+		n >>= 1;
+	}
+	return res;
+}
 
-    expr_node_t *CURR_NODE = *node_ptr;
-
+static expr_node_t *expr_simplify_rec(expr_node_t *CURR_NODE)
+{
     if (CURR_NODE == NULL)
-        return;
+        return NULL;
 
-    expr_simplify(&CURR_NODE->first_arg);
-    expr_simplify(&CURR_NODE->second_arg);
+    CURR_NODE->first_arg  = expr_simplify_rec(CURR_NODE->first_arg);
+    CURR_NODE->second_arg = expr_simplify_rec(CURR_NODE->second_arg);
 
     expr_node_t *RESULT = NULL;
 
@@ -33,5 +38,18 @@ void expr_simplify(expr_node_t **node_ptr)
         break;
     }
 
-    *node_ptr = RESULT;
+    return RESULT;
+}
+
+void expr_simplify(expr_node_t **node_ptr)
+{
+    if (node_ptr == NULL)
+    {
+        LERR(LERR_BAD_ARG, "null pointer passed");
+        return;
+    }
+
+    EXPR_CHECK_RET(*node_ptr,);
+
+    *node_ptr = expr_simplify_rec(*node_ptr);
 }

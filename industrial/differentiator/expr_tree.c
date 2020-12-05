@@ -19,8 +19,20 @@ const char *node_types_display_labels[] =
 
 const int priority[] = { 4, 4, 4, 0, 0, 1, 1, 2, 3, 3, 3, 3 };
 
+static void expr_dump_rec      (expr_node_t *node, FILE *file);
 static void expr_visualize_rec (expr_node_t *node, FILE *file, size_t node_id);
 static void expr_latex_dump_rec(expr_node_t *node, FILE *file);
+
+void expr_dump(expr_node_t *tree_root)
+{
+    EXPR_CHECK_RET(tree_root,);
+
+    FILE *file = fopen("dump.txt", "w");
+
+    expr_dump_rec(tree_root, file);
+
+    fclose(file);
+}
 
 void expr_visualize(expr_node_t *tree_root)
 {
@@ -49,7 +61,7 @@ void expr_latex_dump(expr_node_t *tree_root)
 
     expr_latex_dump_rec(tree_root, file);
 
-    fprintf(file, "$$\\end{document}\n");
+    fprintf(file, "$$\n\\end{document}\n");
     fclose(file);
 
     system("pdflatex expr.tex");
@@ -157,6 +169,50 @@ bool expr_is_constant(expr_node_t *node)
         return false;
 
     return true;
+}
+
+static void expr_dump_rec(expr_node_t *node, FILE *file)
+{
+    if (node->type == TYPE_NUM)
+    {
+        fprintf(file, "%d", node->number);
+        return;
+    }
+
+    if (node->type == TYPE_VAR)
+    {
+        fprintf(file, "%c", node->var);
+        return;
+    }
+
+    if (node->second_arg != NULL)
+    {
+        if (priority[node->first_arg->type] < priority[node->type])
+            fprintf(file, "(");
+
+        expr_dump_rec(node->first_arg, file);
+
+        if (priority[node->first_arg->type] < priority[node->type])
+            fprintf(file, ")");
+
+        fprintf(file, "%s", node_types_display_labels[node->type]);
+
+        if (priority[node->second_arg->type] < priority[node->type])
+            fprintf(file, "(");
+
+        expr_dump_rec(node->second_arg, file);
+        
+        if (priority[node->second_arg->type] < priority[node->type])
+            fprintf(file, ")");
+    }
+    else
+    {
+        fprintf(file, "%s", node_types_display_labels[node->type]);
+
+        fprintf(file, "(");
+        expr_dump_rec(node->first_arg, file);
+        fprintf(file, ")");        
+    }   
 }
 
 static void expr_visualize_rec(expr_node_t *node, FILE *file, size_t node_id)
@@ -274,6 +330,8 @@ static void expr_latex_dump_rec(expr_node_t *node, FILE *file)
 
     if (node->type == TYPE_POW)
     {
+        fprintf(file, "{");
+
         if (priority[node->first_arg->type] < priority[node->type])
             fprintf(file, "(");
 
@@ -282,7 +340,7 @@ static void expr_latex_dump_rec(expr_node_t *node, FILE *file)
         if (priority[node->first_arg->type] < priority[node->type])
             fprintf(file, ")");
 
-        fprintf(file, "^{");
+        fprintf(file, "}^{");
         expr_latex_dump_rec(node->second_arg, file);
         fprintf(file, "}");
 

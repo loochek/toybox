@@ -4,13 +4,10 @@
 #define DIFF_RULE(TYPE, BODY) \
     case TYPE:                \
         BODY;                 \
-        break;                
+        break;             
 
-expr_node_t *expr_diff(expr_node_t *CURR_NODE)
+static expr_node_t *expr_diff_rec(expr_node_t *CURR_NODE, char var)
 {
-    if (CURR_NODE == NULL)
-        return NULL;
-
     expr_node_t *RESULT = NULL;
 
     switch (CURR_NODE->type)
@@ -24,4 +21,11 @@ expr_node_t *expr_diff(expr_node_t *CURR_NODE)
     }
 
     return RESULT;
+}
+
+expr_node_t *expr_diff(expr_node_t *node, char var)
+{
+    EXPR_CHECK_RET(node, NULL);
+
+    return expr_diff_rec(node, var);
 }

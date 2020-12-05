@@ -17,6 +17,9 @@
     node;                                               \
 })
 
+#define DIFF(NODE) expr_diff_rec (NODE, var)
+#define COPY(NODE) expr_deep_copy(NODE)
+
 /**
  * To access current node in the rule, use CURR_NODE
  * You should put a pointer to RESULT as a result of your rule's work
@@ -29,32 +32,35 @@ DIFF_RULE(TYPE_NUM,
 
 DIFF_RULE(TYPE_VAR,
 {
-    RESULT = NEW_NUM(1);
+    if (CURR_NODE->var == var)
+        RESULT = NEW_NUM(1);
+    else
+        RESULT = NEW_NUM(0);
 })
 
 DIFF_RULE(TYPE_ADD,
 {
     RESULT = NEW_NODE(TYPE_ADD,
-                      expr_diff(CURR_NODE->first_arg),
-                      expr_diff(CURR_NODE->second_arg));
+                      DIFF(CURR_NODE->first_arg),
+                      DIFF(CURR_NODE->second_arg));
 })
 
 DIFF_RULE(TYPE_SUB,
 {
     RESULT = NEW_NODE(TYPE_SUB,
-                      expr_diff(CURR_NODE->first_arg),
-                      expr_diff(CURR_NODE->second_arg));
+                      DIFF(CURR_NODE->first_arg),
+                      DIFF(CURR_NODE->second_arg));
 })
 
 DIFF_RULE(TYPE_MUL,
 {
     expr_node_t *first_mul  = NEW_NODE(TYPE_MUL,
-                                        expr_diff     (CURR_NODE->first_arg),
-                                        expr_deep_copy(CURR_NODE->second_arg));
+                                        DIFF(CURR_NODE->first_arg),
+                                        COPY(CURR_NODE->second_arg));
 
     expr_node_t *second_mul = NEW_NODE(TYPE_MUL,
-                                       expr_deep_copy(CURR_NODE->first_arg),
-                                       expr_diff     (CURR_NODE->second_arg));
+                                       COPY(CURR_NODE->first_arg),
+                                       DIFF(CURR_NODE->second_arg));
 
     RESULT = NEW_NODE(TYPE_ADD, first_mul, second_mul);
 })
@@ -62,17 +68,17 @@ DIFF_RULE(TYPE_MUL,
 DIFF_RULE(TYPE_DIV,
 {
     expr_node_t *first_mul  = NEW_NODE(TYPE_MUL,
-                                       expr_diff     (CURR_NODE->first_arg),
-                                       expr_deep_copy(CURR_NODE->second_arg));
+                                       DIFF(CURR_NODE->first_arg),
+                                       COPY(CURR_NODE->second_arg));
 
     expr_node_t *second_mul = NEW_NODE(TYPE_MUL,
-                                       expr_deep_copy(CURR_NODE->first_arg),
-                                       expr_diff     (CURR_NODE->second_arg));
+                                       COPY(CURR_NODE->first_arg),
+                                       DIFF(CURR_NODE->second_arg));
     
     expr_node_t *divident   = NEW_NODE(TYPE_SUB, first_mul, second_mul);
 
     expr_node_t *divider    = NEW_NODE(TYPE_POW,
-                                       expr_deep_copy(CURR_NODE->second_arg),
+                                       COPY(CURR_NODE->second_arg),
                                        NEW_NUM(2));
 
     RESULT = NEW_NODE(TYPE_DIV, divident, divider);
@@ -88,23 +94,23 @@ DIFF_RULE(TYPE_POW,
         // just pow
 
         RESULT = NEW_NODE(TYPE_POW,
-                          expr_deep_copy(CURR_NODE->first_arg),
-                          expr_deep_copy(CURR_NODE->second_arg));
+                          COPY(CURR_NODE->first_arg),
+                          COPY(CURR_NODE->second_arg));
     }
     else if (second_arg_const)
     {
         // x^a
 
         expr_node_t *first_mul = NEW_NODE(TYPE_MUL,
-                                          expr_deep_copy(CURR_NODE->second_arg),
-                                          expr_diff     (CURR_NODE->first_arg));
+                                          COPY(CURR_NODE->second_arg),
+                                          DIFF(CURR_NODE->first_arg));
         
         expr_node_t *pow_sub   = NEW_NODE(TYPE_SUB,
-                                          expr_deep_copy(CURR_NODE->second_arg),
+                                          COPY(CURR_NODE->second_arg),
                                           NEW_NUM(1));
 
         expr_node_t *pow_node  = NEW_NODE(TYPE_POW,
-                                          expr_deep_copy(CURR_NODE->first_arg),
+                                          COPY(CURR_NODE->first_arg),
                                           pow_sub);
         
         RESULT = NEW_NODE(TYPE_MUL, pow_node, first_mul);
@@ -114,17 +120,46 @@ DIFF_RULE(TYPE_POW,
         // a^x
 
         expr_node_t *ln_node  = NEW_NODE(TYPE_LN,
-                                         expr_deep_copy(CURR_NODE->second_arg),
+                                         COPY(CURR_NODE->second_arg),
                                          NULL);
 
         expr_node_t *mul_node = NEW_NODE(TYPE_MUL,
                                          ln_node,
-                                         expr_diff(CURR_NODE->second_arg));
+                                         DIFF(CURR_NODE->second_arg));
 
         RESULT = NEW_NODE(TYPE_MUL,
-                          expr_deep_copy(CURR_NODE),
+                          COPY(CURR_NODE),
                           mul_node);
     }
     else
-        printf("Can't differ x^x!\n");
+    {
+        printf("Warning: can't differ x^x! Keep as is\n");
+        RESULT = COPY(CURR_NODE);
+    }
+        
+})
+
+DIFF_RULE(TYPE_SIN, 
+{
+    expr_node_t *cos_node = NEW_NODE(TYPE_COS, COPY(CURR_NODE->first_arg), NULL);
+
+    RESULT = NEW_NODE(TYPE_MUL, cos_node, DIFF(CURR_NODE->first_arg));
+})
+
+DIFF_RULE(TYPE_COS, 
+{
+    expr_node_t *sin_node = NEW_NODE(TYPE_SIN, COPY(CURR_NODE->first_arg), NULL);
+    expr_node_t *mul_node = NEW_NODE(TYPE_MUL, DIFF(CURR_NODE->first_arg), NEW_NUM(-1));
+
+    RESULT = NEW_NODE(TYPE_MUL, sin_node, mul_node);
+})
+
+DIFF_RULE(TYPE_LN,
+{
+    RESULT = NEW_NODE(TYPE_DIV, DIFF(CURR_NODE->first_arg), COPY(CURR_NODE->first_arg));
+})
+
+DIFF_RULE(TYPE_EXP,
+{
+    RESULT = NEW_NODE(TYPE_MUL, COPY(CURR_NODE), DIFF(CURR_NODE->first_arg));
 })

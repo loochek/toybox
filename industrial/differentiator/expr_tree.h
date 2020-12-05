@@ -44,6 +44,11 @@ typedef struct expr_node_t
 #define EXPR_CHECK_RET(tree_root, to_ret) if (expr_validate(tree_root) != 0) return to_ret;
 
 /**
+ * LERR-affecting
+ */
+void expr_dump(expr_node_t *tree_root);
+
+/**
  * Shows tree with Graphvis
  * LERR-affecting
  */

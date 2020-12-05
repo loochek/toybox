@@ -5,7 +5,7 @@
  */
 
 /**
- * Returs differentiated COPY! of tree
+ * Returs differentiated by var COPY! of tree
  * LERR-affecting
  */
-expr_node_t *expr_diff(expr_node_t *node);
+expr_node_t *expr_diff(expr_node_t *node, char var);

@@ -5,10 +5,6 @@
 #include "simpler.h"
 #include "lerror.h"
 
-// TODO
-// 2/x^(1/3)
-
-
 int main()
 {
     expr_node_t *tree_root = expr_load_from_file("expr_example.txt");
@@ -18,11 +14,13 @@ int main()
         return 0;
     }
 
-    expr_node_t *diff_tree = expr_diff(tree_root);
+    expr_node_t *diff_tree = expr_diff(tree_root, 'x');
+    //expr_node_t *diff_tree = expr_deep_copy(tree_root);
     expr_destroy(tree_root);
 
     expr_simplify(&diff_tree);
 
+    expr_dump(diff_tree);
     expr_visualize(diff_tree);
     expr_latex_dump(diff_tree);
     
