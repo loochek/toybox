@@ -37,6 +37,8 @@ static expr_node_t *grammar_v (parser_state_t *state, node_pool_t *pool);
 
 expr_node_t *expr_load_from_file(const char *file_name, node_pool_t *pool)
 {
+    LERR_RESET();
+    
     char *buffer = NULL;
     int buffer_size = create_buffer_from_file(file_name, &buffer);
     if (buffer_size == -1)

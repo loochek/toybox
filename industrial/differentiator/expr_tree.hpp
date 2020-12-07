@@ -48,7 +48,7 @@ struct expr_node_t
 /**
  * LERR-affecting
  */
-void expr_dump(expr_node_t *tree_root);
+void expr_dump(expr_node_t *tree_root, const char *file_name);
 
 /**
  * Shows tree with Graphvis

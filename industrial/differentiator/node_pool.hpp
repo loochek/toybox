@@ -27,9 +27,24 @@ struct node_pool_t
 
 };
 
+/**
+ * LERR-affecting
+ */
 void node_pool_construct(node_pool_t *pool);
+
+/**
+ * LERR-affecting
+ */
 expr_node_t *node_pool_claim(node_pool_t *pool);
+
+/**
+ * LERR-affecting
+ */
 void node_pool_free(expr_node_t *ptr, node_pool_t *pool);
+
+/**
+ * LERR-affecting
+ */
 void node_pool_destroy(node_pool_t *pool);
 
 #endif

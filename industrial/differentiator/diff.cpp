@@ -27,6 +27,7 @@ static expr_node_t *expr_diff_rec(expr_node_t *CURR_NODE, char var, node_pool_t 
 
 expr_node_t *expr_diff(expr_node_t *node, char var, node_pool_t *pool)
 {
+    LERR_RESET();
     EXPR_CHECK_RET(node, NULL);
 
     return expr_diff_rec(node, var, pool);

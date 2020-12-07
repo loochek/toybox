@@ -21,11 +21,18 @@ static int pow(int a, int n)
 
 static expr_node_t *expr_simplify_rec(expr_node_t *CURR_NODE, node_pool_t *pool)
 {
+    LERR_RESET();
+    
     if (CURR_NODE == NULL)
         return NULL;
 
     CURR_NODE->first_arg  = expr_simplify_rec(CURR_NODE->first_arg, pool);
+    if (LERR_PRESENT())
+        return NULL;
+
     CURR_NODE->second_arg = expr_simplify_rec(CURR_NODE->second_arg, pool);
+    if (LERR_PRESENT())
+        return NULL;
 
     expr_node_t *RESULT = NULL;
 

@@ -24,11 +24,12 @@ static void expr_dump_rec      (expr_node_t *node, FILE *file);
 static void expr_visualize_rec (expr_node_t *node, FILE *file, size_t node_id);
 static void expr_latex_dump_rec(expr_node_t *node, FILE *file);
 
-void expr_dump(expr_node_t *tree_root)
+void expr_dump(expr_node_t *tree_root, const char *file_name)
 {
+    LERR_RESET();
     EXPR_CHECK_RET(tree_root,);
 
-    FILE *file = fopen("dump.txt", "w");
+    FILE *file = fopen(file_name, "w");
 
     expr_dump_rec(tree_root, file);
 
@@ -37,6 +38,7 @@ void expr_dump(expr_node_t *tree_root)
 
 void expr_visualize(expr_node_t *tree_root)
 {
+    LERR_RESET();
     EXPR_CHECK_RET(tree_root,);
 
     FILE *file = fopen("expr.dot", "w");
@@ -53,6 +55,7 @@ void expr_visualize(expr_node_t *tree_root)
 
 void expr_latex_dump(expr_node_t *tree_root)
 {
+    LERR_RESET();
     EXPR_CHECK_RET(tree_root,);
 
     FILE *file = fopen("expr.tex", "w");
@@ -140,6 +143,8 @@ void expr_destroy(expr_node_t *node, struct node_pool_t *pool)
 
 expr_node_t *expr_deep_copy(expr_node_t *node, struct node_pool_t *pool)
 {
+    LERR_RESET();
+
     if (node == NULL)
         return NULL;
 
@@ -184,7 +189,11 @@ static void expr_dump_rec(expr_node_t *node, FILE *file)
 {
     if (node->type == TYPE_NUM)
     {
-        fprintf(file, "%d", node->number);
+        if (node->number < 0)
+            fprintf(file, "(0%d)", node->number);
+        else
+            fprintf(file, "%d", node->number);
+
         return;
     }
 
