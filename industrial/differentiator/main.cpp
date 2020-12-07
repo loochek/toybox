@@ -14,18 +14,23 @@
         return -1;                         \
     }                                      \
 }
-    
+
+const char *DEFAULT_OUT_FILE_NAME = "result.txt";
 
 int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("Usage: differ <diff|simplify> <input file>\n"
+        printf("Usage: equator <diff|simplify> <input file> [output file]\n"
                "diff - differentiate by x\n"
                "simplify - just simplify\n"
-               "Result is saved to result.txt and shown in Firefox\n");
+               "Result is also shown as LaTeX and visualized graph in Firefox\n");
         return 0;
     }
+
+    const char *out_file_name = DEFAULT_OUT_FILE_NAME;
+    if (argc >= 4)
+        out_file_name = argv[3];
 
     node_pool_t pool = {0};
     node_pool_construct(&pool);
@@ -41,7 +46,7 @@ int main(int argc, char *argv[])
         expr_simplify(&diff_tree, &pool);
         ERROR_CHECK();
         
-        expr_dump      (diff_tree, "result.txt");
+        expr_dump      (diff_tree, out_file_name);
         expr_latex_dump(diff_tree);
         expr_visualize (diff_tree);
 
@@ -52,7 +57,7 @@ int main(int argc, char *argv[])
         expr_simplify(&source_tree, &pool);
         ERROR_CHECK();
         
-        expr_dump      (source_tree, "result.txt");
+        expr_dump      (source_tree, out_file_name);
         expr_latex_dump(source_tree);
         expr_visualize (source_tree);
     }

@@ -60,12 +60,16 @@ void expr_latex_dump(expr_node_t *tree_root)
 
     FILE *file = fopen("expr.tex", "w");
     fprintf(file, "\\documentclass{article}\n"
+                  "\\usepackage{graphicx}\n"
                   "\\begin{document}\n"
-                  "$$");
+                  "\\begin{equation}\n"
+                  "\\resizebox{.9\\hsize}{!}{$");
 
     expr_latex_dump_rec(tree_root, file);
 
-    fprintf(file, "$$\n\\end{document}\n");
+    fprintf(file, "$}\n"
+                  "\\end{equation}\n"
+                  "\\end{document}\n");
     fclose(file);
 
     system("pdflatex expr.tex");

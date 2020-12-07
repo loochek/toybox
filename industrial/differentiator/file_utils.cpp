@@ -36,7 +36,7 @@ int create_buffer_from_file(const char* file_name, char **buf_ptr)
         return -1;
     }
 
-    *buf_ptr = (char*)calloc(data_size, sizeof(char));
+    *buf_ptr = (char*)calloc(data_size + 1, sizeof(char));
     if (*buf_ptr == NULL)
     {
         LERR(LERR_ALLOC, "unable to allocate memory");
