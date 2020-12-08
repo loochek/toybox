@@ -6,16 +6,20 @@
 
 #define MAX_CMD_LINE_LENGTH 100
 
-// comment it before releasing
-#define LIST_DEBUG
+/**
+ * Turns on some expensive checks
+ * TODO: comment it before releasing
+ */
+#define LIST_DEBUG_MODE
 
 static elem_t POISON = 0xDEAD;
 static elem_t CANARY = 0xBEEF;
 
-static list_status_t list_expand  (list_t *list);
-static list_status_t list_validate(list_t *list);
-static void          free_cell    (list_t *list, size_t iter);
-static size_t        claim_cell   (list_t *list);
+static list_status_t list_expand    (list_t *list);
+static list_status_t list_validate  (list_t *list);
+static void          free_cell      (list_t *list, size_t iter);
+static size_t        claim_cell     (list_t *list);
+static int           validator_proxy(list_t *list);
 
 #define LIST_DATA(iter)  list->buffer[iter].data
 #define LIST_NEXT(iter)  list->buffer[iter].next
@@ -23,33 +27,34 @@ static size_t        claim_cell   (list_t *list);
 
 #define ITER_WRAP(value) (list_iter_t){value}
 
-#define LIST_CHECK_COND list_validate(list) == LIST_OK
+#define LIST_CHECK(list, to_ret)    \
+{                                   \
+    if (validator_proxy(list) != 0) \
+        return to_ret;              \
+}
 
-#define LIST_CHECK(list, to_ret)           \
-    if (!(LIST_CHECK_COND))                    \
-    {                                          \
-        int dump_id = list_html_dump(list);    \
-        printf("List validation failed: %s\n"  \
-            "See more in log.html\n"        \
-            "Dump id: %d\n",                \
-            __lerr_str, dump_id);           \
-                                            \
-        return to_ret;                         \
-    }
-
-#define LIST_CHECK_ITER(iter, to_ret) if (iter.value == 0) return to_ret;
+#define LIST_CHECK_ITER(iter, to_ret)                    \
+{                                                        \
+    if (iter.value == 0)                                 \
+    {                                                    \
+        LERR(LERR_LIST_ADDRESS, "null iterator passed"); \
+        return to_ret;                                   \
+    }                                                    \
+}
 
 list_status_t list_construct(list_t *list, size_t capacity)
 {
+    LERR_RESET();
+
     // first element in the buffer is fictive
     list->buffer_size = capacity + 1;
     list->used_size   = 0;
 
     list->buffer = (list_node_t*)calloc(list->buffer_size, sizeof(list_node_t));
-
     if (list->buffer == NULL)
     {
         free(list->buffer);
+        LERR(LERR_ALLOC, "can't allocate memory");
         return LIST_ERROR;
     }
 
@@ -87,6 +92,7 @@ list_status_t list_construct(list_t *list, size_t capacity)
 
 list_status_t list_push_front(list_t *list, elem_t elem)
 {
+    LERR_RESET();
     LIST_CHECK(list, LIST_ERROR);
 
     size_t claimed_cell = claim_cell(list);
@@ -119,6 +125,7 @@ list_status_t list_push_front(list_t *list, elem_t elem)
 
 list_status_t list_push_back(list_t *list, elem_t elem)
 {
+    LERR_RESET();
     LIST_CHECK(list, LIST_ERROR);
 
     size_t claimed_cell = claim_cell(list);
@@ -153,6 +160,7 @@ list_status_t list_push_back(list_t *list, elem_t elem)
 
 list_status_t list_pop_front(list_t *list)
 {
+    LERR_RESET();
     LIST_CHECK(list, LIST_ERROR);
 
     if (list->head == 0)
@@ -179,6 +187,7 @@ list_status_t list_pop_front(list_t *list)
 
 list_status_t list_pop_back(list_t *list)
 {
+    LERR_RESET();
     LIST_CHECK(list, LIST_ERROR);
 
     if (list->tail == 0)
@@ -206,6 +215,7 @@ list_status_t list_pop_back(list_t *list)
 
 list_status_t list_insert_after(list_t *list, list_iter_t iter, elem_t elem)
 {
+    LERR_RESET();
     LIST_CHECK(list, LIST_ERROR);
     LIST_CHECK_ITER(iter, LIST_ERROR);
 
@@ -237,6 +247,7 @@ list_status_t list_insert_after(list_t *list, list_iter_t iter, elem_t elem)
 
 list_status_t list_insert_before(list_t *list, list_iter_t iter, elem_t elem)
 {
+    LERR_RESET();
     LIST_CHECK(list, LIST_ERROR);
     LIST_CHECK_ITER(iter, LIST_ERROR);
 
@@ -250,6 +261,7 @@ list_status_t list_insert_before(list_t *list, list_iter_t iter, elem_t elem)
 
 list_status_t list_remove(list_t *list, list_iter_t iter)
 {
+    LERR_RESET();
     LIST_CHECK(list, LIST_ERROR);
     LIST_CHECK_ITER(iter, LIST_ERROR);
 
@@ -277,6 +289,7 @@ list_status_t list_remove(list_t *list, list_iter_t iter)
 
 list_status_t list_linearize(list_t *list)
 {
+    LERR_RESET();
     LIST_CHECK(list, LIST_ERROR);
 
     int size = list_size(list);
@@ -290,10 +303,7 @@ list_status_t list_linearize(list_t *list)
     for (size_t iter = list->tail; iter != 0; iter = LIST_NEXT(iter))
     {
         if (list_push_front(&new_list, LIST_DATA(iter)) != LIST_OK)
-        {
-            list_destruct(&new_list);
             return LIST_ERROR;
-        }
     }
 
     LIST_CHECK(&new_list, LIST_ERROR);
@@ -316,13 +326,17 @@ elem_t *list_data(list_t *list, list_iter_t iter)
     LIST_CHECK(list, NULL);
 
     if (iter.value >= list->buffer_size)
+    {
+        LERR(LERR_LIST_ADDRESS, "iterator out of bounds");
         return NULL;
+    }
     
     return &LIST_DATA(iter.value);
 }
 
 list_iter_t list_iter_lookup(list_t *list, size_t position)
 {
+    LERR_RESET();
     LIST_CHECK(list, NULLITER);
 
     if (list->linear)
@@ -333,7 +347,10 @@ list_iter_t list_iter_lookup(list_t *list, size_t position)
     {
         iter = LIST_NEXT(iter);
         if (iter == 0)
+        {
+            LERR(LERR_LIST_ADDRESS, "position out of range");
             return NULLITER;
+        }
     }
 
     return ITER_WRAP(iter);
@@ -341,20 +358,35 @@ list_iter_t list_iter_lookup(list_t *list, size_t position)
 
 list_iter_t list_next(list_t *list, list_iter_t iter)
 {
+    LERR_RESET();
     LIST_CHECK(list, NULLITER);
+
+    if (iter.value >= list->buffer_size)
+    {
+        LERR(LERR_LIST_ADDRESS, "iterator out of bounds");
+        return NULLITER;
+    }
 
     return ITER_WRAP(LIST_NEXT(iter.value));
 }
 
 list_iter_t list_prev(list_t *list, list_iter_t iter)
 {
+    LERR_RESET();
     LIST_CHECK(list, NULLITER);
+
+    if (iter.value >= list->buffer_size)
+    {
+        LERR(LERR_LIST_ADDRESS, "iterator out of bounds");
+        return NULLITER;
+    }
 
     return ITER_WRAP(LIST_PREV(iter.value));
 }
 
 list_iter_t list_begin(list_t *list)
 {
+    LERR_RESET();
     LIST_CHECK(list, NULLITER);
 
     return ITER_WRAP(list->tail);
@@ -372,16 +404,23 @@ bool list_iter_cmp(list_iter_t iter1, list_iter_t iter2)
 
 void list_destruct(list_t *list)
 {
+    LERR_RESET();
+    LIST_CHECK(list,);
+
     free(list->buffer);
 }
 
 static list_status_t list_expand(list_t *list)
 {
+    LERR_RESET();
     LIST_CHECK(list, LIST_ERROR);
 
     list_node_t *new_buffer = (list_node_t*)realloc(list->buffer, sizeof(list_node_t) * list->buffer_size * 2);
     if (new_buffer == NULL)
+    {
+        LERR(LERR_ALLOC, "unable to allocate memory");
         return LIST_ERROR;
+    }
     
     list->buffer = new_buffer;
 
@@ -438,7 +477,7 @@ static size_t claim_cell(list_t *list)
 
 static list_status_t list_validate(list_t *list)
 {
-    __lerrno = LERR_NO_ERROR;
+    LERR_RESET();
 
 // basic checks
     
@@ -454,7 +493,7 @@ static list_status_t list_validate(list_t *list)
 
 // connectivity check
 
-#ifdef LIST_DEBUG
+#ifdef LIST_DEBUG_MODE
     size_t used_cnt  = 0;
     size_t prev_iter = 0;
 
@@ -497,18 +536,22 @@ static list_status_t list_validate(list_t *list)
     return LIST_OK;
 }
 
+///////////////////////////////////////////
+/// Debugging stuff                     ///
+///////////////////////////////////////////
+
+#define LIST_CHECK_COND list_validate(list) == LIST_OK
+
 #define HEAD_LABEL_ID      10000
 #define TAIL_LABEL_ID      10001
 #define HEAD_FREE_LABEL_ID 10002
 
-static inline void emit_node(FILE* dot_file, list_t * list, size_t iter)
+static void emit_node(FILE* dot_file, list_t *list, size_t iter)
 {
     if (LIST_DATA(iter) == POISON)
-        fprintf(dot_file, "%zu [label=\"&#9762;\" xlabel=%zu];\n",
-                iter, iter);
+        fprintf(dot_file, "{ %zu [label=\"&#9762;\" xlabel=%zu] };\n", iter, iter);
     else
-        fprintf(dot_file, "%zu [label=%d xlabel=%zu];\n",
-                 iter, LIST_DATA(iter), iter);
+        fprintf(dot_file, "{ %zu [label=%d xlabel=%zu] };\n", iter, LIST_DATA(iter), iter);
 }
 
 void list_visualize_phys(list_t *list, const char *img_file_name)
@@ -519,33 +562,29 @@ void list_visualize_phys(list_t *list, const char *img_file_name)
                       "{\n"
                       "node [shape=box]; rankdir=LR;\n");
 
-    fprintf(dot_file, "{\n");
     for (size_t i = 0; i < list->buffer_size; i++)
         emit_node(dot_file, list, i);
-    fprintf(dot_file, "}\n");
 
-    fprintf(dot_file, "{\n");
-    fprintf(dot_file, "{%d [label=\"tail\"];}\n"     , TAIL_LABEL_ID);
-    fprintf(dot_file, "{%d [label=\"head\"];}\n"     , HEAD_LABEL_ID);
-    fprintf(dot_file, "{%d [label=\"head_free\"];}\n", HEAD_FREE_LABEL_ID);
-    fprintf(dot_file, "}\n");
+    fprintf(dot_file, "{ %d [label=\"tail\"] };\n"     , TAIL_LABEL_ID);
+    fprintf(dot_file, "{ %d [label=\"head\"] };\n"     , HEAD_LABEL_ID);
+    fprintf(dot_file, "{ %d [label=\"head_free\"] };\n", HEAD_FREE_LABEL_ID);
 
     for (size_t i = 0; i < list->buffer_size - 1; i++)
-        fprintf(dot_file, "{edge[style=invis, weight=1000] %zu->%zu}\n", i, i + 1);
+        fprintf(dot_file, "{ edge[style=invis, weight=1000] %zu->%zu };\n", i, i + 1);
 
     for (size_t i = 0; i < list->buffer_size; i++)
     {
         fprintf(dot_file,
-                "{edge[constraint=false, arrowhead=vee, color=\"#%02X%02X%02X\"]  %zu->%zu}\n",
+                "{ edge[constraint=false, arrowhead=vee, color=\"#%02X%02X%02X\"]  %zu->%zu };\n",
                 rand() % 128 + 64, rand() % 128 + 64, rand() % 128 + 64, i, LIST_NEXT(i));
         fprintf(dot_file,
-                "{edge[constraint=false, arrowhead=crow, color=\"#%02X%02X%02X\"] %zu->%zu}\n",
+                "{ edge[constraint=false, arrowhead=crow, color=\"#%02X%02X%02X\"] %zu->%zu };\n",
                 rand() % 128 + 64, rand() % 128 + 64, rand() % 128 + 64, i, LIST_PREV(i));
     }
 
-    fprintf(dot_file, "{edge[color=darkgreen]  %d->%zu}\n", HEAD_LABEL_ID     , list->head);
-    fprintf(dot_file, "{edge[color=darkgreen]  %d->%zu}\n", TAIL_LABEL_ID     , list->tail);
-    fprintf(dot_file, "{edge[color=darkgreen]  %d->%zu}\n", HEAD_FREE_LABEL_ID, list->head_free);
+    fprintf(dot_file, "{ edge[color=darkgreen]  %d->%zu };\n", HEAD_LABEL_ID     , list->head);
+    fprintf(dot_file, "{ edge[color=darkgreen]  %d->%zu };\n", TAIL_LABEL_ID     , list->tail);
+    fprintf(dot_file, "{ edge[color=darkgreen]  %d->%zu };\n", HEAD_FREE_LABEL_ID, list->head_free);
 
     fprintf(dot_file, "}\n");
     fclose(dot_file);
@@ -620,7 +659,12 @@ int list_html_dump(list_t *list)
 
     fprintf(html_file, "data: ");
     for (size_t i = 0; i < list->buffer_size; i++)
-        fprintf(html_file, "%7d ", LIST_DATA(i));
+    {
+        if (LIST_DATA(i) == POISON)
+            fprintf(html_file, " poison ");
+        else
+            fprintf(html_file, "%7d ", LIST_DATA(i));
+    }
 
     fprintf(html_file, "\nnext: ");
     for (size_t i = 0; i < list->buffer_size; i++)
@@ -659,4 +703,19 @@ int list_html_dump(list_t *list)
     fclose(html_file);
 
     return dump_id;
+}
+
+static int validator_proxy(list_t *list)
+{
+    if (!(LIST_CHECK_COND))
+    {   
+        int dump_id = list_html_dump(list); 
+        printf("List validation failed: %s\n"
+               "See more in log.html\n"
+               "Dump id: %d\n",
+                __lerr_str, dump_id);
+        return -1;
+    }
+
+    return 0;
 }
