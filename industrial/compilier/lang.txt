@@ -1,0 +1,87 @@
+Language description:
+
+1) Input source file should be parsed to sequence of lexems:
+    LEX_KEYWORD_<name>
+    LEX_OPERATOR
+    LEX_IDENTIFIER
+    LEX_NUMBER
+    LEX_OPEN_BRACKET
+    LEX_CLOSE_BRACKET
+    LEX_COMMA
+    LEX_SEMICOLON
+    LEX_COMPOUND_BEG
+    LEX_COMPOUND_END
+    
+2) General language concepts:
+    Main element of language - expression
+        Expression must return value
+        Root expressions is number literals, variables or functions calls
+        Another expressions consist of expressions linked with some operator
+        Examples: 5, 5 + 5, foo(1,2,3)
+        
+    Operators
+        Makes new expression from two expressions
+        Default operators: + - * / = == < > <= >=
+        Examples: 5 + 5, 5 / 5, a = 5
+        
+    Program Structure
+        Program is the set of functions
+        Entry point - function called main
+    
+    Statements:
+        Statement - program's execution block
+        Types of statements:
+            Expression statement:
+                expression as statement
+                must end with LEX_SEMICOLON
+                Examples: a = 5; 5 + 4; fn(23,1231,132);
+            If statement:
+                if (expression) statement
+            While statement:
+                while (expression) statement;
+            Compound statement
+                set of several another statements in LEX_COMPOUND_BEG and LEX_COMPOUND_END
+                Example:
+                { a = 5; gg(234); { a = 10} }
+            Declaration statement:
+                Declares new variable or function
+                Function:
+                    fn <name>(<params>) <compound stmt>
+                        name - LEX_IDENTIFIER
+                        params - empty or LEX_IDENTIFIERs delimetered with LEX_COMMA
+                Variable:
+                    let x;
+                    let x = <expression>;
+                    
+                    
+    Types:
+        only one type: int;
+        
+    Functions:
+        always returns 0
+        
+        
+/**
+ * Language grammar (functions in parser.c have same names):
+ * main rule - PRG
+ * 
+ * NUM  ::= [0-9]+ (aka LEX_NUMBER)
+ * VAR  ::= [a-zA-Z_][a-zA-Z_0-9]* (aka LEX_IDENTIFIER)
+ * FNCL ::= LEX_IDENTIFIER()
+ * PRIM ::= '('EXPR')' | FNCL | NUM | VAR
+ * MUDI ::= PRI{[*\%]PRI}*
+ * ADSU ::= MUDI{[+-]MUDI}*
+ * CMP  ::= ADSU{['<''>''==''!=']ADSU}*
+ * ASSN ::= VAR[=CMP]?
+ * EXPR ::= ASSN
+ * 
+ * EXPR_STMT ::= EXPR;
+ * VAR_DECL_STMT ::= 'let' LEX_IDENTIFIER {'=' EXPR }? ';'
+ * STMT ::= {COMP_STMT | EXPR_STMT | IF_STATEMENT | VAR_DECL_STMT}
+ * COMP_STMT ::= '{' STMT+ '}'
+ * IF_STMT   ::= 'if' '('EXPR')' { COMP_STMT | STMT }
+ * 
+ * FN_DECL_STMT ::= 'fn' LEX_IDENTIFIER '()' COMP_STMT
+ * 
+ * PRG ::= FN_DECL_STMT+ LEX_PRG_END
+ */
