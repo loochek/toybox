@@ -21,7 +21,7 @@
  * COMP_STMT ::= '{' STMT+ '}'
  * IF_STMT   ::= 'if' '('EXPR')' { COMP_STMT | STMT }
  * 
- * FN_DECL_STMT ::= 'fn' LEX_IDENTIFIER '()' COMP_STMT
+ * FN_DECL_STMT ::= 'fn' LEX_IDENTIFIER '(' ')' COMP_STMT
  * 
  * PRG ::= FN_DECL_STMT+ LEX_PRG_END
  */
@@ -46,11 +46,13 @@ static ast_node_t *grammar_expr_stmt    (parser_state_t *state);
 static ast_node_t *grammar_var_decl_stmt(parser_state_t *state);
 static ast_node_t *grammar_comp_stmt    (parser_state_t *state);
 static ast_node_t *grammar_stmt         (parser_state_t *state);
+static ast_node_t *grammar_fn_decl_stmt (parser_state_t *state);
+static ast_node_t *grammar_prg          (parser_state_t *state);
 
 ast_node_t *ast_build(lexem_t *lexems)
 {
     parser_state_t state = { lexems, 0 };
-    ast_node_t    *tree_root = grammar_expr(&state);
+    ast_node_t    *tree_root = grammar_prg(&state);
 
     return tree_root;
 }
@@ -392,6 +394,7 @@ static ast_node_t *grammar_assn(parser_state_t *state)
     }
 
     LERR(LERR_PARSING, "expected = for assigment");
+    state->curr_offset = old_offset;
     // destroy var
     return NULL;
 }
@@ -424,6 +427,8 @@ static ast_node_t *grammar_expr_stmt(parser_state_t *state)
         // destroy expr
         return NULL;
     }
+
+    state->curr_offset++;
 
     return expr;
 }
@@ -532,6 +537,8 @@ static ast_node_t *grammar_comp_stmt(parser_state_t *state)
         return NULL;
     }
 
+    state->curr_offset++;
+
     ast_node_t *subtree_root = NULL;
 
     while (state->lexems[state->curr_offset].type != LEX_COMPOUND_END)
@@ -539,7 +546,154 @@ static ast_node_t *grammar_comp_stmt(parser_state_t *state)
         ast_node_t *stmt = grammar_stmt(state);
         if (stmt == NULL)
         {
-            subtree_root
+            // destory subtree_root
+            state->curr_offset = old_offset;
+            return NULL;
         }
+
+        if (subtree_root == NULL)
+        {
+            subtree_root = stmt;
+            continue;
+        }
+
+        ast_node_t *comp = calloc(1, sizeof(ast_node_t));
+        if (comp == NULL)
+        {
+            // destory subtree_root stmt
+            state->curr_offset = old_offset;
+            return NULL;
+        }
+
+        comp->type = AST_COMPOUND;
+        comp->left_branch  = subtree_root;
+        comp->right_branch = stmt;
+
+        subtree_root = comp;
     }
+
+    state->curr_offset++;
+
+    return subtree_root;
+}
+
+static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state)
+{
+    LERR_RESET();
+
+    size_t old_offset = state->curr_offset;
+    
+    if (state->lexems[state->curr_offset].type != LEX_KW_FN)
+    {
+        LERR(LERR_PARSING, "expected fn keyword");
+        return NULL;
+    }
+
+    state->curr_offset++;
+
+    if (state->lexems[state->curr_offset].type != LEX_IDENTIFIER)
+    {
+        LERR(LERR_PARSING, "expected identifier");
+        state->curr_offset = old_offset;
+        return NULL;
+    }
+
+    ast_node_t *ident_node = calloc(1, sizeof(ast_node_t));
+    if (ident_node == NULL)
+    {
+        state->curr_offset = old_offset;
+        return NULL;
+    }
+
+    ident_node->type         = AST_IDENTIFIER;
+    ident_node->ident        = state->lexems[state->curr_offset].begin;
+    ident_node->ident_length = state->lexems[state->curr_offset].length;
+
+    state->curr_offset++;
+
+    if (state->lexems[state->curr_offset].type != LEX_OPEN_BRACKET)
+    {
+        LERR(LERR_PARSING, "expected (");
+        state->curr_offset = old_offset;
+        // destruct ident_node
+        return NULL;
+    }
+
+    state->curr_offset++;
+
+    if (state->lexems[state->curr_offset].type != LEX_CLOSE_BRACKET)
+    {
+        LERR(LERR_PARSING, "expected )");
+        state->curr_offset = old_offset;
+        // destruct ident_node
+        return NULL;
+    }
+
+    state->curr_offset++;
+
+    ast_node_t *func_body = grammar_comp_stmt(state);
+    if (func_body == 0)
+    {
+        state->curr_offset = old_offset;
+        // destruct ident_node
+        return NULL;
+    }
+    
+    ast_node_t *decl_node = calloc(1, sizeof(ast_node_t));
+    if (decl_node == NULL)
+    {
+        // destruct ident_node func_body
+        state->curr_offset = old_offset;
+        return NULL;
+    }
+
+    decl_node->type         = AST_FUNC_DECL;
+    decl_node->left_branch  = ident_node;
+    decl_node->right_branch = func_body;
+
+    return decl_node;
+}
+
+static ast_node_t *grammar_prg(parser_state_t *state)
+{
+    LERR_RESET();
+
+    size_t old_offset = state->curr_offset;
+
+    ast_node_t *subtree_root = NULL;
+
+    while (state->lexems[state->curr_offset].type != LEX_PRG_END)
+    {
+        ast_node_t *func = grammar_fn_decl_stmt(state);
+        if (func == NULL)
+        {
+            // destroy subtree_root
+            state->curr_offset = old_offset;
+            return NULL;
+        }
+        
+        if (subtree_root == NULL)
+        {
+            subtree_root = func;
+            continue;
+        }
+
+        ast_node_t *comp = calloc(1, sizeof(ast_node_t));
+        if (comp == NULL)
+        {
+            // destory subtree_root func
+            state->curr_offset = old_offset;
+            return NULL;
+        }
+
+        comp->type         = AST_COMPOUND;
+        comp->left_branch  = subtree_root;
+        comp->right_branch = func;
+
+        subtree_root = comp;
+    }
+
+    state->curr_offset++;
+
+    return subtree_root;
 }
