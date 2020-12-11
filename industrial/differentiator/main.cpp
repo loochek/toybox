@@ -4,6 +4,7 @@
 #include "diff.hpp"
 #include "simpler.hpp"
 #include "lerror.hpp"
+#include "article.hpp"
 
 #define ERROR_CHECK()                      \
 {                                          \
@@ -21,10 +22,7 @@ int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("Usage: equator <diff|simplify> <input file> [output file]\n"
-               "diff - differentiate by x\n"
-               "simplify - just simplify\n"
-               "Result is also shown as LaTeX and visualized graph in Firefox\n");
+        printf("Usage: differ <article|graphvis|txt> <input file> [output file]\n");
         return 0;
     }
 
@@ -38,28 +36,27 @@ int main(int argc, char *argv[])
     expr_node_t *source_tree = expr_load_from_file(argv[2], &pool);
     ERROR_CHECK();
 
-    if (strcmp(argv[1], "diff") == 0)
+    if (strcmp(argv[1], "article") == 0)
+    {
+        make_article(source_tree, 'x', &pool);
+        ERROR_CHECK();
+
+        system("firefox article.pdf");
+    }
+    else
     {
         expr_node_t *diff_tree = expr_diff(source_tree, 'x', &pool);
         ERROR_CHECK();
 
         expr_simplify(&diff_tree, &pool);
         ERROR_CHECK();
-        
-        expr_dump      (diff_tree, out_file_name);
-        expr_latex_dump(diff_tree);
-        expr_visualize (diff_tree);
+
+        if (strcmp(argv[1], "graphvis") == 0)
+            expr_visualize(diff_tree);
+        else
+            expr_dump(diff_tree, out_file_name);
 
         expr_destroy(diff_tree, &pool);
-    }
-    else if (strcmp(argv[1], "simplify") == 0)
-    {
-        expr_simplify(&source_tree, &pool);
-        ERROR_CHECK();
-        
-        expr_dump      (source_tree, out_file_name);
-        expr_latex_dump(source_tree);
-        expr_visualize (source_tree);
     }
     
     expr_destroy(source_tree, &pool);

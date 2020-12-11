@@ -2,6 +2,7 @@
 #define EXPR_TREE_H
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
 
 /*
@@ -59,10 +60,10 @@ void expr_visualize(expr_node_t *tree_root);
 /**
  * LERR-affecting
  */
-void expr_latex_dump(expr_node_t *tree_root);
+void expr_latex_put(expr_node_t *tree_root, FILE *file);
 
 /**
- * Returns 0 if tree is correct? else -1
+ * Returns 0 if passed node is correct, else -1
  * LERR-affecting
  */
 int expr_validate(expr_node_t *node);
@@ -70,7 +71,7 @@ int expr_validate(expr_node_t *node);
 /**
  * Checks is subtree a constant
  */ 
-bool expr_is_constant(expr_node_t *node);
+bool expr_is_constant(expr_node_t *node, char var);
 
 /**
  * LERR-affecting

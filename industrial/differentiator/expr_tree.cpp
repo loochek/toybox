@@ -53,27 +53,14 @@ void expr_visualize(expr_node_t *tree_root)
     system("firefox expr.svg");
 }
 
-void expr_latex_dump(expr_node_t *tree_root)
+void expr_latex_put(expr_node_t *tree_root, FILE *file)
 {
     LERR_RESET();
     EXPR_CHECK_RET(tree_root,);
 
-    FILE *file = fopen("expr.tex", "w");
-    fprintf(file, "\\documentclass{article}\n"
-                  "\\usepackage{graphicx}\n"
-                  "\\begin{document}\n"
-                  "\\begin{equation}\n"
-                  "\\resizebox{.9\\hsize}{!}{$");
-
+    fprintf(file, "$$");
     expr_latex_dump_rec(tree_root, file);
-
-    fprintf(file, "$}\n"
-                  "\\end{equation}\n"
-                  "\\end{document}\n");
-    fclose(file);
-
-    system("pdflatex expr.tex");
-    system("firefox  expr.pdf");
+    fprintf(file, "$$\n");
 }
 
 int expr_validate(expr_node_t *node)
@@ -169,7 +156,7 @@ expr_node_t *expr_deep_copy(expr_node_t *node, struct node_pool_t *pool)
     return copy;
 }
 
-bool expr_is_constant(expr_node_t *node)
+bool expr_is_constant(expr_node_t *node, char var)
 {
     if (node == NULL)
         return true;
@@ -178,12 +165,17 @@ bool expr_is_constant(expr_node_t *node)
         return true;
 
     if (node->type == TYPE_VAR)
+    {
+        if (node->var == var)
+            return false;
+        else
+            return true;
+    }
+        
+    if (!expr_is_constant(node->first_arg, var))
         return false;
 
-    if (!expr_is_constant(node->first_arg))
-        return false;
-
-    if (!expr_is_constant(node->second_arg))
+    if (!expr_is_constant(node->second_arg, var))
         return false;
 
     return true;

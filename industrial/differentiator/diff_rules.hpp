@@ -24,7 +24,7 @@
 
 #define DIFF(NODE)                                      \
 ({                                                      \
-    expr_node_t *tmp = expr_diff_rec(NODE, var, pool);  \
+    expr_node_t *tmp = expr_diff_rec(NODE, VAR, pool, file);  \
     if (tmp == NULL)                                    \
         return NULL;                                    \
                                                         \
@@ -42,6 +42,7 @@
 
 /**
  * To access current node in the rule, use CURR_NODE
+ * Differentiation variable is VAR
  * You should put a pointer to RESULT as a result of your rule's work
  */
 
@@ -52,7 +53,7 @@ DIFF_RULE(TYPE_NUM,
 
 DIFF_RULE(TYPE_VAR,
 {
-    if (CURR_NODE->var == var)
+    if (CURR_NODE->var == VAR)
         RESULT = NEW_NUM(1);
     else
         RESULT = NEW_NUM(0);
@@ -106,8 +107,8 @@ DIFF_RULE(TYPE_DIV,
 
 DIFF_RULE(TYPE_POW, 
 {
-    bool first_arg_const  = expr_is_constant(CURR_NODE->first_arg);
-    bool second_arg_const = expr_is_constant(CURR_NODE->second_arg);
+    bool first_arg_const  = expr_is_constant(CURR_NODE->first_arg, VAR);
+    bool second_arg_const = expr_is_constant(CURR_NODE->second_arg, VAR);
 
     if (first_arg_const && second_arg_const)
     {
