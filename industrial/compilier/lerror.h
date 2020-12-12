@@ -17,8 +17,9 @@ typedef enum
     LERR_FILE_IO,
     LERR_BAD_ARG,
     LERR_ALLOC,
-    LERR_LEX_PARSING,
-    LERR_PARSING
+    LERR_LEXING,
+    LERR_PARSING,
+    LERR_POOL_VALIDATION
 } lerror_t;
 
 extern lerror_t __lerrno;

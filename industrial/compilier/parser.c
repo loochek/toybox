@@ -32,32 +32,32 @@ typedef struct
     size_t   curr_offset;
 } parser_state_t;
 
-static ast_node_t *grammar_num (parser_state_t *state);
-static ast_node_t *grammar_var (parser_state_t *state);
-static ast_node_t *grammar_fncl(parser_state_t *state);
-static ast_node_t *grammar_prim(parser_state_t *state);
-static ast_node_t *grammar_mudi(parser_state_t *state);
-static ast_node_t *grammar_adsu(parser_state_t *state);
-static ast_node_t *grammar_cmp (parser_state_t *state);
-static ast_node_t *grammar_assn(parser_state_t *state);
-static ast_node_t *grammar_expr(parser_state_t *state);
+static ast_node_t *grammar_num (parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_var (parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_fncl(parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_prim(parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_mudi(parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_adsu(parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_cmp (parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_assn(parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_expr(parser_state_t *state, node_pool_t *pool);
 
-static ast_node_t *grammar_expr_stmt    (parser_state_t *state);
-static ast_node_t *grammar_var_decl_stmt(parser_state_t *state);
-static ast_node_t *grammar_comp_stmt    (parser_state_t *state);
-static ast_node_t *grammar_stmt         (parser_state_t *state);
-static ast_node_t *grammar_fn_decl_stmt (parser_state_t *state);
-static ast_node_t *grammar_prg          (parser_state_t *state);
+static ast_node_t *grammar_expr_stmt    (parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_var_decl_stmt(parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_comp_stmt    (parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_stmt         (parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_fn_decl_stmt (parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_prg          (parser_state_t *state, node_pool_t *pool);
 
-ast_node_t *ast_build(lexem_t *lexems)
+ast_node_t *ast_build(lexem_t *lexems, node_pool_t *pool)
 {
     parser_state_t state = { lexems, 0 };
-    ast_node_t    *tree_root = grammar_prg(&state);
+    ast_node_t    *tree_root = grammar_prg(&state, pool);
 
     return tree_root;
 }
 
-static ast_node_t *grammar_num(parser_state_t *state)
+static ast_node_t *grammar_num(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
@@ -65,8 +65,7 @@ static ast_node_t *grammar_num(parser_state_t *state)
 
     if (curr_lexem.type == LEX_NUMBER)
     {
-        // to be replaced
-        ast_node_t *node = calloc(1, sizeof(ast_node_t));
+        ast_node_t *node = node_pool_claim(pool);
         if (node == NULL)
             return NULL;
 
@@ -83,7 +82,7 @@ static ast_node_t *grammar_num(parser_state_t *state)
     return NULL;
 }
 
-static ast_node_t *grammar_var(parser_state_t *state)
+static ast_node_t *grammar_var(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
@@ -91,8 +90,7 @@ static ast_node_t *grammar_var(parser_state_t *state)
 
     if (curr_lexem.type == LEX_IDENTIFIER)
     {
-        // to be replaced
-        ast_node_t *node = calloc(1, sizeof(ast_node_t));
+        ast_node_t *node = node_pool_claim(pool);
         if (node == NULL)
             return NULL;
 
@@ -110,7 +108,7 @@ static ast_node_t *grammar_var(parser_state_t *state)
     return NULL;
 }
 
-static ast_node_t *grammar_fncl(parser_state_t *state)
+static ast_node_t *grammar_fncl(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
@@ -119,11 +117,12 @@ static ast_node_t *grammar_fncl(parser_state_t *state)
         state->lexems[state->curr_offset + 2].type == LEX_CLOSE_BRACKET)
     {
         // to be replaced
-        ast_node_t *call_node  = calloc(1, sizeof(ast_node_t));
-        ast_node_t *ident_node = calloc(1, sizeof(ast_node_t));
+        ast_node_t *call_node  = node_pool_claim(pool);
+        ast_node_t *ident_node = node_pool_claim(pool);
         if (call_node == NULL || ident_node == NULL)
         {
-            //free
+            node_pool_free(call_node , pool);
+            node_pool_free(ident_node, pool);
             return NULL;
         }   
 
@@ -144,7 +143,7 @@ static ast_node_t *grammar_fncl(parser_state_t *state)
     return NULL;
 }
 
-static ast_node_t *grammar_prim(parser_state_t *state)
+static ast_node_t *grammar_prim(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
@@ -153,7 +152,7 @@ static ast_node_t *grammar_prim(parser_state_t *state)
         size_t old_offset = state->curr_offset;
         state->curr_offset++;
 
-        ast_node_t *expr = grammar_expr(state);
+        ast_node_t *expr = grammar_expr(state, pool);
         if (LERR_PRESENT())
         {
             state->curr_offset = old_offset;
@@ -163,7 +162,7 @@ static ast_node_t *grammar_prim(parser_state_t *state)
         if (state->lexems[state->curr_offset].type != LEX_CLOSE_BRACKET)
         {
             LERR(LERR_PARSING, "expected closing bracket");
-            // destroy(expr)
+            ast_destroy(expr, pool);
             state->curr_offset = old_offset;
             return NULL;
         }
@@ -173,28 +172,28 @@ static ast_node_t *grammar_prim(parser_state_t *state)
         return expr;
     }
     
-    ast_node_t *fncl = grammar_fncl(state);
+    ast_node_t *fncl = grammar_fncl(state, pool);
     if (fncl != NULL)
         return fncl;
     else
         LERR_RESET();
 
-    ast_node_t *num = grammar_num(state);
+    ast_node_t *num = grammar_num(state, pool);
     if (num != NULL)
         return num;
     else
         LERR_RESET();
     
-    return grammar_var(state);
+    return grammar_var(state, pool);
 }
 
-static ast_node_t *grammar_mudi(parser_state_t *state)
+static ast_node_t *grammar_mudi(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
     size_t old_offset = state->curr_offset;
 
-    ast_node_t *subtree_root = grammar_prim(state);
+    ast_node_t *subtree_root = grammar_prim(state, pool);
     if (subtree_root == NULL)
         return NULL;
 
@@ -209,19 +208,19 @@ static ast_node_t *grammar_mudi(parser_state_t *state)
 
         state->curr_offset++;
 
-        ast_node_t *second_arg = grammar_prim(state);
+        ast_node_t *second_arg = grammar_prim(state, pool);
         if (second_arg == NULL)
         {
-            //destroy subtree_root
+            ast_destroy(subtree_root, pool);
             state->curr_offset = old_offset;
             return NULL;
         }
             
-        ast_node_t *oper_node = calloc(1, sizeof(ast_node_t));
+        ast_node_t *oper_node = node_pool_claim(pool);
         if (oper_node == NULL)
         {
-            // expr_destroy(subtree_root, pool);
-            // expr_destroy(second_arg  , pool);
+            ast_destroy(subtree_root, pool);
+            ast_destroy(second_arg  , pool);
             state->curr_offset = old_offset;
             return NULL;
         }
@@ -242,13 +241,13 @@ static ast_node_t *grammar_mudi(parser_state_t *state)
     return subtree_root;
 }
 
-static ast_node_t *grammar_adsu(parser_state_t *state)
+static ast_node_t *grammar_adsu(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
     size_t old_offset = state->curr_offset;
 
-    ast_node_t *subtree_root = grammar_mudi(state);
+    ast_node_t *subtree_root = grammar_mudi(state, pool);
     if (subtree_root == NULL)
         return NULL;
 
@@ -263,19 +262,19 @@ static ast_node_t *grammar_adsu(parser_state_t *state)
 
         state->curr_offset++;
 
-        ast_node_t *second_arg = grammar_mudi(state);
+        ast_node_t *second_arg = grammar_mudi(state, pool);
         if (second_arg == NULL)
         {
-            //destroy subtree_root
+            ast_destroy(subtree_root, pool);
             state->curr_offset = old_offset;
             return NULL;
         }
             
-        ast_node_t *oper_node = calloc(1, sizeof(ast_node_t));
+        ast_node_t *oper_node = node_pool_claim(pool);
         if (oper_node == NULL)
         {
-            // expr_destroy(subtree_root, pool);
-            // expr_destroy(second_arg  , pool);
+            ast_destroy(subtree_root, pool);
+            ast_destroy(second_arg  , pool);
             state->curr_offset = old_offset;
             return NULL;
         }
@@ -294,13 +293,13 @@ static ast_node_t *grammar_adsu(parser_state_t *state)
     return subtree_root;
 }
 
-static ast_node_t *grammar_cmp(parser_state_t *state)
+static ast_node_t *grammar_cmp(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
     size_t old_offset = state->curr_offset;
 
-    ast_node_t *subtree_root = grammar_adsu(state);
+    ast_node_t *subtree_root = grammar_adsu(state, pool);
     if (subtree_root == NULL)
         return NULL;
 
@@ -316,19 +315,19 @@ static ast_node_t *grammar_cmp(parser_state_t *state)
 
         state->curr_offset++;
 
-        ast_node_t *second_arg = grammar_adsu(state);
+        ast_node_t *second_arg = grammar_adsu(state, pool);
         if (second_arg == NULL)
         {
-            //destroy subtree_root
+            ast_destroy(subtree_root, pool);
             state->curr_offset = old_offset;
             return NULL;
         }
             
-        ast_node_t *oper_node = calloc(1, sizeof(ast_node_t));
+        ast_node_t *oper_node = node_pool_claim(pool);
         if (oper_node == NULL)
         {
-            // expr_destroy(subtree_root, pool);
-            // expr_destroy(second_arg  , pool);
+            ast_destroy(subtree_root, pool);
+            ast_destroy(second_arg  , pool);
             state->curr_offset = old_offset;
             return NULL;
         }
@@ -351,13 +350,13 @@ static ast_node_t *grammar_cmp(parser_state_t *state)
     return subtree_root;
 }
 
-static ast_node_t *grammar_assn(parser_state_t *state)
+static ast_node_t *grammar_assn(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
     size_t old_offset = state->curr_offset;
 
-    ast_node_t *var = grammar_var(state);
+    ast_node_t *var = grammar_var(state, pool);
     if (var == NULL)
         return NULL;
 
@@ -368,19 +367,19 @@ static ast_node_t *grammar_assn(parser_state_t *state)
         {
             state->curr_offset++;
 
-            ast_node_t *value = grammar_expr(state);
+            ast_node_t *value = grammar_expr(state, pool);
             if (value == NULL)
             {
-                //destroy subtree_root
+                ast_destroy(var, pool);
                 state->curr_offset = old_offset;
                 return NULL;
             }
                 
-            ast_node_t *assn_node = calloc(1, sizeof(ast_node_t));
+            ast_node_t *assn_node = node_pool_claim(pool);
             if (assn_node == NULL)
             {
-                // expr_destroy(var, pool);
-                // expr_destroy(value  , pool);
+                ast_destroy(var, pool);
+                ast_destroy(value  , pool);
                 state->curr_offset = old_offset;
                 return NULL;
             }
@@ -399,32 +398,32 @@ static ast_node_t *grammar_assn(parser_state_t *state)
     return NULL;
 }
 
-static ast_node_t *grammar_expr(parser_state_t *state)
+static ast_node_t *grammar_expr(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
-    ast_node_t *assn = grammar_assn(state);
+    ast_node_t *assn = grammar_assn(state, pool);
     if (assn == NULL)
     {
         LERR_RESET();
-        return grammar_cmp(state);
+        return grammar_cmp(state, pool);
     }
 
     return assn;
 }
 
-static ast_node_t *grammar_expr_stmt(parser_state_t *state)
+static ast_node_t *grammar_expr_stmt(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
-    ast_node_t *expr = grammar_expr(state);
+    ast_node_t *expr = grammar_expr(state, pool);
     if (expr == NULL)
         return NULL;
 
     if (state->lexems[state->curr_offset].type != LEX_SEMICOLON)
     {
         LERR(LERR_PARSING, "expected ;");
-        // destroy expr
+        ast_destroy(expr, pool);
         return NULL;
     }
 
@@ -433,7 +432,7 @@ static ast_node_t *grammar_expr_stmt(parser_state_t *state)
     return expr;
 }
 
-static ast_node_t *grammar_var_decl_stmt(parser_state_t *state)
+static ast_node_t *grammar_var_decl_stmt(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
@@ -454,7 +453,7 @@ static ast_node_t *grammar_var_decl_stmt(parser_state_t *state)
         return NULL;
     }
 
-    ast_node_t *ident_node = calloc(1, sizeof(ast_node_t));
+    ast_node_t *ident_node = node_pool_claim(pool);
     if (ident_node == NULL)
     {
         state->curr_offset = old_offset;
@@ -475,10 +474,10 @@ static ast_node_t *grammar_var_decl_stmt(parser_state_t *state)
     {
         state->curr_offset++;
 
-        init_val = grammar_expr(state);
+        init_val = grammar_expr(state, pool);
         if (init_val == NULL)
         {
-            // destruct ident node
+            ast_destroy(ident_node, pool);
             state->curr_offset = old_offset;
             return NULL;
         }
@@ -493,10 +492,11 @@ static ast_node_t *grammar_var_decl_stmt(parser_state_t *state)
 
     state->curr_offset++;
 
-    ast_node_t *decl_node = calloc(1, sizeof(ast_node_t));
+    ast_node_t *decl_node = node_pool_claim(pool);
     if (decl_node == NULL)
     {
-        // destruct ident_node init_val
+        ast_destroy(ident_node, pool);
+        ast_destroy(init_val, pool);
         state->curr_offset = old_offset;
         return NULL;
     }
@@ -508,26 +508,26 @@ static ast_node_t *grammar_var_decl_stmt(parser_state_t *state)
     return decl_node;
 }
 
-static ast_node_t *grammar_stmt(parser_state_t *state)
+static ast_node_t *grammar_stmt(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
-    ast_node_t *stmt = grammar_comp_stmt(state);
+    ast_node_t *stmt = grammar_comp_stmt(state, pool);
     if (stmt != NULL)
         return stmt;
     else
         LERR_RESET();
 
-    stmt = grammar_var_decl_stmt(state);
+    stmt = grammar_var_decl_stmt(state, pool);
     if (stmt != NULL)
         return stmt;
     else
         LERR_RESET();
 
-    return grammar_expr_stmt(state);
+    return grammar_expr_stmt(state, pool);
 }
 
-static ast_node_t *grammar_comp_stmt(parser_state_t *state)
+static ast_node_t *grammar_comp_stmt(parser_state_t *state, node_pool_t *pool)
 {
     size_t old_offset = state->curr_offset;
     
@@ -543,10 +543,10 @@ static ast_node_t *grammar_comp_stmt(parser_state_t *state)
 
     while (state->lexems[state->curr_offset].type != LEX_COMPOUND_END)
     {
-        ast_node_t *stmt = grammar_stmt(state);
+        ast_node_t *stmt = grammar_stmt(state, pool);
         if (stmt == NULL)
         {
-            // destory subtree_root
+            ast_destroy(subtree_root, pool);
             state->curr_offset = old_offset;
             return NULL;
         }
@@ -557,10 +557,11 @@ static ast_node_t *grammar_comp_stmt(parser_state_t *state)
             continue;
         }
 
-        ast_node_t *comp = calloc(1, sizeof(ast_node_t));
+        ast_node_t *comp = node_pool_claim(pool);
         if (comp == NULL)
         {
-            // destory subtree_root stmt
+            ast_destroy(subtree_root, pool);
+            ast_destroy(stmt, pool);
             state->curr_offset = old_offset;
             return NULL;
         }
@@ -577,7 +578,7 @@ static ast_node_t *grammar_comp_stmt(parser_state_t *state)
     return subtree_root;
 }
 
-static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state)
+static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
@@ -598,7 +599,7 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state)
         return NULL;
     }
 
-    ast_node_t *ident_node = calloc(1, sizeof(ast_node_t));
+    ast_node_t *ident_node = node_pool_claim(pool);
     if (ident_node == NULL)
     {
         state->curr_offset = old_offset;
@@ -615,7 +616,7 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state)
     {
         LERR(LERR_PARSING, "expected (");
         state->curr_offset = old_offset;
-        // destruct ident_node
+        ast_destroy(ident_node, pool);
         return NULL;
     }
 
@@ -625,24 +626,25 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state)
     {
         LERR(LERR_PARSING, "expected )");
         state->curr_offset = old_offset;
-        // destruct ident_node
+        ast_destroy(ident_node, pool);
         return NULL;
     }
 
     state->curr_offset++;
 
-    ast_node_t *func_body = grammar_comp_stmt(state);
+    ast_node_t *func_body = grammar_comp_stmt(state, pool);
     if (func_body == 0)
     {
         state->curr_offset = old_offset;
-        // destruct ident_node
+        ast_destroy(ident_node, pool);
         return NULL;
     }
     
-    ast_node_t *decl_node = calloc(1, sizeof(ast_node_t));
+    ast_node_t *decl_node = node_pool_claim(pool);
     if (decl_node == NULL)
     {
-        // destruct ident_node func_body
+        ast_destroy(ident_node, pool);
+        ast_destroy(func_body , pool);
         state->curr_offset = old_offset;
         return NULL;
     }
@@ -654,7 +656,7 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state)
     return decl_node;
 }
 
-static ast_node_t *grammar_prg(parser_state_t *state)
+static ast_node_t *grammar_prg(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
 
@@ -664,10 +666,10 @@ static ast_node_t *grammar_prg(parser_state_t *state)
 
     while (state->lexems[state->curr_offset].type != LEX_PRG_END)
     {
-        ast_node_t *func = grammar_fn_decl_stmt(state);
+        ast_node_t *func = grammar_fn_decl_stmt(state, pool);
         if (func == NULL)
         {
-            // destroy subtree_root
+            ast_destroy(subtree_root, pool);
             state->curr_offset = old_offset;
             return NULL;
         }
@@ -678,10 +680,11 @@ static ast_node_t *grammar_prg(parser_state_t *state)
             continue;
         }
 
-        ast_node_t *comp = calloc(1, sizeof(ast_node_t));
+        ast_node_t *comp = node_pool_claim(pool);
         if (comp == NULL)
         {
-            // destory subtree_root func
+            ast_destroy(subtree_root, pool);
+            ast_destroy(func, pool);
             state->curr_offset = old_offset;
             return NULL;
         }

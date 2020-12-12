@@ -3,18 +3,35 @@
 
 typedef enum
 {
+    LEX_DUMMY,
+
+    LEX_IDENTIFIER,
+    LEX_NUMBER,
+
     LEX_KW_FN,
     LEX_KW_IF,
     LEX_KW_LET,
-    LEX_OPERATOR,
-    LEX_IDENTIFIER,
-    LEX_NUMBER,
+
     LEX_OPEN_BRACKET,
     LEX_CLOSE_BRACKET,
     LEX_COMMA,
     LEX_SEMICOLON,
     LEX_COMPOUND_BEG,
     LEX_COMPOUND_END,
+
+    LEX_OPER_ADD,
+    LEX_OPER_SUB,
+    LEX_OPER_MUL,
+    LEX_OPER_DIV,
+    LEX_OPER_MOD,
+    LEX_OPER_ASSIGN,
+    LEX_OPER_EQUAL,
+    LEX_OPER_NEQUAL,
+    LEX_OPER_LESS,
+    LEX_OPER_MORE,
+    LEX_OPER_ELESS,
+    LEX_OPER_EMORE,
+    
     LEX_PRG_END
 } lexem_type_t;
 
@@ -36,8 +53,8 @@ typedef struct lexem
 
 /**
  * LERR-affecting
- * return -1 if failed
+ * return NULL if failed
  */
-int create_lexical_array(lexem_t **lexems_ptr, const char *src);
+lexem_t *create_lexical_array(const char *src);
 
 #endif

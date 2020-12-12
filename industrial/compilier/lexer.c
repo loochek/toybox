@@ -8,208 +8,195 @@
 
 #define MAX_LEXEM_COUNT 100
 
-// Needs some refactor
-
-typedef enum
+typedef struct
 {
-    STATE_NUMBER,
-    STATE_IDENTIFIER,
-    STATE_COMMENT,
-    STATE_SPEC_SYM,
-    STATE_WHITESPACE
-} parsing_state_t;
+    lexem_type_t type;
+    const char *sample;
+} type_sample_t;
+
+/**
+ * Lexer templates for special sequences
+ */
+
+static const type_sample_t keywords[] = 
+{
+    { LEX_KW_FN,  "fn" },
+    { LEX_KW_LET, "let"},
+    { LEX_KW_IF,  "if" }
+};
+
+// note that the order is important! (= and == for example - firstly test for ==)
+static const type_sample_t signs[] = 
+{
+    { LEX_OPER_EQUAL , "==" },
+    { LEX_OPER_NEQUAL, "!=" },
+    { LEX_OPER_ELESS , "<=" },
+    { LEX_OPER_EMORE , ">=" },
+    { LEX_OPER_ADD   , "+"  },
+    { LEX_OPER_SUB   , "-"  },
+    { LEX_OPER_MUL   , "*"  },
+    { LEX_OPER_DIV   , "/"  },
+    { LEX_OPER_MOD   , "%"  },
+    { LEX_OPER_ASSIGN, "="  },
+    { LEX_OPER_LESS  , "<"  },
+    { LEX_OPER_MORE  , ">"  },
+
+    { LEX_COMPOUND_BEG , "{"  },
+    { LEX_COMPOUND_END , "}"  },
+    { LEX_OPEN_BRACKET , "("  },
+    { LEX_CLOSE_BRACKET, ")"  },
+    { LEX_COMMA        , ","  },
+    { LEX_SEMICOLON    , ";"  }
+};
 
 static bool is_ident(char c)
 {
     return isalpha(c) || isdigit(c) || c == '_';
 }
 
-// some aliases
+static bool is_allowed(char c)
+{
+    if (is_ident(c))
+        return true;
 
-#define LEX_RESET(STATE)              \
-{                                     \
-    curr_lexem_length = 0;            \
-    curr_lexem        = (lexem_t){0}; \
-    curr_state        = STATE;        \
+    const char *specials = "+-*/%=!<>(){};,";
+    size_t      spec_cnt = strlen(specials);
+
+    for (size_t i = 0; i < spec_cnt; i++)
+    {
+        if (c == specials[i])
+            return true;
+    }
+
+    return false;
 }
 
-#define FINISH_PARSING() goto parsing_finished
-#define  PARSING_ERROR() goto parsing_failed
+static void skip_whitespace(size_t *curr_pos, const char *src)
+{
+    while (isspace(src[*curr_pos]))
+        (*curr_pos)++;
+}
 
-int create_lexical_array(lexem_t **lexems_ptr, const char *src)
+static bool try_read_number(lexem_t *lexem, size_t *curr_pos, const char *src)
+{
+    bool success = false;
+
+    *lexem = (lexem_t){0};
+
+    lexem->type  = LEX_NUMBER;
+    lexem->value = 0;
+
+    while (isdigit(src[*curr_pos]))
+    {
+        success = true;
+
+        lexem->value *= 10;
+        lexem->value += src[*curr_pos] - '0';
+        (*curr_pos)++;
+    }
+
+    return success;
+}
+
+static bool try_read_ident(lexem_t *lexem, size_t *curr_pos, const char *src)
+{
+    *lexem = (lexem_t){0};
+
+    lexem->type  = LEX_IDENTIFIER;
+    lexem->begin = &src[*curr_pos];
+
+    size_t old_pos = *curr_pos;
+
+    while (is_ident(src[*curr_pos]))
+        (*curr_pos)++;
+
+    lexem->length = *curr_pos - old_pos;
+    if (lexem->length == 0)
+        return false;
+
+    for (size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++)
+    {
+        size_t sample_len = strlen(keywords[i].sample);
+
+        if (strncmp(lexem->begin, keywords[i].sample, sample_len) == 0)
+        {
+            lexem->type = keywords[i].type;
+            break;
+        }
+    }
+
+    return true;
+}
+
+static bool try_read_sign(lexem_t *lexem, size_t *curr_pos, const char *src)
+{
+    *lexem = (lexem_t){0};
+
+    const char *start_substr = &src[*curr_pos];
+
+    for (size_t i = 0; i < sizeof(signs) / sizeof(signs[0]); i++)
+    {
+        size_t sample_len = strlen(signs[i].sample);
+
+        if (strncmp(start_substr, signs[i].sample, sample_len) == 0)
+        {
+            lexem->type = signs[i].type;
+            
+            *curr_pos += sample_len;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool try_read_term(lexem_t *lexem, size_t *curr_pos, const char *src)
+{
+    *lexem = (lexem_t){0};
+
+    lexem->type = LEX_PRG_END;
+
+    if (src[*curr_pos] != '\0')
+        return false;
+
+    (*curr_pos)++;
+    return true;
+}
+
+lexem_t *create_lexical_array(const char *src)
 {
     LERR_RESET();
 
-    if (lexems_ptr == NULL)
+    lexem_t *lexems     = calloc(MAX_LEXEM_COUNT, sizeof(lexem_t));
+    size_t   lexems_cnt = 0;
+
+    size_t curr_pos = 0;
+
+    bool should_stop = false;
+
+    while (!should_stop)
     {
-        LERR(LERR_BAD_ARG, "null pointer passed");
-        return -1;
+        skip_whitespace(&curr_pos, src);
+
+        lexem_t curr_lexem = {0};
+
+        if      (try_read_number(&curr_lexem, &curr_pos, src)) {}
+        else if (try_read_ident (&curr_lexem, &curr_pos, src)) {}
+        else if (try_read_sign  (&curr_lexem, &curr_pos, src)) {}
+        else if (try_read_term  (&curr_lexem, &curr_pos, src))
+        {
+            should_stop = true;
+        }
+        else
+        {
+            LERR(LERR_LEXING, "unknown symbol sequence at position %zu", curr_pos);
+            free(lexems);
+            return NULL;
+        }
+
+        lexems[lexems_cnt] = curr_lexem;
+        lexems_cnt++;
     }
 
-    size_t src_length = strlen(src);
-
-    size_t          curr_symbol       = 0;
-    size_t          curr_lexem_length = 0;
-    lexem_t         curr_lexem        = {0};
-    parsing_state_t curr_state        = STATE_NUMBER;
-
-    lexem_t *lexems         = *lexems_ptr;
-    size_t   curr_lexem_cnt = 0;
-
-    lexems = calloc(MAX_LEXEM_COUNT, sizeof(lexem_t));
-    if (lexems == NULL)
-    {
-        LERR(LERR_ALLOC, "unable to allocate memory");
-        return -1;
-    }
-
-    while (true)
-    {
-        switch (curr_state)
-        {
-        case STATE_NUMBER:
-        {
-            if (isdigit(src[curr_symbol]))
-            {
-                curr_lexem.value = curr_lexem.value * 10 + src[curr_symbol] - '0';
-                curr_symbol++;
-
-                curr_lexem_length++;
-            }
-            else
-            {
-                if (curr_lexem_length != 0)
-                {
-                    curr_lexem.type = LEX_NUMBER;
-                    lexems[curr_lexem_cnt] = curr_lexem;
-                    curr_lexem_cnt++;
-                }
-
-                LEX_RESET(STATE_IDENTIFIER);
-                curr_lexem.begin = &src[curr_symbol];
-            }
-
-            break;
-        }
-
-        case STATE_IDENTIFIER:
-        {
-            if (is_ident(src[curr_symbol]))
-            {
-                curr_symbol++;
-                curr_lexem_length++;
-            }
-            else
-            {
-                if (curr_lexem_length != 0)
-                {
-                    curr_lexem.length = &src[curr_symbol - 1] - curr_lexem.begin + 1;
-
-                    if (strncmp(curr_lexem.begin, "if", curr_lexem_length) == 0)
-                        curr_lexem.type = LEX_KW_IF;
-                    else if (strncmp(curr_lexem.begin, "fn", curr_lexem_length) == 0)
-                        curr_lexem.type = LEX_KW_FN;
-                    else if (strncmp(curr_lexem.begin, "let", curr_lexem_length) == 0)
-                        curr_lexem.type = LEX_KW_LET;
-                    else
-                        curr_lexem.type = LEX_IDENTIFIER;
-
-                    lexems[curr_lexem_cnt] = curr_lexem;
-                    curr_lexem_cnt++;
-                }
-
-                LEX_RESET(STATE_SPEC_SYM);
-                curr_lexem.begin  = &src[curr_symbol];
-            }
-
-            break;
-        }
-
-        case STATE_SPEC_SYM:
-        {
-            if (!is_ident(src[curr_symbol]) && !isspace(src[curr_symbol]) && src[curr_symbol] != '\0')
-            {
-                curr_symbol++;
-                curr_lexem_length++;
-
-                if (curr_lexem_length == 2 && strncmp(curr_lexem.begin, "//", 2) == 0)
-                    LEX_RESET(STATE_COMMENT);
-            }
-            else
-            {
-                if (curr_lexem_length != 0)
-                {
-                    curr_lexem.length = &src[curr_symbol - 1] - curr_lexem.begin + 1;
-                    
-                    if (strncmp(curr_lexem.begin, "(", curr_lexem_length) == 0)
-                        curr_lexem.type = LEX_OPEN_BRACKET;
-                    else if (strncmp(curr_lexem.begin, ")", curr_lexem_length) == 0)
-                        curr_lexem.type = LEX_CLOSE_BRACKET;
-                    else if (strncmp(curr_lexem.begin, "{", curr_lexem_length) == 0)
-                        curr_lexem.type = LEX_COMPOUND_BEG;
-                    else if (strncmp(curr_lexem.begin, "}", curr_lexem_length) == 0)
-                        curr_lexem.type = LEX_COMPOUND_END;
-                    else if (strncmp(curr_lexem.begin, ";", curr_lexem_length) == 0)
-                        curr_lexem.type = LEX_SEMICOLON;
-                    else if (strncmp(curr_lexem.begin, ",", curr_lexem_length) == 0)
-                        curr_lexem.type = LEX_COMMA;
-                    else
-                        curr_lexem.type = LEX_OPERATOR;
-
-                    lexems[curr_lexem_cnt] = curr_lexem;
-                    curr_lexem_cnt++;
-                }
-
-                if (isspace(src[curr_symbol]))
-                {
-                    LEX_RESET(STATE_WHITESPACE);
-                }
-                else if (is_ident(src[curr_symbol]))
-                {
-                    LEX_RESET(STATE_NUMBER);
-                }
-                else if (src[curr_symbol] == '\0')
-                    FINISH_PARSING();
-                else
-                {
-                    LERR(LERR_LEX_PARSING, "unknown character: %c", src[curr_symbol]);
-                    PARSING_ERROR();
-                }
-            }
-            
-            break;
-        }
-
-        case STATE_WHITESPACE:
-        {
-            if (isspace(src[curr_symbol]))
-                curr_symbol++;
-            else
-                LEX_RESET(STATE_NUMBER);
-
-            break;
-        }
-
-        case STATE_COMMENT:
-        {
-            if (src[curr_symbol] != '\n')
-                curr_symbol++;
-            else
-                LEX_RESET(STATE_NUMBER);
-
-            break;
-        }
-        }
-    }
-
-parsing_finished:
-    lexems[curr_lexem_cnt] = (lexem_t){LEX_PRG_END};
-    curr_lexem_cnt++;
-
-    *lexems_ptr = lexems;
-    return 0;
-
-parsing_failed:
-    free(lexems);
-    return -1;
+    return lexems;
 }

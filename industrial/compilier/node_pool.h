@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+#include "ast.h"
+
 /**
  * Effective node allocator
  */
@@ -12,7 +14,7 @@
 
 typedef struct pool_node
 {
-    expr_node_t  payload;
+    ast_node_t        payload;
     struct pool_node *next_free;
 } pool_node_t;
 
@@ -33,12 +35,12 @@ void node_pool_construct(node_pool_t *pool);
 /**
  * LERR-affecting
  */
-expr_node_t *node_pool_claim(node_pool_t *pool);
+ast_node_t *node_pool_claim(node_pool_t *pool);
 
 /**
  * LERR-affecting
  */
-void node_pool_free(expr_node_t *ptr, node_pool_t *pool);
+void node_pool_free(ast_node_t *ptr, node_pool_t *pool);
 
 /**
  * LERR-affecting

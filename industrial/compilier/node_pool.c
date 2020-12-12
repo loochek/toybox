@@ -1,6 +1,9 @@
 #include "node_pool.h"
 #include "lerror.h"
 
+// use system calloc to inspect memory leaks
+#define POOL_DEBUG
+
 static void node_pool_expand   (node_pool_t *pool);
 static void node_pool_add_block(node_pool_t *pool);
 static int  node_pool_validate (node_pool_t *pool);
@@ -16,6 +19,7 @@ void node_pool_construct(node_pool_t *pool)
 {
     LERR_RESET();
 
+#ifndef POOL_DEBUG
     if (pool == NULL)
     {
         LERR(LERR_BAD_ARG, "null pointer passed");
@@ -31,10 +35,12 @@ void node_pool_construct(node_pool_t *pool)
     pool->free_head = &pool->blocks[0][BLOCK_SIZE - 1];
 
     POOL_CHECK_RET(pool,)
+#endif
 }
 
-expr_node_t *node_pool_claim(node_pool_t *pool)
+ast_node_t *node_pool_claim(node_pool_t *pool)
 {
+#ifndef POOL_DEBUG
     POOL_CHECK_RET(pool, NULL)
 
     if (pool->free_head == NULL)
@@ -44,36 +50,45 @@ expr_node_t *node_pool_claim(node_pool_t *pool)
             return NULL;
     }
 
-    expr_node_t *to_ret = &pool->free_head->payload;
+    ast_node_t *to_ret = &pool->free_head->payload;
 
     pool->free_head = pool->free_head->next_free;
 
     POOL_CHECK_RET(pool, NULL)
 
     return to_ret;
+#else
+    return calloc(1, sizeof(ast_node_t));
+#endif
 }
 
-void node_pool_free(expr_node_t *ptr, node_pool_t *pool)
+void node_pool_free(ast_node_t *ptr, node_pool_t *pool)
 {
+#ifndef POOL_DEBUG
     POOL_CHECK_RET(pool,)
 
     // little hack (according to pool_node_t internal representation)
     pool_node_t *pool_node = (pool_node_t*)ptr;
 
-    pool_node->payload   = (expr_node_t){};
+    pool_node->payload   = (ast_node_t){};
     pool_node->next_free = pool->free_head;
 
     pool->free_head = pool_node;
 
     POOL_CHECK_RET(pool,)
+#else
+    free(ptr);
+#endif
 }
 
 void node_pool_destroy(node_pool_t *pool)
 {
+#ifndef POOL_DEBUG
     POOL_CHECK_RET(pool,)
     
     for (size_t i = 0; i < pool->blocks_count; i++)
         free(pool->blocks[i]);
+#endif
 }
 
 static void node_pool_expand(node_pool_t *pool)

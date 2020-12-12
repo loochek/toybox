@@ -7,6 +7,9 @@
  * Abstract syntax tree and generic methods
  */
 
+// forward declaration
+struct node_pool;
+
 typedef enum ast_node_type
 {
     AST_NUMBER,
@@ -40,5 +43,9 @@ typedef struct ast_node
     size_t      ident_length;
 
 } ast_node_t;
+
+void ast_visualize(ast_node_t *tree_root);
+
+void ast_destroy(ast_node_t *node, struct node_pool *pool);
 
 #endif
