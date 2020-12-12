@@ -33,7 +33,7 @@ static expr_node_t *expr_diff_rec(expr_node_t *CURR_NODE, char VAR, node_pool_t 
 
     if (file != NULL)
     {
-        fprintf(file, phrases[rand() % PHRASES_CNT]);
+        fprintf(file, "%s", phrases[rand() % PHRASES_CNT]);
         expr_latex_put(CURR_NODE, file);
         fprintf(file, "is equals to\n");
 

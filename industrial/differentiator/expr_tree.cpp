@@ -58,9 +58,9 @@ void expr_latex_put(expr_node_t *tree_root, FILE *file)
     LERR_RESET();
     EXPR_CHECK_RET(tree_root,);
 
-    fprintf(file, "$$");
+    fprintf(file, "\\begin{dmath}\n$$");
     expr_latex_dump_rec(tree_root, file);
-    fprintf(file, "$$\n");
+    fprintf(file, "$$\\end{dmath}\n");
 }
 
 int expr_validate(expr_node_t *node)

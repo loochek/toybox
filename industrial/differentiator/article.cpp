@@ -5,6 +5,7 @@
 
 const char *beginning = "\\documentclass{article} \
 \\usepackage[utf8]{inputenc} \
+\\usepackage{breqn} \
 \\begin{document} \
 \\begin{titlepage} \
 \\begin{center} \
@@ -44,7 +45,7 @@ void make_article(expr_node_t *tree_root, char var, node_pool_t *pool)
     
     FILE *file = fopen("article.tex", "w");
 
-    fprintf(file, beginning);
+    fprintf(file, "%s", beginning);
     expr_node_t *diff_tree = expr_diff_output(tree_root, var, pool, file);
     if (diff_tree == NULL)
     {
@@ -52,7 +53,7 @@ void make_article(expr_node_t *tree_root, char var, node_pool_t *pool)
         return;
     }
 
-    fprintf(file, ending);
+    fprintf(file, "%s", ending);
     fclose(file);
 
     expr_destroy(diff_tree, pool);
