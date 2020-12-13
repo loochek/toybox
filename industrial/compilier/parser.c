@@ -121,9 +121,9 @@ static ast_node_t *grammar_fncl(parser_state_t *state, node_pool_t *pool)
     LERR_RESET();
     size_t old_offset = state->curr_offset;
 
-    ast_node_t *call_node = NULL, *call_args_root = NULL, *arg = NULL, *comp_node = NULL;
+    ast_node_t *call_node = NULL, *args_root = NULL, *arg = NULL, *comp_node = NULL, *func_name = NULL;
 
-    call_args_root = grammar_idnt(state, pool);
+    func_name = grammar_idnt(state, pool);
     ERROR_CHECK();
 
     if (LEXEM(0).type != LEX_OPEN_BRACKET)
@@ -137,7 +137,7 @@ static ast_node_t *grammar_fncl(parser_state_t *state, node_pool_t *pool)
     while (LEXEM(0).type != LEX_CLOSE_BRACKET)
     {
         // if not first arg, require comma
-        if (call_args_root->type == AST_COMPOUND)
+        if (args_root != NULL)
         {
             if (LEXEM(0).type != LEX_COMMA)
             {
@@ -151,14 +151,20 @@ static ast_node_t *grammar_fncl(parser_state_t *state, node_pool_t *pool)
         arg = grammar_expr(state, pool);
         ERROR_CHECK();
 
+        if (args_root == NULL)
+        {
+            args_root = arg;
+            continue;
+        }
+
         comp_node = node_pool_claim(pool);
         ERROR_CHECK();
 
         comp_node->type         = AST_COMPOUND;
-        comp_node->left_branch  = call_args_root;
+        comp_node->left_branch  = args_root;
         comp_node->right_branch = arg;
 
-        call_args_root = comp_node;
+        args_root = comp_node;
 
         // to avoid double-free
         arg = NULL; comp_node = NULL;
@@ -170,16 +176,17 @@ static ast_node_t *grammar_fncl(parser_state_t *state, node_pool_t *pool)
     ERROR_CHECK();
 
     call_node->type = AST_OPER_CALL;
-    call_node->left_branch  = call_args_root;
-    call_node->right_branch = NULL;
+    call_node->left_branch  = func_name;
+    call_node->right_branch = args_root;
 
     return call_node;
 
 error_handler:
-    ast_destroy(call_node     , pool);
-    ast_destroy(call_args_root, pool);
-    ast_destroy(arg           , pool);
-    ast_destroy(comp_node     , pool);
+    ast_destroy(call_node, pool);
+    ast_destroy(func_name, pool);
+    ast_destroy(args_root, pool);
+    ast_destroy(arg      , pool);
+    ast_destroy(comp_node, pool);
 
     state->curr_offset = old_offset;
     return NULL;
@@ -585,16 +592,16 @@ static ast_node_t *grammar_while_stmt(parser_state_t *state, node_pool_t *pool)
     while_node = node_pool_claim(pool);
     ERROR_CHECK();
 
-    while_node->type         = AST_IF;
+    while_node->type         = AST_WHILE;
     while_node->left_branch  = condition;
     while_node->right_branch = while_body;
 
     return while_node;
 
 error_handler:
-    ast_destroy(condition, pool);
-    ast_destroy(while_body  , pool);
-    ast_destroy(while_node  , pool);
+    ast_destroy(condition , pool);
+    ast_destroy(while_body, pool);
+    ast_destroy(while_node, pool);
 
     state->curr_offset = old_offset;
     return NULL;
@@ -688,7 +695,8 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
     LERR_RESET();
     size_t old_offset = state->curr_offset;
 
-    ast_node_t *args_root = NULL, *arg = NULL, *comp_node = NULL, *func_body = NULL, *decl_node = NULL;
+    ast_node_t *args_root = NULL, *arg = NULL, *comp_node = NULL, 
+               *func_body = NULL, *decl_node = NULL, *decl_comp_node = NULL;
     
     if (LEXEM(0).type != LEX_KW_FN)
     {
@@ -698,7 +706,11 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
 
     state->curr_offset++;
 
-    args_root = grammar_idnt(state, pool);
+    decl_comp_node = node_pool_claim(pool);
+    ERROR_CHECK();
+
+    decl_comp_node->type        = AST_COMPOUND;
+    decl_comp_node->left_branch = grammar_idnt(state, pool);
     ERROR_CHECK();
 
     if (LEXEM(0).type != LEX_OPEN_BRACKET)
@@ -712,7 +724,7 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
     while (LEXEM(0).type != LEX_CLOSE_BRACKET)
     {
         // if not first arg, require comma
-        if (args_root->type == AST_COMPOUND)
+        if (args_root != NULL)
         {
             if (LEXEM(0).type != LEX_COMMA)
             {
@@ -725,6 +737,12 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
 
         arg = grammar_idnt(state, pool);
         ERROR_CHECK();
+
+        if (args_root == NULL)
+        {
+            args_root = arg;
+            continue;
+        }
 
         comp_node = node_pool_claim(pool);
         ERROR_CHECK();
@@ -741,6 +759,9 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
 
     state->curr_offset++;
 
+    decl_comp_node->right_branch = args_root;
+    args_root = NULL;
+
     func_body = grammar_comp_stmt(state, pool);
     ERROR_CHECK();
 
@@ -748,17 +769,18 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
     ERROR_CHECK();
 
     decl_node->type         = AST_FUNC_DECL;
-    decl_node->left_branch  = args_root;
+    decl_node->left_branch  = decl_comp_node;
     decl_node->right_branch = func_body;
 
     return decl_node;
 
 error_handler:
-    ast_destroy(arg      , pool);
-    ast_destroy(comp_node, pool);
-    ast_destroy(args_root, pool);
-    ast_destroy(func_body, pool);
-    ast_destroy(decl_node, pool);
+    ast_destroy(arg           , pool);
+    ast_destroy(comp_node     , pool);
+    ast_destroy(decl_comp_node, pool);
+    ast_destroy(args_root     , pool);
+    ast_destroy(func_body     , pool);
+    ast_destroy(decl_node     , pool);
 
     state->curr_offset = old_offset;
     return NULL;

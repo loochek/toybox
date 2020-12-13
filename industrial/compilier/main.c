@@ -30,7 +30,7 @@ int main()
 
     ast_visualize(ast);
 
-    assm_gen(ast, "test.assm");
+    //assm_gen(ast, "test.assm");
 
     ast_destroy(ast, &pool);
     node_pool_destroy(&pool);

@@ -82,6 +82,8 @@ static void ast_visualize_rec(ast_node_t *node, size_t node_id, FILE *file)
         fprintf(file, "%zu [shape=box, label=\"COMPOUND\"]\n", node_id);
     else if (node->type == AST_IF)
         fprintf(file, "%zu [shape=box, label=\"IF\"]\n", node_id);
+    else if (node->type == AST_WHILE)
+        fprintf(file, "%zu [shape=box, label=\"WHILE\"]\n", node_id);
     else if (AST_OPER_ADD <= node->type && node->type <= AST_OPER_CALL)
     {
         fprintf(file, "%zu [shape=box, shape=diamond, label=\"%s\"]\n",
@@ -91,7 +93,8 @@ static void ast_visualize_rec(ast_node_t *node, size_t node_id, FILE *file)
     ast_visualize_rec(node->left_branch , node_id * 2    , file);
     ast_visualize_rec(node->right_branch, node_id * 2 + 1, file);
 
-    fprintf(file, "%zu->%zu\n", node_id, node_id * 2);
-    if (!((node->type == AST_VAR_DECL && node->right_branch == NULL) || node->type == AST_OPER_CALL))
+    if (node->left_branch != NULL)
+        fprintf(file, "%zu->%zu\n", node_id, node_id * 2);
+    if (node->right_branch != NULL)
         fprintf(file, "%zu->%zu\n", node_id, node_id * 2 + 1);
 }

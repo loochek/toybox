@@ -11,6 +11,7 @@ typedef struct
 {
     string_view_t *var_table;
     size_t         table_size;
+    size_t         uid_cnt;
 } gen_state_t;
 
 static int var_lookup(gen_state_t *state, string_view_t *str)
@@ -22,6 +23,21 @@ static int var_lookup(gen_state_t *state, string_view_t *str)
     }
 
     return -1;
+}
+
+static void func_decl_gen(ast_node_t *node, gen_state_t *state, FILE *file, bool is_left_branch)
+{
+    if (node->type == AST_COMPOUND)
+    {
+        func_decl_gen(node->left_branch , state, file, true);
+        func_decl_gen(node->right_branch, state, file, false);
+        return;
+    }
+
+    if (is_left_branch)
+    {
+        
+    }
 }
 
 void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file);
@@ -47,7 +63,7 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
     switch (node->type)
     {
     case AST_NUMBER:
-        fprintf(file, "push %d\n", node->number);
+        fprintf(file, "    push %d\n", node->number);
         break;
 
     case AST_IDENTIFIER:
@@ -58,7 +74,7 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
             // TODO: identifier not found
         }
 
-        fprintf(file, "push [rax+%d]\n", offset);
+        fprintf(file, "    push [rax+%d]\n", offset);
 
         break;
     }
@@ -67,28 +83,28 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
         assm_gen_rec(node->left_branch , state, file);
         assm_gen_rec(node->right_branch, state, file);
 
-        fprintf(file, "add\n");
+        fprintf(file, "    add\n");
         break;
 
     case AST_OPER_SUB:
         assm_gen_rec(node->left_branch , state, file);
         assm_gen_rec(node->right_branch, state, file);
 
-        fprintf(file, "sub\n");
+        fprintf(file, "    sub\n");
         break;
 
     case AST_OPER_MUL:
         assm_gen_rec(node->left_branch , state, file);
         assm_gen_rec(node->right_branch, state, file);
 
-        fprintf(file, "mul\n");
+        fprintf(file, "    mul\n");
         break;
 
     case AST_OPER_DIV:
         assm_gen_rec(node->left_branch , state, file);
         assm_gen_rec(node->right_branch, state, file);
 
-        fprintf(file, "div\n");
+        fprintf(file, "    div\n");
         break;
 
     case AST_OPER_ASSIGN:
@@ -101,7 +117,7 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
             // TODO: identifier not found
         }
 
-        fprintf(file, "pop [rax+%d]\n", offset);
+        fprintf(file, "    pop [rax+%d]\n", offset);
         break;
     }
     case AST_VAR_DECL:
@@ -114,21 +130,54 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
         if (node->right_branch != NULL)
         {
             assm_gen_rec(node->right_branch, state, file);
-            fprintf(file, "pop [rax+%zu]\n", var_offset);
+            fprintf(file, "    pop [rax+%zu]\n", var_offset);
         }
         break;
     }
     case AST_FUNC_DECL:
-        // TODO: arguments
+        
         fprintf(file, "%.*s:\n", node->left_branch->ident.length, node->left_branch->ident.str);
         assm_gen_rec(node->right_branch, state, file);
-        fprintf(file, "ret\n");
+        fprintf(file, "    ret\n");
         break;
 
     case AST_COMPOUND:
         assm_gen_rec(node->left_branch , state, file);
         assm_gen_rec(node->right_branch, state, file);
         break;
+
+    case AST_IF:
+    {
+        assm_gen_rec(node->left_branch , state, file);
+
+        size_t uid = state->uid_cnt++;
+        fprintf(file, "    push 0\n"
+                      "    je if_skip_%zu\n", uid);
+
+        assm_gen_rec(node->right_branch , state, file);
+
+        fprintf(file, "if_skip_%zu:\n", uid);
+
+        break;
+    }
+
+    case AST_WHILE:
+    {
+        size_t uid = state->uid_cnt++;
+        fprintf(file, "while_back_%zu:\n", uid);
+
+        assm_gen_rec(node->left_branch , state, file);
+
+        fprintf(file, "    push 0\n"
+                      "    je while_skip_%zu\n", uid);
+
+        assm_gen_rec(node->right_branch , state, file);
+
+        fprintf(file, "    jmp while_back_%zu\n"
+                      "while_skip_%zu:\n", uid, uid);
+
+        break;
+    }
 
     default:
         printf("unknown!\n");
