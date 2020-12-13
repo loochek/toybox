@@ -1,18 +1,6 @@
-fn test()
+fn main()
 {
-    let none;
-    none = 10;
-}
-
-fn main(argc, argv)
-{
-    let tt = 1 / 2;
-    if (ll != 132124)
-    {
-        let haha = 10;
-        print(1, var, gg());
-    }
-    while (12 != 10)
-        if (12 == 10)
-            call(tt);
+    let a = 10 + 4 / 2;
+    let b;
+    b = 100 + a * 2;
 }

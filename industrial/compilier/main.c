@@ -3,6 +3,7 @@
 #include "parser.h"
 #include "lerror.h"
 #include "node_pool.h"
+#include "assm_gen.h"
 
 int main()
 {
@@ -28,6 +29,8 @@ int main()
     free(lexems);
 
     ast_visualize(ast);
+
+    assm_gen(ast, "test.assm");
 
     ast_destroy(ast, &pool);
     node_pool_destroy(&pool);

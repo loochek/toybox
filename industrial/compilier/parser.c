@@ -86,9 +86,8 @@ static ast_node_t *grammar_idnt(parser_state_t *state, node_pool_t *pool)
     if (node == NULL)
         return NULL;
 
-    node->type         = AST_IDENTIFIER;
-    node->ident        = LEXEM(0).begin;
-    node->ident_length = LEXEM(0).length;
+    node->type  = AST_IDENTIFIER;
+    node->ident = LEXEM(0).ident;
 
     state->curr_offset++;
 

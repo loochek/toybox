@@ -103,23 +103,21 @@ static bool try_read_ident(lexem_t *lexem, size_t *curr_pos, const char *src)
 {
     *lexem = (lexem_t){0};
 
-    lexem->type  = LEX_IDENTIFIER;
-    lexem->begin = &src[*curr_pos];
+    lexem->type      = LEX_IDENTIFIER;
+    lexem->ident.str = &src[*curr_pos];
 
     size_t old_pos = *curr_pos;
 
     while (is_ident(src[*curr_pos]))
         (*curr_pos)++;
 
-    lexem->length = *curr_pos - old_pos;
-    if (lexem->length == 0)
+    lexem->ident.length = *curr_pos - old_pos;
+    if (lexem->ident.length == 0)
         return false;
 
     for (size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++)
     {
-        size_t sample_len = strlen(keywords[i].sample);
-
-        if (strncmp(lexem->begin, keywords[i].sample, sample_len) == 0)
+        if (strview_c_equ(&lexem->ident, keywords[i].sample))
         {
             lexem->type = keywords[i].type;
             break;

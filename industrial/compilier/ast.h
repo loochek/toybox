@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+#include "string_view.h"
+
 /**
  * Abstract syntax tree and generic methods
  */
@@ -43,11 +45,11 @@ typedef struct ast_node
     struct ast_node *left_branch;
     struct ast_node *right_branch;
 
-    int number;
-
-    const char *ident;
-    size_t      ident_length;
-
+    union
+    {
+        int           number;
+        string_view_t ident;
+    };
 } ast_node_t;
 
 void ast_visualize(ast_node_t *tree_root);

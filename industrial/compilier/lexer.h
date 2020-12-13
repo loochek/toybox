@@ -1,6 +1,8 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include "string_view.h"
+
 typedef enum
 {
     LEX_DUMMY,
@@ -42,13 +44,8 @@ typedef struct lexem
 
     union
     {
-        int value;
-
-        struct
-        {
-            const char *begin;
-            size_t length;
-        };
+        int           value;
+        string_view_t ident;
     };
 } lexem_t;
 

@@ -1,3 +1,6 @@
+#ifndef FILE_UTILS_H
+#define FILE_UTILS_H
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -13,3 +16,5 @@ int get_file_size(FILE *file);
  * LERR-affecting
  */
 int create_buffer_from_file(const char* file_name, char **buf_ptr);
+
+#endif

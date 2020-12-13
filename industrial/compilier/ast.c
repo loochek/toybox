@@ -70,7 +70,7 @@ static void ast_visualize_rec(ast_node_t *node, size_t node_id, FILE *file)
     if (node->type == AST_IDENTIFIER)
     {
         fprintf(file, "%zu [shape=box, style=filled, color=\"#7c9ccf\", label=\"%.*s\"]\n",
-                node_id, node->ident_length, node->ident);
+                node_id, node->ident.length, node->ident.str);
         return;
     }
 
