@@ -10,6 +10,7 @@ typedef enum
 
     LEX_KW_FN,
     LEX_KW_IF,
+    LEX_KW_WHILE,
     LEX_KW_LET,
 
     LEX_OPEN_BRACKET,

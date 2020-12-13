@@ -18,18 +18,19 @@ int main()
         return -1;
     }
     
-    // ast_node_t *ast = ast_build(lexems, &pool);
-    // if (LERR_PRESENT())
-    // {
-    //     printf("Error: %s\n", __lerr_str);
-    //     return -1;
-    // }
+    ast_node_t *ast = ast_build(lexems, &pool);
+    if (LERR_PRESENT())
+    {
+        printf("Error: %s\n", __lerr_str);
+        return -1;
+    }
 
-    // free(lexems);
+    free(lexems);
 
-    //ast_visualize(ast);
+    ast_visualize(ast);
 
-    //node_pool_destroy(&pool);
+    ast_destroy(ast, &pool);
+    node_pool_destroy(&pool);
     free(buf);
 
     return 0;

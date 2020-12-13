@@ -9,7 +9,7 @@
  * Effective node allocator
  */
 
-#define BLOCK_SIZE       10000000
+#define BLOCK_SIZE       100
 #define MAX_BLOCKS_COUNT 100
 
 typedef struct pool_node

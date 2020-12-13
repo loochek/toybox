@@ -12,6 +12,8 @@ struct node_pool;
 
 typedef enum ast_node_type
 {
+    AST_DUMMY,
+
     AST_NUMBER,
     AST_IDENTIFIER,
     AST_OPER_ADD,
@@ -24,10 +26,14 @@ typedef enum ast_node_type
     AST_OPER_NEQUAL,
     AST_OPER_LESS,
     AST_OPER_MORE,
+    AST_OPER_ELESS,
+    AST_OPER_EMORE,
     AST_OPER_CALL,
     AST_COMPOUND,
     AST_VAR_DECL,
-    AST_FUNC_DECL
+    AST_FUNC_DECL,
+    AST_IF,
+    AST_WHILE
 } ast_node_type_t;
 
 typedef struct ast_node
@@ -45,7 +51,6 @@ typedef struct ast_node
 } ast_node_t;
 
 void ast_visualize(ast_node_t *tree_root);
-
-void ast_destroy(ast_node_t *node, struct node_pool *pool);
+void ast_destroy  (ast_node_t *node, struct node_pool *pool);
 
 #endif
