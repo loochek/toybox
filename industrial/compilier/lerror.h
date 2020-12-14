@@ -14,11 +14,13 @@
 typedef enum
 {
     LERR_NO_ERROR = 0,
+    LERR_GENERIC,
     LERR_FILE_IO,
     LERR_BAD_ARG,
     LERR_ALLOC,
     LERR_LEXING,
     LERR_PARSING,
+    LERR_ASSM_GEN,
     LERR_POOL_VALIDATION
 } lerror_t;
 

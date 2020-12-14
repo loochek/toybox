@@ -20,10 +20,11 @@ typedef struct
 
 static const type_sample_t keywords[] = 
 {
-    { LEX_KW_FN   , "fn" },
-    { LEX_KW_LET  , "let"},
-    { LEX_KW_IF   , "if" },
-    { LEX_KW_WHILE, "while" }
+    { LEX_KW_FN    , "fn" },
+    { LEX_KW_LET   , "let"},
+    { LEX_KW_IF    , "if" },
+    { LEX_KW_WHILE , "while" },
+    { LEX_KW_RETURN, "return" }
 };
 
 // note that the order is important! (= and == for example - firstly test for ==)

@@ -35,7 +35,8 @@ typedef enum ast_node_type
     AST_VAR_DECL,
     AST_FUNC_DECL,
     AST_IF,
-    AST_WHILE
+    AST_WHILE,
+    AST_RETURN
 } ast_node_type_t;
 
 typedef struct ast_node

@@ -11,7 +11,7 @@ int main()
     node_pool_construct(&pool);
 
     char *buf = NULL;
-    int data_size = create_buffer_from_file("prg.c", &buf);
+    int data_size = create_buffer_from_file("examples/fib.tc", &buf);
     lexem_t *lexems = create_lexical_array(buf);
     if (LERR_PRESENT())
     {
@@ -30,7 +30,7 @@ int main()
 
     ast_visualize(ast);
 
-    //assm_gen(ast, "test.assm");
+    assm_gen(ast, "test.assm");
 
     ast_destroy(ast, &pool);
     node_pool_destroy(&pool);

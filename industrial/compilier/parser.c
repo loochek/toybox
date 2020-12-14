@@ -17,10 +17,11 @@
  * 
  * EXPR_STMT ::= EXPR;
  * VAR_DECL_STMT ::= 'let' IDNT {'=' EXPR }? ';'
- * STMT ::= {COMP_STMT | EXPR_STMT | IF_STATEMENT | WHILE_STMT | VAR_DECL_STMT}
+ * STMT ::= {COMP_STMT | EXPR_STMT | IF_STATEMENT | WHILE_STMT | VAR_DECL_STMT | RET_STMT}
  * COMP_STMT ::= '{' STMT+ '}'
  * IF_STMT   ::= 'if' '('EXPR')' STMT
  * WHILE_STMT::= 'while' '('EXPR')' STMT
+ * RET_STMT  ::= 'return' EXPR? ;
  * 
  * FN_DECL_STMT ::= 'fn' IDNT '('{IDNT{,IDNT}*}+')' COMP_STMT
  * 
@@ -52,7 +53,8 @@ static ast_node_t *grammar_expr(parser_state_t *state, node_pool_t *pool);
 static ast_node_t *grammar_expr_stmt    (parser_state_t *state, node_pool_t *pool);
 static ast_node_t *grammar_var_decl_stmt(parser_state_t *state, node_pool_t *pool);
 static ast_node_t *grammar_if_stmt      (parser_state_t *state, node_pool_t *pool);
-static ast_node_t *grammar_while_stmt      (parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_while_stmt   (parser_state_t *state, node_pool_t *pool);
+static ast_node_t *grammar_ret_stmt     (parser_state_t *state, node_pool_t *pool);
 static ast_node_t *grammar_comp_stmt    (parser_state_t *state, node_pool_t *pool);
 static ast_node_t *grammar_stmt         (parser_state_t *state, node_pool_t *pool);
 static ast_node_t *grammar_fn_decl_stmt (parser_state_t *state, node_pool_t *pool);
@@ -607,6 +609,53 @@ error_handler:
     return NULL;
 }
 
+static ast_node_t *grammar_ret_stmt(parser_state_t *state, node_pool_t *pool)
+{
+    LERR_RESET();
+    size_t old_offset = state->curr_offset;
+
+    ast_node_t *ret_expr = NULL, *ret_node = NULL;
+
+    if (LEXEM(0).type != LEX_KW_RETURN)
+    {
+        LERR(LERR_PARSING, "expected return keyword");
+        ERROR_HANDLER();
+    }
+
+    state->curr_offset++;
+
+    ret_expr = grammar_expr(state, pool);
+    if (LERR_PARSING_PRESENT())
+        LERR_RESET();
+        
+    ERROR_CHECK();
+
+    if (LEXEM(0).type != LEX_SEMICOLON)
+    {
+        LERR(LERR_PARSING, "expected ;");
+        ERROR_HANDLER();
+    }
+
+    state->curr_offset++;
+
+    ret_node = node_pool_claim(pool);
+    ERROR_CHECK();
+
+    ret_node->type = AST_RETURN;
+    ret_node->left_branch  = ret_expr;
+    ret_node->right_branch = NULL;
+
+    return ret_node;
+
+error_handler:
+    ast_destroy(ret_expr, pool);
+    ast_destroy(ret_node, pool);
+
+    state->curr_offset = old_offset;
+    return NULL;
+}
+
+
 static ast_node_t *grammar_stmt(parser_state_t *state, node_pool_t *pool)
 {
     LERR_RESET();
@@ -630,6 +679,12 @@ static ast_node_t *grammar_stmt(parser_state_t *state, node_pool_t *pool)
         LERR_RESET();
 
     stmt = grammar_while_stmt(state, pool);
+    if (!LERR_PARSING_PRESENT())
+        return stmt;
+    else
+        LERR_RESET();
+
+    stmt = grammar_ret_stmt(state, pool);
     if (!LERR_PARSING_PRESENT())
         return stmt;
     else
