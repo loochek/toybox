@@ -5,53 +5,81 @@
 #include "string_view.h"
 #include "lerror.h"
 
+#include "stack/stack_common.h"
+
+#define TYPE strview
+#define elem_t string_view_t
+#include "stack/stack.h"
+#undef elem_t
+#undef TYPE
+
 // code is some dirty, but it's not final variant
 // but it works!
 
 // rax register always stores current offset of stack frame
 
-#define VAR_TABLE_SIZE 100
-
 typedef struct
 {
-    string_view_t *var_table;
-    size_t         table_size;
-    size_t         uid_cnt;
+    my_stack_strview var_table;
+    size_t           uid_cnt;
 } gen_state_t;
 
-static int var_lookup(gen_state_t *state, string_view_t *str)
+static int var_table_size(gen_state_t *state)
 {
-    for (size_t i = 0; i < state->table_size; i++)
-    {
-        if (strview_equ(&state->var_table[i], str))
-            return i;
-    }
+    LERR_RESET();
 
-    return -1;
+    size_t table_size = 0;
+    STACK_ERROR_CHECK_RET(stack_size_strview(&state->var_table, &table_size), -1);
+
+    return table_size;
 }
 
 static int var_table_add(gen_state_t *state, string_view_t *str)
 {
     LERR_RESET();
 
-    if (state->table_size == VAR_TABLE_SIZE)
-    {
-        LERR(LERR_GENERIC, "table is full");
-        return -1;
-    }
+    size_t offset = 0;
+    STACK_ERROR_CHECK_RET(stack_size_strview(&state->var_table, &offset), -1);
 
-    int offset = state->table_size;
-
-    state->var_table[offset] = *str;
-    state->table_size++;
+    STACK_ERROR_CHECK_RET(stack_push_strview(&state->var_table, *str), -1);
 
     return offset;
 }
 
+static void var_table_pop(gen_state_t *state, size_t count)
+{
+    LERR_RESET();
+
+    STACK_ERROR_CHECK_RET(stack_pop_strview(&state->var_table, count),);
+}
+
 static void var_table_clean(gen_state_t *state)
 {
-    memset(state->var_table, 0, sizeof(string_view_t) * state->table_size);
-    state->table_size = 0;
+    LERR_RESET();
+
+    int table_size = var_table_size(state);
+    if (LERR_PRESENT())
+        return;
+
+    var_table_pop(state, table_size);
+}
+
+static int var_lookup(gen_state_t *state, string_view_t *str)
+{
+    int table_size = var_table_size(state);
+    if (LERR_PRESENT())
+        return -1;
+
+    for (size_t i = 0; i < table_size; i++)
+    {
+        string_view_t var_name = {0};
+        STACK_ERROR_CHECK_RET(stack_at_strview(&state->var_table, &var_name, i), -1);
+
+        if (strview_equ(&var_name, str))
+            return i;
+    }
+
+    return -1;
 }
 
 void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file);
@@ -102,15 +130,18 @@ static void func_call_calc_args(ast_node_t *node, gen_state_t *state, FILE *file
 
 void assm_gen(ast_node_t *ast_root, const char *file_name)
 {
+    LERR_RESET();
+
     FILE *file = fopen(file_name, "w");
 
     gen_state_t state = {0};
-    state.var_table  = calloc(VAR_TABLE_SIZE, sizeof(string_view_t));
-    state.table_size = 0;
+    STACK_ERROR_CHECK_RET(stack_construct_strview(&state.var_table, 5),);
 
     assm_gen_rec(ast_root, &state, file);
+    if (LERR_PRESENT())
+        return;
 
-    free(state.var_table);
+    STACK_ERROR_CHECK_RET(stack_destruct_strview(&state.var_table),);
     fclose(file);
 }
 
@@ -294,7 +325,9 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
     case AST_OPER_CALL:
     {
         // save current offset of the stack frame to start new frame from this position 
-        size_t args_start = state->table_size;
+        int args_start = var_table_size(state);
+        if (LERR_PRESENT())
+            break;
 
         // calculate args and put it as fictive variables on the stack frame
         func_call_calc_args(node->right_branch, state, file);
@@ -315,8 +348,12 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
                 "pop rax\n"
                 "push rbx\n", args_start, func_name->ident.length, func_name->ident.str);
 
+        int current_size = var_table_size(state);
+        if (LERR_PRESENT())
+            break;
+
         // remove fictive variables
-        state->table_size = args_start;
+        var_table_pop(state, current_size - args_start);
 
         break;
     }

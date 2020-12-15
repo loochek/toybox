@@ -50,10 +50,12 @@ typedef struct lexem
     };
 } lexem_t;
 
+struct my_stack_fdecl_lexem;
+
 /**
  * LERR-affecting
  * return NULL if failed
  */
-lexem_t *create_lexical_array(const char *src);
+void create_lexical_array(const char *src, struct my_stack_fdecl_lexem *stack);
 
 #endif

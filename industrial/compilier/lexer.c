@@ -6,7 +6,13 @@
 #include "file_utils.h"
 #include "lerror.h"
 
-#define MAX_LEXEM_COUNT 300
+#include "stack/stack_common.h"
+
+#define TYPE lexem
+#define elem_t lexem_t
+#include "stack/stack.h"
+#undef elem_t
+#undef TYPE
 
 typedef struct
 {
@@ -163,12 +169,9 @@ static bool try_read_term(lexem_t *lexem, size_t *curr_pos, const char *src)
     return true;
 }
 
-lexem_t *create_lexical_array(const char *src)
+void create_lexical_array(const char *src, my_stack_lexem *stack)
 {
     LERR_RESET();
-
-    lexem_t *lexems     = calloc(MAX_LEXEM_COUNT, sizeof(lexem_t));
-    size_t   lexems_cnt = 0;
 
     size_t curr_pos = 0;
 
@@ -190,13 +193,9 @@ lexem_t *create_lexical_array(const char *src)
         else
         {
             LERR(LERR_LEXING, "unknown symbol sequence at position %zu", curr_pos);
-            free(lexems);
-            return NULL;
+            return;
         }
 
-        lexems[lexems_cnt] = curr_lexem;
-        lexems_cnt++;
+        STACK_ERROR_CHECK_RET(stack_push_lexem(stack, curr_lexem),);
     }
-
-    return lexems;
 }

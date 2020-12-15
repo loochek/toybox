@@ -17,6 +17,7 @@ typedef enum
     LERR_GENERIC,
     LERR_FILE_IO,
     LERR_BAD_ARG,
+    LERR_STACK,
     LERR_ALLOC,
     LERR_LEXING,
     LERR_PARSING,
