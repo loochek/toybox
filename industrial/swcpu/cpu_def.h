@@ -130,12 +130,14 @@ INSTRUCTION(jmp, 0x30, ARG_RVALUE, { cpu->pc = GET_RVALUE(); })
         cpu->pc = (size_t)jump_addr;                                        \
 }
 
-INSTRUCTION(je , 0x38, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 == imm_val1))
-INSTRUCTION(jne, 0x40, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 != imm_val1))
-INSTRUCTION(jg , 0x48, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 >  imm_val1))
-INSTRUCTION(jge, 0x50, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 >= imm_val1))
-INSTRUCTION(jl , 0x58, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 <  imm_val1))
-INSTRUCTION(jle, 0x60, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 <= imm_val1))
+#define EPS 1e-5
+
+INSTRUCTION(je , 0x38, ARG_RVALUE, CONDITIONAL_JUMP(fabs(imm_val2 - imm_val1) < EPS))
+INSTRUCTION(jne, 0x40, ARG_RVALUE, CONDITIONAL_JUMP((!(fabs(imm_val2 - imm_val1) < EPS))))
+INSTRUCTION(jg , 0x48, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 - imm_val1 > EPS))
+INSTRUCTION(jge, 0x50, ARG_RVALUE, CONDITIONAL_JUMP(imm_val2 - imm_val1 > -EPS))
+INSTRUCTION(jl , 0x58, ARG_RVALUE, CONDITIONAL_JUMP(imm_val1 - imm_val2 > EPS))
+INSTRUCTION(jle, 0x60, ARG_RVALUE, CONDITIONAL_JUMP(imm_val1 - imm_val2 > -EPS))
 
 INSTRUCTION(call, 0x68, ARG_RVALUE,
 {
