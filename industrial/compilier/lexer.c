@@ -6,7 +6,7 @@
 #include "file_utils.h"
 #include "lerror.h"
 
-#define MAX_LEXEM_COUNT 100
+#define MAX_LEXEM_COUNT 300
 
 typedef struct
 {

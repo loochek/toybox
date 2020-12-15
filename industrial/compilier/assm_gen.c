@@ -114,6 +114,43 @@ void assm_gen(ast_node_t *ast_root, const char *file_name)
     fclose(file);
 }
 
+#define BINARY_OP_TEMPLATE(NODE_TYPE, OPCODE)           \
+    case NODE_TYPE:                                     \
+    {                                                   \
+        assm_gen_rec(node->left_branch , state, file);  \
+        if (LERR_PRESENT())                             \
+            break;                                      \
+                                                        \
+        assm_gen_rec(node->right_branch, state, file);  \
+        if (LERR_PRESENT())                             \
+            break;                                      \
+                                                        \
+        fprintf(file, #OPCODE "\n");                    \
+        break;                                          \
+    }
+
+#define COMPARE_OP_TEMPLATE(NODE_TYPE, OPCODE)                         \
+    case NODE_TYPE:                                                    \
+    {                                                                  \
+        assm_gen_rec(node->left_branch , state, file);                 \
+        if (LERR_PRESENT())                                            \
+            break;                                                     \
+                                                                       \
+        assm_gen_rec(node->right_branch, state, file);                 \
+        if (LERR_PRESENT())                                            \
+            break;                                                     \
+                                                                       \
+        size_t uid = state->uid_cnt++;                                 \
+                                                                       \
+        fprintf(file, #OPCODE " " #OPCODE "_true_%zu\n"                \
+                      "push 0\n"                                       \
+                      "jmp " #OPCODE "_final_%zu\n"                    \
+                      #OPCODE "_true_%zu:\n"                           \
+                      "push 1\n"                                       \
+                      #OPCODE "_final_%zu:\n", uid, uid, uid, uid);    \
+        break;                                                         \
+    }                                                                  \
+
 void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
 {
     LERR_RESET();
@@ -143,70 +180,28 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
         break;
     }
 
-    case AST_OPER_ADD:
-    {
-        assm_gen_rec(node->left_branch , state, file);
-        if (LERR_PRESENT())
-            break;
+    BINARY_OP_TEMPLATE(AST_OPER_ADD, add)
+    BINARY_OP_TEMPLATE(AST_OPER_SUB, sub)
+    BINARY_OP_TEMPLATE(AST_OPER_MUL, mul)
+    BINARY_OP_TEMPLATE(AST_OPER_DIV, div)
 
-        assm_gen_rec(node->right_branch, state, file);
-        if (LERR_PRESENT())
-            break;
-
-        fprintf(file, "add\n");
-        break;
-    }
-    
-    case AST_OPER_SUB:
-    {
-        assm_gen_rec(node->left_branch , state, file);
-        if (LERR_PRESENT())
-            break;
-
-        assm_gen_rec(node->right_branch, state, file);
-        if (LERR_PRESENT())
-            break;
-
-        fprintf(file, "sub\n");
-        break;
-    }
-
-    case AST_OPER_MUL:
-    {
-        assm_gen_rec(node->left_branch , state, file);
-        if (LERR_PRESENT())
-            break;
-
-        assm_gen_rec(node->right_branch, state, file);
-        if (LERR_PRESENT())
-            break;
-
-        fprintf(file, "mul\n");
-        break;
-    }
-
-    case AST_OPER_DIV:
-    {
-        assm_gen_rec(node->left_branch , state, file);
-        if (LERR_PRESENT())
-            break;
-
-        assm_gen_rec(node->right_branch, state, file);
-        if (LERR_PRESENT())
-            break;
-
-        fprintf(file, "div\n");
-        break;
-    }
+    COMPARE_OP_TEMPLATE(AST_OPER_LESS  , jl)
+    COMPARE_OP_TEMPLATE(AST_OPER_MORE  , jg)
+    COMPARE_OP_TEMPLATE(AST_OPER_ELESS , jle)
+    COMPARE_OP_TEMPLATE(AST_OPER_EMORE , jge)
+    COMPARE_OP_TEMPLATE(AST_OPER_EQUAL , je)
+    COMPARE_OP_TEMPLATE(AST_OPER_NEQUAL, jne)
 
     case AST_OPER_ASSIGN:
     {
         assm_gen_rec(node->right_branch, state, file);
 
-        int offset = var_lookup(state, &node->left_branch->ident);
+        ast_node_t *var_name = node->left_branch;
+
+        int offset = var_lookup(state, &var_name->ident);
         if (offset < 0)
         {
-            LERR(LERR_ASSM_GEN, "unknown identifier %.*s", node->ident.length, node->ident.str);
+            LERR(LERR_ASSM_GEN, "unknown identifier %.*s", var_name->ident.length, var_name->ident.str);
             break;
         }
 
@@ -344,6 +339,20 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
 
         fprintf(file, "ret\n");
         
+        break;
+    }
+
+    case AST_EXPR_STMT:
+    {
+        // AST_EXPR_STMT is the special node to tell code generator to eat return value of the expression
+        // in order to keep CPU stack correct
+        
+        assm_gen_rec(node->left_branch, state, file);
+        if (LERR_PRESENT())
+            break;
+
+        fprintf(file, "pop rcx\n");
+
         break;
     }
 

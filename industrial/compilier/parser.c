@@ -430,21 +430,34 @@ static ast_node_t *grammar_expr_stmt(parser_state_t *state, node_pool_t *pool)
     LERR_RESET();
     size_t old_offset = state->curr_offset;
 
-    ast_node_t *expr = grammar_expr(state, pool);
-    if (expr == NULL)
-        return NULL;
+    ast_node_t *expr = NULL, *marker_node = NULL;
+
+    expr = grammar_expr(state, pool);
+    ERROR_CHECK();
 
     if (state->lexems[state->curr_offset].type != LEX_SEMICOLON)
     {
         LERR(LERR_PARSING, "expected ;");
-        ast_destroy(expr, pool);
-        state->curr_offset = old_offset;
-        return NULL;
+        ERROR_HANDLER();
     }
 
     state->curr_offset++;
 
-    return expr;
+    marker_node = node_pool_claim(pool);
+    ERROR_CHECK();
+
+    marker_node->type         = AST_EXPR_STMT;
+    marker_node->left_branch  = expr;
+    marker_node->right_branch = NULL;
+
+    return marker_node;
+
+error_handler:
+    ast_destroy(expr       , pool);
+    ast_destroy(marker_node, pool);
+
+    state->curr_offset = old_offset;
+    return NULL;
 }
 
 static ast_node_t *grammar_var_decl_stmt(parser_state_t *state, node_pool_t *pool)
