@@ -1,0 +1,123 @@
+Compilier for simple programming language. Generates assembly for SWCPU.
+
+Language description:
+
+1) Input source file should be parsed to sequence of lexems:
+    LEX_KEYWORD_<name>   fn let while if return
+    LEX_OPER_...         + - * / == != ...
+    LEX_IDENTIFIER       _test_123
+    LEX_NUMBER           123
+    LEX_OPEN_BRACKET     (
+    LEX_CLOSE_BRACKET    )
+    LEX_COMMA            ,
+    LEX_SEMICOLON        ;
+    LEX_COMPOUND_BEG     {
+    LEX_COMPOUND_END     }
+    
+2) Language grammar and semantics:
+    Main element of language - expression
+        Expression must return value
+        Root expressions is number literals, variables or functions calls
+        Another expressions consist of expressions linked with some operator
+        Examples: 5, 5 + 5, foo(1,2,3)
+        
+    Operators
+        Makes new expression from another expressions
+        Only binary operators supported (excepts function call)
+        Supported operators: + - * / = == != < > <= >=
+        Examples: 5 + 5, 5 / 5, a = 5
+        
+    Program Structure
+        Program is the set of functions declarations
+        Entry point - function called main
+    
+    Statements:
+        Statement - program's execution block
+        Types of statements:
+            Expression statement:
+                expression as statement
+                must end with LEX_SEMICOLON
+                Examples: a = 5; 5 + 4; fn(23,1231,132);
+            If statement:
+                if (expression) statement
+            While statement:
+                while (expression) statement;
+            Compound statement
+                set of several another statements in LEX_COMPOUND_BEG and LEX_COMPOUND_END
+                Example:
+                { a = 5; gg(234); { a = 10} }
+            Declaration statement:
+                Declares new variable or function
+                Function:
+                    fn <name>(<params>) <compound stmt>
+                        name - LEX_IDENTIFIER
+                        params - empty or LEX_IDENTIFIERs delimetered with LEX_COMMA
+                Variable:
+                    let x;
+                    let x = <expression>;
+            Return statement:
+                return;
+                return <expression>;
+                    
+                    
+    Types:
+        only one type: double, but double literals isn't supported (sic!)
+        
+    Functions:
+        just functions
+        default return value is 0 (in case of return without expression or exiting function without return)
+        
+
+3) AST
+
+    Leafs:
+    AST_NUMBER
+    AST_IDENTIFIER
+    
+    AST_COMPOUND - a "glue", used for arguments lists and compound statements, respects order
+    
+    AST_OPER_...  - has both branchs
+    AST_OPER_CALL - left branch is AST_IDENTIFIER with func name, right branch (optional) is the arguments expressions
+                    Expressions are separated with AST_COMPOUND
+                    
+    AST_FUNC_DECL - left branch is AST_FUNC_HEAD, right branch is the func body
+    AST_FUNC_HEAD - left branch is AST_IDENTIFIER with func name, right branch (optional) is the arguments list
+                    (AST_IDENTIFIER's glued with AST_COMPOUND)
+                    
+    AST_VAR_DECL  - left branch is AST_IDENTIFIER with var name, right branch (optional) is init expression
+    
+    AST_IF, AST_WHILE - left branch is condition (expression), right branch is the construction body
+    
+    AST_RETURN    - left branch (optional) is return value (expression)
+    
+    AST_EXPR_STMT  - helper node for the code generator to mark expression statement and tell generator to eat return
+                     value
+    
+4) (kinda)Formal grammatics:
+        
+/**
+ * Language grammar (functions in this file have same names):
+ * main rule - PRG
+ * 
+ * IDNT ::= [a-zA-Z_][a-zA-Z_0-9]* (aka LEX_IDENTIFIER)
+ * NUM  ::= [0-9]+ (aka LEX_NUMBER)
+ * FNCL ::= IDNT({EXPR{,EXPR}*}+)
+ * PRIM ::= '('EXPR')' | FNCL | NUM | IDNT
+ * MUDI ::= PRI{[*\%]PRI}*
+ * ADSU ::= MUDI{[+-]MUDI}*
+ * CMP  ::= ADSU{['<''>''==''!=''<=''>=']ADSU}*
+ * ASSN ::= IDNT=EXPR
+ * EXPR ::= ASSN | CMP
+ * 
+ * EXPR_STMT ::= EXPR;
+ * VAR_DECL_STMT ::= 'let' IDNT {'=' EXPR }? ';'
+ * STMT ::= {COMP_STMT | EXPR_STMT | IF_STATEMENT | WHILE_STMT | VAR_DECL_STMT | RET_STMT}
+ * COMP_STMT ::= '{' STMT+ '}'
+ * IF_STMT   ::= 'if' '('EXPR')' STMT
+ * WHILE_STMT::= 'while' '('EXPR')' STMT
+ * RET_STMT  ::= 'return' EXPR? ;
+ * 
+ * FN_DECL_STMT ::= 'fn' IDNT '('{IDNT{,IDNT}*}+')' COMP_STMT
+ * 
+ * PRG ::= FN_DECL_STMT+ LEX_PRG_END
+ */

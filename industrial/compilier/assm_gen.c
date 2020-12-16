@@ -13,7 +13,23 @@
 #undef elem_t
 #undef TYPE
 
-// rax register always stores current offset of stack frame
+/**
+ * Some details about code generating:
+ * Calculating expression is simple - just post-order traversal (but func calls...)
+ * Only local variables are presented now, one function - one scope
+ * Variables are stored in RAM, as stack frames
+ * Offset of the current stack frame must be maintained in RAX register
+ * Offsets of variables relative to stack frame offset are stored in the var table
+ * (aren't stored actually, they are defined as entry offset inside the stack)
+ * Var table is the stack, so offset of new variable are +1 of the last added variable offset
+ * Function arguments is just first variables in the stack frame
+ * So, function declaration is just adding args variables according their names in args list
+ * Function call is little bit tricky
+ * Fictive variables are added, and calculated arguments values are loaded into them
+ * So, we set rax to the start of fictive variables block and get initialized stack frame for called func
+ * now just save old rax and call it
+ * rbx register is used for return value
+ */
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -204,7 +220,8 @@ static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
             break;
         }
 
-        fprintf(file, "pop [rax+%d]\n", offset);
+        fprintf(file, "pop  [rax+%d]\n", offset);
+        fprintf(file, "push [rax+%d]\n", offset); // as = is operator we must provide result
         break;
     }
 
@@ -241,7 +258,9 @@ static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
         if (LERR_PRESENT())
             break;
 
-        fprintf(file, "ret\n");
+        fprintf(file, "push 0\n"
+                      "pop rbx\n"
+                      "ret\n");
         break;
     }
 
