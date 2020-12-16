@@ -1,0 +1,26 @@
+; little launcher and "standart library" to get use of some CPU instructions
+; (as language doesn't have inline assembly)
+
+call main
+hlt
+
+print:
+    push [rax+0]
+    out
+    push 0
+    pop rbx
+    ret
+    
+input:
+    in
+    pop rbx
+    ret
+
+sqr:
+    push [rax+0]
+    sqrt
+    pop rbx
+    ret
+
+; compilier-generated code starts here!
+

@@ -31,14 +31,17 @@ typedef enum ast_node_type
     AST_OPER_ELESS,
     AST_OPER_EMORE,
     AST_OPER_CALL,
-    AST_COMPOUND,
-    AST_VAR_DECL,
-    AST_FUNC_DECL,
+
     AST_IF,
     AST_WHILE,
     AST_RETURN,
 
-    AST_EXPR_STMT
+    AST_VAR_DECL,
+    AST_FUNC_DECL,
+    AST_FUNC_HEAD,
+    AST_EXPR_STMT,
+
+    AST_COMPOUND
 } ast_node_type_t;
 
 typedef struct ast_node

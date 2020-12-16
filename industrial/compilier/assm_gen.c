@@ -13,10 +13,9 @@
 #undef elem_t
 #undef TYPE
 
-// code is some dirty, but it's not final variant
-// but it works!
-
 // rax register always stores current offset of stack frame
+
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 typedef struct
 {
@@ -24,109 +23,34 @@ typedef struct
     size_t           uid_cnt;
 } gen_state_t;
 
-static int var_table_size(gen_state_t *state)
-{
-    LERR_RESET();
+/**
+ * Variables table is some abstraction around stack
+ * It's used for tracking variables offsets in the current stack frame
+ */
 
-    size_t table_size = 0;
-    STACK_ERROR_CHECK_RET(stack_size_strview(&state->var_table, &table_size), -1);
+static int  var_table_size (gen_state_t *state);
+static int  var_table_add  (gen_state_t *state, string_view_t  str);
+static int  var_lookup     (gen_state_t *state, string_view_t *str);
+static void var_table_pop  (gen_state_t *state, size_t count);
+static void var_table_clean(gen_state_t *state);
 
-    return table_size;
-}
+/**
+ * Helper function for FUNC_DECL code generation
+ * Initializes stack frame with function arguments
+ */
+static void func_decl_add_args(ast_node_t *node, gen_state_t *state);
 
-static int var_table_add(gen_state_t *state, string_view_t *str)
-{
-    LERR_RESET();
+/**
+ * Helper function for OPER_CALL code generation
+ * Calculates arguments values and puts them as fictive variables
+ */
+static void func_call_calc_args(ast_node_t *node, gen_state_t *state, FILE *file);
 
-    size_t offset = 0;
-    STACK_ERROR_CHECK_RET(stack_size_strview(&state->var_table, &offset), -1);
+/////////////////////////////////////////////////////////////////////////////////////////////
 
-    STACK_ERROR_CHECK_RET(stack_push_strview(&state->var_table, *str), -1);
+static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file);
 
-    return offset;
-}
-
-static void var_table_pop(gen_state_t *state, size_t count)
-{
-    LERR_RESET();
-
-    STACK_ERROR_CHECK_RET(stack_pop_strview(&state->var_table, count),);
-}
-
-static void var_table_clean(gen_state_t *state)
-{
-    LERR_RESET();
-
-    int table_size = var_table_size(state);
-    if (LERR_PRESENT())
-        return;
-
-    var_table_pop(state, table_size);
-}
-
-static int var_lookup(gen_state_t *state, string_view_t *str)
-{
-    int table_size = var_table_size(state);
-    if (LERR_PRESENT())
-        return -1;
-
-    for (size_t i = 0; i < table_size; i++)
-    {
-        string_view_t var_name = {0};
-        STACK_ERROR_CHECK_RET(stack_at_strview(&state->var_table, &var_name, i), -1);
-
-        if (strview_equ(&var_name, str))
-            return i;
-    }
-
-    return -1;
-}
-
-void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file);
-
-
-static void func_decl_add_args(ast_node_t *node, gen_state_t *state)
-{
-    if (node == NULL)
-        return;
-
-    if (node->type == AST_COMPOUND)
-    {
-        func_decl_add_args(node->left_branch , state);
-        func_decl_add_args(node->right_branch, state);
-        return;
-    }
-
-    var_table_add(state, &node->ident);
-}
-
-static void func_call_calc_args(ast_node_t *node, gen_state_t *state, FILE *file)
-{
-    LERR_RESET();
-
-    if (node == NULL)
-        return;
-
-    if (node->type == AST_COMPOUND)
-    {
-        func_call_calc_args(node->left_branch , state, file);
-        if (LERR_PRESENT())
-            return;
-
-        func_call_calc_args(node->right_branch, state, file);
-        return;
-    }
-
-    assm_gen_rec(node, state, file);
-    if (LERR_PRESENT())
-        return;
-
-    int offset = var_table_add(state, &(string_view_t){"fictive", 7});
-    if (LERR_PRESENT())
-        return;
-
-    fprintf(file, "pop [rax+%d]\n", offset);
-}
+#define ERROR_CHECK() if (LERR_PRESENT()) goto cleanup;
 
 void assm_gen(ast_node_t *ast_root, const char *file_name)
 {
@@ -135,15 +59,18 @@ void assm_gen(ast_node_t *ast_root, const char *file_name)
     FILE *file = fopen(file_name, "w");
 
     gen_state_t state = {0};
-    STACK_ERROR_CHECK_RET(stack_construct_strview(&state.var_table, 5),);
+    STACK_LERR(stack_construct_strview(&state.var_table, 5));
+    ERROR_CHECK();
 
     assm_gen_rec(ast_root, &state, file);
-    if (LERR_PRESENT())
-        return;
+    ERROR_CHECK();
 
-    STACK_ERROR_CHECK_RET(stack_destruct_strview(&state.var_table),);
+cleanup:
+    STACK_LERR(stack_destruct_strview(&state.var_table));
     fclose(file);
 }
+
+#undef ERROR_CHECK
 
 #define BINARY_OP_TEMPLATE(NODE_TYPE, OPCODE)           \
     case NODE_TYPE:                                     \
@@ -182,7 +109,7 @@ void assm_gen(ast_node_t *ast_root, const char *file_name)
         break;                                                         \
     }                                                                  \
 
-void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
+static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
 {
     LERR_RESET();
 
@@ -203,7 +130,7 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
         int offset = var_lookup(state, &node->ident);
         if (offset < 0)
         {
-            LERR(LERR_ASSM_GEN, "unknown identifier %.*s", node->ident.length, node->ident.str);
+            LERR(LERR_ASSM_GEN, "unknown identifier %.*s", (int)node->ident.length, node->ident.str);
             break;
         }
 
@@ -222,64 +149,6 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
     COMPARE_OP_TEMPLATE(AST_OPER_EMORE , jge)
     COMPARE_OP_TEMPLATE(AST_OPER_EQUAL , je)
     COMPARE_OP_TEMPLATE(AST_OPER_NEQUAL, jne)
-
-    case AST_OPER_ASSIGN:
-    {
-        assm_gen_rec(node->right_branch, state, file);
-
-        ast_node_t *var_name = node->left_branch;
-
-        int offset = var_lookup(state, &var_name->ident);
-        if (offset < 0)
-        {
-            LERR(LERR_ASSM_GEN, "unknown identifier %.*s", var_name->ident.length, var_name->ident.str);
-            break;
-        }
-
-        fprintf(file, "pop [rax+%d]\n", offset);
-        break;
-    }
-    case AST_VAR_DECL:
-    {
-        int offset = var_table_add(state, &node->left_branch->ident);
-        if (LERR_PRESENT())
-            break;
-
-        if (node->right_branch != NULL)
-        {
-            assm_gen_rec(node->right_branch, state, file);
-            if (LERR_PRESENT())
-                break;
-
-            fprintf(file, "pop [rax+%d]\n", offset);
-        }
-        break;
-    }
-    case AST_FUNC_DECL:
-    {
-        var_table_clean(state);
-
-        ast_node_t *func_name = node->left_branch->left_branch;
-        ast_node_t *args_root = node->left_branch->right_branch;
-        ast_node_t *func_body = node->right_branch;
-
-        func_decl_add_args(args_root, state);
-
-        fprintf(file, "%.*s:\n", func_name->ident.length, func_name->ident.str);
-
-        assm_gen_rec(func_body, state, file);
-        if (LERR_PRESENT())
-            break;
-
-        fprintf(file, "ret\n");
-        break;
-    }
-        
-
-    case AST_COMPOUND:
-        assm_gen_rec(node->left_branch , state, file);
-        assm_gen_rec(node->right_branch, state, file);
-        break;
 
     case AST_IF:
     {
@@ -322,6 +191,70 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
         break;
     }
 
+    case AST_OPER_ASSIGN:
+    {
+        assm_gen_rec(node->right_branch, state, file);
+
+        ast_node_t *var_name = node->left_branch;
+
+        int offset = var_lookup(state, &var_name->ident);
+        if (offset < 0)
+        {
+            LERR(LERR_ASSM_GEN, "unknown identifier %.*s", (int)var_name->ident.length, var_name->ident.str);
+            break;
+        }
+
+        fprintf(file, "pop [rax+%d]\n", offset);
+        break;
+    }
+
+    case AST_VAR_DECL:
+    {
+        int offset = var_table_add(state, node->left_branch->ident);
+        if (LERR_PRESENT())
+            break;
+
+        if (node->right_branch != NULL)
+        {
+            assm_gen_rec(node->right_branch, state, file);
+            if (LERR_PRESENT())
+                break;
+
+            fprintf(file, "pop [rax+%d]\n", offset);
+        }
+        break;
+    }
+
+    case AST_FUNC_DECL:
+    {
+        var_table_clean(state);
+
+        ast_node_t *func_name = node->left_branch->left_branch;
+        ast_node_t *args_root = node->left_branch->right_branch;
+        ast_node_t *func_body = node->right_branch;
+
+        func_decl_add_args(args_root, state);
+
+        fprintf(file, "%.*s:\n", (int)func_name->ident.length, func_name->ident.str);
+
+        assm_gen_rec(func_body, state, file);
+        if (LERR_PRESENT())
+            break;
+
+        fprintf(file, "ret\n");
+        break;
+    }
+
+    case AST_COMPOUND:
+    {
+        assm_gen_rec(node->left_branch , state, file);
+        if (LERR_PRESENT())
+            break;
+            
+        assm_gen_rec(node->right_branch, state, file);
+        break;
+    }
+        
     case AST_OPER_CALL:
     {
         // save current offset of the stack frame to start new frame from this position 
@@ -346,7 +279,7 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
                 "pop rax\n"
                 "call %.*s\n"
                 "pop rax\n"
-                "push rbx\n", args_start, func_name->ident.length, func_name->ident.str);
+                "push rbx\n", args_start, (int)func_name->ident.length, func_name->ident.str);
 
         int current_size = var_table_size(state);
         if (LERR_PRESENT())
@@ -399,4 +332,115 @@ void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
         assm_gen_rec(node->right_branch, state, file);
         break;
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+static int var_table_size(gen_state_t *state)
+{
+    LERR_RESET();
+
+    size_t table_size = 0;
+    STACK_LERR(stack_size_strview(&state->var_table, &table_size));
+    if (LERR_PRESENT())
+        return -1;
+
+    return table_size;
+}
+
+static int var_table_add(gen_state_t *state, string_view_t str)
+{
+    LERR_RESET();
+
+    size_t offset = 0;
+    STACK_LERR(stack_size_strview(&state->var_table, &offset));
+    if (LERR_PRESENT())
+        return -1;
+
+    STACK_LERR(stack_push_strview(&state->var_table, str));
+    if (LERR_PRESENT())
+        return -1;
+
+    return offset;
+}
+
+static void var_table_pop(gen_state_t *state, size_t count)
+{
+    LERR_RESET();
+
+    STACK_LERR(stack_pop_strview(&state->var_table, count));
+}
+
+static void var_table_clean(gen_state_t *state)
+{
+    LERR_RESET();
+
+    int table_size = var_table_size(state);
+    if (LERR_PRESENT())
+        return;
+
+    var_table_pop(state, table_size);
+}
+
+static int var_lookup(gen_state_t *state, string_view_t *str)
+{
+    int table_size = var_table_size(state);
+    if (LERR_PRESENT())
+        return -1;
+
+    for (size_t i = 0; i < table_size; i++)
+    {
+        string_view_t var_name = {0};
+        STACK_LERR(stack_at_strview(&state->var_table, &var_name, i));
+        if (LERR_PRESENT())
+            return -1;
+
+        if (strview_equ(&var_name, str))
+            return i;
+    }
+
+    return -1;
+}
+
+static void func_decl_add_args(ast_node_t *node, gen_state_t *state)
+{
+    if (node == NULL)
+        return;
+
+    if (node->type == AST_COMPOUND)
+    {
+        func_decl_add_args(node->left_branch , state);
+        func_decl_add_args(node->right_branch, state);
+        return;
+    }
+
+    var_table_add(state, node->ident);
+}
+
+static void func_call_calc_args(ast_node_t *node, gen_state_t *state, FILE *file)
+{
+    LERR_RESET();
+
+    if (node == NULL)
+        return;
+
+    if (node->type == AST_COMPOUND)
+    {
+        func_call_calc_args(node->left_branch , state, file);
+        if (LERR_PRESENT())
+            return;
+
+        func_call_calc_args(node->right_branch, state, file);
+        return;
+    }
+
+    assm_gen_rec(node, state, file);
+    if (LERR_PRESENT())
+        return;
+
+    int offset = var_table_add(state, (string_view_t){"$fictive$", 9});
+    if (LERR_PRESENT())
+        return;
+
+    fprintf(file, "pop [rax+%d]\n", offset);
 }

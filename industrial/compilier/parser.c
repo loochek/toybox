@@ -764,7 +764,7 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
     size_t old_offset = state->curr_offset;
 
     ast_node_t *args_root = NULL, *arg = NULL, *comp_node = NULL, 
-               *func_body = NULL, *decl_node = NULL, *decl_comp_node = NULL;
+               *func_body = NULL, *decl_node = NULL, *decl_head_node = NULL;
     
     if (LEXEM(0).type != LEX_KW_FN)
     {
@@ -774,11 +774,11 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
 
     state->curr_offset++;
 
-    decl_comp_node = node_pool_claim(pool);
+    decl_head_node = node_pool_claim(pool);
     ERROR_CHECK();
 
-    decl_comp_node->type        = AST_COMPOUND;
-    decl_comp_node->left_branch = grammar_idnt(state, pool);
+    decl_head_node->type        = AST_FUNC_HEAD;
+    decl_head_node->left_branch = grammar_idnt(state, pool);
     ERROR_CHECK();
 
     if (LEXEM(0).type != LEX_OPEN_BRACKET)
@@ -827,7 +827,7 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
 
     state->curr_offset++;
 
-    decl_comp_node->right_branch = args_root;
+    decl_head_node->right_branch = args_root;
     args_root = NULL;
 
     func_body = grammar_comp_stmt(state, pool);
@@ -837,7 +837,7 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
     ERROR_CHECK();
 
     decl_node->type         = AST_FUNC_DECL;
-    decl_node->left_branch  = decl_comp_node;
+    decl_node->left_branch  = decl_head_node;
     decl_node->right_branch = func_body;
 
     return decl_node;
@@ -845,7 +845,7 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
 error_handler:
     ast_destroy(arg           , pool);
     ast_destroy(comp_node     , pool);
-    ast_destroy(decl_comp_node, pool);
+    ast_destroy(decl_head_node, pool);
     ast_destroy(args_root     , pool);
     ast_destroy(func_body     , pool);
     ast_destroy(decl_node     , pool);

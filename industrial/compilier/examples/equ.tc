@@ -27,8 +27,8 @@ fn quadratic(a, b, c)
     
     if (discr > 0)
     {
-        print((0 - b + sqrt(discr)) / (2 * a));
-        print((0 - b - sqrt(discr)) / (2 * a));
+        print((0 - b + sqr(discr)) / (2 * a));
+        print((0 - b - sqr(discr)) / (2 * a));
         return;
     }
     

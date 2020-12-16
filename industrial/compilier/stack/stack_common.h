@@ -33,12 +33,9 @@ typedef enum
 } stack_status_t;
 
 // LERR adapter
-#define STACK_ERROR_CHECK_RET(method, to_ret)              \
+#define STACK_LERR(method)                                 \
 {                                                          \
     stack_status_t status = method;                        \
     if (status != STACK_OK)                                \
-    {                                                      \
         LERR(LERR_STACK, "%s", stack_status_text[status]); \
-        return to_ret;                                     \
-    }                                                      \
 }

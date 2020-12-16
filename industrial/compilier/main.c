@@ -4,7 +4,6 @@
 #include "lerror.h"
 #include "node_pool.h"
 #include "assm_gen.h"
-
 #include "stack/stack_common.h"
 
 #define TYPE lexem
@@ -13,50 +12,72 @@
 #undef elem_t
 #undef TYPE
 
-void compile(node_poo)
+#define ERROR_CHECK() if (LERR_PRESENT()) goto cleanup;
+
+void translate(const char *src_file_name, const char *assm_file_name)
 {
     LERR_RESET();
 
-    node_pool_t pool = {0};
+    node_pool_t    pool     = {0};
+    my_stack_lexem lexems   = {0};
+    ast_node_t    *ast      = NULL;
+    char          *prg_text = NULL;
+
     node_pool_construct(&pool);
+    ERROR_CHECK();
 
-    char *buf = NULL;
-    int data_size = create_buffer_from_file("examples/equ.tc", &buf);
-    if (LERR_PRESENT())
-        return;
+    int data_size = create_buffer_from_file(src_file_name, &prg_text);
+    ERROR_CHECK();
 
-    my_stack_lexem lexems = {0};
-    STACK_ERROR_CHECK_RET(stack_construct_lexem(&lexems, 5),);
-
-    create_lexical_array(buf, &lexems);
-    if (LERR_PRESENT())
-        return;
     
-    ast_node_t *ast = ast_build(lexems.data, &pool);
-    if (LERR_PRESENT())
-        return;
+    STACK_LERR(stack_construct_lexem(&lexems, 5));
+    ERROR_CHECK();
 
-    STACK_ERROR_CHECK_RET(stack_destruct_lexem(&lexems),);
+    create_lexical_array(prg_text, &lexems);
+    ERROR_CHECK();
+    
+    ast = ast_build(lexems.data, &pool);
+    ERROR_CHECK();
 
-    ast_visualize(ast);
+    assm_gen(ast, assm_file_name);
 
-    assm_gen(ast, "test.assm");
-    if (LERR_PRESENT())
-        return;
-
+cleanup:
+    STACK_LERR(stack_destruct_lexem(&lexems));
     ast_destroy(ast, &pool);
     node_pool_destroy(&pool);
-    free(buf);
+    free(prg_text);
 }
 
-int main()
+#undef ERROR_CHECK
+
+#define MAX_CMDLINE_LENGTH 100
+
+int main(int argc, char *argv[])
 {
-    compile();
+    if (argc < 2)
+    {
+        printf("Usage: ./tc <source file> [output file]\n");
+        return 0;
+    }
+
+    const char *out_file_name = "a.prg";
+    if (argc >= 3)
+        out_file_name = argv[2];
+
+    system("mkdir -p .tmp");
+
+    translate(argv[1], ".tmp/tmp.assm");
     if (LERR_PRESENT())
     {
         printf("Error: %s\n", __lerr_str);
         return -1;
     }
+    
+    system("cat start.assm .tmp/tmp.assm > .tmp/tmp1.assm");
 
+    char assm_string[MAX_CMDLINE_LENGTH + 1];
+    snprintf(assm_string, MAX_CMDLINE_LENGTH, "./bin/assm .tmp/tmp1.assm %s", out_file_name);
+    system(assm_string);
+    system("rm -rf .tmp");
     return 0;
 }

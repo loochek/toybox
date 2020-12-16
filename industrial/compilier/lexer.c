@@ -5,7 +5,6 @@
 #include "lexer.h"
 #include "file_utils.h"
 #include "lerror.h"
-
 #include "stack/stack_common.h"
 
 #define TYPE lexem
@@ -24,7 +23,9 @@ typedef struct
  * Lexer templates for special sequences
  */
 
-static const type_sample_t keywords[] = 
+static const char *COMMENT_SEQ = "//";
+
+static const type_sample_t KEYWORDS[] = 
 {
     { LEX_KW_FN    , "fn" },
     { LEX_KW_LET   , "let"},
@@ -34,7 +35,7 @@ static const type_sample_t keywords[] =
 };
 
 // note that the order is important! (= and == for example - firstly test for ==)
-static const type_sample_t signs[] = 
+static const type_sample_t SIGNS[] = 
 {
     { LEX_OPER_EQUAL , "==" },
     { LEX_OPER_NEQUAL, "!=" },
@@ -57,32 +58,73 @@ static const type_sample_t signs[] =
     { LEX_SEMICOLON    , ";"  }
 };
 
+static bool is_ident        (char c);
+static void skip_non_program(size_t *curr_pos, const char *src);
+static bool try_read_number (lexem_t *lexem, size_t *curr_pos, const char *src);
+static bool try_read_ident  (lexem_t *lexem, size_t *curr_pos, const char *src);
+static bool try_read_sign   (lexem_t *lexem, size_t *curr_pos, const char *src);
+static bool try_read_term   (lexem_t *lexem, size_t *curr_pos, const char *src);
+
+void create_lexical_array(const char *src, my_stack_lexem *stack)
+{
+    LERR_RESET();
+
+    size_t curr_pos = 0;
+
+    bool should_stop = false;
+
+    while (!should_stop)
+    {
+        skip_non_program(&curr_pos, src);
+
+        lexem_t curr_lexem = {0};
+
+        if      (try_read_number(&curr_lexem, &curr_pos, src)) {}
+        else if (try_read_ident (&curr_lexem, &curr_pos, src)) {}
+        else if (try_read_sign  (&curr_lexem, &curr_pos, src)) {}
+        else if (try_read_term  (&curr_lexem, &curr_pos, src))
+        {
+            should_stop = true;
+        }
+        else
+        {
+            LERR(LERR_LEXING, "unknown symbol sequence at position %zu", curr_pos);
+            return;
+        }
+
+        STACK_LERR(stack_push_lexem(stack, curr_lexem));
+        if (LERR_PRESENT())
+            return;
+    }
+}
+
+
 static bool is_ident(char c)
 {
     return isalpha(c) || isdigit(c) || c == '_';
 }
 
-static bool is_allowed(char c)
+static void skip_non_program(size_t *curr_pos, const char *src)
 {
-    if (is_ident(c))
-        return true;
+    bool should_stop = false;
 
-    const char *specials = "+-*/%=!<>(){};,";
-    size_t      spec_cnt = strlen(specials);
-
-    for (size_t i = 0; i < spec_cnt; i++)
+    while (!should_stop)
     {
-        if (c == specials[i])
-            return true;
+        should_stop = true;
+
+        while (isspace(src[*curr_pos]))
+        {
+            should_stop = false;
+            (*curr_pos)++;
+        }
+
+        if (strncmp(&src[*curr_pos], COMMENT_SEQ, strlen(COMMENT_SEQ)) == 0)
+        {
+            should_stop = false;
+            while (src[*curr_pos] != '\n' && src[*curr_pos] != '\0')
+                (*curr_pos)++;
+        }
     }
-
-    return false;
-}
-
-static void skip_whitespace(size_t *curr_pos, const char *src)
-{
-    while (isspace(src[*curr_pos]))
-        (*curr_pos)++;
 }
 
 static bool try_read_number(lexem_t *lexem, size_t *curr_pos, const char *src)
@@ -122,11 +164,11 @@ static bool try_read_ident(lexem_t *lexem, size_t *curr_pos, const char *src)
     if (lexem->ident.length == 0)
         return false;
 
-    for (size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++)
+    for (size_t i = 0; i < sizeof(KEYWORDS) / sizeof(KEYWORDS[0]); i++)
     {
-        if (strview_c_equ(&lexem->ident, keywords[i].sample))
+        if (strview_c_equ(&lexem->ident, KEYWORDS[i].sample))
         {
-            lexem->type = keywords[i].type;
+            lexem->type = KEYWORDS[i].type;
             break;
         }
     }
@@ -140,13 +182,13 @@ static bool try_read_sign(lexem_t *lexem, size_t *curr_pos, const char *src)
 
     const char *start_substr = &src[*curr_pos];
 
-    for (size_t i = 0; i < sizeof(signs) / sizeof(signs[0]); i++)
+    for (size_t i = 0; i < sizeof(SIGNS) / sizeof(SIGNS[0]); i++)
     {
-        size_t sample_len = strlen(signs[i].sample);
+        size_t sample_len = strlen(SIGNS[i].sample);
 
-        if (strncmp(start_substr, signs[i].sample, sample_len) == 0)
+        if (strncmp(start_substr, SIGNS[i].sample, sample_len) == 0)
         {
-            lexem->type = signs[i].type;
+            lexem->type = SIGNS[i].type;
             
             *curr_pos += sample_len;
             return true;
@@ -167,35 +209,4 @@ static bool try_read_term(lexem_t *lexem, size_t *curr_pos, const char *src)
 
     (*curr_pos)++;
     return true;
-}
-
-void create_lexical_array(const char *src, my_stack_lexem *stack)
-{
-    LERR_RESET();
-
-    size_t curr_pos = 0;
-
-    bool should_stop = false;
-
-    while (!should_stop)
-    {
-        skip_whitespace(&curr_pos, src);
-
-        lexem_t curr_lexem = {0};
-
-        if      (try_read_number(&curr_lexem, &curr_pos, src)) {}
-        else if (try_read_ident (&curr_lexem, &curr_pos, src)) {}
-        else if (try_read_sign  (&curr_lexem, &curr_pos, src)) {}
-        else if (try_read_term  (&curr_lexem, &curr_pos, src))
-        {
-            should_stop = true;
-        }
-        else
-        {
-            LERR(LERR_LEXING, "unknown symbol sequence at position %zu", curr_pos);
-            return;
-        }
-
-        STACK_ERROR_CHECK_RET(stack_push_lexem(stack, curr_lexem),);
-    }
 }

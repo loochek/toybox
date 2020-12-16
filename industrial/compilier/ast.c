@@ -86,6 +86,10 @@ static void ast_visualize_rec(ast_node_t *node, size_t node_id, FILE *file)
         fprintf(file, "%zu [shape=box, label=\"WHILE\"]\n", node_id);
     else if (node->type == AST_RETURN)
         fprintf(file, "%zu [shape=box, label=\"RETURN\"]\n", node_id);
+    else if (node->type == AST_EXPR_STMT)
+        fprintf(file, "%zu [shape=box, label=\"EXPR_STMT\"]\n", node_id);
+    else if (node->type == AST_FUNC_HEAD)
+        fprintf(file, "%zu [shape=box, label=\"FUNC_HEAD\"]\n", node_id);
     else if (AST_OPER_ADD <= node->type && node->type <= AST_OPER_CALL)
     {
         fprintf(file, "%zu [shape=box, shape=diamond, label=\"%s\"]\n",
