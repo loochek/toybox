@@ -18,6 +18,7 @@ typedef enum ast_node_type
 
     AST_NUMBER,
     AST_IDENTIFIER,
+    
     AST_OPER_ADD,
     AST_OPER_SUB,
     AST_OPER_MUL,

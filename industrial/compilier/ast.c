@@ -6,22 +6,34 @@
 
 const char *ast_types_display_names[] = 
 {
-    "",
-    "",
-    "",
-    "+",
-    "-",
-    "*",
-    "/",
-    "%",
-    "=",
-    "==",
-    "!=",
-    "<",
-    ">",
-    "<=",
-    ">=",
-    "()"
+    "",            // AST_DUMMY 
+
+    "",            // AST_NUMBER
+    "",            // AST_IDENTIFIER
+
+    "+",           // AST_OPER_ADD
+    "-",           // AST_OPER_SUB
+    "*",           // AST_OPER_MUL
+    "/",           // AST_OPER_DIV
+    "%",           // AST_OPER_MOD
+    "=",           // AST_OPER_ASSIGN
+    "==",          // AST_OPER_EQUAL
+    "!=",          // AST_OPER_NQUAL
+    "<",           // AST_OPER_LESS
+    ">",           // AST_OPER_MORE
+    "<=",          // AST_OPER_ELESS
+    ">=",          // AST_OPER_EMORE
+    "()",          // AST_OPER_CALL
+
+    "IF",
+    "WHILE",
+    "RETURN",
+    "VAR_DECL",
+    "FUNC_DECL",
+    "FUNC_HEAD",
+    "EXPR_STMT",
+
+    "COMPOUND"
 };
 
 static void ast_visualize_rec(ast_node_t *node, size_t node_id, FILE *file);
@@ -65,36 +77,19 @@ static void ast_visualize_rec(ast_node_t *node, size_t node_id, FILE *file)
         fprintf(file, "%zu [shape=box, style=filled, color=\"#7c9ccf\", label=%d]\n",
                 node_id, node->number);
         return;
-    }   
+    }
 
     if (node->type == AST_IDENTIFIER)
     {
         fprintf(file, "%zu [shape=box, style=filled, color=\"#7c9ccf\", label=\"%.*s\"]\n",
-                node_id, node->ident.length, node->ident.str);
+                node_id, (int)node->ident.length, node->ident.str);
         return;
     }
 
-    if (node->type == AST_VAR_DECL)
-        fprintf(file, "%zu [shape=box, label=\"VAR_DECL\"]\n", node_id);
-    else if (node->type == AST_FUNC_DECL)
-        fprintf(file, "%zu [shape=box, label=\"FUNC_DECL\"]\n", node_id);
-    else if (node->type == AST_COMPOUND)
-        fprintf(file, "%zu [shape=box, label=\"COMPOUND\"]\n", node_id);
-    else if (node->type == AST_IF)
-        fprintf(file, "%zu [shape=box, label=\"IF\"]\n", node_id);
-    else if (node->type == AST_WHILE)
-        fprintf(file, "%zu [shape=box, label=\"WHILE\"]\n", node_id);
-    else if (node->type == AST_RETURN)
-        fprintf(file, "%zu [shape=box, label=\"RETURN\"]\n", node_id);
-    else if (node->type == AST_EXPR_STMT)
-        fprintf(file, "%zu [shape=box, label=\"EXPR_STMT\"]\n", node_id);
-    else if (node->type == AST_FUNC_HEAD)
-        fprintf(file, "%zu [shape=box, label=\"FUNC_HEAD\"]\n", node_id);
-    else if (AST_OPER_ADD <= node->type && node->type <= AST_OPER_CALL)
-    {
-        fprintf(file, "%zu [shape=box, shape=diamond, label=\"%s\"]\n",
-                node_id, ast_types_display_names[node->type]);
-    }
+    if (AST_OPER_ADD <= node->type && node->type <= AST_OPER_CALL)
+        fprintf(file, "%zu [shape=diamond, label=\"%s\"]\n", node_id, ast_types_display_names[node->type]);
+    else
+        fprintf(file, "%zu [shape=box, label=\"%s\"]\n", node_id, ast_types_display_names[node->type]);
 
     ast_visualize_rec(node->left_branch , node_id * 2    , file);
     ast_visualize_rec(node->right_branch, node_id * 2 + 1, file);
