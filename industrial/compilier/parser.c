@@ -25,7 +25,7 @@
  * 
  * FN_DECL_STMT ::= 'fn' IDNT '('{IDNT{,IDNT}*}+')' COMP_STMT
  * 
- * PRG ::= FN_DECL_STMT+ LEX_PRG_END
+ * PRG ::= {FN_DECL_STMT}+ LEX_PRG_END
  */
 
 // aliases
@@ -156,6 +156,7 @@ static ast_node_t *grammar_fncl(parser_state_t *state, node_pool_t *pool)
         if (args_root == NULL)
         {
             args_root = arg;
+            arg = NULL;
             continue;
         }
 
@@ -711,7 +712,7 @@ static ast_node_t *grammar_comp_stmt(parser_state_t *state, node_pool_t *pool)
     LERR_RESET();
     size_t old_offset = state->curr_offset;
 
-    ast_node_t *subtree_root = NULL, *stmt = NULL, *comp_node = NULL;
+    ast_node_t *subtree_root = NULL, *stmt = NULL, *comp_node = NULL, *scope_node = NULL;
     
     if (LEXEM(0).type != LEX_COMPOUND_BEG)
     {
@@ -729,6 +730,7 @@ static ast_node_t *grammar_comp_stmt(parser_state_t *state, node_pool_t *pool)
         if (subtree_root == NULL)
         {
             subtree_root = stmt;
+            stmt = NULL;
             continue;
         }
 
@@ -747,7 +749,13 @@ static ast_node_t *grammar_comp_stmt(parser_state_t *state, node_pool_t *pool)
 
     state->curr_offset++;
 
-    return subtree_root;
+    scope_node = node_pool_claim(pool);
+    ERROR_CHECK();
+
+    scope_node->type        = AST_SCOPE;
+    scope_node->left_branch = subtree_root;
+
+    return scope_node;
 
 error_handler:
     ast_destroy(subtree_root, pool);
@@ -809,6 +817,7 @@ static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool
         if (args_root == NULL)
         {
             args_root = arg;
+            arg = NULL;
             continue;
         }
 
@@ -869,6 +878,7 @@ static ast_node_t *grammar_prg(parser_state_t *state, node_pool_t *pool)
         if (subtree_root == NULL)
         {
             subtree_root = func_node;
+            func_node = NULL;
             continue;
         }
 

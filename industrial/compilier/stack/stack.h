@@ -23,8 +23,8 @@ stack_status_t OVERLOAD(stack_construct)(OVERLOAD(my_stack) *self, size_t initia
 stack_status_t OVERLOAD(stack_push     )(OVERLOAD(my_stack) *self, elem_t elem);
 stack_status_t OVERLOAD(stack_pop      )(OVERLOAD(my_stack) *self, size_t count);
 stack_status_t OVERLOAD(stack_size     )(OVERLOAD(my_stack) *self, size_t *size);
-stack_status_t OVERLOAD(stack_top      )(OVERLOAD(my_stack) *self, elem_t *elem);
-stack_status_t OVERLOAD(stack_at       )(OVERLOAD(my_stack) *self, elem_t *elem, size_t pos);
+stack_status_t OVERLOAD(stack_top      )(OVERLOAD(my_stack) *self, elem_t **elem);
+stack_status_t OVERLOAD(stack_at       )(OVERLOAD(my_stack) *self, elem_t **elem, size_t pos);
 stack_status_t OVERLOAD(stack_destruct )(OVERLOAD(my_stack) *self);
 void           OVERLOAD(stack_dump     )(OVERLOAD(my_stack) *self);
 stack_status_t OVERLOAD(stack_validate )(OVERLOAD(my_stack) *self);

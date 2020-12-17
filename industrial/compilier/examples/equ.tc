@@ -12,6 +12,7 @@ fn linear(b, c)
         return;
     }
     
+    print(1);
     print((0 - c) / b);
 }
 
@@ -21,18 +22,20 @@ fn quadratic(a, b, c)
     
     if (discr == 0)
     {
+        print(1);
         print((0 - b) / (2 * a));
         return;
     }
     
     if (discr > 0)
     {
+        print(2);
         print((0 - b + sqr(discr)) / (2 * a));
         print((0 - b - sqr(discr)) / (2 * a));
         return;
     }
     
-    print(0 - 1);
+    print(0);
     return;
 }
 

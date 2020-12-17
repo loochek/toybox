@@ -13,6 +13,12 @@
 #undef elem_t
 #undef TYPE
 
+#define TYPE table
+#define elem_t my_stack_strview
+#include "stack/stack.h"
+#undef elem_t
+#undef TYPE
+
 /**
  * Some details about code generating:
  * Calculating expression is simple - just post-order traversal (but func calls...)
@@ -35,7 +41,8 @@
 
 typedef struct
 {
-    my_stack_strview var_table;
+    my_stack_table   var_table;
+    size_t           curr_var_offset;
     size_t           uid_cnt;
 } gen_state_t;
 
@@ -44,11 +51,10 @@ typedef struct
  * It's used for tracking variables offsets in the current stack frame
  */
 
-static int  var_table_size (gen_state_t *state);
-static int  var_table_add  (gen_state_t *state, string_view_t  str);
-static int  var_lookup     (gen_state_t *state, string_view_t *str);
-static void var_table_pop  (gen_state_t *state, size_t count);
-static void var_table_clean(gen_state_t *state);
+static int  var_table_add       (gen_state_t *state, string_view_t  str);
+static int  var_table_lookup    (gen_state_t *state, string_view_t *str);
+static void var_table_push_scope(gen_state_t *state);
+static void var_table_pop_scope (gen_state_t *state);
 
 /**
  * Helper function for FUNC_DECL code generation
@@ -75,14 +81,26 @@ void assm_gen(ast_node_t *ast_root, const char *file_name)
     FILE *file = fopen(file_name, "w");
 
     gen_state_t state = {0};
-    STACK_LERR(stack_construct_strview(&state.var_table, 5));
+
+    STACK_LERR(stack_construct_table(&state.var_table, 5));
     ERROR_CHECK();
 
     assm_gen_rec(ast_root, &state, file);
-    ERROR_CHECK();
 
 cleanup:
-    STACK_LERR(stack_destruct_strview(&state.var_table));
+    ;
+    size_t scopes_count = 0;
+    
+    stack_size_table(&state.var_table, &scopes_count);
+
+    for (size_t i = 0; i < scopes_count; i++)
+    {
+        my_stack_strview *scope = NULL;
+        stack_at_table(&state.var_table, &scope, i);
+        stack_destruct_strview(scope);
+    }
+    
+    stack_destruct_table(&state.var_table);
     fclose(file);
 }
 
@@ -143,7 +161,7 @@ static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
 
     case AST_IDENTIFIER:
     {
-        int offset = var_lookup(state, &node->ident);
+        int offset = var_table_lookup(state, &node->ident);
         if (offset < 0)
         {
             LERR(LERR_ASSM_GEN, "unknown identifier %.*s", (int)node->ident.length, node->ident.str);
@@ -210,10 +228,12 @@ static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
     case AST_OPER_ASSIGN:
     {
         assm_gen_rec(node->right_branch, state, file);
+        if (LERR_PRESENT())
+            break;
 
         ast_node_t *var_name = node->left_branch;
 
-        int offset = var_lookup(state, &var_name->ident);
+        int offset = var_table_lookup(state, &var_name->ident);
         if (offset < 0)
         {
             LERR(LERR_ASSM_GEN, "unknown identifier %.*s", (int)var_name->ident.length, var_name->ident.str);
@@ -244,13 +264,17 @@ static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
 
     case AST_FUNC_DECL:
     {
-        var_table_clean(state);
-
         ast_node_t *func_name = node->left_branch->left_branch;
         ast_node_t *args_root = node->left_branch->right_branch;
         ast_node_t *func_body = node->right_branch;
 
+        var_table_push_scope(state);
+        if (LERR_PRESENT())
+            break;
+
         func_decl_add_args(args_root, state);
+        if (LERR_PRESENT())
+            break;
 
         fprintf(file, "%.*s:\n", (int)func_name->ident.length, func_name->ident.str);
 
@@ -261,6 +285,8 @@ static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
         fprintf(file, "push 0\n"
                       "pop rbx\n"
                       "ret\n");
+
+        var_table_pop_scope(state);
         break;
     }
 
@@ -277,7 +303,12 @@ static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
     case AST_OPER_CALL:
     {
         // save current offset of the stack frame to start new frame from this position 
-        int args_start = var_table_size(state);
+        size_t args_start = state->curr_var_offset;
+        if (LERR_PRESENT())
+            break;
+
+        // push new scope for fictive variables
+        var_table_push_scope(state);
         if (LERR_PRESENT())
             break;
 
@@ -293,20 +324,15 @@ static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
         fprintf(file,
                 "push rax\n"
                 "push rax\n"
-                "push %d\n"
+                "push %zu\n"
                 "add\n"
                 "pop rax\n"
                 "call %.*s\n"
                 "pop rax\n"
                 "push rbx\n", args_start, (int)func_name->ident.length, func_name->ident.str);
 
-        int current_size = var_table_size(state);
-        if (LERR_PRESENT())
-            break;
-
         // remove fictive variables
-        var_table_pop(state, current_size - args_start);
-
+        var_table_pop_scope(state);
         break;
     }
 
@@ -345,90 +371,135 @@ static void assm_gen_rec(ast_node_t *node, gen_state_t *state, FILE *file)
         break;
     }
 
+    case AST_SCOPE:
+    {
+        // AST_SCOPE is the special node to tell code generator to create new scope (associated with {})
+
+        var_table_push_scope(state);
+        if (LERR_PRESENT())
+            break;
+
+        assm_gen_rec(node->left_branch, state, file);
+
+        var_table_pop_scope(state);
+        break;
+    }
+
     default:
-        printf("unknown!\n");
-        assm_gen_rec(node->left_branch , state, file);
-        assm_gen_rec(node->right_branch, state, file);
+        LERR(LERR_ASSM_GEN, "unknown type of node");
         break;
     }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-static int var_table_size(gen_state_t *state)
-{
-    LERR_RESET();
-
-    size_t table_size = 0;
-    STACK_LERR(stack_size_strview(&state->var_table, &table_size));
-    if (LERR_PRESENT())
-        return -1;
-
-    return table_size;
-}
-
 static int var_table_add(gen_state_t *state, string_view_t str)
 {
     LERR_RESET();
 
-    size_t offset = 0;
-    STACK_LERR(stack_size_strview(&state->var_table, &offset));
+    my_stack_strview *top_scope = NULL;
+    STACK_LERR(stack_top_table(&state->var_table, &top_scope));
     if (LERR_PRESENT())
         return -1;
 
-    STACK_LERR(stack_push_strview(&state->var_table, str));
+    STACK_LERR(stack_push_strview(top_scope, str));
     if (LERR_PRESENT())
         return -1;
 
-    return offset;
+    size_t to_ret = state->curr_var_offset;
+    state->curr_var_offset++;
+
+    return to_ret;
 }
 
-static void var_table_pop(gen_state_t *state, size_t count)
+static void var_table_push_scope(gen_state_t *state)
 {
     LERR_RESET();
 
-    STACK_LERR(stack_pop_strview(&state->var_table, count));
-}
-
-static void var_table_clean(gen_state_t *state)
-{
-    LERR_RESET();
-
-    int table_size = var_table_size(state);
+    my_stack_strview new_scope = {0};
+    STACK_LERR(stack_construct_strview(&new_scope, 5));
     if (LERR_PRESENT())
         return;
 
-    var_table_pop(state, table_size);
+    STACK_LERR(stack_push_table(&state->var_table, new_scope));
+    if (LERR_PRESENT())
+    {
+        stack_destruct_strview(&new_scope);
+        return;
+    }
 }
 
-static int var_lookup(gen_state_t *state, string_view_t *str)
+static void var_table_pop_scope(gen_state_t *state)
 {
-    int table_size = var_table_size(state);
+    my_stack_strview *to_delete = NULL;
+    STACK_LERR(stack_top_table(&state->var_table, &to_delete));
+    if (LERR_PRESENT())
+        return;
+
+    size_t del_table_size = 0;
+    STACK_LERR(stack_size_strview(to_delete, &del_table_size));
+    if (LERR_PRESENT())
+        return;
+
+    state->curr_var_offset -= del_table_size;
+
+    stack_destruct_strview(to_delete);
+
+    STACK_LERR(stack_pop_table(&state->var_table, 1));
+}
+
+static int var_table_lookup(gen_state_t *state, string_view_t *str)
+{
+    LERR_RESET();
+
+    size_t scopes_count = 0;
+    STACK_LERR(stack_size_table(&state->var_table, &scopes_count));
     if (LERR_PRESENT())
         return -1;
 
-    for (size_t i = 0; i < table_size; i++)
+    size_t global_var_offset =  0;
+    int answer = -1;
+
+    for (size_t scope_idx = 0; scope_idx < scopes_count; scope_idx++)
     {
-        string_view_t var_name = {0};
-        STACK_LERR(stack_at_strview(&state->var_table, &var_name, i));
+        my_stack_strview *curr_scope = NULL;
+        STACK_LERR(stack_at_table(&state->var_table, &curr_scope, scope_idx));
+
+        size_t scope_size = 0;
+        STACK_LERR(stack_size_strview(curr_scope, &scope_size));
         if (LERR_PRESENT())
             return -1;
 
-        if (strview_equ(&var_name, str))
-            return i;
+        for (size_t var_offset = 0; var_offset < scope_size; var_offset++)
+        {
+            string_view_t *var_name = NULL;
+            STACK_LERR(stack_at_strview(curr_scope, &var_name, var_offset));
+            if (LERR_PRESENT())
+                return -1;
+
+            if (strview_equ(var_name, str))
+                answer = global_var_offset;
+
+            global_var_offset++;
+        }
     }
 
-    return -1;
+    return answer;
 }
 
 static void func_decl_add_args(ast_node_t *node, gen_state_t *state)
 {
+    LERR_RESET();
+
     if (node == NULL)
         return;
 
     if (node->type == AST_COMPOUND)
     {
         func_decl_add_args(node->left_branch , state);
+        if (LERR_PRESENT())
+            return;
+
         func_decl_add_args(node->right_branch, state);
         return;
     }

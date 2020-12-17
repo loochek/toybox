@@ -41,6 +41,7 @@ typedef enum ast_node_type
     AST_FUNC_DECL,
     AST_FUNC_HEAD,
     AST_EXPR_STMT,
+    AST_SCOPE,
 
     AST_COMPOUND
 } ast_node_type_t;

@@ -128,25 +128,25 @@ stack_status_t OVERLOAD(stack_size)(OVERLOAD(my_stack) *self, size_t *size)
     return STACK_OK;
 }
 
-stack_status_t OVERLOAD(stack_top)(OVERLOAD(my_stack) *self, elem_t *elem)
+stack_status_t OVERLOAD(stack_top)(OVERLOAD(my_stack) *self, elem_t **elem)
 {
     STACK_CHECK(self);
 
     if (self->size == 0)
         return STACK_EMPTY;
 
-    *elem = self->data[self->size - 1];
+    *elem = &self->data[self->size - 1];
     return STACK_OK;
 }
 
-stack_status_t OVERLOAD(stack_at)(OVERLOAD(my_stack) *self, elem_t *elem, size_t pos)
+stack_status_t OVERLOAD(stack_at)(OVERLOAD(my_stack) *self, elem_t **elem, size_t pos)
 {
     STACK_CHECK(self);
 
     if (pos >= self->size)
         return STACK_EMPTY;
 
-    *elem = self->data[pos];
+    *elem = &self->data[pos];
     return STACK_OK;
 }
 

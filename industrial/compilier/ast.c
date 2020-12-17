@@ -32,6 +32,7 @@ const char *ast_types_display_names[] =
     "FUNC_DECL",
     "FUNC_HEAD",
     "EXPR_STMT",
+    "SCOPE",
 
     "COMPOUND"
 };
