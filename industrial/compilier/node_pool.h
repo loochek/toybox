@@ -37,14 +37,8 @@ void node_pool_construct(node_pool_t *pool);
  */
 ast_node_t *node_pool_claim(node_pool_t *pool);
 
-/**
- * LERR-affecting
- */
 void node_pool_free(ast_node_t *ptr, node_pool_t *pool);
 
-/**
- * LERR-affecting
- */
 void node_pool_destroy(node_pool_t *pool);
 
 #endif
