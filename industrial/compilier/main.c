@@ -44,7 +44,7 @@ void translate(const char *src_file_name, const char *assm_file_name, bool show_
     assm_gen(ast, assm_file_name);
 
 cleanup:
-    STACK_LERR(stack_destruct_lexem(&lexems));
+    stack_destruct_lexem(&lexems);
     ast_destroy(ast, &pool);
     node_pool_destroy(&pool);
     free(prg_text);
