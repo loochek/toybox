@@ -10,3 +10,8 @@
 *.pdf
 *.svg
 *.tex
+*.directory
+*.lst
+*.com
+*.obj
+*.map
