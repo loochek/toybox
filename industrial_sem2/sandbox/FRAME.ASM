@@ -12,31 +12,62 @@ SHADOW_COLOR  equ 08h
 SHADOW_VERTICAL_OFFSET   equ 1
 SHADOW_HORIZONTAL_OFFSET equ 2
 
+MSG_BOX_TEXT_VERTICAL_OFFSET   equ 1
+MSG_BOX_TEXT_HORIZONTAL_OFFSET equ 2
+
 org 0100h
 
 start:
-	; display sample frame
 	mov bl, 20
 	mov bh, 4
 	mov al, 40
-	mov ah, 10
-	call show_frame
-	
-	add bl, 2
-	add bh, 2
+	mov ah, 7
+	mov si, offset example_header
+	mov di, offset example_message
 	mov ch, MAIN_COLOR
-	mov si, offset example_string
-	call print_string
+	call msg_box
 	
 	ret
 
-example_string db "Test string", '$'
+; bl - column offset
+; bh - row offset
+; al - width
+; ah - height
+; si - address of header string
+; di - address of text string
+; ch - color attribute
+msg_box:
+	pusha
+	push bx
+
+	call show_frame
+	
+	call str_len
+	mov dh, al
+	sub dh, dl
+	sar dh, 1
+	add bl, dh
+	call print_text
+
+	pop bx  ; restore trashed offsets
+	add bl, MSG_BOX_TEXT_HORIZONTAL_OFFSET
+	add bh, MSG_BOX_TEXT_VERTICAL_OFFSET
+	mov si, di
+	call print_text
+	
+	popa
+	ret
+
+example_header  db "Important message", '$'
+example_message db "Multi", 0Ah, "Line", 0Ah, "Test", 0Ah, "String!", '$'
+
 
 ; display frame with animation
 ; bl - column offset
 ; bh - row offset
 ; al - width
 ; ah - height
+; ch - color attribute
 show_frame:
 	pusha
 	
@@ -67,10 +98,10 @@ show_frame_vertical_expand_loop:
 ; bh - row offset
 ; dl - width
 ; dh - height
+; ch - color attribute
 draw_frame:
 	pusha
 
-	mov ch, MAIN_COLOR	
 	mov cl, 'É'
 	mov al, 'Í'
 	mov ah, '»'
@@ -144,25 +175,37 @@ draw_line_shadow:
 	ret
 
 
+; print a block of the text (respecting \n)
 ; si - address of $-terminated string
 ; ch - color attribute
 ; bl - collumn offset
 ; bh - row offset
-print_string:
+print_text:
 	pusha
 	
-print_string_loop:
+	mov dl, bl ; remember collumn offset for new-line'ing
+
+print_text_loop:
 	cmp [si], byte ptr '$'
-	je print_string_loop_end
-	
+	je print_text_loop_end
+
+	cmp [si], byte ptr 0Ah ; '\n'
+	je print_text_new_line
+
 	mov cl, [si]
 	call put_char
-	
 	inc bl
-	inc si
-	jmp print_string_loop
+	jmp print_text_loop_final
 
-print_string_loop_end:
+print_text_new_line:
+	inc bh
+	mov bl, dl
+	
+print_text_loop_final:
+	inc si
+	jmp print_text_loop
+
+print_text_loop_end:
 	popa
 	ret
 
@@ -203,7 +246,26 @@ skip_char_write:
 put_char_exit:
 	popa
 	ret
+
 	
+; si - address of $-terminated string
+; result in dl
+str_len:
+	push si
+	mov dl, 00h
+	
+str_len_loop:
+	cmp [si], byte ptr '$'
+	je str_len_loop_end
+
+	inc dl
+	inc si
+	jmp str_len_loop
+	
+str_len_loop_end:
+	pop si
+	ret
+
 
 ; animation delay
 ; sleep for 25ms
