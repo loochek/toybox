@@ -1,6 +1,19 @@
 .model tiny
-.186
 .code
+
+;------------------------------
+save macro regs
+	irp r, <regs>
+		push r
+	endm
+endm
+
+rest macro regs
+	irp r, <regs>
+		pop r
+	endm
+endm
+;------------------------------
 
 VRAM_ADDR     equ 0B800h
 SCREEN_WIDTH  equ 80
@@ -17,106 +30,146 @@ MSG_BOX_TEXT_HORIZONTAL_OFFSET equ 2
 
 org 0100h
 
-start:
+start proc
 	mov bl, 20
 	mov bh, 4
 	mov al, 40
 	mov ah, 7
-	mov si, offset example_header
-	mov di, offset example_message
+	mov di, offset example_header
+	mov si, offset example_message
 	mov ch, MAIN_COLOR
 	call msg_box
 	
 	ret
 
-; bl - column offset
-; bh - row offset
-; al - width
-; ah - height
-; si - address of header string
-; di - address of text string
-; ch - color attribute
-msg_box:
-	pusha
-	push bx
-
-	call show_frame
-	
-	call str_len
-	mov dh, al
-	sub dh, dl
-	sar dh, 1
-	add bl, dh
-	call print_text
-
-	pop bx  ; restore trashed offsets
-	add bl, MSG_BOX_TEXT_HORIZONTAL_OFFSET
-	add bh, MSG_BOX_TEXT_VERTICAL_OFFSET
-	mov si, di
-	call print_text
-	
-	popa
-	ret
+start endp
 
 example_header  db "Important message", '$'
 example_message db "Multi", 0Ah, "Line", 0Ah, "Test", 0Ah, "String!", '$'
 
 
+;-------------------------------------------
+; bl - column offset
+; bh - row offset
+; al - width
+; ah - height
+; di - address of header string
+; si - address of text string
+; ch - color attribute
+;-------------------------------------------
+; TRASHES: ax, bx, cx, dx, si, di, es
+;-------------------------------------------
+msg_box proc
+	call show_frame                               ; TRASHES: dx, es
+
+	save <bx, cx, ax, di>
+	mov cx, cs
+	mov es, cx
+	call str_len                                  ; TRASHES: al, di, result in cx
+	rest <di>
+	xchg si, di
+
+	rest <ax>
+	mov dh, al
+	sub dh, cl
+	sar dh, 1
+	add bl, dh
+	rest <cx>
+	call print_text                               ; TRASHES: ax, bx, dx, si, es
+
+	rest <bx>
+	add bl, MSG_BOX_TEXT_HORIZONTAL_OFFSET
+	add bh, MSG_BOX_TEXT_VERTICAL_OFFSET
+	mov si, di
+	call print_text                               ; TRASHES: ax, bx, dx, si, es
+
+	ret
+
+msg_box endp
+
+
+;-------------------------------------------
 ; display frame with animation
 ; bl - column offset
 ; bh - row offset
 ; al - width
 ; ah - height
 ; ch - color attribute
-show_frame:
-	pusha
-	
+;-------------------------------------------
+; TRASHES: dx, es
+;-------------------------------------------
+show_frame proc
 	mov dl, 02h
 	mov dh, 02h
 
 show_frame_horizontal_expand_loop:
-	call draw_frame
-	call delay
+	save <ax, bx, cx, dx>
+	call draw_frame                            ; TRASHES: ax, bx, cx, dx, es
+	rest <dx, cx, bx, ax>
+
+	save <ax, cx, dx>
+	call delay                                 ; TRASHES: ah, cx, dx
+	rest <dx, cx, ax>
+
 	inc dl
-	
 	cmp dl, al
 	jb show_frame_horizontal_expand_loop
 	
 show_frame_vertical_expand_loop:
-	call draw_frame
-	call delay
+	save <ax, bx, cx, dx>
+	call draw_frame                            ; TRASHES: ax, bx, cx, dx, es
+	rest <dx, cx, bx, ax>
+
+	save <ax, cx, dx>
+	call delay                                 ; TRASHES: ah, cx, dx
+	rest <dx, cx, ax>
+
 	inc dh
-	
 	cmp dh, ah
 	jb show_frame_vertical_expand_loop	
 	
-	popa
 	ret
 	
+show_frame endp
 
+;-------------------------------------------
 ; bl - collumn offset
 ; bh - row offset
 ; dl - width
 ; dh - height
 ; ch - color attribute
-draw_frame:
-	pusha
-
+;-------------------------------------------
+; TRASHES: ax, bx, cx, dx, es
+;-------------------------------------------
+draw_frame proc
 	mov cl, 'É'
 	mov al, 'Í'
 	mov ah, '»'
-	call draw_line
-	call draw_line_shadow
+
+	save <bx, cx, dx>
+	call draw_line           ; TRASHES: ax, bl, cl, dl, es
+	rest <dx, cx, bx>
+
+	save <bx, cx, dx>
+	call draw_line_shadow    ; TRASHES: ax, bx, cx, dl, es
+	rest <dx, cx, bx>
 	
 	mov cl, 'º'
 	mov al, ' '
 	mov ah, 'º'
-	dec dh		; to correct frame height
+
+	dec dh		             ; to correct frame height
 
 draw_frame_loop:
 	inc bh
-	call draw_line
-	call draw_line_shadow
+
+	save <ax, bx, cx, dx>
+	call draw_line           ; TRASHES: ax, bl, cl, dl, es
+	rest <dx, cx, bx, ax>
+
+	save <ax, bx, cx, dx>
+	call draw_line_shadow    ; TRASHES: ax, bx, cx, dl, es
+	rest <dx, cx, bx, ax>
 	
 	dec dh
 	jnz draw_frame_loop
@@ -124,43 +177,62 @@ draw_frame_loop:
 	mov cl, 'È'
 	mov al, 'Í'
 	mov ah, '¼'
-	call draw_line
-	call draw_line_shadow
+
+	save <bx, cx, dx>
+	call draw_line            ; TRASHES: ax, bl, cl, dl, es
+	rest <dx, cx, bx>
+
+	call draw_line_shadow     ; TRASHES: ax, bx, cx, dl, es
 	
-	popa
 	ret	
 
-	
+draw_frame endp
+
+
+;-------------------------------------------
 ; bl - column offset
 ; bh - row offset
 ; dl - width
 ; cl, al, ah - ascii codes of first, middle and last characrters
 ; ch - color attribute
-draw_line:
-	pusha
-	call put_char
+;-------------------------------------------
+; TRASHES: ax, bl, cl, dl, es
+;-------------------------------------------
+draw_line proc
+	save <ax, bx, dx>
+	call put_char      ; TRASHES: ax, bx, dx, es
+	rest <dx, bx, ax>
 	
 	mov cl, al
-	dec dl		; to correct line width
+	dec dl		       ; to correct line width
 
 draw_line_loop:
 	inc bl
-	call put_char
+
+	save <ax, bx, dx>
+	call put_char      ; TRASHES: ax, bx, dx, es
+	rest <dx, bx, ax>
 	
 	dec dl
 	jnz draw_line_loop
 	
 	mov cl, ah
-	call put_char
+	call put_char      ; TRASHES: ax, bx, dx, es
 
-	popa
 	ret
-	
-	
-; use this after draw_line to draw shadow for line
-draw_line_shadow:
-	pusha
 
+draw_line endp
+	
+
+;-------------------------------------------
+; use this after draw_line to draw shadow for line
+; bl - column offset
+; bh - row offset
+; dl - width
+;-------------------------------------------
+; TRASHES: ax, bx, cx, dl, es
+;-------------------------------------------
+draw_line_shadow proc
 	mov ch, SHADOW_COLOR
 	mov cl, 00h
 	mov al, 00h
@@ -169,21 +241,24 @@ draw_line_shadow:
 	add bl, SHADOW_HORIZONTAL_OFFSET
 	add bh, SHADOW_VERTICAL_OFFSET
 	
-	call draw_line
+	call draw_line                        ; TRASHES: ax, bl, cl, dl, es
 	
-	popa
 	ret
 
+draw_line_shadow endp
 
-; print a block of the text (respecting \n)
+
+;-------------------------------------------
+; prints a block of the text (respecting \n)
 ; si - address of $-terminated string
 ; ch - color attribute
 ; bl - collumn offset
 ; bh - row offset
-print_text:
-	pusha
-	
-	mov dl, bl ; remember collumn offset for new-line'ing
+;-------------------------------------------
+; TRASHES: ax, bx, dx, si, es
+;-------------------------------------------
+print_text proc
+	mov dl, bl             ; remember collumn offset for new-line'ing
 
 print_text_loop:
 	cmp [si], byte ptr '$'
@@ -193,7 +268,11 @@ print_text_loop:
 	je print_text_new_line
 
 	mov cl, [si]
-	call put_char
+
+	save <bx, dx>
+	call put_char		   ; TRASHES: ax, bx, dx, es
+	rest <dx, bx>
+
 	inc bl
 	jmp print_text_loop_final
 
@@ -206,17 +285,19 @@ print_text_loop_final:
 	jmp print_text_loop
 
 print_text_loop_end:
-	popa
 	ret
 
-	
+print_text endp
+
+;-------------------------------------------
 ; cl - ascii code (use NUL to write color only)
 ; ch - color attribute
 ; bl - collumn offset
 ; bh - row offset
-put_char:
-	pusha
-
+;-------------------------------------------
+; TRASHES: ax, bx, dx, es
+;-------------------------------------------
+put_char proc
 	cmp bl, SCREEN_WIDTH
 	jae put_char_exit
 
@@ -225,7 +306,7 @@ put_char:
 
 	mov ax, SCREEN_WIDTH * 2
 	mov dl, bh
-	mov dh, 00h
+	xor dh, dh
 	mul dx
 
 	mov bh, 00h
@@ -244,40 +325,44 @@ skip_char_write:
 	mov es:[bx + 1], ch
 
 put_char_exit:
-	popa
 	ret
 
-	
-; si - address of $-terminated string
-; result in dl
-str_len:
-	push si
-	mov dl, 00h
-	
-str_len_loop:
-	cmp [si], byte ptr '$'
-	je str_len_loop_end
+put_char endp
 
-	inc dl
-	inc si
-	jmp str_len_loop
-	
-str_len_loop_end:
-	pop si
+
+;-------------------------------------------
+; es:di - address of $-terminated string
+; result in cx
+;-------------------------------------------
+; TRASHES: al, di
+;-------------------------------------------
+str_len proc
+	mov al, '$'
+	xor cx, cx
+	dec cx
+	cld
+	repne scasb
+	neg cx
+	sub cx, 2
+
 	ret
 
+str_len endp
 
+;-------------------------------------------
 ; animation delay
 ; sleep for 25ms
-delay:
-	pusha
-
+;-------------------------------------------
+; TRASHES: ah, cx, dx
+;-------------------------------------------
+delay proc
 	mov dx, 61A8h
-	mov cx, 0000h
+	xor cx, cx
 	mov ah, 86h
 	int 15h
 
-	popa
-	ret	
+	ret
+
+delay endp
 
 end start
