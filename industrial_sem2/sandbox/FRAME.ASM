@@ -31,6 +31,12 @@ MSG_BOX_TEXT_HORIZONTAL_OFFSET equ 2
 org 0100h
 
 start proc
+
+	mov ax, 2989
+	mov cl, 2
+	mov si, offset example_message + 2
+	call itoa
+
 	mov bl, 20
 	mov bh, 4
 	mov al, 40
@@ -45,8 +51,59 @@ start proc
 start endp
 
 example_header  db "Important message", '$'
-example_message db "Multi", 0Ah, "Line", 0Ah, "Test", 0Ah, "String!", '$'
+example_message db "0x", 17 dup (0)
 
+;example_message db "Multi", 0Ah, "Line", 0Ah, "Test", 0Ah, "String!", '$'
+
+;-------------------------------------------
+; converts unsigned integer from ax to string with base (cl <= 36)
+; result string is written to [si]
+;-------------------------------------------
+; TRASHES: ax, bx, cx, dx, di, es
+;-------------------------------------------
+itoa proc
+	mov di, offset itoa_buffer - 1
+
+	cmp cx, 36
+	ja itoa_error_base
+
+	mov bx, cs
+	mov es, bx
+	mov bx, offset itoa_digits
+	std
+
+itoa_loop:
+	xor dx, dx
+	div cx
+	push ax
+
+	mov ax, dx
+	xor ah, ah
+	
+	xlatb
+	stosb
+	
+	pop ax
+	test ax, ax
+	jnz itoa_loop
+
+	cld
+
+itoa_error_base:
+	xchg si, di
+
+	inc si
+	mov cx, offset itoa_buffer + 1
+	sub cx, si
+	repne movsb
+
+	ret
+
+itoa endp
+
+db 16 dup(0)         ; 16 digits in worst case
+itoa_buffer db '$'
+itoa_digits db "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 ;-------------------------------------------
 ; bl - column offset
