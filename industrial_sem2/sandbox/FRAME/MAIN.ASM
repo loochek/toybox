@@ -1,223 +1,81 @@
 .model tiny
 .code
 
-;------------------------------
-save macro regs
-	irp r, <regs>
-		push r
-	endm
-endm
-
-rest macro regs
-	irp r, <regs>
-		pop r
-	endm
-endm
-;------------------------------
-
 org 0100h
 
-MAIN_COLOR equ 70h
-ARGC_ADDR  equ 80h
-ARGS_ADDR  equ 82h
+HOTKEY_SCANCODE equ 36h ; right shift
 
 ;-------------------------------------------
 ; main
+; sets hook to the keyboard interrupt
 ;-------------------------------------------
 start proc
+    xor bx, bx
+    mov es, bx
+    mov bx, 4 * 9h       ; INT 9h address location
 
-	mov dx, 2989 ; BAD
-	mov di, offset frame_text
-	call fill_buffer
+    cli
+    mov si, es:[bx + 2]
+    mov di, es:[bx]
+    mov old_handler_segment, si
+    mov old_handler_offset,  di
 
-    mov di, offset frame_header
+    mov si, cs
+    mov es:[bx + 2], si
+    mov es:[bx]    , offset keyb_int_handler
+    sti
 
-    mov bx, ARGC_ADDR
-    cmp [bx], byte ptr 0                    ; is command line argument present?
-    je start_custom_header_skip
+    mov ax, 3100h   ; TSR
+    mov dx, word ptr REZIDENT_MEM_SIZE
+    shr dx, 4
+    inc dx
+    int 21h
 
-    mov di, ARGS_ADDR
+    ; restore old handler in case of fail
 
-start_custom_header_skip:
-	mov bl, 20
-	mov bh, 4
-	mov al, 40
-	mov ah, 8
-	mov si, offset frame_text
-	mov ch, MAIN_COLOR
-	call msg_box
-	
-	ret
+    cli
+    mov si, old_handler_segment
+    mov di, old_handler_offset
+    mov es:[bx + 2], si
+    mov es:[bx]    , di
+    sti
 
-frame_header  db "Important message", '$'
-frame_text    db 512 dup(0)                 ; reserve memory for "formatted string"
+    ret
 
 start endp
 
 
 ;-------------------------------------------
-; fills buffer at [di]
-; formats dx with different bases
+; keyboard interrupt handler
 ;-------------------------------------------
-; TRASHES: ax, bx, cx, si, di
-; Restores ES to CS
-;-------------------------------------------
-fill_buffer proc
-	mov cx, cs
-	mov es, cx
+keyb_int_handler proc
+    push ax
+    in al, 60h
+    cmp al, HOTKEY_SCANCODE
+    jne keyb_int_handler_exit
 
-	mov cx, fill_buffer_str1_len
-	mov si, offset fill_buffer_str1
-	rep movsb
+    push bx cx dx si di ds es
+    mov cx, cs
+    mov ds, cx
 
-	mov cl, 1
-	save<dx>
-	call itoa_pow2
-	rest<dx>
+    call regmon_show
 
-	mov cx, fill_buffer_str2_len
-	mov si, offset fill_buffer_str2
-	rep movsb
+    pop es ds di si dx cx bx
 
-	mov cl, 3
-	save<dx>
-	call itoa_pow2
-	rest<dx>
+keyb_int_handler_exit:
+    pop ax
 
-	mov cx, fill_buffer_str3_len
-	mov si, offset fill_buffer_str3
-	rep movsb
+    push cs:old_handler_segment
+    push cs:old_handler_offset
+    retf
 
-	mov cl, 4
-	save<dx>
-	call itoa_pow2
-	rest<dx>
+keyb_int_handler endp
 
-	mov cx, fill_buffer_str4_len
-	mov si, offset fill_buffer_str4
-	rep movsb
+old_handler_segment dw 0
+old_handler_offset  dw 0
 
-	mov cx, 10
-	save<dx>
-	call itoa
-	rest<dx>
+include REGMON.ASM
 
-	mov al, '$'
-	stosb
+REZIDENT_MEM_SIZE:          ; want to keep all program as resident
 
-	ret
-
-fill_buffer_str1     db "Value of DX:", 0Ah, "Bin: "
-fill_buffer_str1_len equ $ - offset fill_buffer_str1
-
-fill_buffer_str2     db 0Ah, "Oct: "
-fill_buffer_str2_len equ $ - offset fill_buffer_str2
-
-fill_buffer_str3     db 0Ah, "Hex: "
-fill_buffer_str3_len equ $ - offset fill_buffer_str3
-
-fill_buffer_str4     db 0Ah, "Dec: "
-fill_buffer_str4_len equ $ - offset fill_buffer_str4
-
-fill_buffer endp
-
-
-;-------------------------------------------
-; converts unsigned integer from dx to string with base cx (2 <= cx <= 36)
-; writes result to [di] and moves di to byte after number
-; $0x________  --->  $0x12345___
-;	 ^di                     ^di
-;-------------------------------------------
-; TRASHES: ax, bx, cx, dx, si
-; Restores ES to CS
-;-------------------------------------------
-itoa proc
-    mov bx, cs
-	mov es, bx
-
-	mov si, di
-	mov di, offset itoa_buffer
-    
-	cmp cx, 36
-	ja itoa_error_base
-
-    mov ax, dx
-
-itoa_loop:
-	xor dx, dx
-	div cx
-	
-    mov bx, dx
-	mov ch, [offset itoa_digits + bx]
-	mov [di], ch
-    dec di
-    xor ch, ch
-	
-	test ax, ax
-	jnz itoa_loop
-
-itoa_error_base:
-	xchg si, di
-	inc si
-	mov cx, offset itoa_buffer + 1
-	sub cx, si
-	rep movsb
-
-	ret
-itoa endp
-
-;-------------------------------------------
-; converts unsigned integer from dx to string with base 2^cl (2 <= cl <= 5)
-; writes result to [di] and moves di to byte after number
-; $0x________  --->  $0x12345___
-;	 ^di                     ^di
-; more efficient than itoa
-;-------------------------------------------
-; TRASHES: ax, bx, cx, dx, si
-; Restores ES to CS
-;-------------------------------------------
-itoa_pow2 proc
-    mov bx, cs
-    mov es, bx
-
-    mov bx, offset itoa_digits
-    mov si, di
-    mov di, offset itoa_buffer
-    std
-
-    cmp cl, 5
-	ja itoa_pow2_error_base
-
-    mov ch, 0FFh
-    shl ch, cl
-    not ch
-
-itoa_pow2_loop:
-    mov ax, dx
-    and al, ch
-    shr dx, cl
-
-    xlatb
-    stosb
-
-    test dx, dx
-    jnz itoa_pow2_loop
-
-itoa_pow2_error_base:
-    cld
-    xchg si, di
-    inc si
-	mov cx, offset itoa_buffer + 1
-	sub cx, si
-	rep movsb
-
-    ret
-
-itoa_pow2 endp
-
-			db 15 dup(0)
-itoa_buffer db 0           ; 16 digits in worst case
-itoa_digits db "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-include WINDOW.ASM
 end start

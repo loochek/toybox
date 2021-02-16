@@ -23,9 +23,9 @@ print_text_loop:
 
 	mov cl, [si]
 
-	save <bx, dx>
+	push bx dx
 	call put_char		   ; TRASHES: ax, bx, dx, es
-	rest <dx, bx>
+	pop  dx bx
 
 	inc bl
 	jmp print_text_loop_final

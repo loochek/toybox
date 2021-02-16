@@ -10,36 +10,38 @@ MSG_BOX_TEXT_HORIZONTAL_OFFSET equ 2
 ;-------------------------------------------
 ; display message box with centered header
 ; and text inside
+; (display instantly)
 ;
 ; bl - column offset
 ; bh - row offset
-; al - width
-; ah - height
+; dl - width
+; dh - height
 ; di - address of header string
 ; si - address of text string
 ; ch - color attribute
 ;-------------------------------------------
-; TRASHES: ax, bx, cx, dx, si, di, es
+; TRASHES: ax, bx, cx, dx, si, di
+; Restores ES to CS
 ;-------------------------------------------
 msg_box proc
-	call show_frame                               ; TRASHES: dx, es
+	push bx cx dx bx di
+	call draw_frame                               ; TRASHES: ax, bx, cx, dx, es
 
-	save <bx, cx, ax, di>
 	mov cx, cs
 	mov es, cx
 	call str_len                                  ; TRASHES: al, di, result in cx
-	rest <di>
+	pop di
 	xchg si, di
 
-	rest <ax>
-	mov dh, al
-	sub dh, cl
-	sar dh, 1
-	add bl, dh
-	rest <cx>
+	pop bx dx
+	mov ah, dl
+	sub ah, cl
+	sar ah, 1
+	add bl, ah
+	pop cx
 	call print_text                               ; TRASHES: ax, bx, dx, si, es
 
-	rest <bx>
+	pop bx
 	add bl, MSG_BOX_TEXT_HORIZONTAL_OFFSET
 	add bh, MSG_BOX_TEXT_VERTICAL_OFFSET
 	mov si, di
@@ -50,50 +52,94 @@ msg_box proc
 msg_box endp
 
 
-;-------------------------------------------
-; display frame with animation
-;
-; bl - column offset
-; bh - row offset
-; al - width
-; ah - height
-; ch - color attribute
-;-------------------------------------------
-; TRASHES: dx, es
-;-------------------------------------------
-show_frame proc
-	mov dl, 02h
-	mov dh, 02h
+; ;-------------------------------------------
+; ; display message box with centered header
+; ; and text inside
+; ; (display with animation)
+; ;
+; ; bl - column offset
+; ; bh - row offset
+; ; al - width
+; ; ah - height
+; ; di - address of header string
+; ; si - address of text string
+; ; ch - color attribute
+; ;-------------------------------------------
+; ; TRASHES: ax, bx, cx, dx, si, di, es
+; ;-------------------------------------------
+; msg_box_anim proc
+; 	call show_frame                               ; TRASHES: dx, es
 
-show_frame_horizontal_expand_loop:
-	save <ax, bx, cx, dx>
-	call draw_frame                            ; TRASHES: ax, bx, cx, dx, es
-	rest <dx, cx, bx, ax>
+; 	push bx cx ax di
+; 	mov cx, cs
+; 	mov es, cx
+; 	call str_len                                  ; TRASHES: al, di, result in cx
+; 	pop di
+; 	xchg si, di
 
-	save <ax, cx, dx>
-	call delay                                 ; TRASHES: ah, cx, dx
-	rest <dx, cx, ax>
+; 	pop ax
+; 	mov dh, al
+; 	sub dh, cl
+; 	sar dh, 1
+; 	add bl, dh
+; 	pop cx
+; 	call print_text                               ; TRASHES: ax, bx, dx, si, es
 
-	inc dl
-	cmp dl, al
-	jb show_frame_horizontal_expand_loop
+; 	pop bx
+; 	add bl, MSG_BOX_TEXT_HORIZONTAL_OFFSET
+; 	add bh, MSG_BOX_TEXT_VERTICAL_OFFSET
+; 	mov si, di
+; 	call print_text                               ; TRASHES: ax, bx, dx, si, es
+
+; 	ret
+
+; msg_box_anim endp
+
+
+; ;-------------------------------------------
+; ; display frame with animation
+; ;
+; ; bl - column offset
+; ; bh - row offset
+; ; al - width
+; ; ah - height
+; ; ch - color attribute
+; ;-------------------------------------------
+; ; TRASHES: dx, es
+; ;-------------------------------------------
+; show_frame proc
+; 	mov dl, 02h
+; 	mov dh, 02h
+
+; show_frame_horizontal_expand_loop:
+; 	push ax bx cx dx
+; 	call draw_frame                            ; TRASHES: ax, bx, cx, dx, es
+; 	pop  dx cx bx ax
+
+; 	push ax cx dx
+; 	call delay                                 ; TRASHES: ah, cx, dx
+; 	pop  dx cx ax
+
+; 	inc dl
+; 	cmp dl, al
+; 	jb show_frame_horizontal_expand_loop
 	
-show_frame_vertical_expand_loop:
-	save <ax, bx, cx, dx>
-	call draw_frame                            ; TRASHES: ax, bx, cx, dx, es
-	rest <dx, cx, bx, ax>
+; show_frame_vertical_expand_loop:
+; 	push ax bx cx dx
+; 	call draw_frame                            ; TRASHES: ax, bx, cx, dx, es
+; 	pop  dx cx bx ax
 
-	save <ax, cx, dx>
-	call delay                                 ; TRASHES: ah, cx, dx
-	rest <dx, cx, ax>
+; 	push ax cx dx
+; 	call delay                                 ; TRASHES: ah, cx, dx
+; 	pop  dx cx ax
 
-	inc dh
-	cmp dh, ah
-	jb show_frame_vertical_expand_loop	
+; 	inc dh
+; 	cmp dh, ah
+; 	jb show_frame_vertical_expand_loop	
 	
-	ret
+; 	ret
 	
-show_frame endp
+; show_frame endp
 
 
 ;-------------------------------------------
@@ -110,13 +156,13 @@ draw_frame proc
 	mov al, 'Í'
 	mov ah, '»'
 
-	save <bx, cx, dx>
+	push bx cx dx
 	call draw_line           ; TRASHES: ax, bl, cl, dl, es
-	rest <dx, cx, bx>
+	pop  dx cx bx
 
-	save <bx, cx, dx>
+	push bx cx dx
 	call draw_line_shadow    ; TRASHES: ax, bx, cx, dl, es
-	rest <dx, cx, bx>
+	pop  dx cx bx
 	
 	mov cl, 'º'
 	mov al, ' '
@@ -127,13 +173,13 @@ draw_frame proc
 draw_frame_loop:
 	inc bh
 
-	save <ax, bx, cx, dx>
+	push ax bx cx dx
 	call draw_line           ; TRASHES: ax, bl, cl, dl, es
-	rest <dx, cx, bx, ax>
+	pop  dx cx bx ax
 
-	save <ax, bx, cx, dx>
+	push ax bx cx dx
 	call draw_line_shadow    ; TRASHES: ax, bx, cx, dl, es
-	rest <dx, cx, bx, ax>
+	pop  dx cx bx ax
 	
 	dec dh
 	jnz draw_frame_loop
@@ -142,9 +188,9 @@ draw_frame_loop:
 	mov al, 'Í'
 	mov ah, '¼'
 
-	save <bx, cx, dx>
+	push bx cx dx
 	call draw_line            ; TRASHES: ax, bl, cl, dl, es
-	rest <dx, cx, bx>
+	pop  dx cx bx
 
 	call draw_line_shadow     ; TRASHES: ax, bx, cx, dl, es
 	
@@ -163,9 +209,9 @@ draw_frame endp
 ; TRASHES: ax, bl, cl, dl, es
 ;-------------------------------------------
 draw_line proc
-	save <ax, bx, dx>
+	push ax bx dx
 	call put_char      ; TRASHES: ax, bx, dx, es
-	rest <dx, bx, ax>
+	pop  dx bx ax
 	
 	mov cl, al
 	dec dl		       ; to correct line width
@@ -173,9 +219,9 @@ draw_line proc
 draw_line_loop:
 	inc bl
 
-	save <ax, bx, dx>
+	push ax bx dx
 	call put_char      ; TRASHES: ax, bx, dx, es
-	rest <dx, bx, ax>
+	pop  dx bx ax
 	
 	dec dl
 	jnz draw_line_loop
