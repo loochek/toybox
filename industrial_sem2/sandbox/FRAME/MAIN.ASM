@@ -52,19 +52,18 @@ keyb_int_handler proc
     push ax
     in al, 60h
     cmp al, HOTKEY_SCANCODE
+    pop ax
     jne keyb_int_handler_exit
 
-    push bx cx dx si di ds es
+    push ax bx cx dx si di ds es
     mov cx, cs
     mov ds, cx
 
     call regmon_show
 
-    pop es ds di si dx cx bx
+    pop es ds di si dx cx bx ax
 
 keyb_int_handler_exit:
-    pop ax
-
     push cs:old_handler_segment
     push cs:old_handler_offset
     retf
