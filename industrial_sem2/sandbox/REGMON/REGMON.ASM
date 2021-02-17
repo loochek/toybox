@@ -1,9 +1,8 @@
 REGMON_MAIN_COLOR     equ 70h
-
-REGMON_ROW_OFFSET     equ 1
-REMGON_COLLUMN_OFFSET equ 1
 REGMON_WINDOW_WIDTH   equ 19
 REGMON_WINDOW_HEIGHT  equ 6
+REGMON_ROW_OFFSET     equ 1
+REMGON_COLLUMN_OFFSET equ 1
 
 ;-------------------------------------------
 ; shows Registers Monitor window with
