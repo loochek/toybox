@@ -1,6 +1,7 @@
 REGMON_MAIN_COLOR     equ 70h
 REGMON_WINDOW_WIDTH   equ 14
 REGMON_WINDOW_HEIGHT  equ 6
+REGMON_BASE           equ 4    ; registers values is shown with (2^REGMON_BASE) base
 
 ;-------------------------------------------
 ; shows Registers Monitor window with
@@ -53,7 +54,7 @@ regmon_text_fmt proc
 	mov cx, regmon_text_fmt_str1_len
 	rep movsb
 
-	mov cl, 4
+	mov cl, REGMON_BASE
 	pop dx
 	call itoa_pow2		; TRASHES: ax, bx, cx, dx, si
 
@@ -61,7 +62,7 @@ regmon_text_fmt proc
 	mov cx, regmon_text_fmt_str2_len
 	rep movsb
 
-	mov cl, 4
+	mov cl, REGMON_BASE
 	pop dx
 	call itoa_pow2		; TRASHES: ax, bx, cx, dx, si
 
@@ -69,7 +70,7 @@ regmon_text_fmt proc
 	mov cx, regmon_text_fmt_str3_len
 	rep movsb
 
-	mov cl, 4
+	mov cl, REGMON_BASE
 	pop dx
 	call itoa_pow2		; TRASHES: ax, bx, cx, dx, si
 
@@ -77,7 +78,7 @@ regmon_text_fmt proc
 	mov cx, regmon_text_fmt_str4_len
 	rep movsb
 
-	mov cl, 4
+	mov cl, REGMON_BASE
 	pop dx
 	call itoa_pow2		; TRASHES: ax, bx, cx, dx, si
 

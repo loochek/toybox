@@ -4,7 +4,7 @@
 org 0100h
 
 HOTKEY_SCANCODE equ 36h ; right shift
-CRASH_SCANCODE  equ 29h ; ~
+CRASH_SCANCODE  equ 0Eh ; backspace
 
 WATCH1_KEY      equ 02h ; 1
 WATCH2_KEY      equ 03h ; 2
