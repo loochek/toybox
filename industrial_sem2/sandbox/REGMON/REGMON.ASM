@@ -1,32 +1,34 @@
 REGMON_MAIN_COLOR     equ 70h
-REGMON_WINDOW_WIDTH   equ 19
+REGMON_WINDOW_WIDTH   equ 14
 REGMON_WINDOW_HEIGHT  equ 6
-REGMON_ROW_OFFSET     equ 1
-REMGON_COLLUMN_OFFSET equ 1
 
 ;-------------------------------------------
 ; shows Registers Monitor window with
 ; AX, BX, CX, DX registers values
+; LSB of si - collumn offset
+; MSB of si - row offset
+;
+; di - address of $-term. string
+;    - frame header
 ;-------------------------------------------
 ; TRASHES: ax, bx, cx, dx, si, di
 ; Restores ES to CS
 ;-------------------------------------------
 regmon_show proc
+	push si di
 	mov di, offset frame_text
 	call regmon_text_fmt			        ; TRASHES: ax, bx, cx, dx, si, di
+	pop  di si
 
-	mov bl, REMGON_COLLUMN_OFFSET
-	mov bh, REGMON_ROW_OFFSET
+	mov bx, si
 	mov dl, REGMON_WINDOW_WIDTH
 	mov dh, REGMON_WINDOW_HEIGHT
-	mov di, offset frame_header
 	mov si, offset frame_text
 	mov ch, REGMON_MAIN_COLOR
 	call msg_box						    ; TRASHES: ax, bx, cx, dx, si, di
 	
 	ret
 
-frame_header  db "Registers monitor", '$'
 frame_text    db 512 dup(0)                 ; reserve memory for "formatted string"
 
 regmon_show endp
