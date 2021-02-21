@@ -1,7 +1,7 @@
 REGMON_MAIN_COLOR     equ 70h
 REGMON_WINDOW_WIDTH   equ 14
 REGMON_WINDOW_HEIGHT  equ 6
-REGMON_BASE           equ 4    ; registers values is shown with (2^REGMON_BASE) base
+REGMON_BASE           equ 4    ; registers values are shown with (2^REGMON_BASE) base
 
 ;-------------------------------------------
 ; shows Registers Monitor window with
@@ -50,37 +50,15 @@ regmon_text_fmt proc
 	mov cx, cs
 	mov es, cx
 
-	mov si, offset regmon_text_fmt_str1
-	mov cx, regmon_text_fmt_str1_len
+irpc x, 1234
+	mov si, offset regmon_text_fmt_str&x
+	mov cx, regmon_text_fmt_str_len&x
 	rep movsb
 
 	mov cl, REGMON_BASE
 	pop dx
 	call itoa_pow2		; TRASHES: ax, bx, cx, dx, si
-
-	mov si, offset regmon_text_fmt_str2
-	mov cx, regmon_text_fmt_str2_len
-	rep movsb
-
-	mov cl, REGMON_BASE
-	pop dx
-	call itoa_pow2		; TRASHES: ax, bx, cx, dx, si
-
-	mov si, offset regmon_text_fmt_str3
-	mov cx, regmon_text_fmt_str3_len
-	rep movsb
-
-	mov cl, REGMON_BASE
-	pop dx
-	call itoa_pow2		; TRASHES: ax, bx, cx, dx, si
-
-	mov si, offset regmon_text_fmt_str4
-	mov cx, regmon_text_fmt_str4_len
-	rep movsb
-
-	mov cl, REGMON_BASE
-	pop dx
-	call itoa_pow2		; TRASHES: ax, bx, cx, dx, si
+endm
 
 	mov al, '$'
 	stosb
@@ -88,16 +66,16 @@ regmon_text_fmt proc
 	ret
 
 regmon_text_fmt_str1     db  "AX: 0x"
-regmon_text_fmt_str1_len equ $ - regmon_text_fmt_str1
+regmon_text_fmt_str_len1 equ $ - regmon_text_fmt_str1
 
 regmon_text_fmt_str2     db  0Ah, "BX: 0x"
-regmon_text_fmt_str2_len equ $ - regmon_text_fmt_str2
+regmon_text_fmt_str_len2 equ $ - regmon_text_fmt_str2
 
 regmon_text_fmt_str3     db  0Ah, "CX: 0x"
-regmon_text_fmt_str3_len equ $ - regmon_text_fmt_str3
+regmon_text_fmt_str_len3 equ $ - regmon_text_fmt_str3
 
 regmon_text_fmt_str4     db  0Ah, "DX: 0x"
-regmon_text_fmt_str4_len equ $ - regmon_text_fmt_str4
+regmon_text_fmt_str_len4 equ $ - regmon_text_fmt_str4
 
 regmon_text_fmt endp
 

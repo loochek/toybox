@@ -3,13 +3,13 @@
 
 org 0100h
 
-HOTKEY_SCANCODE equ 36h ; right shift
-CRASH_SCANCODE  equ 0Eh ; backspace
-
-WATCH1_KEY      equ 02h ; 1
-WATCH2_KEY      equ 03h ; 2
-WATCH3_KEY      equ 04h ; 3
-WATCH4_KEY      equ 05h ; 4
+HOTKEY     equ 36h ; right shift
+ACTIVE_KEY equ 2Ah ; left shift
+CRASH_KEY  equ 0Eh ; backspace
+WATCH1_KEY equ 02h ; 1
+WATCH2_KEY equ 03h ; 2
+WATCH3_KEY equ 04h ; 3
+WATCH4_KEY equ 05h ; 4
 
 ;-------------------------------------------
 ; main
@@ -30,6 +30,8 @@ start proc
     mov es:[bx + 2], si
     mov es:[bx]    , offset keyb_int_handler
     sti
+
+    mov watch_cfg_ptr, offset watch1_cfg    ; initialize variable with default value
 
     mov ax, 3100h   ; TSR
     mov dx, offset REZIDENT_MEM_SIZE
@@ -59,10 +61,10 @@ keyb_int_handler proc
     in al, 60h
 
 ; check if hotkey pressed or released
-    cmp al, HOTKEY_SCANCODE
+    cmp al, HOTKEY
     je keyb_int_handler_hotkey_pressed
 
-    cmp al, HOTKEY_SCANCODE + 80h
+    cmp al, HOTKEY + 80h    ; released scancode
     je keyb_int_handler_hotkey_released
 
 ; check hotkey status, exit if not pressed
@@ -70,7 +72,7 @@ keyb_int_handler proc
     jne keyb_int_handler_exit
 
 ; if hotkey pressed, check function keys
-    cmp al, CRASH_SCANCODE
+    cmp al, CRASH_KEY
     je keyb_int_handler_crash
 
     cmp al, WATCH1_KEY
@@ -84,6 +86,9 @@ keyb_int_handler proc
 
     cmp al, WATCH4_KEY
     je keyb_int_handler_watch4
+
+    cmp al, ACTIVE_KEY
+    je keyb_int_handler_active
 
 ; exit if no function keys pressed
 keyb_int_handler_exit:
@@ -128,8 +133,14 @@ keyb_int_handler_watch3:
 keyb_int_handler_watch4:
     mov cs:watch_cfg_ptr, offset watch4_cfg
     jmp keyb_int_handler_show_regmon
+
+;-------------------------------------------
+keyb_int_handler_active:
+    ; just jump - update last active watch
+    jmp keyb_int_handler_show_regmon
     
-; common code for keyb_int_handler_watch*
+; common code for previous handlers
+; shows Registers Monitor depending on watch_cfg
 ;-------------------------------------------
 keyb_int_handler_show_regmon:
     pop ax
@@ -171,9 +182,13 @@ crash_loop:
 crash endp
 
 
+;-------------------------------------------
+; variables
+;-------------------------------------------
 old_handler_segment   dw 0
 old_handler_offset    dw 0
 hotkey_pressed        db 0
+watch_cfg_ptr         dw 0
 
 
 ;-------------------------------------------
@@ -199,11 +214,8 @@ watch4_cfg:
     db SCREEN_HEIGHT - REGMON_WINDOW_HEIGHT - 3
     db "Watch 4", '$'
 
-watch_cfg_ptr dw 0
-
 
 include REGMON.ASM
 
 REZIDENT_MEM_SIZE:          ; want to keep all program as resident
-
 end start
