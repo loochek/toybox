@@ -20,6 +20,8 @@ extern itoa, itoa_pow2
 ; %b, %o, %x - put number in corresponding base
 ; %s         - put C string
 ; %c         - put char
+;
+; Return value is the number of characters printed
 ;----------------------------------------------
 _printf:
     push ebp
@@ -51,7 +53,7 @@ printf_fmt_loop_end:
     mov ecx, printf_buffer
     mov edx, edi
     sub edx, printf_buffer
-    int 0x80
+    int 0x80                                    ; return value in eax
 
     pop edi
     pop esi
@@ -76,23 +78,46 @@ printf_percent_handler:
     cmp [esi], byte 'd'
     je printf_dec_handler
 
+    cmp [esi], byte 'c'
+    je printf_char_handler
+
+    ; just skip in case of bad formatting argument
+    inc esi
+    jmp printf_fmt_loop
+
+
+printf_char_handler:
+    mov eax, [ebx]
+    add ebx, 4
+
+    stosb
+
+    inc esi
+    jmp printf_fmt_loop
+
 
 printf_string_handler:
     push esi
     mov esi, [ebx]
     add ebx, 4
-    call put_string
-    pop esi
 
+put_string:
+    cmp [esi], byte 0x00
+    je put_string_end
+    movsb
+    jmp put_string
+
+put_string_end:
+    pop esi
     inc esi
     jmp printf_fmt_loop
 
-; TODO: replace copy-paste with macro
 
-printf_hex_handler:
+%macro num_handler 2
+%1:
     mov edx, [ebx]
     add ebx, 4
-    mov cl, 4
+    mov cl, %2
 
     push esi
     push ebx
@@ -102,34 +127,12 @@ printf_hex_handler:
 
     inc esi
     jmp printf_fmt_loop
+%endmacro
 
-printf_oct_handler:
-    mov edx, [ebx]
-    add ebx, 4
-    mov cl, 3
+num_handler printf_bin_handler, 1
+num_handler printf_oct_handler, 3
+num_handler printf_hex_handler, 4
 
-    push esi
-    push ebx
-    call itoa_pow2
-    pop ebx
-    pop esi
-
-    inc esi
-    jmp printf_fmt_loop
-
-printf_bin_handler:
-    mov edx, [ebx]
-    add ebx, 4
-    mov cl, 1
-
-    push esi
-    push ebx
-    call itoa_pow2
-    pop ebx
-    pop esi
-
-    inc esi
-    jmp printf_fmt_loop
 
 printf_dec_handler:
     mov edx, [ebx]
@@ -147,26 +150,5 @@ printf_dec_handler:
 
 
 ;-----------------------------------------------
-; moves C string from esi to edi
-; edi is moved after string
-; \0 is not moved
-;--------
-; cats\0|  I love aaaaaa --> I love catsaa
-; ^esi  |         ^edi                  ^edi
-;       |
-;-----------------------------------------------
-; TRASHES: esi
-;-----------------------------------------------
-put_string:
-    cmp [esi], byte 0x00
-    je put_string_end
-    movsb
-    jmp put_string
-    
-put_string_end:
-    ret
-
-
-;-----------------------------------------------
 section .data
-printf_buffer times 500 db 0
+printf_buffer times 512 db 0
