@@ -1,3 +1,5 @@
+; entry point for C program
+
 section .text
 
 global _start

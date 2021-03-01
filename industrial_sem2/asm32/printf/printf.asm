@@ -61,28 +61,25 @@ printf_fmt_loop_end:
     pop ebp
     ret
 
+
 printf_percent_handler:
     inc esi
-    cmp [esi], byte 's'
-    je printf_string_handler
+    ; parse format character according to jump table in .data section
+    movzx edx, byte [esi]
+    jmp [printf_jump_table + 4 * edx]
 
-    cmp [esi], byte 'x'
-    je printf_hex_handler
-    
-    cmp [esi], byte 'o'
-    je printf_oct_handler
 
-    cmp [esi], byte 'b'
-    je printf_bin_handler
+; entries for jump table:
 
-    cmp [esi], byte 'd'
-    je printf_dec_handler
-
-    cmp [esi], byte 'c'
-    je printf_char_handler
-
+printf_bad_fmt_arg:
     ; just skip in case of bad formatting argument
     inc esi
+    jmp printf_fmt_loop
+
+
+printf_double_percent_handler:
+    ; put second percent to result string
+    movsb
     jmp printf_fmt_loop
 
 
@@ -151,4 +148,30 @@ printf_dec_handler:
 
 ;-----------------------------------------------
 section .data
-printf_buffer times 512 db 0
+printf_buffer times 512 db 0  ; overflooow.....
+
+; format characters jump table
+; looks weird, but better than conditional jumps
+;
+; description:
+; ...37chars...%...59chars..._bcd__________o___s____x__...133chars...
+; |(fmt chars) ^              ^^^          ^   ^    ^               |
+; |--------------------------256 possible chars---------------------|
+printf_jump_table times 37 dd printf_bad_fmt_arg
+                           ; percent - ascii code 37
+                           dd printf_double_percent_handler
+                  times 59 dd printf_bad_fmt_arg
+                           ; lowercase ascii letters - starting from 97
+                           dd printf_bad_fmt_arg
+                           dd printf_bin_handler
+                           dd printf_char_handler
+                           dd printf_dec_handler
+                  times 10 dd printf_bad_fmt_arg
+                           dd printf_oct_handler
+                   times 3 dd printf_bad_fmt_arg
+                           dd printf_string_handler
+                   times 4 dd printf_bad_fmt_arg
+                           dd printf_hex_handler
+                   times 2 dd printf_bad_fmt_arg
+                           ; the rest of byte values
+                 times 133 dd printf_bad_fmt_arg
