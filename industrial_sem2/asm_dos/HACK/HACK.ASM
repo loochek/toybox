@@ -25,19 +25,11 @@ passwd_loop:
 
 passwd_loop_end:
 	mov si, offset passwd_buf
-	mov di, offset correct_passwd
-	mov cx, correct_passwd_len
-
-passwd_check_loop:
-	lodsb
-	mov ah, decrypt_key
-	xor al, ah
-	scasb
-	jne passwd_incorrect
-
-	loop passwd_check_loop
-
+	call check_password
+	test al, al
+	jz passwd_incorrect
 	jmp passwd_correct
+	
 
 passwd_incorrect:
 	mov ah, 09h
@@ -69,5 +61,35 @@ correct_passwd dq 0C4C3C7CECBC3C8CCh
 correct_passwd_len equ $ - correct_passwd
 
 decrypt_key    db 0AAh
+
+db 10 dup(0)  ; fake buffer and offset
+
+;------------------------------------------
+; checks password given in si to be correct
+; puts 01 or 00 to al
+;------------------------------------------
+; TRASHES: ah, cx, si, di
+;------------------------------------------
+check_password:
+	mov di, offset correct_passwd
+	mov cx, correct_passwd_len
+
+check_password_loop:
+	lodsb
+	mov ah, decrypt_key
+	xor al, ah
+	scasb
+	jne check_password_incorrect
+
+	loop check_password_loop
+
+	; password is correct
+	xor al, al
+	inc al
+	ret
+
+check_password_incorrect:
+	xor al, al
+	ret
 
 end start
