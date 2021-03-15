@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <ncurses.h>
 
 #include "lerror.h"
 
@@ -100,6 +101,50 @@ void patch(uint8_t *prg_buffer)
     prg_buffer[0x4] = 0xE0;
 }
 
+void alert(const char *msg)
+{
+    clear();
+    refresh();
+    
+    int width = strlen(msg) + 2;
+    int height = 3;
+
+    int row_offset     = (LINES - height) / 2;
+    int collumn_offset = (COLS  - width ) / 2;
+    
+    WINDOW *msg_box = newwin(height, width, row_offset, collumn_offset);
+    box(msg_box, 0, 0);
+    mvwprintw(msg_box, 1, 1, msg);
+    wrefresh(msg_box);
+
+    delwin(msg_box);
+}
+
+void progress()
+{
+    clear();
+    refresh();
+    
+    int width = 50;
+    int height = 7;
+
+    int row_offset     = (LINES - height) / 2;
+    int collumn_offset = (COLS  - width ) / 2;
+    
+    WINDOW *msg_box = newwin(height, width, row_offset, collumn_offset);
+    box(msg_box, 0, 0);
+    mvwprintw(msg_box, 1, 21, "Patching");
+    wrefresh(msg_box);
+
+    for (int i = 0; i < 46; i++)
+    {
+        mvwaddch(msg_box, 5, 2 + i, '#');
+        wrefresh(msg_box);
+        usleep(100000);
+    }
+
+    delwin(msg_box);
+}
 
 const char    *patch_target = "IVAN.COM";
 const uint16_t CORRECT_HASH = 0xE099; // IVAN.COM
@@ -108,35 +153,63 @@ int main()
 {
     uint8_t *prg_buffer = NULL;
 
+    initscr();
+    noecho();
+    cbreak();
+    curs_set(0);
+
+    alert("This program will patch your IVAN.COM. Continue [y/n]?");
+
+    int ch = 0;
+    while (ch != 'y' && ch != 'n')
+        ch = getch();
+
+    if (ch == 'n')
+    {
+        endwin();
+        return 0;
+    }
+
     ssize_t program_size = load_program(patch_target, &prg_buffer);
     if (program_size == -1)
     {
-        printf("Failed to load program: %s\n", __lerr_str);
+        alert("Failed to load program! Make sure that IVAN.COM exists!");
+        getch();
         goto FAIL;
     }
 
     uint16_t hash = calculate_hash(prg_buffer, program_size);
     if (hash != CORRECT_HASH)
     {
-        printf("Hash mismatch: this patcher requires original IVAN.COM\n");
+        alert("Hash mismatch: this patcher requires original IVAN.COM");
+        getch();
         goto FAIL;
     }
+
+    progress();
 
     patch(prg_buffer);
 
     write_program(patch_target, prg_buffer, program_size);
     if (LERR_PRESENT())
     {
-        printf("Failed to write program: %s\n", __lerr_str);
+        printf("Failed to write program! Make sure that you have permissions!");
+        getch();
         goto FAIL;
     }
 
-    printf("Succesfully patched!\n\n\nIn memory of xatab...\n");
+    alert("Patched succesfully!");
+    getch();
 
+    alert("In memory of xatab...");
+    usleep(500000);
+
+    endwin();
     free(prg_buffer);
     return 0;
 
 FAIL:
     free(prg_buffer);
+    endwin();
     return -1;
 }

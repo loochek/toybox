@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-O2
+CFLAGS=-lncurses -O2
 
 build:
 	$(CC) $(CFLAGS) -o patcher patcher.c lerror.c
