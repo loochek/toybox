@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-lncurses -O2
+CFLAGS=-lcdk -lncurses -fsanitize=address
 
 build:
 	$(CC) $(CFLAGS) -o patcher patcher.c lerror.c

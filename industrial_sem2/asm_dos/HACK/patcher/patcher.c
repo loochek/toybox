@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <ncurses.h>
+#include <cdk/cdk.h>
 
 #include "lerror.h"
 
@@ -101,115 +101,188 @@ void patch(uint8_t *prg_buffer)
     prg_buffer[0x4] = 0xE0;
 }
 
-void alert(const char *msg)
+const char *COLOR_ERR     = "</02>";
+const char *COLOR_DEFAULT = "</05>";
+
+void alert(CDKSCREEN *cdk_screen, char *msg, const char *color)
 {
-    clear();
-    refresh();
-    
-    int width = strlen(msg) + 2;
-    int height = 3;
+    char *buttons = "OK";
+    CDKDIALOG *dialog = newCDKDialog(cdk_screen,
+                                     CENTER,
+                                     CENTER,
+                                     &msg,
+                                     1,
+                                     &buttons,
+                                     1,
+                                     A_REVERSE,
+                                     TRUE,
+                                     TRUE,
+                                     TRUE);
 
-    int row_offset     = (LINES - height) / 2;
-    int collumn_offset = (COLS  - width ) / 2;
-    
-    WINDOW *msg_box = newwin(height, width, row_offset, collumn_offset);
-    box(msg_box, 0, 0);
-    mvwprintw(msg_box, 1, 1, msg);
-    wrefresh(msg_box);
+    setCDKDialogBackgroundColor(dialog, color);
+    activateCDKDialog(dialog, (chtype *)0);
 
-    delwin(msg_box);
+    eraseCDKDialog(dialog);
+    destroyCDKDialog(dialog);
+
+    refreshCDKScreen(cdk_screen);
 }
 
-void progress()
+#define PROGRESS_BAR_LENGTH       22
+#define PROGRESS_BAR_BLOCK_LENGTH 6
+#define PROGRESS_TIMER            4
+#define PROGRESS_DELAY            50000
+
+void progress(CDKSCREEN *cdk_screen)
 {
-    clear();
-    refresh();
-    
-    int width = 50;
-    int height = 7;
+    char progress_bar[PROGRESS_BAR_LENGTH + 1] = "                      ";
+    char *text[2] = { "Patching...",  progress_bar };
 
-    int row_offset     = (LINES - height) / 2;
-    int collumn_offset = (COLS  - width ) / 2;
-    
-    WINDOW *msg_box = newwin(height, width, row_offset, collumn_offset);
-    box(msg_box, 0, 0);
-    mvwprintw(msg_box, 1, 21, "Patching");
-    wrefresh(msg_box);
+    CDKLABEL *label = newCDKLabel(cdk_screen,
+                                  CENTER,
+                                  CENTER,
+                                  text,
+                                  2,
+                                  TRUE,
+                                  TRUE);
 
-    for (int i = 0; i < 46; i++)
+    setCDKLabelBackgroundColor(label, COLOR_DEFAULT);
+
+    for (int timer = 0; timer < PROGRESS_TIMER; timer++)
     {
-        mvwaddch(msg_box, 5, 2 + i, '#');
-        wrefresh(msg_box);
-        usleep(100000);
+        for (int i = 0; i < PROGRESS_BAR_LENGTH - PROGRESS_BAR_BLOCK_LENGTH; i++)
+        {
+            progress_bar[i] = ' ';
+            progress_bar[i + PROGRESS_BAR_BLOCK_LENGTH] = '#';
+            setCDKLabelMessage(label, text, 2);
+            activateCDKLabel(label, (chtype *)0);
+            usleep(PROGRESS_DELAY);
+            eraseCDKLabel(label);
+        }
+
+        for (int i = 15; i >= 0; i--)
+        {
+            progress_bar[i + PROGRESS_BAR_BLOCK_LENGTH] = ' ';
+            progress_bar[i] = '#';
+            setCDKLabelMessage(label, text, 2);
+            activateCDKLabel(label, (chtype *)0);
+            usleep(PROGRESS_DELAY);
+            eraseCDKLabel(label);
+        }
     }
 
-    delwin(msg_box);
+    eraseCDKLabel(label);
+    destroyCDKLabel(label);
+    refreshCDKScreen(cdk_screen);
 }
 
-const char    *patch_target = "IVAN.COM";
-const uint16_t CORRECT_HASH = 0xE099; // IVAN.COM
+#define MEMORIAL_DELAY 300000
+
+void memorial(CDKSCREEN *cdk_screen)
+{
+    char *text = "In memory of xatab...";
+
+    CDKLABEL *label = newCDKLabel(cdk_screen,
+                                  CENTER,
+                                  CENTER,
+                                  &text,
+                                  1,
+                                  TRUE,
+                                  TRUE);
+
+    setCDKLabelBackgroundColor(label, COLOR_DEFAULT);
+
+    activateCDKLabel(label, (chtype *)0);
+    usleep(MEMORIAL_DELAY);
+    
+    eraseCDKLabel(label);
+    destroyCDKLabel(label);
+    refreshCDKScreen(cdk_screen);
+}
+
+
+int patch_ask(CDKSCREEN *cdk_screen)
+{
+    char *patch_msg = "This program will patch your IVAN.COM. Continue?";
+    char *patch_buttons[2] = { "No", "Yes" };
+
+    CDKDIALOG *patch_dialog = newCDKDialog(cdk_screen,
+                                           CENTER,
+                                           CENTER,
+                                           &patch_msg,
+                                           1,
+                                           patch_buttons,
+                                           2,
+                                           A_REVERSE,
+                                           TRUE,
+                                           TRUE,
+                                           TRUE);
+
+    setCDKDialogBackgroundColor(patch_dialog, COLOR_DEFAULT);
+
+    int selection = activateCDKDialog(patch_dialog, (chtype *)0);
+
+    eraseCDKDialog(patch_dialog);
+    destroyCDKDialog(patch_dialog);
+    refreshCDKScreen(cdk_screen);
+    
+    return selection;
+}
+
+const char    *patch_target  = "IVAN.COM";
+const uint16_t CORRECT_HASH  = 0xE099; // IVAN.COM
 
 int main()
 {
     uint8_t *prg_buffer = NULL;
 
-    initscr();
-    noecho();
-    cbreak();
+    CDKSCREEN *cdk_screen = initCDKScreen(NULL);
     curs_set(0);
+    initCDKColor();
 
-    alert("This program will patch your IVAN.COM. Continue [y/n]?");
-
-    int ch = 0;
-    while (ch != 'y' && ch != 'n')
-        ch = getch();
-
-    if (ch == 'n')
+    if (!patch_ask(cdk_screen))
     {
-        endwin();
+        destroyCDKScreen(cdk_screen);
+        endCDK();
         return 0;
     }
 
     ssize_t program_size = load_program(patch_target, &prg_buffer);
     if (program_size == -1)
     {
-        alert("Failed to load program! Make sure that IVAN.COM exists!");
-        getch();
+        alert(cdk_screen, "Failed to load program! Check IVAN.COM existence and permissions!", COLOR_ERR);
         goto FAIL;
     }
 
     uint16_t hash = calculate_hash(prg_buffer, program_size);
     if (hash != CORRECT_HASH)
     {
-        alert("Hash mismatch: this patcher requires original IVAN.COM");
-        getch();
+        alert(cdk_screen, "Hash mismatch: this patcher requires original IVAN.COM", COLOR_ERR);
         goto FAIL;
     }
 
-    progress();
+    progress(cdk_screen);
 
     patch(prg_buffer);
 
     write_program(patch_target, prg_buffer, program_size);
     if (LERR_PRESENT())
     {
-        printf("Failed to write program! Make sure that you have permissions!");
-        getch();
+        alert(cdk_screen, "Failed to write program! Make sure that you have permissions!", COLOR_ERR);
         goto FAIL;
     }
-
-    alert("Patched succesfully!");
-    getch();
-
-    alert("In memory of xatab...");
-    usleep(500000);
-
-    endwin();
     free(prg_buffer);
+
+    alert(cdk_screen, "Patched succesfully!", COLOR_DEFAULT);
+    memorial(cdk_screen);
+
+    destroyCDKScreen(cdk_screen);
+    endCDK();
     return 0;
 
 FAIL:
     free(prg_buffer);
-    endwin();
+    destroyCDKScreen(cdk_screen);
+    endCDK();
     return -1;
 }
