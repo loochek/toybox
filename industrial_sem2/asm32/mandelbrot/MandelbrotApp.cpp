@@ -45,7 +45,7 @@ MandelbrotApp::MandelbrotApp(const int   canvas_width,
                 m_origin_y(origin_y),
                 m_radius_sq(radius * radius)
 {
-    render_window.create(sf::VideoMode(canvas_width, canvas_height), "Mandelbrot", sf::Style::Fullscreen);
+    render_window.create(sf::VideoMode(canvas_width, canvas_height), "Mandelbrot");
     canvas.create(canvas_width, canvas_height);
     canvas_texture.create(canvas_width, canvas_height);
     canvas_sprite.setPosition(0, 0);
@@ -68,10 +68,10 @@ void MandelbrotApp::run()
         printf("FPS: %f\n", 1000.f / elapsed.asMilliseconds());
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
-            m_scale /= 1.1;
+            m_scale /= 1.01;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
-            m_scale *= 1.1;
+            m_scale *= 1.01;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
             m_origin_x -= m_scale * 50 * elapsed.asSeconds();
@@ -93,7 +93,10 @@ void MandelbrotApp::run()
             for (int j = 0; j < 4; j++)
             {
                 thread[thread_cnt] = new sf::Thread(std::bind(&MandelbrotApp::recalc_canvas_avx,
-                                                              this, 480 * i, 270 * j, 480, 270));
+                                                              this, m_canvas_width  / 4 * i,
+                                                                    m_canvas_height / 4 * j,
+                                                                    m_canvas_width  / 4,
+                                                                    m_canvas_height / 4));
                 thread[thread_cnt]->launch();
                 thread_cnt++;                
             }
