@@ -16,6 +16,7 @@ public:
 private:
     void recalc_canvas(int raster_offs_x, int raster_offs_y, int width, int height);
     void recalc_canvas_sse(int raster_offs_x, int raster_offs_y, int width, int height);
+    void recalc_canvas_mid(int raster_offs_x, int raster_offs_y, int width, int height);
 
     sf::RenderWindow render_window;
     sf::Image        canvas;
