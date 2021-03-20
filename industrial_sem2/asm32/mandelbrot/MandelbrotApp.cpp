@@ -3,6 +3,33 @@
 #include <functional>
 #include <x86intrin.h>
 
+const sf::Color color_mapping[] = {
+                                    sf::Color(66, 30, 15),
+                                    sf::Color(25, 7, 26),
+                                    sf::Color(9, 1, 47),
+                                    sf::Color(4, 4, 73),
+                                    sf::Color(0, 7, 100),
+                                    sf::Color(12, 44, 138),
+                                    sf::Color(24, 82, 177),
+                                    sf::Color(57, 125, 209),
+                                    sf::Color(134, 181, 229),
+                                    sf::Color(211, 236, 248),
+                                    sf::Color(241, 233, 191),
+                                    sf::Color(248, 201, 95),
+                                    sf::Color(255, 170, 0),
+                                    sf::Color(204, 128, 0),
+                                    sf::Color(153, 87, 0),
+                                    sf::Color(106, 52, 3)
+                                  };
+
+sf::Color MandelbrotApp::color_function(int iteration)
+{
+    if (iteration == m_step_limit)
+        return sf::Color::Black;
+
+    return color_mapping[iteration % 16];
+}
+
 MandelbrotApp::MandelbrotApp(const int   canvas_width,
                              const int   canvas_height,
                              const int   step_limit,
@@ -18,7 +45,7 @@ MandelbrotApp::MandelbrotApp(const int   canvas_width,
                 m_origin_y(origin_y),
                 m_radius_sq(radius * radius)
 {
-    render_window.create(sf::VideoMode(canvas_width, canvas_height), "Mandelbrot");
+    render_window.create(sf::VideoMode(canvas_width, canvas_height), "Mandelbrot", sf::Style::Fullscreen);
     canvas.create(canvas_width, canvas_height);
     canvas_texture.create(canvas_width, canvas_height);
     canvas_sprite.setPosition(0, 0);
@@ -41,22 +68,22 @@ void MandelbrotApp::run()
         printf("FPS: %f\n", 1000.f / elapsed.asMilliseconds());
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
-            m_scale -= 0.00001f;
+            m_scale /= 1.1;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
-            m_scale += 0.00001f;
+            m_scale *= 1.1;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            m_origin_x -= m_scale * 5;
+            m_origin_x -= m_scale * 50 * elapsed.asSeconds();
         
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            m_origin_x += m_scale * 5;
+            m_origin_x += m_scale * 50 * elapsed.asSeconds();
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-            m_origin_y -= m_scale * 5;
+            m_origin_y -= m_scale * 50 * elapsed.asSeconds();
         
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-            m_origin_y += m_scale * 5;
+            m_origin_y += m_scale * 50 * elapsed.asSeconds();
 
         sf::Thread* thread[16];
         int thread_cnt = 0;
@@ -65,8 +92,8 @@ void MandelbrotApp::run()
         {
             for (int j = 0; j < 4; j++)
             {
-                thread[thread_cnt] = new sf::Thread(std::bind(&MandelbrotApp::recalc_canvas_sse,
-                                                              this, 200 * i, 150 * j, 200, 150));
+                thread[thread_cnt] = new sf::Thread(std::bind(&MandelbrotApp::recalc_canvas_avx,
+                                                              this, 480 * i, 270 * j, 480, 270));
                 thread[thread_cnt]->launch();
                 thread_cnt++;                
             }
@@ -78,7 +105,7 @@ void MandelbrotApp::run()
         for (int i = 0; i < 16; i++)
             delete thread[i];
 
-        //recalc_canvas_sse(0, 0, m_canvas_width, m_canvas_height);
+        //recalc_canvas_avx(0, 0, m_canvas_width, m_canvas_height);
         
         canvas_texture.update(canvas);
 
@@ -125,7 +152,7 @@ void MandelbrotApp::recalc_canvas(int raster_offs_x, int raster_offs_y, int rast
                 zy = new_zy;
             }
 
-            canvas.setPixel(raster_x, raster_y, sf::Color(step_cnt, step_cnt, step_cnt));
+            canvas.setPixel(raster_x, raster_y, color_function(step_cnt));
 
             curr_plane_x += m_scale;
         }
@@ -202,7 +229,7 @@ void MandelbrotApp::recalc_canvas_mid(int raster_offs_x, int raster_offs_y, int 
             }
 
             for (int i = 0; i < 4; i++)
-                canvas.setPixel(raster_x + i, raster_y, sf::Color(step_cnt[i], step_cnt[i], step_cnt[i]));
+                canvas.setPixel(raster_x + i, raster_y, color_function(step_cnt[i]));
 
             curr_plane_x += m_scale * 4;
         }
@@ -273,9 +300,79 @@ void MandelbrotApp::recalc_canvas_sse(int raster_offs_x, int raster_offs_y, int 
 
             int *step_cnt_p = (int*)&step_cnt;
             for (int i = 0; i < 4; i++)
-                canvas.setPixel(raster_x + 4 - i, raster_y, sf::Color(step_cnt_p[i], step_cnt_p[i], step_cnt_p[i]));
+                canvas.setPixel(raster_x + 4 - i, raster_y, color_function(step_cnt_p[i]));
 
             curr_plane_x += m_scale * 4;
+        }
+        
+        curr_plane_x = m_origin_x - (m_canvas_width  / 2 - raster_offs_x) * m_scale;
+        curr_plane_y += m_scale;
+    }
+}
+
+void MandelbrotApp::recalc_canvas_avx(int raster_offs_x, int raster_offs_y, int raster_width, int raster_height)
+{
+    // raster canvas covers the complex plane depending on the scale
+
+    // plane coords of (raster_offs_x, raster_offs_y) raster pixel
+    float curr_plane_x = m_origin_x - (m_canvas_width  / 2 - raster_offs_x) * m_scale;
+    float curr_plane_y = m_origin_y - (m_canvas_height / 2 - raster_offs_y) * m_scale;
+
+    __m256  const_0123  = _mm256_set_ps(0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f);
+    __m256  scale_p     = _mm256_set1_ps(m_scale);
+    __m256  radius_sq_p = _mm256_set1_ps(m_radius_sq);
+    __m256i one_epi32   = _mm256_set1_epi32(1);
+    __m256  one_ps      = _mm256_set1_ps(1.0f);
+
+    // for each point corresponding to a pixel of the canvas
+    // we calculate the first member of { z_i } sequence which outside of defined circle
+    // the number of a member of the sequence affects the color of the pixel through a certain function
+
+    for (int raster_y = raster_offs_y; raster_y < raster_offs_y + raster_height; raster_y++)
+    {
+        for (int raster_x = raster_offs_x; raster_x < raster_offs_x + raster_width; raster_x += 8)
+        {
+            // member number for each point
+            __m256i step_cnt = _mm256_setzero_si256();
+
+            __m256 curr_plane_x_p = _mm256_set1_ps(curr_plane_x);
+            curr_plane_x_p = _mm256_add_ps(curr_plane_x_p, _mm256_mul_ps(scale_p, const_0123));
+
+            __m256 curr_plane_y_p = _mm256_set1_ps(curr_plane_y);
+
+            // z_0 = current point
+            __m256 zx = curr_plane_x_p;
+            __m256 zy = curr_plane_y_p;
+
+            for (int step = 0; step < m_step_limit; step++)
+            {
+
+                __m256 zx2 = _mm256_mul_ps(zx, zx);
+                __m256 zy2 = _mm256_mul_ps(zy, zy);
+
+                __m256 cmp = _mm256_add_ps(zx2, zy2);
+                cmp = _mm256_cmp_ps(cmp, radius_sq_p, 0x12);
+                
+                if (!_mm256_movemask_ps(cmp))
+                     break;
+
+                __m256i cmpi = _mm256_castps_si256(_mm256_and_ps(cmp, _mm256_castsi256_ps(one_epi32)));
+                step_cnt = _mm256_add_epi32(step_cnt, cmpi);
+                cmp = _mm256_and_ps(cmp, one_ps);
+
+                // z_i = z_(i-1)^2 + z_0
+
+                __m256 xy = _mm256_mul_ps(zx, zy);
+
+                zx = _mm256_add_ps(_mm256_sub_ps(zx2, zy2), curr_plane_x_p);
+                zy = _mm256_add_ps(_mm256_add_ps(xy, xy)  , curr_plane_y_p);
+            }
+
+            int *step_cnt_p = (int*)&step_cnt;
+            for (int i = 0; i < 8; i++)
+                canvas.setPixel(raster_x + 8 - i, raster_y, color_function(step_cnt_p[i]));
+
+            curr_plane_x += m_scale * 8;
         }
         
         curr_plane_x = m_origin_x - (m_canvas_width  / 2 - raster_offs_x) * m_scale;
