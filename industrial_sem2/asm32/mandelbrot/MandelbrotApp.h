@@ -20,10 +20,10 @@ private:
 
     sf::Color color_function(int iteration);
 
-    sf::RenderWindow render_window;
-    sf::Image        canvas;
-    sf::Texture      canvas_texture;
-    sf::Sprite       canvas_sprite;
+    sf::RenderWindow m_render_window;
+    sf::Image        m_canvas;
+    sf::Texture      m_canvas_texture;
+    sf::Sprite       m_canvas_sprite;
 
     const int m_canvas_width;
     const int m_canvas_height;

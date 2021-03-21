@@ -45,45 +45,45 @@ MandelbrotApp::MandelbrotApp(const int    canvas_width,
                 m_origin_y(origin_y),
                 m_radius_sq(radius * radius)
 {
-    render_window.create(sf::VideoMode(canvas_width, canvas_height), "Mandelbrot");
-    canvas.create(canvas_width, canvas_height);
-    canvas_texture.create(canvas_width, canvas_height);
-    canvas_sprite.setPosition(0, 0);
-    canvas_sprite.setTexture(canvas_texture);
+    m_render_window.create(sf::VideoMode(canvas_width, canvas_height), "Mandelbrot");
+    m_canvas.create(canvas_width, canvas_height);
+    m_canvas_texture.create(canvas_width, canvas_height);
+    m_canvas_sprite.setPosition(0, 0);
+    m_canvas_sprite.setTexture(m_canvas_texture);
 }
 
 void MandelbrotApp::run()
 {
     sf::Clock clock;
-    while (render_window.isOpen())
+    while (m_render_window.isOpen())
     {
         sf::Event event;
-        while (render_window.pollEvent(event))
+        while (m_render_window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
-                render_window.close();
+                m_render_window.close();
         }
 
         float elapsed = clock.restart().asSeconds();
         printf("FPS: %f\n", 1.0f / elapsed);
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
-            m_scale /= 1.01f;
+            m_scale /= 1.0f + 0.3f * elapsed;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
-            m_scale *= 1.01f;
+            m_scale *= 1.0f + 0.3f * elapsed;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            m_origin_x -= m_scale * 50 * elapsed;
+            m_origin_x -= m_scale * 100 * elapsed;
         
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            m_origin_x += m_scale * 50 * elapsed;
+            m_origin_x += m_scale * 100 * elapsed;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-            m_origin_y -= m_scale * 50 * elapsed;
+            m_origin_y -= m_scale * 100 * elapsed;
         
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-            m_origin_y += m_scale * 50 * elapsed;
+            m_origin_y += m_scale * 100 * elapsed;
 
         sf::Thread* thread[16];
         int thread_cnt = 0;
@@ -110,11 +110,11 @@ void MandelbrotApp::run()
 
         //recalc_canvas_avx(0, 0, m_canvas_width, m_canvas_height);
         
-        canvas_texture.update(canvas);
+        m_canvas_texture.update(m_canvas);
 
-        render_window.clear();
-        render_window.draw(canvas_sprite);
-        render_window.display();
+        m_render_window.clear();
+        m_render_window.draw(m_canvas_sprite);
+        m_render_window.display();
     }
 }
 
@@ -156,7 +156,7 @@ void MandelbrotApp::recalc_canvas(int raster_offs_x, int raster_offs_y, int rast
                 zy = 2 * xy + curr_plane_y;
             }
 
-            canvas.setPixel(raster_x, raster_y, color_function(step_cnt));
+            m_canvas.setPixel(raster_x, raster_y, color_function(step_cnt));
 
             curr_plane_x += m_scale;
         }
@@ -229,7 +229,7 @@ void MandelbrotApp::recalc_canvas_avx_perf(int raster_offs_x,
 
             int *step_cnt_p = (int*)&step_cnt;
             for (int i = 0; i < 8; i++)
-                canvas.setPixel(raster_x + 8 - i, raster_y, color_function(step_cnt_p[i]));
+                m_canvas.setPixel(raster_x + 8 - i, raster_y, color_function(step_cnt_p[i]));
 
             curr_plane_x += m_scale * 8;
         }
@@ -302,7 +302,7 @@ void MandelbrotApp::recalc_canvas_avx_prec(int raster_offs_x,
 
             long long *step_cnt_p = (long long*)&step_cnt;
             for (int i = 0; i < 4; i++)
-                canvas.setPixel(raster_x + 4 - i, raster_y, color_function(step_cnt_p[i]));
+                m_canvas.setPixel(raster_x + 4 - i, raster_y, color_function(step_cnt_p[i]));
 
             curr_plane_x += m_scale * 4;
         }
