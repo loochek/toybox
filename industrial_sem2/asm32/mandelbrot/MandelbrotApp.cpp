@@ -3,7 +3,7 @@
 #include <functional>
 #include <x86intrin.h>
 
-const sf::Color color_mapping[] = {
+const sf::Color color_map[] = {
                                     sf::Color(66, 30, 15),
                                     sf::Color(25, 7, 26),
                                     sf::Color(9, 1, 47),
@@ -22,12 +22,15 @@ const sf::Color color_mapping[] = {
                                     sf::Color(106, 52, 3)
                                   };
 
+const double MOVEMENT_SPEED = 100.0f;
+const double SCALE_SPEED    = 0.3f;
+
 sf::Color MandelbrotApp::color_function(int iteration)
 {
     if (iteration == m_step_limit)
         return sf::Color::Black;
 
-    return color_mapping[iteration % 16];
+    return color_map[iteration % 16];
 }
 
 MandelbrotApp::MandelbrotApp(const int    canvas_width,
@@ -68,22 +71,22 @@ void MandelbrotApp::run()
         printf("FPS: %f\n", 1.0f / elapsed);
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
-            m_scale /= 1.0f + 0.3f * elapsed;
+            m_scale /= 1.0f + SCALE_SPEED * elapsed;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
-            m_scale *= 1.0f + 0.3f * elapsed;
+            m_scale *= 1.0f + SCALE_SPEED * elapsed;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            m_origin_x -= m_scale * 100 * elapsed;
+            m_origin_x -= m_scale * MOVEMENT_SPEED * elapsed;
         
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            m_origin_x += m_scale * 100 * elapsed;
+            m_origin_x += m_scale * MOVEMENT_SPEED * elapsed;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-            m_origin_y -= m_scale * 100 * elapsed;
+            m_origin_y -= m_scale * MOVEMENT_SPEED * elapsed;
         
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-            m_origin_y += m_scale * 100 * elapsed;
+            m_origin_y += m_scale * MOVEMENT_SPEED * elapsed;
 
         sf::Thread* thread[16];
         int thread_cnt = 0;
