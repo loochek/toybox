@@ -42,7 +42,26 @@ typedef struct
 } mandelbrot_cfg_t;
 
 /**
+ * Raster function declaration
+ */
+typedef void (*raster_func_t)(mandelbrot_cfg_t*, sfImage*, int, int, int, int);
+
+/**
  * Basic rasterizer
  */
 void raster(mandelbrot_cfg_t *cfg, sfImage *canvas,
             int raster_offs_x, int raster_offs_y, int raster_width, int raster_height);
+
+/**
+ * AVX rasterizer
+ * Up to 8x faster than basic rasterizer but less accurate (floats instead of doubles)
+ */
+void raster_avx_perf(mandelbrot_cfg_t *cfg, sfImage *canvas,
+                     int raster_offs_x, int raster_offs_y, int raster_width, int raster_height);
+
+/**
+ * AVX rasterizer
+ * Up to 4x faster than basic rasterizer
+ */
+void raster_avx_prec(mandelbrot_cfg_t *cfg, sfImage *canvas,
+                     int raster_offs_x, int raster_offs_y, int raster_width, int raster_height);
