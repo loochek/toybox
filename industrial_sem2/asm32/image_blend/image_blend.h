@@ -12,3 +12,4 @@ typedef struct
 
 void blend(sfImage *output_canvas, blender_input_t *input);
 void blend_sse(sfImage *output_canvas, blender_input_t *input);
+void blend_avx(sfImage *output_canvas, blender_input_t *input);

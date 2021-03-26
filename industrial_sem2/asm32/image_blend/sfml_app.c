@@ -44,15 +44,16 @@ void app_run(app_state_t *app)
         {
             if (event.type == sfEvtClosed)
                 sfRenderWindow_close(app->window);
-        }
+        }        
 
-        // Application loop
-        // 0: handle time
+        sfClock_restart(app->clock);
+
+        for (int i = 0; i < 100; i++)
+            blend_avx(app->canvas, &app->input);
+
         float elapsed = sfTime_asSeconds(sfClock_restart(app->clock));
-        printf("FPS: %f\n", 1.0f / elapsed);
+        printf("Rasterizer FPS: %f\n", 1.0f / elapsed);
 
-
-        blend(app->canvas, &app->input);
         sfTexture_updateFromImage(app->canvas_texture, app->canvas, 0, 0);
 
         // 3: display

@@ -57,7 +57,6 @@ void blend(sfImage *output_canvas, blender_input_t *input)
     }
 }
 
-
 void blend_sse(sfImage *output_canvas, blender_input_t *input)
 {
     const unsigned char *background = sfImage_getPixelsPtr(input->background); // RGBA
@@ -89,7 +88,6 @@ void blend_sse(sfImage *output_canvas, blender_input_t *input)
 
     __m128i zero = _mm_setzero_si128();
     __m128i c255 = _mm_set1_epi16(255);
-    __m128i csdf = _mm_set_epi16(7, 6, 5, 4, 3, 2, 1, 0);
 
     int fg_offs = 0;
     int bg_offs = (background_width * input->foreground_y_offset + input->foreground_x_offset) * 4;
@@ -147,6 +145,98 @@ void blend_sse(sfImage *output_canvas, blender_input_t *input)
 
             result_high = _mm_shuffle_epi8(result_high, pack_mask);
             result_low  = _mm_shuffle_epi8(result_low , pack_mask);
+
+            __m128i result = (__m128i)_mm_movelh_ps((__m128)result_low, (__m128)result_high);
+
+            unsigned char *result_ptr = (unsigned char*)&result;
+
+            for (int i = 0; i < 4; i++)
+            {
+                unsigned char r = result_ptr[4 * i + 0];
+                unsigned char g = result_ptr[4 * i + 1];
+                unsigned char b = result_ptr[4 * i + 2];
+                unsigned char a = result_ptr[4 * i + 3];
+
+                sfImage_setPixel(output_canvas,
+                                    input->foreground_x_offset + x + i,
+                                    input->foreground_y_offset + y,
+                                    (sfColor) { r, g, b, 255 });
+            }
+        }
+    }
+}
+
+void blend_avx(sfImage *output_canvas, blender_input_t *input)
+{
+    const unsigned char *background = sfImage_getPixelsPtr(input->background); // RGBA
+    const unsigned char *foreground = sfImage_getPixelsPtr(input->foreground); // RGBA
+
+    sfVector2u canvas_size     = sfImage_getSize(output_canvas);
+    sfVector2u background_size = sfImage_getSize(input->background);
+    sfVector2u foreground_size = sfImage_getSize(input->foreground);
+    
+    int canvas_width = canvas_size.x, canvas_height = canvas_size.y;    
+    int background_width = background_size.x, background_height = background_size.y;
+    int foreground_width = foreground_size.x, foreground_height = foreground_size.y;
+
+    // copy background image to canvas
+    for (int y = 0; y < background_height; y++)
+    {
+        for (int x = 0; x < background_width; x++)
+        {
+            int offs = (background_width * y + x) * 4;
+
+            int b_r = background[offs];
+            int b_g = background[offs + 1];
+            int b_b = background[offs + 2];
+            int b_a = background[offs + 3];
+
+            sfImage_setPixel(output_canvas, x, y, (sfColor){ b_r, b_g, b_b, 255 });
+        }
+    }
+
+    __m256i zero = _mm256_setzero_si256();
+    __m256i c255 = _mm256_set1_epi16(255);
+
+    int fg_offs = 0;
+    int bg_offs = (background_width * input->foreground_y_offset + input->foreground_x_offset) * 4;
+
+    // foreground overlay
+    for (int y = 0; y < foreground_height; y++)
+    {
+        for (int x = 0; x < foreground_width; x += 4)
+        {
+            int fg_offs = (foreground_width * y + x) * 4;
+            int bg_offs = (background_width * (y + input->foreground_y_offset) + x + input->foreground_x_offset) * 4;
+      
+            __m128i fg_pixels = _mm_load_si128((__m128i*)&foreground[fg_offs]);
+            __m128i bg_pixels = _mm_load_si128((__m128i*)&background[bg_offs]);
+
+            __m256i fg = _mm256_cvtepu8_epi16(fg_pixels);
+            __m256i bg = _mm256_cvtepu8_epi16(bg_pixels);
+
+            __m256i alpha_mask = _mm256_set_epi8(0x80, 30, 0x80, 30, 0x80, 30, 0x80, 30,
+                                                 0x80, 22, 0x80, 22, 0x80, 22, 0x80, 22,
+                                                 0x80, 14, 0x80, 14, 0x80, 14, 0x80, 14,
+                                                 0x80, 6,  0x80, 6,  0x80, 6,  0x80, 6);
+            
+            __m256i alpha_fg = _mm256_shuffle_epi8(fg, alpha_mask);
+            __m256i alpha_bg = _mm256_sub_epi16(c255, alpha_fg);
+
+            fg = _mm256_mullo_epi16(fg, alpha_fg);
+            bg = _mm256_mullo_epi16(bg, alpha_bg);
+    
+            __m256i result_wide = _mm256_add_epi16(fg, bg);
+
+            __m256i pack_mask = _mm256_set_epi8(0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+                                                31,   29,   27,   25,   23,   21,   19,   17,
+                                                0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+                                                15,   13,   11,    9,    7,    5,    3,    1);
+
+            result_wide = _mm256_shuffle_epi8(result_wide, pack_mask);
+            
+            __m128i result_low  = _mm256_extractf128_si256(result_wide, 0);
+            __m128i result_high = _mm256_extractf128_si256(result_wide, 1);
 
             __m128i result = (__m128i)_mm_movelh_ps((__m128)result_low, (__m128)result_high);
 
