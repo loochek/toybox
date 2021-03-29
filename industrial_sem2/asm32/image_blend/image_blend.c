@@ -209,8 +209,8 @@ void blend_avx(sfImage *output_canvas, blender_input_t *input)
             int fg_offs = (foreground_width * y + x) * 4;
             int bg_offs = (background_width * (y + input->foreground_y_offset) + x + input->foreground_x_offset) * 4;
       
-            __m128i fg_pixels = _mm_load_si128((__m128i*)&foreground[fg_offs]);
-            __m128i bg_pixels = _mm_load_si128((__m128i*)&background[bg_offs]);
+            __m128i fg_pixels = _mm_lddqu_si128((__m128i*)&foreground[fg_offs]);
+            __m128i bg_pixels = _mm_lddqu_si128((__m128i*)&background[bg_offs]);
 
             __m256i fg = _mm256_cvtepu8_epi16(fg_pixels);
             __m256i bg = _mm256_cvtepu8_epi16(bg_pixels);

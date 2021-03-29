@@ -29,8 +29,8 @@ int app_init(app_state_t *app)
 
     app->input.background = sfImage_createFromFile("Table.bmp");
     app->input.foreground = sfImage_createFromFile("AskhatCat.bmp");
-    app->input.foreground_x_offset = 240;
-    app->input.foreground_y_offset = 200;
+    app->input.foreground_x_offset = 251;
+    app->input.foreground_y_offset = 211;
 
     return 0;
 }
