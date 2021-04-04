@@ -1,14 +1,17 @@
 CC=clang
-CFLAGS=-fsanitize=address -g
+CFLAGS=-O0 -g
+export CC
+export CFLAGS
 
-build:
-	$(CC) $(CFLAGS) list.c main.c lstatus.c -o list_main
-
-build_test:
-	$(CC) $(CFLAGS) list.c tests.c lerror.c -o list_test
-
-test: build_test
+list_test: build_list_test
 	./list_test
 
+build_list_test:
+	$(MAKE) -C lstatus
+	$(MAKE) -C list build tests.o
+	$(CC) list/list.o list/tests.o lstatus/lstatus.o -o list_test
+
 clean:
-	rm -f list_test list_main list.dot images/* log.html
+	$(MAKE) -C lstatus clean
+	$(MAKE) -C list clean
+	rm -f list_test
