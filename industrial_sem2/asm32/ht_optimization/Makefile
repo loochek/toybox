@@ -1,17 +1,15 @@
-CC=clang
-CFLAGS=-O0 -g
-export CC
-export CFLAGS
+CXX=clang++
+CXXFLAGS=-O0 -g
+export CXX
+export CXXFLAGS
 
-list_test: build_list_test
-	./list_test
-
-build_list_test:
+build:
 	$(MAKE) -C lstatus
-	$(MAKE) -C list build tests.o
-	$(CC) list/list.o list/tests.o lstatus/lstatus.o -o list_test
+	$(MAKE) -C dict
+	$(MAKE) -C list
+	$(CXX) main.cpp lstatus/lstatus.o dict/dict.o -o dict_test
 
 clean:
 	$(MAKE) -C lstatus clean
 	$(MAKE) -C list clean
-	rm -f list_test
+	rm -f dict_test

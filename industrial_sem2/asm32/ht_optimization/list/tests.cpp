@@ -1,10 +1,11 @@
-#include "list.h"
-#include <assert.h>
-#include <stdio.h>
+#include <cassert>
+#include <cstdio>
+
+#include "list.hpp"
 
 #define LASS(expr) { assert((expr) == LSTATUS_OK); }
 
-void check(list_t *list, int correct_arr[], int correct_size)
+void check(list_t<int> *list, int correct_arr[], int correct_size)
 {
     int cnt = 0;
     list_iter_t iter     = NULLITER;
@@ -30,7 +31,7 @@ void test_basic()
 {
     int lsize = 0;
 
-    list_t list;
+    list_t<int> list = {0};
     LASS(list_construct(&list, 5));
 
     for (int i = 1; i <= 10; i++)
@@ -78,7 +79,7 @@ void test_advanced()
     list_iter_t end_iter = NULLITER;
     int         lsize = 0;
     
-    list_t list;
+    list_t<int> list = {0};
     LASS(list_construct(&list, 5));
 
     for (int i = 1; i <= 5; i++)

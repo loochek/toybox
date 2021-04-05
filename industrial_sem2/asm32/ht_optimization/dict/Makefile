@@ -1,4 +1,4 @@
-build: lstatus.o
+build: dict.o
 
 %.o : %.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@

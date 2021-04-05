@@ -1,9 +1,245 @@
-#include <stdio.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstdbool>
+#include <cstdio>
+#include <cstring>
 
-#include "list.h"
+#include "../lstatus/lstatus.hpp"
+#include "../dict/chain_ring.hpp"
 
-#define MAX_CMD_LINE_LENGTH 100
+/**
+ * "Iterator" is the index in the physical buffer
+ *  It's wrapped into struct to hide internals from the user in public interface
+ *  (especially to avoid confusion between the physical index in the buffer
+ *  and the logical position of the element in the list)
+ *  Anyway, internals uses unwrapped int because of simplicity
+ */
+typedef struct
+{
+    int value;
+} list_iter_t;
+
+/**
+ * List data structure
+ * Fast insertions in any place of sequence, but slow random access
+ */
+
+template<typename T>
+struct list_node_t
+{
+    T   data;
+    int next;
+    int prev;
+};
+
+template<typename T>
+struct list_t
+{
+    int  canary1;
+
+    list_node_t<T> *buffer;
+
+    int  head;
+    int  tail;
+    int  head_free;
+
+    int  buffer_size;
+    int  used_size;
+    
+    bool linear;
+
+    int  canary2;
+};
+
+/**
+ * Initializes a list instance
+ *
+ * \param \c list List pointer
+ * \param \c capacity Initial capacity
+ */
+template<typename T>
+lstatus_t list_construct(list_t<T> *list, int capacity);
+
+/**
+ * Deinitializes a list instance
+ *
+ * \param \c list List pointer
+ */
+template<typename T>
+lstatus_t list_destruct(list_t<T> *list);
+
+/**
+ * Inserts an element to the front of the list
+ *
+ * \param \c list List pointer
+ * \param \c elem Element to insert
+ */
+template<typename T>
+lstatus_t list_push_front(list_t<T> *list, T elem);
+
+/**
+ * Initializes a list instance
+ *
+ * \param \c list List pointer
+ * \param \c capacity Initial capacity
+ */
+template<typename T>
+lstatus_t list_push_back(list_t<T> *list, T elem);
+
+/**
+ * Removes an element from the front of the list
+ *
+ * \param \c list List pointer
+ */
+template<typename T>
+lstatus_t list_pop_front(list_t<T> *list);
+
+/**
+ * Removes an element from the back of the list
+ *
+ * \param \c list List pointer
+ */
+template<typename T>
+lstatus_t list_pop_back(list_t<T> *list);
+
+/**
+ * Tells a size of the list
+ *
+ * \param \c list List pointer
+ * \param \c out_size Where to write the size
+ */
+template<typename T>
+lstatus_t list_size(list_t<T> *list, int *out_size);
+
+/**
+ * As null pointer, but for list iterators
+ */
+#define NULLITER (list_iter_t){0}
+
+/**
+ * Moves the iterator to the next element
+ *
+ * \param \c list List pointer
+ * \param \c iter Iterator to move
+ */
+template<typename T>
+lstatus_t list_next(list_t<T> *list, list_iter_t *iter);
+
+/**
+ * Moves the iterator to the previous element
+ *
+ * \param \c list List pointer
+ * \param \c iter Iterator to move
+ */
+template<typename T>
+lstatus_t list_prev(list_t<T> *list, list_iter_t *iter);
+
+/**
+ * Provides an iterator to the beginning of the list
+ *
+ * \param \c list List pointer
+ * \param \c iter Where to write the iterator
+ */
+template<typename T>
+lstatus_t list_begin(list_t<T> *list, list_iter_t *iter);
+
+/**
+ * Provides an iterator to the end of the list
+ *
+ * \param \c list List pointer
+ * \param \c iter Where to write the iterator
+ */
+template<typename T>
+lstatus_t list_end(list_t<T> *list, list_iter_t *iter);
+
+/**
+ * Provides access to element by iterator
+ *
+ * \param \c list List pointer
+ * \param \c iter Iterator to the element
+ * \param \c elem Where to write a pointer to the element
+ */
+template<typename T>
+lstatus_t list_data(list_t<T> *list, list_iter_t iter, T **elem);
+
+/**
+ * Inserts an element after the element pointed to by the iterator
+ *
+ * \param \c list List pointer
+ * \param \c iter Iterator
+ * \param \c elem Element to insert
+ */
+template<typename T>
+lstatus_t list_insert_after(list_t<T> *list, list_iter_t iter, T elem);
+
+/**
+ * Inserts an element before the element pointed to by the iterator
+ *
+ * \param \c list List pointer
+ * \param \c iter Iterator
+ * \param \c elem Element to insert
+ */
+template<typename T>
+lstatus_t list_insert_before(list_t<T> *list, list_iter_t iter, T elem);
+
+/**
+ * Removes the element by the iterator
+ * Note that the iterator becomes invalid in case of LSTATUS_OK
+ *
+ * \param \c list List pointer
+ * \param \c iter Iterator
+ */
+template<typename T>
+lstatus_t list_remove(list_t<T> *list, list_iter_t iter);
+
+/**
+ * Slow method, but after reordering list_iter_lookup is not linear
+ * Also push_front and pop_front don't break that order
+ *
+ * \param \c list List pointer
+ */
+template<typename T>
+lstatus_t list_linearize(list_t<T> *list);
+
+/**
+ * Returns iterator to element from it's position in the list
+ * Slow if list isn't linearized
+ * 
+ * \param \c list List pointer
+ * \param \c position Position to lookup
+ * \param \c iter_out Where to write the iterator
+ */
+template<typename T>
+lstatus_t list_iter_lookup(list_t<T> *list, int position, list_iter_t *iter_out);
+
+// TODO: review debug tools
+
+// /**
+//  * Debugging method
+//  * Shows physical layout of the list
+//  */
+// void list_visualize_phys(list_t *list, const char *img_file_name);
+
+// /**
+//  * LERR-affecting
+//  * Debugging method
+//  * Shows logical layout of the list
+//  */
+// list_status_t list_visualize_fancy(list_t *list, const char *img_file_name);
+
+// /**
+//  * Debugging method
+//  * returns Dump ID
+//  */
+// int list_html_dump(list_t *list);
+
+
+
+
+//----------------------------------------------------------
+// IMPLEMENTATION
+//----------------------------------------------------------
+
+//#define MAX_CMD_LINE_LENGTH 100
 
 /**
  * Turns on some expensive checks
@@ -11,13 +247,21 @@
  */
 //#define LIST_DEBUG_MODE
 
-static elem_t POISON = 0xDEAD;
-static int    CANARY = 0xBEEF;
+//static int POISON = 0xDEAD;
+static int CANARY = 0xBEEF;
 
-static lstatus_t list_expand  (list_t *list);
-static lstatus_t list_validate(list_t *list);
-static lstatus_t free_cell    (list_t *list, int iter);
-static lstatus_t claim_cell   (list_t *list, int *claimed_cell_iter);
+template<typename T>
+static lstatus_t list_expand(list_t<T> *list);
+
+template<typename T>
+static lstatus_t list_validate(list_t<T> *list);
+
+template<typename T>
+static lstatus_t free_cell (list_t<T> *list, int iter);
+
+template<typename T>
+static lstatus_t claim_cell(list_t<T> *list, int *claimed_cell_iter);
+
 //static int       validator_proxy(list_t *list);
 
 #define LIST_DATA(iter)  list->buffer[iter].data
@@ -39,15 +283,16 @@ static lstatus_t claim_cell   (list_t *list, int *claimed_cell_iter);
         return LSTATUS_LIST_NULL_ITER; \
 }
 
-lstatus_t list_construct(list_t *list, int capacity)
+template<typename T>
+lstatus_t list_construct(list_t<T> *list, int capacity)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
 
     // first element in the buffer is fictive
     list->buffer_size = capacity + 1;
     list->used_size   = 0;
 
-    list->buffer = (list_node_t*)calloc(list->buffer_size, sizeof(list_node_t));
+    list->buffer = (list_node_t<T>*)calloc(list->buffer_size, sizeof(list_node_t<T>));
     if (list->buffer == NULL)
     {
         free(list->buffer);
@@ -55,8 +300,8 @@ lstatus_t list_construct(list_t *list, int capacity)
         return status;
     }
 
-    for (int i = 0; i < list->buffer_size; i++)
-        LIST_DATA(i) = POISON;
+    //for (int i = 0; i < list->buffer_size; i++)
+    //    LIST_DATA(i) = POISON;
 
     list->head      = 0;
     list->tail      = 0;
@@ -87,9 +332,10 @@ lstatus_t list_construct(list_t *list, int capacity)
     return LSTATUS_OK;
 }
 
-lstatus_t list_push_front(list_t *list, elem_t elem)
+template<typename T>
+lstatus_t list_push_front(list_t<T> *list, T elem)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     int claimed_cell = 0;
@@ -124,9 +370,10 @@ lstatus_t list_push_front(list_t *list, elem_t elem)
     return LSTATUS_OK;
 }
 
-lstatus_t list_push_back(list_t *list, elem_t elem)
+template<typename T>
+lstatus_t list_push_back(list_t<T> *list, T elem)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     int claimed_cell = 0;
@@ -163,15 +410,16 @@ lstatus_t list_push_back(list_t *list, elem_t elem)
     return LSTATUS_OK;
 }
 
-lstatus_t list_pop_front(list_t *list)
+template<typename T>
+lstatus_t list_pop_front(list_t<T> *list)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     if (list->head == 0)
         return LSTATUS_LIST_EMPTY;
 
-    LIST_DATA(list->head) = POISON;
+    //LIST_DATA(list->head) = POISON;
 
     int to_remove = list->head;
     list->head = LIST_PREV(list->head);
@@ -191,9 +439,10 @@ lstatus_t list_pop_front(list_t *list)
     return LSTATUS_OK;
 }
 
-lstatus_t list_pop_back(list_t *list)
+template<typename T>
+lstatus_t list_pop_back(list_t<T> *list)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     if (list->tail == 0)
@@ -220,9 +469,10 @@ lstatus_t list_pop_back(list_t *list)
     return LSTATUS_OK;
 }
 
-lstatus_t list_insert_after(list_t *list, list_iter_t iter, elem_t elem)
+template<typename T>
+lstatus_t list_insert_after(list_t<T> *list, list_iter_t iter, T elem)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
     LIST_CHECK_ITER(iter);
 
@@ -257,9 +507,10 @@ lstatus_t list_insert_after(list_t *list, list_iter_t iter, elem_t elem)
     return LSTATUS_OK;
 }
 
-lstatus_t list_insert_before(list_t *list, list_iter_t iter, elem_t elem)
+template<typename T>
+lstatus_t list_insert_before(list_t<T> *list, list_iter_t iter, T elem)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
     LIST_CHECK_ITER(iter);
 
@@ -273,9 +524,10 @@ lstatus_t list_insert_before(list_t *list, list_iter_t iter, elem_t elem)
     return list_insert_after(list, iter, elem);
 }
 
-lstatus_t list_remove(list_t *list, list_iter_t iter)
+template<typename T>
+lstatus_t list_remove(list_t<T> *list, list_iter_t iter)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
     LIST_CHECK_ITER(iter);
 
@@ -302,9 +554,10 @@ lstatus_t list_remove(list_t *list, list_iter_t iter)
     return LSTATUS_OK;
 }
 
-lstatus_t list_linearize(list_t *list)
+template<typename T>
+lstatus_t list_linearize(list_t<T> *list)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     int size = 0;
@@ -312,7 +565,7 @@ lstatus_t list_linearize(list_t *list)
     if (status != LSTATUS_OK)
         return status;
 
-    list_t new_list = {0};
+    list_t<T> new_list = {0};
     if (list_construct(&new_list, size) != LSTATUS_OK)
         return status;
 
@@ -336,9 +589,10 @@ lstatus_t list_linearize(list_t *list)
     return LSTATUS_OK;
 }
 
-lstatus_t list_size(list_t *list, int *out_size)
+template<typename T>
+lstatus_t list_size(list_t<T> *list, int *out_size)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     *out_size = list->used_size;
@@ -346,9 +600,10 @@ lstatus_t list_size(list_t *list, int *out_size)
     return LSTATUS_OK;
 }
 
-lstatus_t list_data(list_t *list, list_iter_t iter, elem_t **elem)
+template<typename T>
+lstatus_t list_data(list_t<T> *list, list_iter_t iter, T **elem)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     if (iter.value >= list->buffer_size)
@@ -361,9 +616,10 @@ lstatus_t list_data(list_t *list, list_iter_t iter, elem_t **elem)
     return LSTATUS_OK;
 }
 
-lstatus_t list_iter_lookup(list_t *list, int position, list_iter_t *iter_out)
+template<typename T>
+lstatus_t list_iter_lookup(list_t<T> *list, int position, list_iter_t *iter_out)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     if (list->linear)
@@ -387,9 +643,10 @@ lstatus_t list_iter_lookup(list_t *list, int position, list_iter_t *iter_out)
     return LSTATUS_OK;
 }
 
-lstatus_t list_next(list_t *list, list_iter_t *iter)
+template<typename T>
+lstatus_t list_next(list_t<T> *list, list_iter_t *iter)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     if (iter->value >= list->buffer_size)
@@ -402,9 +659,10 @@ lstatus_t list_next(list_t *list, list_iter_t *iter)
     return LSTATUS_OK;
 }
 
-lstatus_t list_prev(list_t *list, list_iter_t *iter)
+template<typename T>
+lstatus_t list_prev(list_t<T> *list, list_iter_t *iter)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     if (iter->value >= list->buffer_size)
@@ -417,27 +675,30 @@ lstatus_t list_prev(list_t *list, list_iter_t *iter)
     return LSTATUS_OK;
 }
 
-lstatus_t list_begin(list_t *list, list_iter_t *iter)
+template<typename T>
+lstatus_t list_begin(list_t<T> *list, list_iter_t *iter)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     *iter = ITER_WRAP(list->tail);
     return LSTATUS_OK;
 }
 
-lstatus_t list_end(list_t *list, list_iter_t *iter)
+template<typename T>
+lstatus_t list_end(list_t<T> *list, list_iter_t *iter)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     *iter = NULLITER;
     return LSTATUS_OK;
 }
 
-lstatus_t list_destruct(list_t *list)
+template<typename T>
+lstatus_t list_destruct(list_t<T> *list)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
     free(list->buffer);
@@ -445,17 +706,13 @@ lstatus_t list_destruct(list_t *list)
     return LSTATUS_OK;
 }
 
-bool list_iter_cmp(list_iter_t iter1, list_iter_t iter2)
+template<typename T>
+static lstatus_t list_expand(list_t<T> *list)
 {
-    return iter1.value == iter2.value;
-}
-
-static lstatus_t list_expand(list_t *list)
-{
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
-    list_node_t *new_buffer = (list_node_t*)realloc(list->buffer, sizeof(list_node_t) * list->buffer_size * 2);
+    list_node_t<T> *new_buffer = (list_node_t<T>*)realloc(list->buffer, sizeof(list_node_t<T>) * list->buffer_size * 2);
     if (new_buffer == NULL)
     {
         LSTATUS(LSTATUS_ERR_ALLOC, "");
@@ -464,10 +721,10 @@ static lstatus_t list_expand(list_t *list)
     
     list->buffer = new_buffer;
 
-    memset(list->buffer + list->buffer_size, 0, list->buffer_size * sizeof(list_node_t));
+    memset(list->buffer + list->buffer_size, 0, list->buffer_size * sizeof(list_node_t<T>));
 
-    for (int i = list->buffer_size; i < list->buffer_size * 2; i++)
-        LIST_DATA(i) = POISON;
+    //for (int i = list->buffer_size; i < list->buffer_size * 2; i++)
+    //    LIST_DATA(i) = POISON;
         
     for (int i = list->buffer_size; i < list->buffer_size * 2 - 1; i++)
         LIST_PREV(i) = i + 1;
@@ -486,18 +743,20 @@ static lstatus_t list_expand(list_t *list)
     return LSTATUS_OK;
 }
 
-static lstatus_t free_cell(list_t *list, int iter)
+template<typename T>
+static lstatus_t free_cell(list_t<T> *list, int iter)
 {
     // there is no LIST_CHECK, since it's an internal routine so list can be invalid here
 
     LIST_PREV(iter)            = list->head_free;
     list->head_free            = iter;
-    LIST_DATA(list->head_free) = POISON;
+    //LIST_DATA(list->head_free) = POISON;
 
     return LSTATUS_OK;
 }
 
-static lstatus_t claim_cell(list_t *list, int *claimed_cell_iter)
+template<typename T>
+static lstatus_t claim_cell(list_t<T> *list, int *claimed_cell_iter)
 {
     // there is no LIST_CHECK, since it's an internal routine so list can be invalid here
 
@@ -525,15 +784,16 @@ static lstatus_t claim_cell(list_t *list, int *claimed_cell_iter)
 #define CHECK_POISON(iter) \
     CHECK_COND(LIST_DATA(iter) == POISON, "Expected poison at cell %d", iter)
 
-static lstatus_t list_validate(list_t *list)
+template<typename T>
+static lstatus_t list_validate(list_t<T> *list)
 {
-    lstatus_t status = 0;
+    lstatus_t status = LSTATUS_OK;
 
 // basic checks
     CHECK_COND(list->canary1 == CANARY, "canary1 fault");
     CHECK_COND(list->canary2 == CANARY, "canary2 fault");
 
-    CHECK_POISON(0);
+    //CHECK_POISON(0);
 
     CHECK_COND(LIST_NEXT(list->head) == 0, "next[head] is not zero");
     CHECK_COND(LIST_PREV(list->tail) == 0, "prev[tail] is not zero");
@@ -570,7 +830,7 @@ static lstatus_t list_validate(list_t *list)
 
     for (int cur_iter = list->head_free; cur_iter != 0; cur_iter = LIST_PREV(cur_iter))
     {
-        CHECK_POISON(cur_iter);
+        //CHECK_POISON(cur_iter);
 
         free_cnt++;
         CHECK_COND(free_cnt < list->buffer_size,
