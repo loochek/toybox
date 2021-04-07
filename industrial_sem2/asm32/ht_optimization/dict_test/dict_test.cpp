@@ -3,7 +3,7 @@
 #include "../dict/dict.hpp"
 #include "db.hpp"
 
-const int BUCKET_COUNT = 10000;
+const int INIT_BUCKET_COUNT = 2;
 
 int main()
 {
@@ -12,7 +12,7 @@ int main()
     printf("Welcome to English-to-Russian dictionary!\nLoading...\n");
 
     dict_t dict = {0};
-    if ((status = dict_construct(&dict, BUCKET_COUNT)) != LSTATUS_OK)
+    if ((status = dict_construct(&dict, INIT_BUCKET_COUNT)) != LSTATUS_OK)
     {
         LS_ERR_PRINT();
         fprintf(stderr, "Internal error!\n");

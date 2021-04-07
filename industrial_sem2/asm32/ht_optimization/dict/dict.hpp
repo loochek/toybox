@@ -22,6 +22,7 @@ struct dict_t
 
     list_t<chain_ring_t> *buckets;
     int buckets_count;
+    int keys_count;
 
     int canary2;
 };
@@ -30,9 +31,9 @@ struct dict_t
  * Initializes a dictionary
  * 
  * \param \c dict Pointer to the dictionary
- * \param \c bucket_cnt Initial buckets count
+ * \param \c init_bucket_cnt Initial buckets count
  */
-lstatus_t dict_construct(dict_t *dict, int bucket_cnt);
+lstatus_t dict_construct(dict_t *dict, int init_bucket_cnt);
 
 /**
  * Deinitializes a dictionary
