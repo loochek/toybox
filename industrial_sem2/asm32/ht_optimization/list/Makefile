@@ -1,6 +1,3 @@
-CXX=clang++
-CXXFLAGS=-O0 -g
-
 build: list_common.o
 
 list_test: build_list_test
@@ -14,4 +11,4 @@ build_list_test: tests.o
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 clean:
-	rm -f list_test
+	rm -f list_test *.o

@@ -5,24 +5,15 @@
 #include "../lstatus/lstatus.hpp"
 
 /**
- * To be exactly 8 bytes
- * Say hello to the SIMD extensions!
- */
-const int WORD_MAX_LEN = 31;
-
-/**
  * Implements simple dictionary based on chaining hash table.
- * Keys and values are C strings with a maximum length of WORD_MAX_LEN
+ * Dictionary is designed to be non-owning,
+ * so you must keep validity of pointers that you passed to a dictionary
  */
 
-/**
- * Strings are short since we use this structure as English-to-Russian dictionary,
- * so it's easier to store strings directly in the chain.
- */
 struct chain_ring_t
 {
-    char key  [WORD_MAX_LEN + 1];
-    char value[WORD_MAX_LEN + 1];
+    const char *key;
+    const char *value;
 };
 
 struct dict_t
@@ -49,6 +40,7 @@ lstatus_t dict_destruct(dict_t *dict);
 /**
  * Inserts an element into the dictionary
  * If element with such key already exists, it updates it with provided value
+ * You must keep pointers valid as dictionary is non-owning!
  * 
  * \param \c dict  Pointer to the dictionary
  * \param \c key   Key

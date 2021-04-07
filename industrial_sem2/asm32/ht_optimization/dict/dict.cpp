@@ -27,10 +27,10 @@ lstatus_t dict_construct(dict_t *dict, int bucket_cnt)
 
     dict->buckets_count = bucket_cnt;
 
-    dict->buckets = (list_t<chain_ring_t>*)calloc(bucket_cnt, sizeof(chain_ring_t));
+    dict->buckets = (list_t<chain_ring_t>*)calloc(bucket_cnt, sizeof(list_t<chain_ring_t>));
     if (dict->buckets == nullptr)
     {
-        LSTATUS(LSTATUS_ERR_ALLOC, "");
+        LSTATUS(LSTATUS_BAD_ALLOC, "");
         return status;
     }
 
@@ -65,7 +65,7 @@ lstatus_t dict_insert(dict_t *dict, const char *key, const char *value)
     if (status == LSTATUS_OK)
     {
         // if key was found, update the value
-        strncpy(ring_ptr->value, value, WORD_MAX_LEN);
+        ring_ptr->value = value;
     }
     else if (status == LSTATUS_DICT_BAD_KEY)
     {
@@ -75,10 +75,7 @@ lstatus_t dict_insert(dict_t *dict, const char *key, const char *value)
 
         list_t<chain_ring_t> *bucket = &dict->buckets[hash];
 
-        chain_ring_t ring = {0};
-        strncpy(ring.key  , key  , WORD_MAX_LEN);
-        strncpy(ring.value, value, WORD_MAX_LEN);
-
+        chain_ring_t ring = { key, value };
         LSCHK(list_push_back(bucket, ring));
     }
 
@@ -110,20 +107,6 @@ lstatus_t dict_destruct(dict_t *dict)
     return LSTATUS_OK;
 }
 
-static int dict_calc_hash(const char *string)
-{
-    long long hash = 0;
-
-    const char *curr_char = string;
-    while (*curr_char != '\0')
-    {
-        hash = (hash * HASH_BASE + (*curr_char - 'a' + 1)) % HASH_MOD;
-        curr_char++;
-    }
-
-    return (int)hash;
-}
-
 static lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
 {
     lstatus_t status = LSTATUS_OK;
@@ -146,7 +129,23 @@ static lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ri
             *ring_out = curr_ring;
             return LSTATUS_OK;
         }
+
+        LSCHK(list_next(bucket, &iter));
     }
 
     return LSTATUS_DICT_BAD_KEY;
+}
+
+static int dict_calc_hash(const char *string)
+{
+    long long hash = 0;
+
+    const char *curr_char = string;
+    while (*curr_char != '\0')
+    {
+        hash = (hash * HASH_BASE + (*curr_char)) % HASH_MOD;
+        curr_char++;
+    }
+
+    return (int)hash;
 }

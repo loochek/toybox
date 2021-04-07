@@ -4,7 +4,6 @@
 #include <cstring>
 
 #include "../lstatus/lstatus.hpp"
-#include "../dict/chain_ring.hpp"
 
 /**
  * "Iterator" is the index in the physical buffer
@@ -152,6 +151,14 @@ template<typename T>
 lstatus_t list_end(list_t<T> *list, list_iter_t *iter);
 
 /**
+ * Returns true if the iterators are equal
+ * 
+ * \param \c iter1 First iterator
+ * \param \c iter2 Second iterator
+ */
+bool list_iter_cmp(list_iter_t iter1, list_iter_t iter2);
+
+/**
  * Provides access to element by iterator
  *
  * \param \c list List pointer
@@ -296,7 +303,7 @@ lstatus_t list_construct(list_t<T> *list, int capacity)
     if (list->buffer == NULL)
     {
         free(list->buffer);
-        LSTATUS(LSTATUS_ERR_ALLOC, "");
+        LSTATUS(LSTATUS_BAD_ALLOC, "");
         return status;
     }
 
@@ -608,7 +615,7 @@ lstatus_t list_data(list_t<T> *list, list_iter_t iter, T **elem)
 
     if (iter.value >= list->buffer_size)
     {
-        LSTATUS(LSTATUS_LIST_ADDRESS, "iterator out of bounds");
+        LSTATUS(LSTATUS_LIST_BAD_ADDRESS, "iterator out of bounds");
         return status;
     }
     
@@ -634,7 +641,7 @@ lstatus_t list_iter_lookup(list_t<T> *list, int position, list_iter_t *iter_out)
         iter = LIST_NEXT(iter);
         if (iter == 0)
         {
-            LSTATUS(LSTATUS_LIST_ADDRESS, "position out of range");
+            LSTATUS(LSTATUS_LIST_BAD_ADDRESS, "position out of range");
             return status;
         }
     }
@@ -651,7 +658,7 @@ lstatus_t list_next(list_t<T> *list, list_iter_t *iter)
 
     if (iter->value >= list->buffer_size)
     {
-        LSTATUS(LSTATUS_LIST_ADDRESS, "iterator out of bounds");
+        LSTATUS(LSTATUS_LIST_BAD_ADDRESS, "iterator out of bounds");
         return status;
     }
 
@@ -667,7 +674,7 @@ lstatus_t list_prev(list_t<T> *list, list_iter_t *iter)
 
     if (iter->value >= list->buffer_size)
     {
-        LSTATUS(LSTATUS_LIST_ADDRESS, "iterator out of bounds");
+        LSTATUS(LSTATUS_LIST_BAD_ADDRESS, "iterator out of bounds");
         return status;
     }
 
@@ -715,7 +722,7 @@ static lstatus_t list_expand(list_t<T> *list)
     list_node_t<T> *new_buffer = (list_node_t<T>*)realloc(list->buffer, sizeof(list_node_t<T>) * list->buffer_size * 2);
     if (new_buffer == NULL)
     {
-        LSTATUS(LSTATUS_ERR_ALLOC, "");
+        LSTATUS(LSTATUS_BAD_ALLOC, "");
         return status;
     }
     
