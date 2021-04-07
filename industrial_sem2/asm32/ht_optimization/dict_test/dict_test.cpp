@@ -3,7 +3,7 @@
 #include "../dict/dict.hpp"
 #include "db.hpp"
 
-const int BUCKET_COUNT = 100000;
+const int BUCKET_COUNT = 1000;
 
 int main()
 {

@@ -17,7 +17,8 @@ enum lstatus_t
     LSTATUS_LIST_INVALID,
     LSTATUS_LIST_NULL_ITER,
     LSTATUS_LIST_BAD_ADDRESS,
-    LSTATUS_DICT_BAD_KEY
+    LSTATUS_DICT_BAD_KEY,
+    LSTATUS_DICT_INVALID,
 };
 
 /// Stores an info message from the last LSTATUS call

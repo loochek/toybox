@@ -218,6 +218,15 @@ lstatus_t list_linearize(list_t<T> *list);
 template<typename T>
 lstatus_t list_iter_lookup(list_t<T> *list, int position, list_iter_t *iter_out);
 
+/**
+ * Checks health of the list
+ * The list is invalid if return value isn't LSTATUS_OK
+ * 
+ * \param \c list List pointer
+ */
+template<typename T>
+lstatus_t list_validate(list_t<T> *list);
+
 // TODO: review debug tools
 
 // /**
@@ -248,12 +257,6 @@ lstatus_t list_iter_lookup(list_t<T> *list, int position, list_iter_t *iter_out)
 
 //#define MAX_CMD_LINE_LENGTH 100
 
-/**
- * Turns on some expensive checks
- * TODO: comment it before releasing
- */
-//#define LIST_DEBUG_MODE
-
 //static int POISON = 0xDEAD;
 static int CANARY = 0xBEEF;
 
@@ -261,10 +264,7 @@ template<typename T>
 static lstatus_t list_expand(list_t<T> *list);
 
 template<typename T>
-static lstatus_t list_validate(list_t<T> *list);
-
-template<typename T>
-static lstatus_t free_cell (list_t<T> *list, int iter);
+static lstatus_t free_cell(list_t<T> *list, int iter);
 
 template<typename T>
 static lstatus_t claim_cell(list_t<T> *list, int *claimed_cell_iter);
@@ -277,12 +277,11 @@ static lstatus_t claim_cell(list_t<T> *list, int *claimed_cell_iter);
 
 #define ITER_WRAP(value) (list_iter_t){value}
 
-#define LIST_CHECK(list)             \
-{                                    \
-    status = list_validate(list);    \
-    if (status != LSTATUS_OK)        \
-        return status;               \
-}
+#ifdef DEBUG
+#define LIST_CHECK(dict) LSCHK(list_validate(list))
+#else
+#define LIST_CHECK(dict)
+#endif
 
 #define LIST_CHECK_ITER(iter)          \
 {                                      \
@@ -792,7 +791,7 @@ static lstatus_t claim_cell(list_t<T> *list, int *claimed_cell_iter)
     CHECK_COND(LIST_DATA(iter) == POISON, "Expected poison at cell %d", iter)
 
 template<typename T>
-static lstatus_t list_validate(list_t<T> *list)
+lstatus_t list_validate(list_t<T> *list)
 {
     lstatus_t status = LSTATUS_OK;
 
@@ -809,7 +808,7 @@ static lstatus_t list_validate(list_t<T> *list)
 
 // connectivity check
 
-#ifdef LIST_DEBUG_MODE
+#ifdef DEBUG
     int used_cnt  = 0;
     int prev_iter = 0;
 

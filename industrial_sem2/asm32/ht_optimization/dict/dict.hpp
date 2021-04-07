@@ -18,8 +18,12 @@ struct chain_ring_t
 
 struct dict_t
 {
+    int canary1;
+
     list_t<chain_ring_t> *buckets;
     int buckets_count;
+
+    int canary2;
 };
 
 /**
@@ -58,5 +62,13 @@ lstatus_t dict_insert(dict_t *dict, const char *key, const char *value);
  * \param \c out_value Where to write a pointer to the value
  */
 lstatus_t dict_lookup(dict_t *dict, const char *key, const char **out_value);
+
+/**
+ * Checks health of the list
+ * The list is invalid if return value isn't LSTATUS_OK
+ * 
+ * \param \c dict Pointer to the dictionary
+ */
+lstatus_t dict_validate(dict_t *dict);
 
 #endif

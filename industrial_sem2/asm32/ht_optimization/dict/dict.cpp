@@ -1,9 +1,15 @@
 #include "dict.hpp"
 
-const int HASH_BASE = 31;
-const int HASH_MOD  = 1000000007;
-
+const int HASH_BASE        = 31;
+const int HASH_MOD         = 1000000007;
 const int BUCKET_INIT_SIZE = 2;
+const int DICT_CANARY      = 0xDEAD;
+
+#ifdef DEBUG
+#define DICT_CHECK(dict) LSCHK(dict_validate(dict))
+#else
+#define DICT_CHECK(dict)
+#endif
 
 /**
  * Calculates polynomial hash of the string
@@ -26,6 +32,8 @@ lstatus_t dict_construct(dict_t *dict, int bucket_cnt)
     lstatus_t status = LSTATUS_OK;
 
     dict->buckets_count = bucket_cnt;
+    dict->canary1 = DICT_CANARY;
+    dict->canary2 = DICT_CANARY;
 
     dict->buckets = (list_t<chain_ring_t>*)calloc(bucket_cnt, sizeof(list_t<chain_ring_t>));
     if (dict->buckets == nullptr)
@@ -53,12 +61,14 @@ lstatus_t dict_construct(dict_t *dict, int bucket_cnt)
         }
     }
 
+    DICT_CHECK(dict);
     return LSTATUS_OK;
 }
 
 lstatus_t dict_insert(dict_t *dict, const char *key, const char *value)
 {
     lstatus_t status = LSTATUS_OK;
+    DICT_CHECK(dict);
 
     chain_ring_t *ring_ptr = nullptr;
     status = dict_find_ring(dict, key, &ring_ptr);
@@ -77,6 +87,8 @@ lstatus_t dict_insert(dict_t *dict, const char *key, const char *value)
 
         chain_ring_t ring = { key, value };
         LSCHK(list_push_back(bucket, ring));
+
+        DICT_CHECK(dict);
     }
 
     // if dict_find_ring returns bad lstatus, just return it 
@@ -86,6 +98,7 @@ lstatus_t dict_insert(dict_t *dict, const char *key, const char *value)
 lstatus_t dict_lookup(dict_t *dict, const char *key, const char **out_value)
 {
     lstatus_t status = LSTATUS_OK;
+    DICT_CHECK(dict);
 
     chain_ring_t *ring_ptr = nullptr;
     LSCHK(dict_find_ring(dict, key, &ring_ptr));
@@ -97,6 +110,7 @@ lstatus_t dict_lookup(dict_t *dict, const char *key, const char **out_value)
 lstatus_t dict_destruct(dict_t *dict)
 {
     lstatus_t status = LSTATUS_OK;
+    DICT_CHECK(dict);
 
     for (int i = 0; i < dict->buckets_count; i++)
     {
@@ -107,9 +121,27 @@ lstatus_t dict_destruct(dict_t *dict)
     return LSTATUS_OK;
 }
 
+lstatus_t dict_validate(dict_t *dict)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    if (dict->canary1 != DICT_CANARY ||
+        dict->canary2 != DICT_CANARY)
+    {
+        LSTATUS(LSTATUS_DICT_INVALID, "canary fault");
+        return status;
+    }
+
+    for (int i = 0; i < dict->buckets_count; i++)
+        LSCHK(list_validate(&dict->buckets[i]));
+
+    return LSTATUS_OK;
+}
+
 static lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
 {
     lstatus_t status = LSTATUS_OK;
+    DICT_CHECK(dict);
 
     int hash = dict_calc_hash(key) % dict->buckets_count;
 
