@@ -15,13 +15,20 @@ const int LOAD_FACTOR_LIM  = 75;
 /**
  * Generic method to find ring in the dictionary. 
  * Common code for insertion and lookup. 
- * Returns LSTATUS_DICT_BAD_KEY if key is not present in the dictionary. 
+ * Returns LSTATUS_DICT_BAD_KEY if key is not present in the dictionary.
+ * Non-static as rewrited in assembly
  * 
  * \param \c dict Pointer to the dictionary
  * \param \c key  Key
  * \param \c ring_out Where to write a pointer to the ring
  */
-static lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out);
+lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out);
+
+/**
+ * Calculates polynomial hash of the string
+ * Non-static as called in assembly
+ */
+int dict_calc_hash(const char *string);
 
 /**
  * Checks load factor and, if needed, rehashes the dictionary to keep performance
@@ -29,11 +36,6 @@ static lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ri
  * \param \c dict Pointer to the dictionary
  */
 static lstatus_t dict_rehash(dict_t *dict);
-
-/**
- * Calculates polynomial hash of the string
- */
-static int dict_calc_hash(const char *string);
 
 lstatus_t dict_construct(dict_t *dict, int init_bucket_cnt)
 {
@@ -159,35 +161,35 @@ lstatus_t dict_validate(dict_t *dict)
     return LSTATUS_OK;
 }
 
-static lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
-{
-    lstatus_t status = LSTATUS_OK;
-    DICT_CHECK(dict);
+// lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
+// {
+//     lstatus_t status = LSTATUS_OK;
+//     DICT_CHECK(dict);
 
-    int hash = dict_calc_hash(key) % dict->buckets_count;
+//     int hash = dict_calc_hash(key) % dict->buckets_count;
 
-    list_t<chain_ring_t> *bucket = &dict->buckets[hash];
+//     list_t<chain_ring_t> *bucket = &dict->buckets[hash];
 
-    list_iter_t iter = NULLITER, end_iter = NULLITER;
-    LSCHK(list_begin(bucket, &iter));
-    LSCHK(list_end  (bucket, &end_iter));
+//     list_iter_t iter = NULLITER, end_iter = NULLITER;
+//     LSCHK(list_begin(bucket, &iter));
+//     LSCHK(list_end  (bucket, &end_iter));
 
-    while (!list_iter_cmp(iter, end_iter))
-    {
-        chain_ring_t *curr_ring = nullptr;
-        LSCHK(list_data(bucket, iter, &curr_ring));
+//     while (!list_iter_cmp(iter, end_iter))
+//     {
+//         chain_ring_t *curr_ring = nullptr;
+//         LSCHK(list_data(bucket, iter, &curr_ring));
 
-        if (strcmp(curr_ring->key, key) == 0)
-        {
-            *ring_out = curr_ring;
-            return LSTATUS_OK;
-        }
+//         if (strcmp(curr_ring->key, key) == 0)
+//         {
+//             *ring_out = curr_ring;
+//             return LSTATUS_OK;
+//         }
 
-        LSCHK(list_next(bucket, &iter));
-    }
+//         LSCHK(list_next(bucket, &iter));
+//     }
 
-    return LSTATUS_DICT_BAD_KEY;
-}
+//     return LSTATUS_DICT_BAD_KEY;
+// }
 
 static lstatus_t dict_rehash(dict_t *dict)
 {
@@ -225,7 +227,7 @@ static lstatus_t dict_rehash(dict_t *dict)
     return LSTATUS_OK;
 }
 
-static int dict_calc_hash(const char *string)
+int dict_calc_hash(const char *string)
 {
     long long hash = 0;
 
