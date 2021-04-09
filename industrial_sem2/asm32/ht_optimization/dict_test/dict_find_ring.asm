@@ -44,7 +44,7 @@ dict_find_ring:
 ; list_t<chain_ring_t> *bucket = &dict->buckets[hash];
 ; bucket = [dict + 4] + hash * 48
 ; rax = bucket address
-    mov rax, [r12 + 4]  ; &dict->buckets
+    mov rax, [r12 + 8]  ; &dict->buckets
     mov ecx, r15d
     shl rcx, 4 ; * 16
     lea rcx, [rcx + rcx * 2] ; * 3
@@ -71,7 +71,7 @@ dict_find_ring:
     mov edi, [rsp + 4]
     call list_iter_cmp
     test eax, eax
-    jz while_end
+    jnz while_end
 
 while:
 ; list_data(bucket, iter, &curr_ring))
@@ -79,9 +79,11 @@ while:
     mov rsi, [rsp]
     lea rdx, [rsp + 8]
     call list_data
+; chain_ring_t* in [rsp+8] right now
 
 ; strcmp(curr_ring->key, key)
     mov rdi, [rsp + 8]
+    mov rdi, [rdi]
     mov rsi, r13
     call strcmp
     test rax, rax
@@ -102,7 +104,7 @@ if_skip:
     mov edi, [rsp + 4]
     call list_iter_cmp
     test eax, eax
-    jnz while
+    jz while
 
 while_end:
     mov eax, 8

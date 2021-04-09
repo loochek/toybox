@@ -3,6 +3,8 @@
 #include "../dict/dict.hpp"
 #include "db.hpp"
 
+#include "benchmark_keys.inl"
+
 const int INIT_BUCKET_COUNT = 2;
 
 int main()
@@ -46,13 +48,10 @@ int main()
             printf("%s\n", value);
     }
 #else
-
     const char *value = nullptr;
-    const char *key   = "accomodation";
-
-    for (int i = 0; i < 1000000; i++)
+    for (int i = 0; i < 1000000000; i++)
     {
-        dict_lookup(&dict, key, &value);
+        dict_lookup(&dict, benchmark_keys[rand() % bench_keys_cnt], &value);
     }
 
 #endif

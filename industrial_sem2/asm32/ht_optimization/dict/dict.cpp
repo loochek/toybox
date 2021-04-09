@@ -161,35 +161,35 @@ lstatus_t dict_validate(dict_t *dict)
     return LSTATUS_OK;
 }
 
-// lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
-// {
-//     lstatus_t status = LSTATUS_OK;
-//     DICT_CHECK(dict);
+lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
+{
+    lstatus_t status = LSTATUS_OK;
+    DICT_CHECK(dict);
 
-//     int hash = dict_calc_hash(key) % dict->buckets_count;
+    int hash = dict_calc_hash(key) % dict->buckets_count;
 
-//     list_t<chain_ring_t> *bucket = &dict->buckets[hash];
+    list_t<chain_ring_t> *bucket = &dict->buckets[hash];
 
-//     list_iter_t iter = NULLITER, end_iter = NULLITER;
-//     LSCHK(list_begin(bucket, &iter));
-//     LSCHK(list_end  (bucket, &end_iter));
+    list_iter_t iter = NULLITER, end_iter = NULLITER;
+    LSCHK(list_begin(bucket, &iter));
+    LSCHK(list_end  (bucket, &end_iter));
 
-//     while (!list_iter_cmp(iter, end_iter))
-//     {
-//         chain_ring_t *curr_ring = nullptr;
-//         LSCHK(list_data(bucket, iter, &curr_ring));
+    while (!list_iter_cmp(iter, end_iter))
+    {
+        chain_ring_t *curr_ring = nullptr;
+        LSCHK(list_data(bucket, iter, &curr_ring));
 
-//         if (strcmp(curr_ring->key, key) == 0)
-//         {
-//             *ring_out = curr_ring;
-//             return LSTATUS_OK;
-//         }
+        if (strcmp(curr_ring->key, key) == 0)
+        {
+            *ring_out = curr_ring;
+            return LSTATUS_OK;
+        }
 
-//         LSCHK(list_next(bucket, &iter));
-//     }
+        LSCHK(list_next(bucket, &iter));
+    }
 
-//     return LSTATUS_DICT_BAD_KEY;
-// }
+    return LSTATUS_DICT_BAD_KEY;
+}
 
 static lstatus_t dict_rehash(dict_t *dict)
 {
