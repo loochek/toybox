@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include "dict.hpp"
 
 const int HASH_BASE        = 31;
@@ -28,7 +30,7 @@ lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
  * Calculates polynomial hash of the string
  * Non-static as called in assembly
  */
-int dict_calc_hash(const char *string);
+uint32_t dict_calc_hash(const char *string);
 
 /**
  * Checks load factor and, if needed, rehashes the dictionary to keep performance
@@ -161,36 +163,6 @@ lstatus_t dict_validate(dict_t *dict)
     return LSTATUS_OK;
 }
 
-lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
-{
-    lstatus_t status = LSTATUS_OK;
-    DICT_CHECK(dict);
-
-    int hash = dict_calc_hash(key) % dict->buckets_count;
-
-    list_t<chain_ring_t> *bucket = &dict->buckets[hash];
-
-    list_iter_t iter = NULLITER, end_iter = NULLITER;
-    LSCHK(list_begin(bucket, &iter));
-    LSCHK(list_end  (bucket, &end_iter));
-
-    while (!list_iter_cmp(iter, end_iter))
-    {
-        chain_ring_t *curr_ring = nullptr;
-        LSCHK(list_data(bucket, iter, &curr_ring));
-
-        if (strcmp(curr_ring->key, key) == 0)
-        {
-            *ring_out = curr_ring;
-            return LSTATUS_OK;
-        }
-
-        LSCHK(list_next(bucket, &iter));
-    }
-
-    return LSTATUS_DICT_BAD_KEY;
-}
-
 static lstatus_t dict_rehash(dict_t *dict)
 {
     lstatus_t status = LSTATUS_OK;
@@ -227,16 +199,64 @@ static lstatus_t dict_rehash(dict_t *dict)
     return LSTATUS_OK;
 }
 
-int dict_calc_hash(const char *string)
+lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
 {
-    long long hash = 0;
+    lstatus_t status = LSTATUS_OK;
+    DICT_CHECK(dict);
 
-    const char *curr_char = string;
-    while (*curr_char != '\0')
+    int hash = dict_calc_hash(key) % dict->buckets_count;
+
+    list_t<chain_ring_t> *bucket = &dict->buckets[hash];
+
+    list_iter_t iter = NULLITER, end_iter = NULLITER;
+    LSCHK(list_begin(bucket, &iter));
+    LSCHK(list_end  (bucket, &end_iter));
+
+    while (!list_iter_cmp(iter, end_iter))
     {
-        hash = (hash * HASH_BASE + (*curr_char)) % HASH_MOD;
-        curr_char++;
+        chain_ring_t *curr_ring = nullptr;
+        LSCHK(list_data(bucket, iter, &curr_ring));
+
+        if (strcmp(curr_ring->key, key) == 0)
+        {
+            *ring_out = curr_ring;
+            return LSTATUS_OK;
+        }
+
+        LSCHK(list_next(bucket, &iter));
     }
 
-    return (int)hash;
+    return LSTATUS_DICT_BAD_KEY;
 }
+
+// uint32_t dict_calc_hash(const char *string)
+// {
+//     uint64_t hash = 0;
+
+//     const char *curr_char = string;
+//     while (*curr_char != '\0')
+//     {
+//         hash = (hash * HASH_BASE + (*curr_char)) % HASH_MOD;
+//         curr_char++;
+//     }
+
+//     return (uint32_t)hash;
+// }
+
+// uint32_t dict_calc_hash(const char *string)
+// {
+//     uint32_t hash = 0;
+
+//     for (; *string != '\0'; string++)
+//     {
+//         hash += *string;
+//         hash += (hash << 10);
+//         hash ^= (hash >> 6);
+//     }
+
+//     hash += (hash << 3);
+//     hash ^= (hash >> 11);
+//     hash += (hash << 15);
+
+//     return hash;
+// }

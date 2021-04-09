@@ -7,6 +7,16 @@
 
 const int INIT_BUCKET_COUNT = 2;
 
+unsigned int rand_xorshift()
+{
+    static unsigned int rand_state = 7;
+
+	rand_state ^= rand_state << 13;
+	rand_state ^= rand_state >> 17;
+	rand_state ^= rand_state << 5;
+	return rand_state;
+}
+
 int main()
 {
     lstatus_t status = LSTATUS_OK;
@@ -49,7 +59,7 @@ int main()
     }
 #else
     const char *value = nullptr;
-    for (int i = 0; i < 1000000000; i++)
+    for (int i = 0; i < 100000000; i++)
     {
         dict_lookup(&dict, benchmark_keys[rand() % bench_keys_cnt], &value);
     }
