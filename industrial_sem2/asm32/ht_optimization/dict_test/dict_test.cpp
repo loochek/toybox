@@ -5,6 +5,12 @@
 
 #include "benchmark_keys.inl"
 
+#ifdef VALGRIND
+const int BENCHMARK_ITERATIONS = 1000000;
+#else
+const int BENCHMARK_ITERATIONS = 100000000;
+#endif
+
 const int INIT_BUCKET_COUNT = 2;
 
 unsigned int rand_xorshift()
@@ -59,9 +65,9 @@ int main()
     }
 #else
     const char *value = nullptr;
-    for (int i = 0; i < 100000000; i++)
+    for (int i = 0; i < BENCHMARK_ITERATIONS; i++)
     {
-        dict_lookup(&dict, benchmark_keys[rand() % bench_keys_cnt], &value);
+        dict_lookup(&dict, benchmark_keys[rand_xorshift() % bench_keys_cnt], &value);
     }
 
 #endif

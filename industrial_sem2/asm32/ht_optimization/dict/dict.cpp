@@ -95,7 +95,7 @@ lstatus_t dict_insert(dict_t *dict, const char *key, const char *value)
     {
         // if key was not found, insert a new one
 
-        int hash = dict_calc_hash(key) % dict->buckets_count;
+        uint32_t hash = dict_calc_hash(key) % dict->buckets_count;
 
         list_t<chain_ring_t> *bucket = &dict->buckets[hash];
 
@@ -199,12 +199,13 @@ static lstatus_t dict_rehash(dict_t *dict)
     return LSTATUS_OK;
 }
 
+#ifndef DICT_FIND_RING_ASM
 lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
 {
     lstatus_t status = LSTATUS_OK;
     DICT_CHECK(dict);
 
-    int hash = dict_calc_hash(key) % dict->buckets_count;
+    uint32_t hash = dict_calc_hash(key) % dict->buckets_count;
 
     list_t<chain_ring_t> *bucket = &dict->buckets[hash];
 
@@ -228,6 +229,7 @@ lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
 
     return LSTATUS_DICT_BAD_KEY;
 }
+#endif
 
 // uint32_t dict_calc_hash(const char *string)
 // {
@@ -243,20 +245,22 @@ lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
 //     return (uint32_t)hash;
 // }
 
-// uint32_t dict_calc_hash(const char *string)
-// {
-//     uint32_t hash = 0;
+#ifndef DICT_CALC_HASH_ASM
+uint32_t dict_calc_hash(const char *string)
+{
+    uint32_t hash = 0;
 
-//     for (; *string != '\0'; string++)
-//     {
-//         hash += *string;
-//         hash += (hash << 10);
-//         hash ^= (hash >> 6);
-//     }
+    for (; *string != '\0'; string++)
+    {
+        hash += *string;
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
 
-//     hash += (hash << 3);
-//     hash ^= (hash >> 11);
-//     hash += (hash << 15);
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
 
-//     return hash;
-// }
+    return hash;
+}
+#endif

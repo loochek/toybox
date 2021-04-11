@@ -25,6 +25,7 @@ dict_find_ring:
     push r12
     push r13
     push r14
+    push r15
 
     sub rsp, 24
 
@@ -61,10 +62,14 @@ dict_find_ring:
     mov rdi, r15
     lea rsi, [rsp]
     call list_begin
+    test eax, eax
+    jnz end
 
     mov rdi, r15
     lea rsi, [rsp + 4]
     call list_end
+    test eax, eax
+    jnz end
 
 ; while (!list_iter_cmp(iter, end_iter))
     mov esi, [rsp]
@@ -79,6 +84,8 @@ while:
     mov rsi, [rsp]
     lea rdx, [rsp + 8]
     call list_data
+    test eax, eax
+    jnz end
 ; chain_ring_t* in [rsp+8] right now
 
 ; strcmp(curr_ring->key, key)
@@ -99,6 +106,8 @@ if_skip:
     mov rdi, r15
     mov rsi, rsp
     call list_next
+    test eax, eax
+    jnz end
 
     mov esi, [rsp]
     mov edi, [rsp + 4]
@@ -111,6 +120,7 @@ while_end:
 
 end:
     add rsp, 24
+    pop r15
     pop r14
     pop r13
     pop r12
