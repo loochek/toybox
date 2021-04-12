@@ -19,13 +19,19 @@ To make a test that respects the comments described, I took the dictionary clien
 
 At this point, we can start profiling. But which keys we should take for such repeated queries? To reproduce real life use case, I took all keys from the dictionary and use random key for each query. Profiling with two different rands (built-in and xor shift) shows that hashes calculation takes most of the time. The second place is taken by the dict_find_ring function.
 
-![](pictures/initial.png)
+![](pictures/prof_initial.png)
 
 ## Optimizing 1
 
 According to the profiling results, we should revise hash calculation algorithm at first. Now I'm using polynominal hash, but it isn't a good choice. I've found an elegant algorithm based on bit shifts. As we know, multiplication and, especially, division are much more heavier than bit shifts. So, let's try to replace the hash function and re-measure time.
 
-![Polynominal](pictures/time_poly.png) ![Bit shift](pictures/time_shift.png)
+Polynominal:
+
+![Polynominal](pictures/time_poly.png)
+
+Bit shift:
+
+![Bit shift](pictures/time_shift.png)
 
 Even slower! There are mismatch between our expectations and the result. Let's go deeper and take a look to the compilier output.
 
@@ -105,7 +111,7 @@ Bit shift hash:
  72f:   c3                      ret
 ```
 
-As we see, compilier access memory very intensely - it seems to be a main problem. The bit shift version has more intensive memory usage than the polynomial version, so our expectations about divisions and bit shifts turned out to be insignificant against the frequent memory accesses. Let's use inline assembly to implement hashing logic and compare.
+As we see, compilier access memory very intensely - it seems to be a main problem. The bit shift version has more intensive memory usage than the polynomial version, so our expectations about divisions and bit shifts turned out to be insignificant against the frequent memory accesses. Let's use inline assembly to implement hashing logic manually and compare.
 
 There are result:
 ```
@@ -151,7 +157,19 @@ There are result:
  70c:   0f 1f 40 00             nopl   0x0(%rax)
 ```
 
-Our version is much more lightweight - there are only one memory access per symbol. Let's compare. Comparing initial polynominal hashing and optimized bit shift hashing, we have achieved ~15% less time! Let's see profilier output now. Another heavily-used function is dict_find_ring. Let's see compilier output:
+Our version is much more lightweight - there are only one memory access per symbol. Let's test:
+
+![Polynominal](pictures/time_hash.png)
+
+Comparing initial polynominal hashing and optimized bit shift hashing, we have achieved ~15% less time!
+
+## Optimizing 2
+
+Let's see profilier output now:
+
+![](pictures/prof_hash.png)
+
+dict_find_ring remains the next heavily used function. The function is straightforward enough and it's hard to come up with algorithmic optimization. So, let's see compilier output:
 ```
 0000000000000500 <_Z14dict_find_ringP6dict_tPKcPP12chain_ring_t>:
  500:   55                      push   %rbp
@@ -349,4 +367,20 @@ We see intensive memory accesses again. Let's rewrite manually:
   e4:   41 5c                   pop    %r12
   e6:   c3                      retq
 ```
-We managed to reduce some memory accesses. Comparing with previous result, 
+We managed to significantly reduce the number of memory accesses. Let's test:
+
+![Polynominal](pictures/time_both.png)
+
+Comparing with initial time, we have got ~22% less time!
+
+## Further optimizations
+
+Let's see profilier output now:
+
+![](pictures/prof_both.png)
+
+Remaining functions have a much smaller contribution to the total run time, so their optimization is not very advisable. For myself, I decided to stop at the achieved result.
+
+# Results
+
+The optimized code runs about ~25% faster than initial. We wrote about 130 lines of assembly code. The Dedinsky value is 1.25/130*1000=**9.6 points**
