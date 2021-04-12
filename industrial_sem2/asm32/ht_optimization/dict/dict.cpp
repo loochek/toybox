@@ -29,6 +29,8 @@ lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
 /**
  * Calculates polynomial hash of the string
  * Non-static as called in assembly
+ *
+ * \param \c string Pointer to the string
  */
 uint32_t dict_calc_hash(const char *string);
 
@@ -231,36 +233,82 @@ lstatus_t dict_find_ring(dict_t *dict, const char *key, chain_ring_t **ring_out)
 }
 #endif
 
-// uint32_t dict_calc_hash(const char *string)
-// {
-//     uint64_t hash = 0;
-
-//     const char *curr_char = string;
-//     while (*curr_char != '\0')
-//     {
-//         hash = (hash * HASH_BASE + (*curr_char)) % HASH_MOD;
-//         curr_char++;
-//     }
-
-//     return (uint32_t)hash;
-// }
-
 #ifndef DICT_CALC_HASH_ASM
 uint32_t dict_calc_hash(const char *string)
 {
-    uint32_t hash = 0;
+    uint64_t hash = 0;
 
-    for (; *string != '\0'; string++)
+    const char *curr_char = string;
+    while (*curr_char != '\0')
     {
-        hash += *string;
-        hash += (hash << 10);
-        hash ^= (hash >> 6);
+        hash = (hash * HASH_BASE + (*curr_char)) % HASH_MOD;
+        curr_char++;
     }
 
-    hash += (hash << 3);
-    hash ^= (hash >> 11);
-    hash += (hash << 15);
+    return (uint32_t)hash;
+}
+#else
+uint32_t dict_calc_hash(const char *string)
+{
+    uint32_t result = 0;
 
-    return hash;
+    __asm__(R"asm(
+.intel_syntax noprefix
+    xor eax, eax
+
+    mov cl, [rdi]
+    test cl, cl
+    jz end
+
+loop:
+    movzx esi, cl
+    add eax, esi
+    mov esi, eax
+    shl esi, 10
+    add eax, esi
+    mov esi, eax
+    shr esi, 6
+    xor eax, esi
+    
+    inc rdi
+    mov cl, [rdi]
+    test cl, cl
+    jnz loop
+
+end:
+    mov esi, eax
+    shl esi, 3
+    add eax, esi
+    mov esi, eax
+    shr esi, 11
+    xor eax, esi
+    mov esi, eax
+    shl esi, 15
+    add eax, esi
+
+    )asm"
+    : "=a" (result)
+    : "D"(string)
+    : "%esi", "%cl");
+
+    return result;
 }
 #endif
+
+// uint32_t dict_calc_hash(const char *string)
+// {
+//     uint32_t hash = 0;
+
+//     for (; *string != '\0'; string++)
+//     {
+//         hash += *string;
+//         hash += (hash << 10);
+//         hash ^= (hash >> 6);
+//     }
+
+//     hash += (hash << 3);
+//     hash ^= (hash >> 11);
+//     hash += (hash << 15);
+
+//     return hash;
+// }
