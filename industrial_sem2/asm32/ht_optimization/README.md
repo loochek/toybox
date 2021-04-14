@@ -1,5 +1,3 @@
-(WIP)
-
 # Hash table optimization
 
 ## We have
@@ -161,7 +159,7 @@ Our version is much more lightweight - there are only one memory access per symb
 
 ![Polynominal](pictures/time_hash.png)
 
-Comparing initial polynominal hashing and optimized bit shift hashing, we have achieved ~15% less time!
+Comparing initial polynominal hashing and optimized bit shift hashing, we have achieved ~16% less time!
 
 ## Optimizing 2
 
@@ -371,7 +369,7 @@ We managed to significantly reduce the number of memory accesses. Let's test:
 
 ![Polynominal](pictures/time_both.png)
 
-Comparing with initial time, we have got ~22% less time!
+Comparing with initial time, we have got ~24% less time!
 
 ## Further optimizations
 
@@ -383,4 +381,4 @@ Remaining functions have a much smaller contribution to the total run time, so t
 
 # Results
 
-The optimized code runs about ~25% faster than initial. We wrote about 130 lines of assembly code. The Dedinsky value is 1.25/130*1000=**9.6 points**
+The optimized code runs ~1.32 times faster than initial. We wrote about 130 lines of assembly code. The Dedinsky value is 1.32/130*1000=**10.2 points**
