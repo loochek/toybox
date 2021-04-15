@@ -5,6 +5,11 @@
 We have a English-to-Russian dictionary based on a chaining hash table. Words definitions are loaded from file, you can write an English word and get a simple dictionary topic.
 So, there are hash table with pointers to strings as keys and values, contents of the dictionary are loaded as a big buffer, then simple parser constructs in-place C strings and inserts pointers to the hash table. In a nutshell, a pretty efficient structure.
 
+## Enviroment
+
+Since this is a learning task, there is one important simplification - compiler optimizations is completely disabled, aka -O0.
+Used hardware: generic ultrabook based on Ryzen 3500U connected to power supply (important!), Ubuntu derivative with Plasma, no heavy apps running in background.
+
 ## Optimization strategy
 
 First, we need to profile our application in order to spot functions which optimization will really speed up the application. I'm using Callgrind with Kcachegrind as a frontend. Second, we must profile and test the program in real-world use cases. In our case, it's important to speed up the search in the dictionary, since data loading and insertion into the dictionary occurs only once at the start of the program, while the search takes the rest of the program's operation time.
