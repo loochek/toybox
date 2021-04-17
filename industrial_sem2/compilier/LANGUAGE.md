@@ -1,0 +1,127 @@
+*Hopefully, I have described my programming language enough*
+
+## General language concepts
+
+### Syntax
+- Identifier
+    - A string of uppercase and lowercase English letters, digits, and underscores that doesn't start with a digit
+- Numeric literal
+    - A sequence of digits representing a non-negative integer number
+- Expression
+    - The basic element of the language
+    - Root expressions are numeric literals, identifiers or functions calls
+        - A function call is an identifier with parentheses on the right, in which expressions can be listed, separated by commas
+            - Examples:
+                - foo()
+                - bar(4, foobar)
+        - Examples:
+            - 5
+            - var
+            - foo(1, 2, 3, foobar)
+    - Other expressions are created as a combination of two expressions linked by some operator
+        - Examples:
+            - 5 + 5
+            - 5 / foo(1)
+            - a = 5
+    - Expression can be wrapped with parentheses
+- Operator
+    - Makes a new expression from one or two other expressions
+    - Default operators: + - * / % == != < > <= >= =
+    - Special operator = takes identifier as left argument
+- Statement
+    - There are several types of expressions:
+        - Expression statement
+            - Expression as statement
+            - Syntax: expression;
+                - Examples:
+                    - a = 5;
+                    - 5 + 4;
+                    - fn(23,1231,132);
+        - If statement:
+            - Syntax: if (expression) statement
+        - While statement
+            - Syntax: while (expression) statement
+        - Compound statement
+            - Syntax: { statement1 statement2 ... }
+            - combination of other statements
+                - Example:
+                    - { a = 5; gg(234); { a = 10; } }
+        - Function declaration statement
+            - Syntax: fn <name>(<params>) <compound stmt>
+            - (where name is some identifier, params are empty or identifiers delimetered with comma)
+                - Example:
+                    - fn foo(a, b) { z = 10; }
+
+        - Variable declaration statement:
+            - Syntax: let x;
+            - (or)
+            - Syntax: let x = <expression>;
+                - Examples:
+                    - let a;
+                    - let a = 10;
+        - Return statement
+            - Syntax: return;
+            - (or)
+            - Syntax: return <expr>;
+            - Examples:
+                - return;
+                - return 123 + 12;
+- Formal description of the syntax can be found in parser.cpp
+                    
+### Semantics
+
+- The only data type is signed 64-bit integer
+- Identifier
+    - is a name of variable or function
+- Numeric literal
+    - returns its value as an expression
+- Variable
+    - is some memory cell
+    - returns its value as an expression
+    - is created as the result of variable declaration statement
+    - a value of the variable can be set during declaration and updated by an assignment operator 
+- Expression
+    - Must have value as calculation result
+- Operator
+    - Takes return values of arguments and returns its value according to them
+    - Operator = updates a value of the variable with return value of an expression.
+    - Operator = returns value of the expression
+    - Behaviour of other operators is intuitive, comparsions returns 0 or 1
+    - Parentheses can be used in an expression to control order of calculations
+    - Default order:
+        - Parenthesed expression, function call, variable, numeric literal
+        - * / %
+        - + -
+        - comparsions, assignment
+        - (operators on the same level are calculated consistently)
+        
+    - Examples:
+        - 5 + 2 - return value is 7
+        - a = 5 - return value is 5, a value of the variable a has been updated
+        - (5 + 3) * 2 - return value is 16
+
+- Control flow
+    - Program consists of function
+        - A function is a statement to execute
+            - Function must have return value
+                - A return value is controlled by return statement, 0 by default
+            - Function can have arguments
+                - Arguments are variables with values predefined when called and can be used like regular variables
+- Statement
+    - Expression statement
+        - Just omits its value
+    - If statement:
+        - Executes statement if the expression is not equals to 0
+    - While statement
+        - Executes statement while the expression is not equals to 0
+    - Compound statement
+        - A set of statements to execute
+        - Statements are executed consistently
+    - Function declaration statement
+        - Declares a function
+        - TODO: scope
+    - Variable declaration statement
+        - Declares a variable
+        - TODO: scope
+- At the beginning of execution, the function called 'main' is called
+- Formal description of the semantics can be found in TODO
