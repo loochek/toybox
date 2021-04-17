@@ -65,6 +65,6 @@ struct lexem_t
  * \param \c lexems Where to put emitted lexems
  * \param \c comp_status Compilier status structure
  */
-lstatus_t parse_source(const char *src, list_t<lexem_t> *lexems, compilier_status_t *comp_status);
+lstatus_t lexer_parse_source(const char *src, list_t<lexem_t> *lexems, compilier_status_t *comp_status);
 
 #endif

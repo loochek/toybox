@@ -4,7 +4,6 @@
 /**
  * A simple proxy for using non-null terminated strings
  */
-
 struct string_view_t
 {
     const char *str;

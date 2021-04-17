@@ -70,7 +70,7 @@ static bool try_read_ident   (lexem_t *lexem, lexer_state_t *state);
 static bool try_read_spec_seq(lexem_t *lexem, lexer_state_t *state);
 static bool try_read_term    (lexem_t *lexem, lexer_state_t *state);
 
-lstatus_t parse_source(const char *src, list_t<lexem_t> *lexems, compilier_status_t *comp_status)
+lstatus_t lexer_parse_source(const char *src, list_t<lexem_t> *lexems, compilier_status_t *comp_status)
 {
     lstatus_t status = LSTATUS_OK;
     comp_status->error_occured = false;
@@ -117,19 +117,19 @@ static void skip_non_program(lexer_state_t *state)
     {
         should_stop = true;
 
-        if (state->src[state->curr_pos] == '\n')
-        {
-            should_stop = false;
-            state->curr_row++;
-            state->curr_col = 0;
-            state->curr_pos++;
-        }
-
         while (isspace(state->src[state->curr_pos]))
         {
             should_stop = false;
+
+            if (state->src[state->curr_pos] == '\n')
+            {
+                state->curr_row++;
+                state->curr_col = 0;
+            }
+            else
+                state->curr_col++;
+            
             state->curr_pos++;
-            state->curr_col++;
         }
 
         if (strncmp(&state->src[state->curr_pos], COMMENT_SEQ, strlen(COMMENT_SEQ)) == 0)

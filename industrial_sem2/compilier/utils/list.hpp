@@ -56,7 +56,7 @@ struct list_t
  * \param \c capacity Initial capacity
  */
 template<typename T>
-lstatus_t list_construct(list_t<T> *list, int capacity);
+lstatus_t list_construct(list_t<T> *list, int capacity = 8);
 
 /**
  * Deinitializes a list instance
@@ -76,13 +76,29 @@ template<typename T>
 lstatus_t list_push_front(list_t<T> *list, T elem);
 
 /**
- * Initializes a list instance
+ * Inserts an zero-initialized element to the front of the list
  *
  * \param \c list List pointer
- * \param \c capacity Initial capacity
+ */
+template<typename T>
+lstatus_t list_push_front(list_t<T> *list);
+
+/**
+ * Inserts an element to the back of the list
+ *
+ * \param \c list List pointer
+ * \param \c elem Element to insert
  */
 template<typename T>
 lstatus_t list_push_back(list_t<T> *list, T elem);
+
+/**
+ * Inserts an zero-initialized element to the back of the list
+ *
+ * \param \c list List pointer
+ */
+template<typename T>
+lstatus_t list_push_back(list_t<T> *list);
 
 /**
  * Removes an element from the front of the list
@@ -227,6 +243,12 @@ lstatus_t list_iter_lookup(list_t<T> *list, int position, list_iter_t *iter_out)
 template<typename T>
 lstatus_t list_validate(list_t<T> *list);
 
+/**
+ * Provides poison value for type T
+ */
+template<typename T>
+const T list_poison();
+
 //----------------------------------------------------------
 // IMPLEMENTATION
 //----------------------------------------------------------
@@ -236,20 +258,22 @@ static int CANARY = 0xBEEF;
 // to cover up to 32 bytes
 static int POISON[] = { 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD };
 
-/**
- * Provides poison value for type T
- */
-template<typename T>
-static const T list_poison();
+// internal functions
 
 template<typename T>
-static lstatus_t list_expand(list_t<T> *list);
+lstatus_t list_expand(list_t<T> *list);
 
 template<typename T>
-static lstatus_t free_cell(list_t<T> *list, int iter);
+lstatus_t free_cell(list_t<T> *list, int iter);
 
 template<typename T>
-static lstatus_t claim_cell(list_t<T> *list, int *claimed_cell_iter);
+lstatus_t claim_cell(list_t<T> *list, int *claimed_cell_iter);
+
+template<typename T>
+lstatus_t list_push_front_uninitialized(list_t<T> *list);
+
+template<typename T>
+lstatus_t list_push_back_uninitialized(list_t<T> *list);
 
 #define LIST_DATA(iter)  list->buffer[iter].data
 #define LIST_NEXT(iter)  list->buffer[iter].next
@@ -288,7 +312,7 @@ lstatus_t list_construct(list_t<T> *list, int capacity)
 
 #ifdef DEBUG
     for (size_t i = 0; i < list->buffer_size; i++)
-        LIST_DATA(i) = list_poison();
+        LIST_DATA(i) = list_poison<T>();
 #endif
 
     list->head      = 0;
@@ -326,33 +350,34 @@ lstatus_t list_push_front(list_t<T> *list, T elem)
     lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
-    int claimed_cell = 0;
-    status = claim_cell(list, &claimed_cell);
-    if (status != LSTATUS_OK)
-    {
-        status = list_expand(list);
-        if (status != LSTATUS_OK)
-            return status;
+    LSCHK(list_push_front_uninitialized(list));
 
-        status = claim_cell(list, &claimed_cell);
-        if (status != LSTATUS_OK)
-            return status;
-    }
-    
-    LIST_DATA(claimed_cell) = elem;
-    LIST_PREV(claimed_cell) = list->head;
-    LIST_NEXT(claimed_cell) = 0;
+    list_iter_t iter_end = NULLITER;
+    LSCHK(list_end(list, &iter_end));
 
-    if (list->head != 0)
-        LIST_NEXT(list->head) = claimed_cell;
-    
-    list->head = claimed_cell;
-    
-    // if list was empty, set tail too
-    if (list->tail == 0)
-        list->tail = claimed_cell;
+    T *data = nullptr;
+    LSCHK(list_data(list, iter_end, &data));
+    *data = elem;
 
-    list->used_size++;
+    LIST_CHECK(list);
+    return LSTATUS_OK;
+}
+
+template<typename T>
+lstatus_t list_push_front(list_t<T> *list)
+{
+    lstatus_t status = LSTATUS_OK;
+    LIST_CHECK(list);
+
+    LSCHK(list_push_front_uninitialized(list));
+
+    list_iter_t iter_last = NULLITER;
+    LSCHK(list_end(list, &iter_last));
+    LSCHK(list_prev(list, &iter_last));
+
+    T *data = nullptr;
+    LSCHK(list_data(list, iter_last, &data));
+    memset(data, 0, sizeof(T));
 
     LIST_CHECK(list);
     return LSTATUS_OK;
@@ -364,35 +389,34 @@ lstatus_t list_push_back(list_t<T> *list, T elem)
     lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
-    int claimed_cell = 0;
-    status = claim_cell(list, &claimed_cell);
-    if (status != LSTATUS_OK)
-    {
-        status = list_expand(list);
-        if (status != LSTATUS_OK)
-            return status;
+    LSCHK(list_push_front_uninitialized(list));
 
-        status = claim_cell(list, &claimed_cell);
-        if (status != LSTATUS_OK)
-            return status;
-    }
+    list_iter_t iter_last = NULLITER;
+    LSCHK(list_end(list, &iter_last));
+    LSCHK(list_prev(list, &iter_last));
 
-    list->linear = false;
+    T *data = nullptr;
+    LSCHK(list_data(list, iter_last, &data));
+    *data = elem;
 
-    LIST_DATA(claimed_cell) = elem;
-    LIST_NEXT(claimed_cell) = list->tail;
-    LIST_PREV(claimed_cell) = 0;
+    LIST_CHECK(list);
+    return LSTATUS_OK;
+}
 
-    if (list->tail != 0)
-        LIST_PREV(list->tail) = claimed_cell;
+template<typename T>
+lstatus_t list_push_back(list_t<T> *list)
+{
+    lstatus_t status = LSTATUS_OK;
+    LIST_CHECK(list);
 
-    list->tail = claimed_cell;
+    LSCHK(list_push_back_uninitialized(list));
 
-    // if list was empty, set head too
-    if (list->head == 0)
-        list->head = claimed_cell;
-    
-    list->used_size++;
+    list_iter_t iter_begin = NULLITER;
+    LSCHK(list_begin(list, &iter_begin));
+
+    T *data = nullptr;
+    LSCHK(list_data(list, iter_begin, &data));
+    memset(data, 0, sizeof(T));
 
     LIST_CHECK(list);
     return LSTATUS_OK;
@@ -407,7 +431,9 @@ lstatus_t list_pop_front(list_t<T> *list)
     if (list->head == 0)
         return LSTATUS_LIST_EMPTY;
 
-    LIST_DATA(list->head) = list_poison();
+#ifdef DEBUG
+    LIST_DATA(list->head) = list_poison<T>();
+#endif
 
     int to_remove = list->head;
     list->head = LIST_PREV(list->head);
@@ -704,7 +730,7 @@ lstatus_t list_destruct(list_t<T> *list)
 }
 
 #define CHECK_POISON(iter) \
-    CHECK_COND(LIST_DATA(iter) == list_poison(), "Expected poison at cell %d", iter)
+    CHECK_COND(memcmp(&LIST_DATA(iter), POISON, sizeof(T)) == 0, "Expected poison at cell %d", iter)
 
 template<typename T>
 lstatus_t list_validate(list_t<T> *list)
@@ -715,7 +741,9 @@ lstatus_t list_validate(list_t<T> *list)
     CHECK_COND(list->canary1 == CANARY, "canary1 fault");
     CHECK_COND(list->canary2 == CANARY, "canary2 fault");
 
+#ifdef DEBUG
     CHECK_POISON(0);
+#endif
 
     CHECK_COND(LIST_NEXT(list->head) == 0, "next[head] is not zero");
     CHECK_COND(LIST_PREV(list->tail) == 0, "prev[tail] is not zero");
@@ -768,7 +796,13 @@ lstatus_t list_validate(list_t<T> *list)
 }
 
 template<typename T>
-static lstatus_t list_expand(list_t<T> *list)
+const T list_poison()
+{
+    return *(T*)POISON;
+}
+
+template<typename T>
+lstatus_t list_expand(list_t<T> *list)
 {
     lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
@@ -784,8 +818,10 @@ static lstatus_t list_expand(list_t<T> *list)
 
     memset(list->buffer + list->buffer_size, 0, list->buffer_size * sizeof(list_node_t<T>));
 
+#ifdef DEBUG
     for (int i = list->buffer_size; i < list->buffer_size * 2; i++)
-       LIST_DATA(i) = list_poison();
+       LIST_DATA(i) = list_poison<T>();
+#endif
         
     for (int i = list->buffer_size; i < list->buffer_size * 2 - 1; i++)
         LIST_PREV(i) = i + 1;
@@ -805,19 +841,22 @@ static lstatus_t list_expand(list_t<T> *list)
 }
 
 template<typename T>
-static lstatus_t free_cell(list_t<T> *list, int iter)
+lstatus_t free_cell(list_t<T> *list, int iter)
 {
     // there is no LIST_CHECK, since it's an internal routine so list can be invalid here
 
     LIST_PREV(iter)            = list->head_free;
     list->head_free            = iter;
-    LIST_DATA(list->head_free) = list_poison();
+
+#ifdef DEBUG
+    LIST_DATA(list->head_free) = list_poison<T>();
+#endif
 
     return LSTATUS_OK;
 }
 
 template<typename T>
-static lstatus_t claim_cell(list_t<T> *list, int *claimed_cell_iter)
+lstatus_t claim_cell(list_t<T> *list, int *claimed_cell_iter)
 {
     // there is no LIST_CHECK, since it's an internal routine so list can be invalid here
 
@@ -834,7 +873,79 @@ static lstatus_t claim_cell(list_t<T> *list, int *claimed_cell_iter)
 }
 
 template<typename T>
-static T list_poison()
+lstatus_t list_push_front_uninitialized(list_t<T> *list)
 {
-    return *(T*)POISON;
+    lstatus_t status = LSTATUS_OK;
+    LIST_CHECK(list);
+
+    int claimed_cell = 0;
+    status = claim_cell(list, &claimed_cell);
+    if (status != LSTATUS_OK)
+    {
+        status = list_expand(list);
+        if (status != LSTATUS_OK)
+            return status;
+
+        status = claim_cell(list, &claimed_cell);
+        if (status != LSTATUS_OK)
+            return status;
+    }
+    
+    // LIST_DATA(claimed_cell) = elem;
+    LIST_PREV(claimed_cell) = list->head;
+    LIST_NEXT(claimed_cell) = 0;
+
+    if (list->head != 0)
+        LIST_NEXT(list->head) = claimed_cell;
+    
+    list->head = claimed_cell;
+    
+    // if list was empty, set tail too
+    if (list->tail == 0)
+        list->tail = claimed_cell;
+
+    list->used_size++;
+
+    LIST_CHECK(list);
+    return LSTATUS_OK;
+}
+
+template<typename T>
+lstatus_t list_push_back_uninitialized(list_t<T> *list)
+{
+    lstatus_t status = LSTATUS_OK;
+    LIST_CHECK(list);
+
+    int claimed_cell = 0;
+    status = claim_cell(list, &claimed_cell);
+    if (status != LSTATUS_OK)
+    {
+        status = list_expand(list);
+        if (status != LSTATUS_OK)
+            return status;
+
+        status = claim_cell(list, &claimed_cell);
+        if (status != LSTATUS_OK)
+            return status;
+    }
+
+    list->linear = false;
+
+    //LIST_DATA(claimed_cell) = elem;
+    LIST_NEXT(claimed_cell) = list->tail;
+    LIST_PREV(claimed_cell) = 0;
+
+    if (list->tail != 0)
+        LIST_PREV(list->tail) = claimed_cell;
+
+    list->tail = claimed_cell;
+
+    // if list was empty, set head too
+    if (list->head == 0)
+        list->head = claimed_cell;
+    
+    list->used_size++;
+
+    LIST_CHECK(list);
+    return LSTATUS_OK;
 }

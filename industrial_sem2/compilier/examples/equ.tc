@@ -1,0 +1,55 @@
+fn linear(b, c)
+{
+    if (b == 0)
+    {
+        if (c == 0)
+        {
+            print(9999);
+            return;
+        }
+        
+        print(0);
+        return;
+    }
+    
+    print(1);
+    print((0 - c) / b);
+}
+
+fn quadratic(a, b, c)
+{
+    let discr = b * b - 4 * a * c;
+    
+    if (discr == 0)
+    {
+        print(1);
+        print((0 - b) / (2 * a));
+        return;
+    }
+    
+    if (discr > 0)
+    {
+        print(2);
+        print((0 - b + sqr(discr)) / (2 * a));
+        print((0 - b - sqr(discr)) / (2 * a));
+        return;
+    }
+    
+    print(0);
+    return;
+}
+
+fn main()
+{
+    let a = input();
+    let b = input();
+    let c = input();
+    
+    if (a == 0)
+    {
+        linear(b, c);
+        return;
+    }
+    
+    quadratic(a, b, c);
+}
