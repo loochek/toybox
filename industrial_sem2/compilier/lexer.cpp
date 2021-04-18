@@ -4,15 +4,15 @@
 
 //====================================================
 
+/**
+ * Lexer templates
+ */
+
 struct lexer_template_t
 {
     lexem_type_t type;
     const char *sample;
 };
-
-/**
- * Lexer templates
- */
 
 static const lexer_template_t KEYWORDS[] = 
 {
@@ -70,13 +70,14 @@ static bool try_read_ident   (lexem_t *lexem, lexer_state_t *state);
 static bool try_read_spec_seq(lexem_t *lexem, lexer_state_t *state);
 static bool try_read_term    (lexem_t *lexem, lexer_state_t *state);
 
-lstatus_t lexer_parse_source(const char *src, list_t<lexem_t> *lexems, compilier_status_t *comp_status)
+#define LEXER_ERROR(err_str, ...) \
+    COMPILATION_ERROR(comp_err, state.curr_row, state.curr_pos, err_str, ##__VA_ARGS__)
+
+lstatus_t lexer_tokenize(const char *src, list_t<lexem_t> *lexems, compilation_error_t *comp_err)
 {
     lstatus_t status = LSTATUS_OK;
-    comp_status->error_occured = false;
 
     lexer_state_t state = { src, 0 };
-
     bool should_stop = false;
 
     while (!should_stop)
@@ -94,8 +95,8 @@ lstatus_t lexer_parse_source(const char *src, list_t<lexem_t> *lexems, compilier
         }
         else
         {
-            COMPILATION_ERROR(state.curr_row, state.curr_pos, "unknown symbol sequence");
-            return LSTATUS_OK;
+            LEXER_ERROR("unknown symbol sequence");
+            return LSTATUS_LEXER_FAIL;
         }
 
         LSCHK(list_push_front(lexems, curr_lexem));
@@ -153,8 +154,8 @@ static bool try_read_number(lexem_t *lexem, lexer_state_t *state)
     {
         success = true;
 
-        lexem->value *= 10;
-        lexem->value += state->src[state->curr_pos] - '0';
+        lexem->number *= 10;
+        lexem->number += state->src[state->curr_pos] - '0';
         state->curr_pos++;
         state->curr_col++;
     }

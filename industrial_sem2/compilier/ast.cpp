@@ -40,8 +40,6 @@ static void ast_visualize_rec(ast_node_t *node, int node_id, FILE *file);
 
 void ast_visualize(ast_node_t *tree_root)
 {
-    lstatus_t status = LSTATUS_OK;
-
     FILE *file = fopen("tree.dot", "w");
 
     fprintf(file, "digraph\n{\n");
@@ -60,8 +58,6 @@ lstatus_t ast_destroy(ast_node_t *node, memory_pool_t<ast_node_t> *pool)
     if (node == nullptr)
         return LSTATUS_OK;
 
-    lstatus_t status = LSTATUS_OK;
-
     if (node->left_branch != NULL)
         LSCHK(ast_destroy(node->left_branch, pool));
 
@@ -69,9 +65,10 @@ lstatus_t ast_destroy(ast_node_t *node, memory_pool_t<ast_node_t> *pool)
         LSCHK(ast_destroy(node->right_branch, pool));
     
     LSCHK(memory_pool_free(pool, node));
+    return LSTATUS_OK;
 }
 
-static void ast_visualize_rec(ast_node_t *node, size_t node_id, FILE *file)
+static void ast_visualize_rec(ast_node_t *node, int node_id, FILE *file)
 {
     if (node == NULL)
         return;

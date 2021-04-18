@@ -4,7 +4,7 @@
 #include "utils/lstatus.hpp"
 #include "utils/list.hpp"
 #include "utils/string_view.hpp"
-#include "compilier_status.hpp"
+#include "compilation_error.hpp"
 
 /**
  * Types of lexems emitted by a lexer
@@ -49,11 +49,11 @@ struct lexem_t
 {
     lexem_type_t type;
     int row;
-    int collumn;
+    int col;
 
     union
     {
-        int value;
+        int number;
         string_view_t ident;
     };
 };
@@ -63,8 +63,8 @@ struct lexem_t
  * 
  * \param \c src Source code
  * \param \c lexems Where to put emitted lexems
- * \param \c comp_status Compilier status structure
+ * \param \c comp_err Compilation error structure
  */
-lstatus_t lexer_parse_source(const char *src, list_t<lexem_t> *lexems, compilier_status_t *comp_status);
+lstatus_t lexer_tokenize(const char *src, list_t<lexem_t> *lexems, compilation_error_t *comp_err);
 
 #endif

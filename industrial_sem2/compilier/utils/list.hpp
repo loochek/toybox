@@ -1,3 +1,6 @@
+#ifndef LIST_HPP
+#define LIST_HPP
+
 #include <cstdlib>
 #include <cstdbool>
 #include <cstdio>
@@ -352,11 +355,12 @@ lstatus_t list_push_front(list_t<T> *list, T elem)
 
     LSCHK(list_push_front_uninitialized(list));
 
-    list_iter_t iter_end = NULLITER;
-    LSCHK(list_end(list, &iter_end));
+    list_iter_t iter_last = NULLITER;
+    LSCHK(list_end(list, &iter_last));
+    LSCHK(list_prev(list, &iter_last));
 
     T *data = nullptr;
-    LSCHK(list_data(list, iter_end, &data));
+    LSCHK(list_data(list, iter_last, &data));
     *data = elem;
 
     LIST_CHECK(list);
@@ -389,14 +393,13 @@ lstatus_t list_push_back(list_t<T> *list, T elem)
     lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
 
-    LSCHK(list_push_front_uninitialized(list));
+    LSCHK(list_push_back_uninitialized(list));
 
-    list_iter_t iter_last = NULLITER;
-    LSCHK(list_end(list, &iter_last));
-    LSCHK(list_prev(list, &iter_last));
+    list_iter_t iter_begin = NULLITER;
+    LSCHK(list_begin(list, &iter_begin));
 
     T *data = nullptr;
-    LSCHK(list_data(list, iter_last, &data));
+    LSCHK(list_data(list, iter_begin, &data));
     *data = elem;
 
     LIST_CHECK(list);
@@ -685,7 +688,11 @@ lstatus_t list_prev(list_t<T> *list, list_iter_t *iter)
         return status;
     }
 
-    *iter = ITER_WRAP(LIST_PREV(iter->value));
+    if (iter->value == 0)
+        *iter = ITER_WRAP(list->head);
+    else
+        *iter = ITER_WRAP(LIST_PREV(iter->value));
+        
     return LSTATUS_OK;
 }
 
@@ -949,3 +956,5 @@ lstatus_t list_push_back_uninitialized(list_t<T> *list)
     LIST_CHECK(list);
     return LSTATUS_OK;
 }
+
+#endif

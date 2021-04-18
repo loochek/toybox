@@ -1,3 +1,6 @@
+#ifndef MEMORY_POOL_HPP
+#define MEMORY_POOL_HPP
+
 #include "list.hpp"
 
 /**
@@ -57,9 +60,9 @@ lstatus_t memory_pool_construct(memory_pool_t<T> *pool)
 template<typename T>
 lstatus_t memory_pool_alloc(memory_pool_t<T> *pool, T **ptr_out)
 {
-    lstatus status = LSTATUS_OK;
+    lstatus_t status = LSTATUS_OK;
 
-    *ptr_out = calloc(1, sizeof(T));
+    *ptr_out = (T*)calloc(1, sizeof(T));
     if (*ptr_out == nullptr)
     {
         LSTATUS(LSTATUS_BAD_ALLOC, "");
@@ -81,3 +84,5 @@ lstatus_t memory_pool_destruct(memory_pool_t<T> *pool)
 {
     return LSTATUS_OK;
 }
+
+#endif

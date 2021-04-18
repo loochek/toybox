@@ -59,7 +59,7 @@ struct ast_node_t
     };
 
     int row;
-    int collumn;
+    int col;
 };
 
 /**

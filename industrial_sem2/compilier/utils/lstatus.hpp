@@ -16,7 +16,9 @@ enum lstatus_t
     LSTATUS_LIST_FULL,
     LSTATUS_LIST_INVALID,
     LSTATUS_LIST_NULL_ITER,
-    LSTATUS_LIST_BAD_ADDRESS
+    LSTATUS_LIST_BAD_ADDRESS,
+    LSTATUS_LEXER_FAIL,
+    LSTATUS_PARSER_FAIL
 };
 
 /// Stores an info message from the last LSTATUS call
@@ -38,9 +40,9 @@ extern const char *__lstatus_str_repr[];
 #define LSTATUS(st, st_str, ...) { LSTATUS_SET(st); LSTATUSSTR(st_str, ##__VA_ARGS__); }
 
 /**
- * Checks expression to be LSTATUS_OK, else returns status
+ * Checks expression to be LSTATUS_OK, else returns its status
  */
-#define LSCHK(expr) { status = expr; if (status != LSTATUS_OK) return status; }
+#define LSCHK(expr) { lstatus_t __status_loc = expr; if (__status_loc != LSTATUS_OK) return __status_loc; }
 
 #define LS_ERR_PRINT() fprintf(stderr, "[ERROR] %s: %s\n", __lstatus_str_repr[status], __lstatus_msg)
 
