@@ -3,32 +3,58 @@
 #include "lexer.hpp"
 #include "parser.hpp"
 
+#define ERROR_HANDLER() goto error_handler
+
 int main()
 {
     lstatus_t status = LSTATUS_OK;
 
     char *src = nullptr;
-    status = create_buffer_from_file("examples/test.tc", &src);
+    list_t<lexem_t> lexems = {};
+    ast_node_t *tree_root = nullptr;
+    compilation_error_t comp_err = {};
+
+    status = create_buffer_from_file("examples/equ.tc", &src);
     if (status != LSTATUS_OK)
     {
         LS_ERR_PRINT();
-        return -1;
+        ERROR_HANDLER();
     }
 
-    list_t<lexem_t> lexems = {};
     status = list_construct(&lexems, 10);
     if (status != LSTATUS_OK)
     {
         LS_ERR_PRINT();
-        return -1;
+        ERROR_HANDLER();
     }
 
-    compilation_error_t comp_err = {};
     status = lexer_tokenize(src, &lexems, &comp_err);
+    if (status == LSTATUS_LEXER_FAIL)
+    {
+        print_error(&comp_err);
+        ERROR_HANDLER();
+    }
 
-    ast_node_t *tree_root = nullptr;
     status = ast_build(&lexems, nullptr, &comp_err, &tree_root);
+    if (status == LSTATUS_PARSER_FAIL)
+    {
+        print_error(&comp_err);
+        ERROR_HANDLER();
+    }
+
+    printf("Success!\n");
     ast_visualize(tree_root);
 
+    free(src);
+    list_destruct(&lexems);
+    ast_destroy(tree_root, nullptr);
+
     return 0;
+
+error_handler:
+    free(src);
+    list_destruct(&lexems);
+    ast_destroy(tree_root, nullptr);
+
+    return -1;
 }

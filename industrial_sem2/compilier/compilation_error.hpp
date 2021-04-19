@@ -23,4 +23,11 @@ struct compilation_error_t
     err_struct->col = err_col;                                                     \
 }
 
+/**
+ * Prints pretty formatted error message
+ * 
+ * \param \c comp_error Compilation error structure
+ */
+void print_error(compilation_error_t *comp_error);
+
 #endif

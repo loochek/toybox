@@ -17,14 +17,14 @@
  * EXPR_STMT ::= EXPR;
  * VAR_DECL_STMT ::= 'let' IDNT {'=' EXPR }? ';'
  * STMT ::= {COMP_STMT | EXPR_STMT | IF_STATEMENT | WHILE_STMT | VAR_DECL_STMT | RET_STMT}
- * COMP_STMT ::= '{' STMT+ '}'
+ * COMP_STMT ::= '{' STMT* '}'
  * IF_STMT   ::= 'if' '('EXPR')' STMT
  * WHILE_STMT::= 'while' '('EXPR')' STMT
  * RET_STMT  ::= 'return' EXPR? ;
  * 
  * FN_DECL_STMT ::= 'fn' IDNT '('{IDNT{,IDNT}*}+')' COMP_STMT
  * 
- * PRG ::= {FN_DECL_STMT}+ LEX_PRG_END
+ * PRG ::= {FN_DECL_STMT}* LEX_PRG_END
  */
 
 struct parser_state_t
@@ -45,15 +45,15 @@ static lstatus_t grammar_cmp (ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_assn(ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_expr(ast_node_t **node_out, parser_state_t *state);
 
-// static ast_node_t *grammar_expr_stmt    (parser_state_t *state, node_pool_t *pool);
-// static ast_node_t *grammar_var_decl_stmt(parser_state_t *state, node_pool_t *pool);
-// static ast_node_t *grammar_if_stmt      (parser_state_t *state, node_pool_t *pool);
-// static ast_node_t *grammar_while_stmt   (parser_state_t *state, node_pool_t *pool);
-// static ast_node_t *grammar_ret_stmt     (parser_state_t *state, node_pool_t *pool);
-// static ast_node_t *grammar_comp_stmt    (parser_state_t *state, node_pool_t *pool);
-// static ast_node_t *grammar_stmt         (parser_state_t *state, node_pool_t *pool);
-// static ast_node_t *grammar_fn_decl_stmt (parser_state_t *state, node_pool_t *pool);
-// static ast_node_t *grammar_prg          (parser_state_t *state, node_pool_t *pool);
+static lstatus_t grammar_expr_stmt    (ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_var_decl_stmt(ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_if_stmt      (ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_while_stmt   (ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_ret_stmt     (ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_comp_stmt    (ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_stmt         (ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_fn_decl_stmt (ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_prg          (ast_node_t **node_out, parser_state_t *state);
 
 // helper function to translate lexem operator to AST operator
 static ast_node_type_t lex_to_ast(lexem_type_t lexem_type);
@@ -69,7 +69,7 @@ lstatus_t ast_build(list_t<lexem_t> *lexems, memory_pool_t<ast_node_t> *pool,
     LSCHK(list_begin(lexems, &lexems_iter_begin));
 
     parser_state_t state = { lexems, comp_err, pool, lexems_iter_begin };
-    LSCHK(grammar_expr(tree_root_out, &state));
+    LSCHK(grammar_prg(tree_root_out, &state));
 
     return LSTATUS_OK;
 }
@@ -484,487 +484,455 @@ error_handler:
     return status;
 }
 
-// static ast_node_t *grammar_expr_stmt(parser_state_t *state, node_pool_t *pool)
-// {
-//     LERR_RESET();
-//     size_t old_offset = state->curr_offset;
+static lstatus_t grammar_expr_stmt(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
 
-//     ast_node_t *expr = NULL, *marker_node = NULL;
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
 
-//     expr = grammar_expr(state, pool);
-//     ERROR_CHECK();
+    ast_node_t *expr = nullptr, *marker_node = nullptr;
 
-//     if (state->lexems[state->curr_offset].type != LEX_SEMICOLON)
-//     {
-//         LERR(LERR_PARSING, "expected ;");
-//         ERROR_HANDLER();
-//     }
+    LSCHK_LOCAL(grammar_expr(&expr, state));
 
-//     state->curr_offset++;
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_SEMICOLON)
+        PARSING_ERROR("expected ;");
 
-//     marker_node = node_pool_claim(pool);
-//     ERROR_CHECK();
+    NEXT_LEXEM();
 
-//     marker_node->type         = AST_EXPR_STMT;
-//     marker_node->left_branch  = expr;
-//     marker_node->right_branch = NULL;
+    ALLOC_NODE(marker_node);
+    marker_node->type         = AST_EXPR_STMT;
+    marker_node->left_branch  = expr;
+    marker_node->right_branch = NULL;
 
-//     return marker_node;
+    *node_out = marker_node;
+    return LSTATUS_OK;
 
-// error_handler:
-//     ast_destroy(expr       , pool);
-//     ast_destroy(marker_node, pool);
+error_handler:
+    DESTROY_NODE(expr);
+    DESTROY_NODE(marker_node);
 
-//     state->curr_offset = old_offset;
-//     return NULL;
-// }
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
 
-// static ast_node_t *grammar_var_decl_stmt(parser_state_t *state, node_pool_t *pool)
-// {
-//     LERR_RESET();
-//     size_t old_offset = state->curr_offset;
+static lstatus_t grammar_var_decl_stmt(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
 
-//     ast_node_t *ident_node = NULL, *init_val = NULL, *decl_node = NULL;
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
+
+    ast_node_t *ident_node = nullptr, *init_val = nullptr, *decl_node = nullptr;
+
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_KW_LET)
+        PARSING_ERROR("expected let keyword");
+
+    NEXT_LEXEM();
+
+    LSCHK_LOCAL(grammar_idnt(&ident_node, state));
+
+    FETCH_LEXEM();
+    if (curr_lexem->type == LEX_ASSIGN)
+    {
+        NEXT_LEXEM();
+        LSCHK_LOCAL(grammar_expr(&init_val, state));
+    }
+
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_SEMICOLON)
+        PARSING_ERROR("expected ;");
+
+    NEXT_LEXEM();
+
+    ALLOC_NODE(decl_node);
+    decl_node->type = AST_VAR_DECL;
+    decl_node->left_branch = ident_node;
+    decl_node->right_branch = init_val;
+
+    *node_out = decl_node;
+    return LSTATUS_OK;
+
+error_handler:
+    DESTROY_NODE(ident_node);
+    DESTROY_NODE(init_val);
+    DESTROY_NODE(decl_node);
+
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
+
+static lstatus_t grammar_if_stmt(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
+
+    ast_node_t *condition = nullptr, *if_body = nullptr, *if_node = nullptr;
     
-//     if (LEXEM(0).type != LEX_KW_LET)
-//     {
-//         LERR(LERR_PARSING, "expected let keyword");
-//         ERROR_HANDLER();
-//     }
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_KW_IF)
+        PARSING_ERROR("expected if keyword");
 
-//     state->curr_offset++;
+    NEXT_LEXEM();
 
-//     ident_node = grammar_idnt(state, pool);
-//     ERROR_CHECK();
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_OPEN_BRACKET)
+        PARSING_ERROR("expected (");
 
-//     if (LEXEM(0).type == LEX_OPER_ASSIGN)
-//     {
-//         state->curr_offset++;
+    NEXT_LEXEM();
 
-//         init_val = grammar_expr(state, pool);
-//         ERROR_CHECK();
-//     }
+    LSCHK_LOCAL(grammar_expr(&condition, state));
 
-//     if (LEXEM(0).type != LEX_SEMICOLON)
-//     {
-//         LERR(LERR_PARSING, "expected ;");
-//         ERROR_HANDLER();
-//     }
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_CLOSE_BRACKET)
+        PARSING_ERROR("expected )");
 
-//     state->curr_offset++;
+    NEXT_LEXEM();
 
-//     decl_node = node_pool_claim(pool);
-//     ERROR_CHECK();
+    LSCHK_LOCAL(grammar_stmt(&if_body, state));
 
-//     decl_node->type = AST_VAR_DECL;
-//     decl_node->left_branch = ident_node;
-//     decl_node->right_branch = init_val;
+    ALLOC_NODE(if_node);
+    if_node->type         = AST_IF;
+    if_node->left_branch  = condition;
+    if_node->right_branch = if_body;
 
-//     return decl_node;
+    *node_out = if_node;
+    return LSTATUS_OK;
 
-// error_handler:
-//     ast_destroy(ident_node, pool);
-//     ast_destroy(init_val  , pool);
-//     ast_destroy(decl_node , pool);
+error_handler:
+    DESTROY_NODE(condition);
+    DESTROY_NODE(if_body);
+    DESTROY_NODE(if_node);
 
-//     state->curr_offset = old_offset;
-//     return NULL;
-// }
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
 
-// static ast_node_t *grammar_if_stmt(parser_state_t *state, node_pool_t *pool)
-// {
-//     LERR_RESET();
-//     size_t old_offset = state->curr_offset;
+static lstatus_t grammar_while_stmt(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
 
-//     ast_node_t *condition = NULL, *if_body = NULL, *if_node = NULL;
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
+
+    ast_node_t *condition = nullptr, *while_body = nullptr, *while_node = nullptr;
     
-//     if (LEXEM(0).type != LEX_KW_IF)
-//     {
-//         LERR(LERR_PARSING, "expected if keyword");
-//         ERROR_HANDLER();
-//     }
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_KW_WHILE)
+        PARSING_ERROR("expected while keyword");
 
-//     state->curr_offset++;
+    NEXT_LEXEM();
 
-//     if (LEXEM(0).type != LEX_OPEN_BRACKET)
-//     {
-//         LERR(LERR_PARSING, "expected (");
-//         ERROR_HANDLER();
-//     }
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_OPEN_BRACKET)
+        PARSING_ERROR("expected (");
 
-//     state->curr_offset++;
+    NEXT_LEXEM();
 
-//     condition = grammar_expr(state, pool);
-//     ERROR_CHECK();
+    LSCHK_LOCAL(grammar_expr(&condition, state));
 
-//     if (LEXEM(0).type != LEX_CLOSE_BRACKET)
-//     {
-//         LERR(LERR_PARSING, "expected )");
-//         ERROR_HANDLER();
-//     }
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_CLOSE_BRACKET)
+        PARSING_ERROR("expected )");
 
-//     state->curr_offset++;
+    NEXT_LEXEM();
 
-//     if_body = grammar_stmt(state, pool);
-//     ERROR_CHECK();
+    LSCHK_LOCAL(grammar_stmt(&while_body, state));
 
-//     if_node = node_pool_claim(pool);
-//     ERROR_CHECK();
+    ALLOC_NODE(while_node);
+    while_node->type         = AST_IF;
+    while_node->left_branch  = condition;
+    while_node->right_branch = while_node;
 
-//     if_node->type         = AST_IF;
-//     if_node->left_branch  = condition;
-//     if_node->right_branch = if_body;
+    *node_out = while_node;
+    return LSTATUS_OK;
 
-//     return if_node;
+error_handler:
+    DESTROY_NODE(condition);
+    DESTROY_NODE(while_body);
+    DESTROY_NODE(while_node);
 
-// error_handler:
-//     ast_destroy(condition, pool);
-//     ast_destroy(if_body  , pool);
-//     ast_destroy(if_node  , pool);
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
 
-//     state->curr_offset = old_offset;
-//     return NULL;
-// }
+static lstatus_t grammar_ret_stmt(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
 
-// static ast_node_t *grammar_while_stmt(parser_state_t *state, node_pool_t *pool)
-// {
-//     LERR_RESET();
-//     size_t old_offset = state->curr_offset;
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
 
-//     ast_node_t *condition = NULL, *while_body = NULL, *while_node = NULL;
+    ast_node_t *ret_expr = nullptr, *ret_node = nullptr;
+
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_KW_RETURN)
+        PARSING_ERROR("expected return keyword");
+
+    NEXT_LEXEM();
+
+    TRY_TO_PARSE(grammar_expr(&ret_expr, state), {});
+
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_SEMICOLON)
+        PARSING_ERROR("expected ;");
+
+    NEXT_LEXEM();
+
+    ALLOC_NODE(ret_node);
+    ret_node->type = AST_RETURN;
+    ret_node->left_branch  = ret_expr;
+    ret_node->right_branch = NULL;
+
+    *node_out = ret_node;
+    return LSTATUS_OK;
+
+error_handler:
+    DESTROY_NODE(ret_expr);
+    DESTROY_NODE(ret_node);
+
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
+
+static lstatus_t grammar_stmt(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
+
+    ast_node_t *stmt = nullptr;
+
+    TRY_TO_PARSE(grammar_comp_stmt(&stmt, state),
+    {
+        *node_out = stmt;
+        return LSTATUS_OK;
+    });
+
+    TRY_TO_PARSE(grammar_var_decl_stmt(&stmt, state),
+    {
+        *node_out = stmt;
+        return LSTATUS_OK;
+    });
+
+    TRY_TO_PARSE(grammar_if_stmt(&stmt, state),
+    {
+        *node_out = stmt;
+        return LSTATUS_OK;
+    });
+
+    TRY_TO_PARSE(grammar_while_stmt(&stmt, state),
+    {
+        *node_out = stmt;
+        return LSTATUS_OK;
+    });
+
+    TRY_TO_PARSE(grammar_ret_stmt(&stmt, state),
+    {
+        *node_out = stmt;
+        return LSTATUS_OK;
+    });
+
+    LSCHK_LOCAL(grammar_expr_stmt(&stmt, state));
     
-//     if (LEXEM(0).type != LEX_KW_WHILE)
-//     {
-//         LERR(LERR_PARSING, "expected while keyword");
-//         ERROR_HANDLER();
-//     }
+    *node_out = stmt;
+    return LSTATUS_OK;
 
-//     state->curr_offset++;
+error_handler:
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
 
-//     if (LEXEM(0).type != LEX_OPEN_BRACKET)
-//     {
-//         LERR(LERR_PARSING, "expected (");
-//         ERROR_HANDLER();
-//     }
+static lstatus_t grammar_comp_stmt(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
 
-//     state->curr_offset++;
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
 
-//     condition = grammar_expr(state, pool);
-//     ERROR_CHECK();
+    ast_node_t *subtree_root = nullptr, *stmt = nullptr, *comp_node = nullptr, *scope_node = nullptr;
+    
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_COMPOUND_BEG)
+        PARSING_ERROR("expected {");
 
-//     if (LEXEM(0).type != LEX_CLOSE_BRACKET)
-//     {
-//         LERR(LERR_PARSING, "expected )");
-//         ERROR_HANDLER();
-//     }
+    NEXT_LEXEM();
 
-//     state->curr_offset++;
+    while (({ FETCH_LEXEM(); curr_lexem->type != LEX_COMPOUND_END; }))
+    {
+        LSCHK_LOCAL(grammar_stmt(&stmt, state));
 
-//     while_body = grammar_stmt(state, pool);
-//     ERROR_CHECK();
+        if (subtree_root == nullptr)
+        {
+            subtree_root = stmt;
+            stmt = nullptr;
+            continue;
+        }
 
-//     while_node = node_pool_claim(pool);
-//     ERROR_CHECK();
+        ALLOC_NODE(comp_node);
+        comp_node->type         = AST_COMPOUND;
+        comp_node->left_branch  = subtree_root;
+        comp_node->right_branch = stmt;
 
-//     while_node->type         = AST_WHILE;
-//     while_node->left_branch  = condition;
-//     while_node->right_branch = while_body;
+        subtree_root = comp_node;
 
-//     return while_node;
+        // to avoid double-free
+        stmt = NULL; comp_node = NULL;
+    }
 
-// error_handler:
-//     ast_destroy(condition , pool);
-//     ast_destroy(while_body, pool);
-//     ast_destroy(while_node, pool);
+    NEXT_LEXEM();
 
-//     state->curr_offset = old_offset;
-//     return NULL;
-// }
+    ALLOC_NODE(scope_node);
+    scope_node->type        = AST_SCOPE;
+    scope_node->left_branch = subtree_root;
 
-// static ast_node_t *grammar_ret_stmt(parser_state_t *state, node_pool_t *pool)
-// {
-//     LERR_RESET();
-//     size_t old_offset = state->curr_offset;
+    *node_out = scope_node;
+    return LSTATUS_OK;
 
-//     ast_node_t *ret_expr = NULL, *ret_node = NULL;
+error_handler:
+    DESTROY_NODE(subtree_root);
+    DESTROY_NODE(stmt);
+    DESTROY_NODE(comp_node);
+    DESTROY_NODE(scope_node);
 
-//     if (LEXEM(0).type != LEX_KW_RETURN)
-//     {
-//         LERR(LERR_PARSING, "expected return keyword");
-//         ERROR_HANDLER();
-//     }
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
 
-//     state->curr_offset++;
+static lstatus_t grammar_fn_decl_stmt(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
 
-//     ret_expr = grammar_expr(state, pool);
-//     if (LERR_PARSING_PRESENT())
-//         LERR_RESET();
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
+
+    ast_node_t *args_root = nullptr, *arg = nullptr, *comp_node = nullptr, 
+               *func_body = nullptr, *decl_node = nullptr, *decl_head_node = nullptr;
+    
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_KW_FN)
+        PARSING_ERROR("expected fn keyword");
+
+    NEXT_LEXEM();
+
+    ALLOC_NODE(decl_head_node);
+    decl_head_node->type = AST_FUNC_HEAD;
+    LSCHK_LOCAL(grammar_idnt(&decl_head_node->left_branch, state));
+
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_OPEN_BRACKET)
+        PARSING_ERROR("expected (");
+
+    NEXT_LEXEM();
+
+    while (({ FETCH_LEXEM(); curr_lexem->type != LEX_CLOSE_BRACKET; }))
+    {
+        // if not first arg, require comma
+        if (args_root != nullptr)
+        {
+            FETCH_LEXEM();
+            if (curr_lexem->type != LEX_COMMA)
+                PARSING_ERROR("expected ,");
+
+            NEXT_LEXEM();
+        }
+
+        LSCHK_LOCAL(grammar_idnt(&arg, state));
+
+        if (args_root == nullptr)
+        {
+            args_root = arg;
+            arg = nullptr;
+            continue;
+        }
+
+        ALLOC_NODE(comp_node);
+        comp_node->type         = AST_COMPOUND;
+        comp_node->left_branch  = args_root;
+        comp_node->right_branch = arg;
+
+        args_root = comp_node;
+
+        // to avoid double-free
+        arg = NULL; comp_node = NULL;
+    }
+
+    NEXT_LEXEM();
+
+    decl_head_node->right_branch = args_root;
+    args_root = nullptr;
+
+    LSCHK_LOCAL(grammar_comp_stmt(&func_body, state));
+
+    ALLOC_NODE(decl_node);
+    decl_node->type         = AST_FUNC_DECL;
+    decl_node->left_branch  = decl_head_node;
+    decl_node->right_branch = func_body;
+
+    *node_out = decl_node;
+    return LSTATUS_OK;
+
+error_handler:
+    DESTROY_NODE(arg);
+    DESTROY_NODE(comp_node);
+    DESTROY_NODE(decl_head_node);
+    DESTROY_NODE(args_root);
+    DESTROY_NODE(func_body);
+    DESTROY_NODE(decl_node);
+
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
+
+static lstatus_t grammar_prg(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
+
+    ast_node_t *subtree_root = nullptr, *func_node = nullptr, *comp_node = nullptr;
+
+    while (({ FETCH_LEXEM(); curr_lexem->type != LEX_PRG_END; }))
+    {
+        LSCHK_LOCAL(grammar_fn_decl_stmt(&func_node, state));
         
-//     ERROR_CHECK();
-
-//     if (LEXEM(0).type != LEX_SEMICOLON)
-//     {
-//         LERR(LERR_PARSING, "expected ;");
-//         ERROR_HANDLER();
-//     }
-
-//     state->curr_offset++;
-
-//     ret_node = node_pool_claim(pool);
-//     ERROR_CHECK();
-
-//     ret_node->type = AST_RETURN;
-//     ret_node->left_branch  = ret_expr;
-//     ret_node->right_branch = NULL;
-
-//     return ret_node;
-
-// error_handler:
-//     ast_destroy(ret_expr, pool);
-//     ast_destroy(ret_node, pool);
-
-//     state->curr_offset = old_offset;
-//     return NULL;
-// }
-
-
-// static ast_node_t *grammar_stmt(parser_state_t *state, node_pool_t *pool)
-// {
-//     LERR_RESET();
-
-//     ast_node_t *stmt = grammar_comp_stmt(state, pool);
-//     if (!LERR_PARSING_PRESENT())
-//         return stmt;
-//     else
-//         LERR_RESET();
-
-//     stmt = grammar_var_decl_stmt(state, pool);
-//     if (!LERR_PARSING_PRESENT())
-//         return stmt;
-//     else
-//         LERR_RESET();
-
-//     stmt = grammar_if_stmt(state, pool);
-//     if (!LERR_PARSING_PRESENT())
-//         return stmt;
-//     else
-//         LERR_RESET();
-
-//     stmt = grammar_while_stmt(state, pool);
-//     if (!LERR_PARSING_PRESENT())
-//         return stmt;
-//     else
-//         LERR_RESET();
-
-//     stmt = grammar_ret_stmt(state, pool);
-//     if (!LERR_PARSING_PRESENT())
-//         return stmt;
-//     else
-//         LERR_RESET();
-
-//     return grammar_expr_stmt(state, pool);
-// }
-
-// static ast_node_t *grammar_comp_stmt(parser_state_t *state, node_pool_t *pool)
-// {
-//     LERR_RESET();
-//     size_t old_offset = state->curr_offset;
-
-//     ast_node_t *subtree_root = NULL, *stmt = NULL, *comp_node = NULL, *scope_node = NULL;
-    
-//     if (LEXEM(0).type != LEX_COMPOUND_BEG)
-//     {
-//         LERR(LERR_PARSING, "expected {");
-//         ERROR_HANDLER();
-//     }
-
-//     state->curr_offset++;
-
-//     while (LEXEM(0).type != LEX_COMPOUND_END)
-//     {
-//         stmt = grammar_stmt(state, pool);
-//         ERROR_CHECK();
-
-//         if (subtree_root == NULL)
-//         {
-//             subtree_root = stmt;
-//             stmt = NULL;
-//             continue;
-//         }
-
-//         comp_node = node_pool_claim(pool);
-//         ERROR_CHECK();
-
-//         comp_node->type         = AST_COMPOUND;
-//         comp_node->left_branch  = subtree_root;
-//         comp_node->right_branch = stmt;
-
-//         subtree_root = comp_node;
-
-//         // to avoid double-free
-//         stmt = NULL; comp_node = NULL;
-//     }
-
-//     state->curr_offset++;
-
-//     scope_node = node_pool_claim(pool);
-//     ERROR_CHECK();
-
-//     scope_node->type        = AST_SCOPE;
-//     scope_node->left_branch = subtree_root;
-
-//     return scope_node;
-
-// error_handler:
-//     ast_destroy(subtree_root, pool);
-//     ast_destroy(stmt        , pool);
-//     ast_destroy(comp_node   , pool);
-
-//     state->curr_offset = old_offset;
-//     return NULL;
-// }
-
-// static ast_node_t *grammar_fn_decl_stmt(parser_state_t *state, node_pool_t *pool)
-// {
-//     LERR_RESET();
-//     size_t old_offset = state->curr_offset;
-
-//     ast_node_t *args_root = NULL, *arg = NULL, *comp_node = NULL, 
-//                *func_body = NULL, *decl_node = NULL, *decl_head_node = NULL;
-    
-//     if (LEXEM(0).type != LEX_KW_FN)
-//     {
-//         LERR(LERR_PARSING, "expected fn keyword");
-//         ERROR_HANDLER();
-//     }
-
-//     state->curr_offset++;
-
-//     decl_head_node = node_pool_claim(pool);
-//     ERROR_CHECK();
-
-//     decl_head_node->type        = AST_FUNC_HEAD;
-//     decl_head_node->left_branch = grammar_idnt(state, pool);
-//     ERROR_CHECK();
-
-//     if (LEXEM(0).type != LEX_OPEN_BRACKET)
-//     {
-//         LERR(LERR_PARSING, "expected (");
-//         ERROR_HANDLER();
-//     }
-
-//     state->curr_offset++;
-
-//     while (LEXEM(0).type != LEX_CLOSE_BRACKET)
-//     {
-//         // if not first arg, require comma
-//         if (args_root != NULL)
-//         {
-//             if (LEXEM(0).type != LEX_COMMA)
-//             {
-//                 LERR(LERR_PARSING, "expected ,");
-//                 ERROR_HANDLER();
-//             }
-
-//             state->curr_offset++;
-//         }
-
-//         arg = grammar_idnt(state, pool);
-//         ERROR_CHECK();
-
-//         if (args_root == NULL)
-//         {
-//             args_root = arg;
-//             arg = NULL;
-//             continue;
-//         }
-
-//         comp_node = node_pool_claim(pool);
-//         ERROR_CHECK();
-
-//         comp_node->type         = AST_COMPOUND;
-//         comp_node->left_branch  = args_root;
-//         comp_node->right_branch = arg;
-
-//         args_root = comp_node;
-
-//         // to avoid double-free
-//         arg = NULL; comp_node = NULL;
-//     }
-
-//     state->curr_offset++;
-
-//     decl_head_node->right_branch = args_root;
-//     args_root = NULL;
-
-//     func_body = grammar_comp_stmt(state, pool);
-//     ERROR_CHECK();
-
-//     decl_node = node_pool_claim(pool);
-//     ERROR_CHECK();
-
-//     decl_node->type         = AST_FUNC_DECL;
-//     decl_node->left_branch  = decl_head_node;
-//     decl_node->right_branch = func_body;
-
-//     return decl_node;
-
-// error_handler:
-//     ast_destroy(arg           , pool);
-//     ast_destroy(comp_node     , pool);
-//     ast_destroy(decl_head_node, pool);
-//     ast_destroy(args_root     , pool);
-//     ast_destroy(func_body     , pool);
-//     ast_destroy(decl_node     , pool);
-
-//     state->curr_offset = old_offset;
-//     return NULL;
-// }
-
-// static ast_node_t *grammar_prg(parser_state_t *state, node_pool_t *pool)
-// {
-//     LERR_RESET();
-//     size_t old_offset = state->curr_offset;
-
-//     ast_node_t *subtree_root = NULL, *func_node = NULL, *comp_node = NULL;
-
-//     while (LEXEM(0).type != LEX_PRG_END)
-//     {
-//         func_node = grammar_fn_decl_stmt(state, pool);
-//         ERROR_CHECK();
-        
-//         if (subtree_root == NULL)
-//         {
-//             subtree_root = func_node;
-//             func_node = NULL;
-//             continue;
-//         }
-
-//         comp_node = node_pool_claim(pool);
-//         ERROR_CHECK();
-
-//         comp_node->type         = AST_COMPOUND;
-//         comp_node->left_branch  = subtree_root;
-//         comp_node->right_branch = func_node;
-
-//         subtree_root = comp_node;
-
-//         // to avoid double-free
-//         func_node = NULL; comp_node = NULL;
-//     }
-
-//     state->curr_offset++;
-
-//     return subtree_root;
-
-// error_handler:
-//     ast_destroy(subtree_root, pool);
-//     ast_destroy(func_node   , pool);
-//     ast_destroy(comp_node   , pool);
-
-//     state->curr_offset = old_offset;
-//     return NULL;
-// }
+        if (subtree_root == nullptr)
+        {
+            subtree_root = func_node;
+            func_node = nullptr;
+            continue;
+        }
+
+        ALLOC_NODE(comp_node);
+        comp_node->type         = AST_COMPOUND;
+        comp_node->left_branch  = subtree_root;
+        comp_node->right_branch = func_node;
+
+        subtree_root = comp_node;
+
+        // to avoid double-free
+        func_node = nullptr; comp_node = nullptr;
+    }
+
+    NEXT_LEXEM();
+
+    *node_out = subtree_root;
+    return LSTATUS_OK;
+
+error_handler:
+    DESTROY_NODE(subtree_root);
+    DESTROY_NODE(func_node);
+    DESTROY_NODE(comp_node);
+
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
 
 static ast_node_type_t lex_to_ast(lexem_type_t lexem_type)
 {

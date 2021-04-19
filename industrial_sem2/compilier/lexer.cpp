@@ -71,7 +71,7 @@ static bool try_read_spec_seq(lexem_t *lexem, lexer_state_t *state);
 static bool try_read_term    (lexem_t *lexem, lexer_state_t *state);
 
 #define LEXER_ERROR(err_str, ...) \
-    COMPILATION_ERROR(comp_err, state.curr_row, state.curr_pos, err_str, ##__VA_ARGS__)
+    COMPILATION_ERROR(comp_err, state.curr_row, state.curr_col, err_str, ##__VA_ARGS__)
 
 lstatus_t lexer_tokenize(const char *src, list_t<lexem_t> *lexems, compilation_error_t *comp_err)
 {
