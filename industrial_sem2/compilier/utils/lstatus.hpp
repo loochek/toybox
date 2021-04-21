@@ -18,7 +18,9 @@ enum lstatus_t
     LSTATUS_LIST_NULL_ITER,
     LSTATUS_LIST_BAD_ADDRESS,
     LSTATUS_LEXER_FAIL,
-    LSTATUS_PARSER_FAIL
+    LSTATUS_PARSER_FAIL,
+    LSTATUS_NOT_FOUND,
+    LSTATUS_CODE_GEN_FAIL
 };
 
 /// Stores an info message from the last LSTATUS call

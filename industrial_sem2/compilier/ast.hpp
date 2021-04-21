@@ -60,6 +60,8 @@ struct ast_node_t
 
     int row;
     int col;
+    
+    int regs_used;
 };
 
 /**

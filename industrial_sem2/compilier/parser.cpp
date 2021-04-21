@@ -55,10 +55,10 @@ static lstatus_t grammar_stmt         (ast_node_t **node_out, parser_state_t *st
 static lstatus_t grammar_fn_decl_stmt (ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_prg          (ast_node_t **node_out, parser_state_t *state);
 
-// helper function to translate lexem operator to AST operator
+/**
+ * helper function to translate lexem operator to AST operator
+ */
 static ast_node_type_t lex_to_ast(lexem_type_t lexem_type);
-
-////////// main function //////////
 
 lstatus_t ast_build(list_t<lexem_t> *lexems, memory_pool_t<ast_node_t> *pool,
                     compilation_error_t *comp_err, ast_node_t **tree_root_out)
@@ -74,7 +74,7 @@ lstatus_t ast_build(list_t<lexem_t> *lexems, memory_pool_t<ast_node_t> *pool,
     return LSTATUS_OK;
 }
 
-///////////////////////////////////
+//------------------------------------------------------------------------------------------------------
 
 #define LSCHK_LOCAL(expr) { status = expr; if (status != LSTATUS_OK) goto error_handler; }
 
