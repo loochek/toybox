@@ -1,29 +1,11 @@
 #include "code_gen.hpp"
 #include "utils/string_view.hpp"
 #include "utils/list.hpp"
+#include "binary_emitter.hpp"
 
 /**
  * WARNING: this is prototype
  */
-
-enum register_t
-{
-    REG_DUMMY,
-    REG_RAX,
-    REG_RBX,
-    REG_RCX,
-    REG_RDX,
-    REG_RSI,
-    REG_RDI,
-    REG_R8,
-    REG_R9,
-    REG_R10,
-    REG_R11,
-    REG_R12,
-    REG_R13,
-    REG_R14,
-    REG_R15,
-};
 
 const register_t alloc_order[] = { REG_RDI, REG_RSI, REG_RCX, REG_RDX, REG_R8, REG_R9 , REG_R10, REG_R11, REG_RBX, REG_R12, REG_R13, REG_R14 };
 
@@ -110,7 +92,7 @@ lstatus_t evaluate_expression(ast_node_t *expr, int alloc_offset, gen_state_t *s
     {
     case AST_NUMBER:
     {
-         // EMIT(mov %alloc_order[alloc_offset], expr->number)
+        LSCHK(emit_mov(nullptr, alloc_order[alloc_offset], expr->number));
 
         return LSTATUS_OK;
     }
@@ -128,7 +110,7 @@ lstatus_t evaluate_expression(ast_node_t *expr, int alloc_offset, gen_state_t *s
         else if (status != LSTATUS_OK)
             return status;
 
-        // EMIT(mov %alloc_order[alloc_offset], [rbp-var_offset*8])
+        LSCHK(emit_mov(nullptr, alloc_order[alloc_offset], REG_RBP, -var_offset * 8));
 
         return LSTATUS_OK;
     }
@@ -148,20 +130,24 @@ lstatus_t evaluate_expression(ast_node_t *expr, int alloc_offset, gen_state_t *s
 
         LSCHK(evaluate_expression(expr->right_branch, alloc_offset, state));
 
-        // EMIT(mov [rbp-var_offset*8] %alloc_order[alloc_offset])
+        LSCHK(emit_mov(nullptr, REG_RBP, -var_offset * 8, alloc_order[alloc_offset]));
     }
 
     case AST_CALL:
     {
-        // EMIT(push all currently used caller-save immediate registers - [rdi;alloc_offset) )
-
+        // push all currently used caller-save immediate registers - [rdi;alloc_offset)
+        for (int i = 0; i < alloc_offset; i++)
+            LSCHK(emit_push(nullptr, alloc_order[i]));
+        
         int call_alloc_offset = 0;
         LSCHK(func_call_arg_helper(expr->right_branch, &call_alloc_offset, state));
 
         // EMIT(call expr->left_branch_ident)
         // EMIT(mov %alloc_order[alloc_offset], rax)
 
-         // EMIT(pop caller-save immediate registers - [rdi;alloc_offset) )
+        // pop caller-save immediate registers - [rdi;alloc_offset)
+        for (int i = alloc_offset - 1; i >= 0; i--)
+            LSCHK(emit_pop(nullptr, alloc_order[i]));
     }
     
     default:
@@ -186,94 +172,84 @@ lstatus_t evaluate_expression(ast_node_t *expr, int alloc_offset, gen_state_t *s
         switch (expr->type)
         {
         case AST_OPER_ADD:
-            // EMIT(add %dst_reg, %src_reg)
+            LSCHK(emit_add(nullptr, dst_reg, src_reg));
             break;
 
         case AST_OPER_SUB:
-            // EMIT(sub %dst_reg, %src_reg)
+            LSCHK(emit_sub(nullptr, dst_reg, src_reg));
             break;
 
         case AST_OPER_MUL:
-            // EMIT(imul %dst_reg, %src_reg)
+            LSCHK(emit_imul(nullptr, dst_reg, src_reg));
             break;
 
-        case AST_OPER_DIV:
-            if (src_reg == REG_RDX)
-            {
-                // EMIT(mov r15, rdx)
-                // EMIT(mov rax, %dst_reg)
-                // EMIT(cdq)
-                // EMIT(idiv r15)
-                // EMIT(mov %dst_reg, rax)
-            }
-            else
-            {
-                // EMIT(mov rax, %dst_reg)
-                // EMIT(cdq)
-                // EMIT(idiv %src_reg)
-                // EMIT(mov %dst_reg, rax)
-            }
+        /// TODO: review
+        // case AST_OPER_DIV:
+        //     if (src_reg == REG_RDX)
+        //     {
+        //         LSCHK(emit_mov(nullptr, REG_R15, REG_RDX));
+        //         LSCHK(emit_mov(nullptr, REG_RAX, dst_reg));
+        //         LSCHK(emit_cdq(nullptr));
+        //         LSCHK(emit_idiv(nullptr, REG_R15));
+        //         LSCHK(emit_mov(nullptr, dst_reg, REG_RAX));
+        //     }
+        //     else
+        //     {
+        //         LSCHK(emit_mov(nullptr, REG_R15, REG_RDX));
+        //         LSCHK(emit_mov(nullptr, REG_RAX, dst_reg));
+        //         LSCHK(emit_cdq(nullptr));
+        //         LSCHK(emit_idiv(nullptr, src_reg));
+        //         LSCHK(emit_mov(nullptr, dst_reg, REG_RAX));
+        //         LSCHK(emit_mov(nullptr, REG_RDX, REG_R15));
+        //     }
 
-            break;
+        //     break;
 
-        case AST_OPER_MOD:
-            if (src_reg == REG_RDX)
-            {
-                // EMIT(mov r15, rdx)
-                // EMIT(mov rax, %dst_reg)
-                // EMIT(cdq)
-                // EMIT(idiv r15)
-                // EMIT(mov %dst_reg, rdx)
-            }
-            else
-            {
-                // EMIT(mov rax, %dst_reg)
-                // EMIT(cdq)
-                // EMIT(idiv %src_reg)
-                // EMIT(mov %dst_reg, rdx)
-            }
+        // case AST_OPER_MOD:
+
             
-            break;
+        //     break;
 
         case AST_OPER_EQUAL:
-            // EMIT(cmp %dst_reg, %src_reg)
-            // EMIT(sete %dst_reg)
+            LSCHK(emit_cmp(nullptr, dst_reg, src_reg));
+            LSCHK(emit_sete(nullptr, dst_reg));
 
             break;
         
         case AST_OPER_NEQUAL:
-            // EMIT(cmp %dst_reg, %src_reg)
-            // EMIT(setne %dst_reg)
+            LSCHK(emit_cmp(nullptr, dst_reg, src_reg));
+            LSCHK(emit_setne(nullptr, dst_reg));
 
             break;
 
         case AST_OPER_LESS:
-            // EMIT(cmp %dst_reg, %src_reg)
-            // EMIT(setl %dst_reg)
+            LSCHK(emit_cmp(nullptr, dst_reg, src_reg));
+            LSCHK(emit_setl(nullptr, dst_reg));
 
             break;
         
         case AST_OPER_MORE:
-            // EMIT(cmp %dst_reg, %src_reg)
-            // EMIT(setg %dst_reg)
+            LSCHK(emit_cmp(nullptr, dst_reg, src_reg));
+            LSCHK(emit_setg(nullptr, dst_reg));
 
             break;
 
         case AST_OPER_ELESS:
-            // EMIT(cmp %dst_reg, %src_reg)
-            // EMIT(setle %dst_reg)
+            LSCHK(emit_cmp(nullptr, dst_reg, src_reg));
+            LSCHK(emit_setle(nullptr, dst_reg));
 
             break;
 
         case AST_OPER_EMORE:
-            // EMIT(cmp %dst_reg, %src_reg)
-            // EMIT(setge %dst_reg)
+            LSCHK(emit_cmp(nullptr, dst_reg, src_reg));
+            LSCHK(emit_setge(nullptr, dst_reg));
 
             break;
         }
 
+        // move result into base register if needed
         if (expr->right_branch->regs_used > expr->left_branch->regs_used)
-            // EMIT(mov %src_reg, %dst_regs)
+            LSCHK(emit_mov(nullptr, src_reg, dst_reg));
 
         return LSTATUS_OK;
     }
