@@ -1,7 +1,9 @@
 #ifndef BINARY_EMITTER_HPP
 #define BINARY_EMITTER_HPP
 
+#include <cstdio>
 #include "utils/lstatus.hpp"
+#include "utils/string_view.hpp"
 
 enum register_t
 {
@@ -26,26 +28,38 @@ enum register_t
 
 struct emitter_t
 {
-
+    FILE *file;
 };
 
-lstatus_t emit_mov(emitter_t *emt, register_t dst, register_t src);
-lstatus_t emit_mov(emitter_t *emt, register_t dst, int imm_src);
-lstatus_t emit_mov(emitter_t *emt, register_t dst, register_t src_base, int src_offset);
-lstatus_t emit_mov(emitter_t *emt, register_t dst_base, int dst_offset, register_t src);
-lstatus_t emit_add(emitter_t *emt, register_t dst, register_t src);
-lstatus_t emit_sub(emitter_t *emt, register_t dst, register_t src);
-lstatus_t emit_imul(emitter_t *emt, register_t dst, register_t src);
-lstatus_t emit_idiv(emitter_t *emt, register_t divider);
-lstatus_t emit_cmp(emitter_t *emt, register_t dst, register_t src);
-lstatus_t emit_sete(emitter_t *emt, register_t dst);
+lstatus_t emit_mov  (emitter_t *emt, register_t dst, register_t src);
+lstatus_t emit_mov  (emitter_t *emt, register_t dst, int imm_src);
+lstatus_t emit_mov  (emitter_t *emt, register_t dst, register_t src_base, int src_offset);
+lstatus_t emit_mov  (emitter_t *emt, register_t dst_base, int dst_offset, register_t src);
+lstatus_t emit_add  (emitter_t *emt, register_t dst, register_t src);
+lstatus_t emit_add  (emitter_t *emt, register_t dst, int imm_src);
+lstatus_t emit_sub  (emitter_t *emt, register_t dst, register_t src);
+lstatus_t emit_sub  (emitter_t *emt, register_t dst, int imm_src);
+lstatus_t emit_imul (emitter_t *emt, register_t dst, register_t src);
+lstatus_t emit_idiv (emitter_t *emt, register_t divider);
+lstatus_t emit_xor  (emitter_t *emt, register_t dst, register_t src);
+lstatus_t emit_cmp  (emitter_t *emt, register_t dst, register_t src);
+lstatus_t emit_sete (emitter_t *emt, register_t dst);
 lstatus_t emit_setne(emitter_t *emt, register_t dst);
-lstatus_t emit_setl(emitter_t *emt, register_t dst);
-lstatus_t emit_setg(emitter_t *emt, register_t dst);
+lstatus_t emit_setl (emitter_t *emt, register_t dst);
+lstatus_t emit_setg (emitter_t *emt, register_t dst);
 lstatus_t emit_setle(emitter_t *emt, register_t dst);
 lstatus_t emit_setge(emitter_t *emt, register_t dst);
-lstatus_t emit_cdq(emitter_t *emt);
-lstatus_t emit_push(emitter_t *emt, register_t src);
-lstatus_t emit_pop(emitter_t *emt, register_t dst);
+lstatus_t emit_cdq  (emitter_t *emt);
+lstatus_t emit_push (emitter_t *emt, register_t src);
+lstatus_t emit_pop  (emitter_t *emt, register_t dst);
+lstatus_t emit_call (emitter_t *emt, string_view_t label);
+lstatus_t emit_call (emitter_t *emt, const char *label);
+lstatus_t emit_ret  (emitter_t *emt);
+lstatus_t emit_test (emitter_t *emt, register_t dst, register_t src);
+lstatus_t emit_jmp  (emitter_t *emt, const char *label);
+lstatus_t emit_jz   (emitter_t *emt, const char *label);
+
+lstatus_t emit_label(emitter_t *emt, string_view_t label);
+lstatus_t emit_label(emitter_t *emt, const char *label);
 
 #endif
