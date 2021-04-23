@@ -181,8 +181,12 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
     LSCHK(emit_mov(&state->emt, REG_RBP, REG_RSP));
     LSCHK(emit_sub(&state->emt, REG_RSP, 128)); /// TODO: dependency on variables count
 
+    LSCHK(emit_comment(&state->emt, "placement of arguments"));
+
     int reg_offset = 0;
     LSCHK(func_decl_arg_helper(func_head->right_branch, &reg_offset, state));
+
+    LSCHK(emit_comment(&state->emt, "function body"));
 
     LSCHK(gen_statement(func_decl->right_branch, state));
 
@@ -301,6 +305,8 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
 
     if (var_decl->right_branch != nullptr)
     {
+        LSCHK(emit_comment(&state->emt, "variable initialization"));
+
         // 0 is alloc_order[0]
         LSCHK(evaluate_expression(var_decl->right_branch, 0, state));
 
@@ -315,6 +321,7 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
 
 static lstatus_t gen_expr_stmt(ast_node_t *expr_stmt, gen_state_t *state)
 {
+    LSCHK(emit_comment(&state->emt, "expression statement"));
     // 0 is alloc_order[0]
     LSCHK(evaluate_expression(expr_stmt->left_branch, 0, state));
     // ignore calculated value
@@ -323,11 +330,14 @@ static lstatus_t gen_expr_stmt(ast_node_t *expr_stmt, gen_state_t *state)
 
 static lstatus_t gen_if(ast_node_t *if_node, gen_state_t *state)
 {
+    LSCHK(emit_comment(&state->emt, "if condition"));
     // 0 is alloc_order[0]
     LSCHK(evaluate_expression(if_node->left_branch, 0, state));
 
     LSCHK(emit_test(&state->emt, alloc_order[0], alloc_order[0]));
     LSCHK(emit_jz(&state->emt, "if_jmp_label_placeholder"));
+
+    LSCHK(emit_comment(&state->emt, "if body"));
 
     LSCHK(gen_statement(if_node->right_branch, state));
     LSCHK(emit_label(&state->emt, "if_jmp_label_placeholder"));
@@ -339,12 +349,15 @@ static lstatus_t gen_while(ast_node_t *while_node, gen_state_t *state)
 {
     LSCHK(emit_label(&state->emt, "while_begin_placeholder"));
 
+    LSCHK(emit_comment(&state->emt, "while condition"));
+
     // 0 is alloc_order[0]
     LSCHK(evaluate_expression(while_node->left_branch, 0, state));
 
     LSCHK(emit_test(&state->emt, alloc_order[0], alloc_order[0]));
     LSCHK(emit_jz(&state->emt, "while_end_placeholder"));
 
+    LSCHK(emit_comment(&state->emt, "while body"));
     LSCHK(gen_statement(while_node->right_branch, state));
 
     LSCHK(emit_jmp(&state->emt, "while_jmp_to_begin_placeholder"));
@@ -354,6 +367,8 @@ static lstatus_t gen_while(ast_node_t *while_node, gen_state_t *state)
 
 static lstatus_t gen_ret_stmt(ast_node_t *ret_stmt, gen_state_t *state)
 {
+    LSCHK(emit_comment(&state->emt, "return"));
+
     if (ret_stmt->left_branch != nullptr)
     {
         // 0 is alloc_order[0]
@@ -507,6 +522,8 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
 
         case AST_OPER_DIV:
+            LSCHK(emit_comment(&state->emt, "--division--"));
+
             if (src_reg == REG_RDX)
             {
                 LSCHK(emit_mov(&state->emt, REG_R15, REG_RDX));
@@ -525,9 +542,11 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
                 LSCHK(emit_mov(&state->emt, REG_RDX, REG_R15));
             }
 
+            LSCHK(emit_comment(&state->emt, "--division end--"));
             break;
 
         case AST_OPER_MOD:
+            LSCHK(emit_comment(&state->emt, "--modulo--"));
             if (src_reg == REG_RDX)
             {
                 LSCHK(emit_mov(&state->emt, REG_R15, REG_RDX));
@@ -546,6 +565,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
                 LSCHK(emit_mov(&state->emt, REG_RDX, REG_R15));
             }
 
+            LSCHK(emit_comment(&state->emt, "--modulo end--"));
             break;
 
         case AST_OPER_EQUAL:
@@ -634,7 +654,7 @@ static lstatus_t var_table_find(gen_state_t *state, string_view_t name, int *off
 
         if (strview_equ(&name, var_name))
         {
-            *offset_out = var_offset;
+            *offset_out = var_offset + 1;
             return LSTATUS_OK;
         }
 

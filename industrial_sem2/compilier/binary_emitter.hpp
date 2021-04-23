@@ -65,4 +65,6 @@ lstatus_t emit_jz   (emitter_t *emt, const char *label);
 lstatus_t emit_label(emitter_t *emt, string_view_t label);
 lstatus_t emit_label(emitter_t *emt, const char *label);
 
+lstatus_t emit_comment(emitter_t *emt, const char *comment);
+
 #endif

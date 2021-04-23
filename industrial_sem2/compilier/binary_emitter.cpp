@@ -181,7 +181,7 @@ lstatus_t emit_call(emitter_t *emt, const char *label)
 
 lstatus_t emit_ret(emitter_t *emt)
 {
-    fprintf(emt->file, "    ret\n");
+    fprintf(emt->file, "    ret\n\n");
     return LSTATUS_OK;
 }
 
@@ -206,5 +206,11 @@ lstatus_t emit_label(emitter_t *emt, string_view_t label)
 lstatus_t emit_label(emitter_t *emt, const char *label)
 {
     fprintf(emt->file, "%s:\n", label);
+    return LSTATUS_OK;
+}
+
+lstatus_t emit_comment(emitter_t *emt, const char *comment)
+{
+    fprintf(emt->file, "; %s\n", comment);
     return LSTATUS_OK;
 }

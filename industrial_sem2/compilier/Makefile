@@ -1,5 +1,5 @@
 CXX=clang++
-CXXFLAGS=-g
+CXXFLAGS=-g -fsanitize=address
 
 build:
 	$(CXX) $(CXXFLAGS) -o tc \
