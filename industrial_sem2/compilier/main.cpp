@@ -2,6 +2,7 @@
 #include "utils/file_utils.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "code_gen.hpp"
 
 #define ERROR_HANDLER() goto error_handler
 
@@ -41,9 +42,23 @@ int main()
         print_error(&comp_err);
         ERROR_HANDLER();
     }
+    else if (status != LSTATUS_OK)
+    {
+        LS_ERR_PRINT();
+        ERROR_HANDLER();
+    }
 
-    printf("Success!\n");
-    ast_visualize(tree_root);
+    status = code_gen(tree_root, &comp_err);
+    if (status == LSTATUS_CODE_GEN_FAIL)
+    {
+        print_error(&comp_err);
+        ERROR_HANDLER();
+    }
+    else if (status != LSTATUS_OK)
+    {
+        LS_ERR_PRINT();
+        ERROR_HANDLER();
+    }
 
     free(src);
     list_destruct(&lexems);
