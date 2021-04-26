@@ -1,3 +1,22 @@
+fn sqr(x)
+{
+    let l = 0;
+    let r = 1000000;
+    
+    while (r - l > 1)
+    {
+        let m = (l + r) / 2;
+        
+        if (m * m > x)
+            r = m;
+            
+        if (m * m <= x)
+            l = m;
+    }
+    
+    return l;
+}
+
 fn linear(b, c)
 {
     if (b == 0)

@@ -644,9 +644,9 @@ static lstatus_t grammar_while_stmt(ast_node_t **node_out, parser_state_t *state
     LSCHK_LOCAL(grammar_stmt(&while_body, state));
 
     ALLOC_NODE(while_node);
-    while_node->type         = AST_IF;
+    while_node->type         = AST_WHILE;
     while_node->left_branch  = condition;
-    while_node->right_branch = while_node;
+    while_node->right_branch = while_body;
 
     *node_out = while_node;
     return LSTATUS_OK;

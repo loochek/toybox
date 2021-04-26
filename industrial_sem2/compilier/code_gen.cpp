@@ -14,6 +14,12 @@ struct gen_state_t
     list_t<string_view_t> var_table;
     compilation_error_t  *comp_err;
     emitter_t emt;
+    
+    /// used for generating unique labels
+    int label_uid_cnt;
+
+    /// stores a name of current function - used by return statement
+    string_view_t curr_func_name;
 };
 
 
@@ -30,7 +36,7 @@ static lstatus_t root_func_helper(ast_node_t *root_func, gen_state_t *state);
 static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state);
 
 /**
- * Generates code for function arguments declaration
+ * Helper function, generates code for function arguments declaration
  */
 static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *reg_offset, gen_state_t *state);
 
@@ -175,8 +181,11 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
     ast_node_t *func_head = func_decl->left_branch;
 
     string_view_t func_name = func_head->left_branch->ident;
+    state->curr_func_name = func_name;
 
     LSCHK(emit_label(&state->emt, func_name));
+    LSCHK(emit_push(&state->emt, REG_R15)); 
+    LSCHK(emit_push(&state->emt, REG_R15)); /// TODO: more elegant solution for stack alignment
     LSCHK(emit_push(&state->emt, REG_RBP));
     LSCHK(emit_mov(&state->emt, REG_RBP, REG_RSP));
     LSCHK(emit_sub(&state->emt, REG_RSP, 128)); /// TODO: dependency on variables count
@@ -190,9 +199,12 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
 
     LSCHK(gen_statement(func_decl->right_branch, state));
 
-    LSCHK(emit_label(&state->emt, "func_exit_placeholder"));
+    LSCHK(emit_label(&state->emt, ".%.*s_exit", func_name.length, func_name.str));
 
     LSCHK(emit_add(&state->emt, REG_RSP, 128));
+    LSCHK(emit_pop(&state->emt, REG_RBP));
+    LSCHK(emit_pop(&state->emt, REG_R15));
+    LSCHK(emit_pop(&state->emt, REG_R15)); /// TODO: more elegant solution for stack alignment
     LSCHK(emit_ret(&state->emt));
 
     LSCHK(var_table_cleanup(state));
@@ -305,7 +317,7 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
 
     if (var_decl->right_branch != nullptr)
     {
-        LSCHK(emit_comment(&state->emt, "variable initialization"));
+        LSCHK(emit_comment(&state->emt, "%variable initialization"));
 
         // 0 is alloc_order[0]
         LSCHK(evaluate_expression(var_decl->right_branch, 0, state));
@@ -330,24 +342,30 @@ static lstatus_t gen_expr_stmt(ast_node_t *expr_stmt, gen_state_t *state)
 
 static lstatus_t gen_if(ast_node_t *if_node, gen_state_t *state)
 {
+    int if_id = state->label_uid_cnt;
+    state->label_uid_cnt++;
+
     LSCHK(emit_comment(&state->emt, "if condition"));
     // 0 is alloc_order[0]
     LSCHK(evaluate_expression(if_node->left_branch, 0, state));
 
     LSCHK(emit_test(&state->emt, alloc_order[0], alloc_order[0]));
-    LSCHK(emit_jz(&state->emt, "if_jmp_label_placeholder"));
+    LSCHK(emit_jz(&state->emt, ".if_skip_%d", if_id));
 
     LSCHK(emit_comment(&state->emt, "if body"));
 
     LSCHK(gen_statement(if_node->right_branch, state));
-    LSCHK(emit_label(&state->emt, "if_jmp_label_placeholder"));
+    LSCHK(emit_label(&state->emt, ".if_skip_%d", if_id));
 
     return LSTATUS_OK;
 }
 
 static lstatus_t gen_while(ast_node_t *while_node, gen_state_t *state)
 {
-    LSCHK(emit_label(&state->emt, "while_begin_placeholder"));
+    int while_id = state->label_uid_cnt;
+    state->label_uid_cnt++;
+
+    LSCHK(emit_label(&state->emt, ".while_%d", while_id));
 
     LSCHK(emit_comment(&state->emt, "while condition"));
 
@@ -355,12 +373,14 @@ static lstatus_t gen_while(ast_node_t *while_node, gen_state_t *state)
     LSCHK(evaluate_expression(while_node->left_branch, 0, state));
 
     LSCHK(emit_test(&state->emt, alloc_order[0], alloc_order[0]));
-    LSCHK(emit_jz(&state->emt, "while_end_placeholder"));
+    LSCHK(emit_jz(&state->emt, ".while_end_%d", while_id));
 
     LSCHK(emit_comment(&state->emt, "while body"));
     LSCHK(gen_statement(while_node->right_branch, state));
 
-    LSCHK(emit_jmp(&state->emt, "while_jmp_to_begin_placeholder"));
+    LSCHK(emit_jmp(&state->emt, ".while_%d", while_id));
+
+    LSCHK(emit_label(&state->emt, ".while_end_%d", while_id));
 
     return LSTATUS_OK;
 }
@@ -380,7 +400,7 @@ static lstatus_t gen_ret_stmt(ast_node_t *ret_stmt, gen_state_t *state)
         LSCHK(emit_xor(&state->emt, REG_RAX, REG_RAX));
     }
 
-    LSCHK(emit_jmp(&state->emt, "func_exit_placeholder"));
+    LSCHK(emit_jmp(&state->emt, ".%.*s_exit", state->curr_func_name.length, state->curr_func_name.str));
 
     return LSTATUS_OK;
 }
@@ -475,6 +495,9 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         for (int i = 0; i < alloc_offset; i++)
             LSCHK(emit_push(&state->emt, alloc_order[i]));
         
+        if (alloc_offset % 2) /// TODO: more elegant solution for stack alignment
+            LSCHK(emit_push(&state->emt, REG_RDI));
+        
         int call_alloc_offset = 0;
         LSCHK(func_call_arg_helper(expr->right_branch, &call_alloc_offset, state));
 
@@ -484,6 +507,9 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         // pop caller-save immediate registers - [rdi;alloc_offset)
         for (int i = alloc_offset - 1; i >= 0; i--)
             LSCHK(emit_pop(&state->emt, alloc_order[i]));
+
+        if (alloc_offset % 2) /// TODO: more elegant solution for stack alignment
+            LSCHK(emit_pop(&state->emt, REG_RDI));
 
         break;
     }
@@ -528,7 +554,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             {
                 LSCHK(emit_mov(&state->emt, REG_R15, REG_RDX));
                 LSCHK(emit_mov(&state->emt, REG_RAX, dst_reg));
-                LSCHK(emit_cdq(&state->emt));
+                LSCHK(emit_cqo(&state->emt));
                 LSCHK(emit_idiv(&state->emt, REG_R15));
                 LSCHK(emit_mov(&state->emt, dst_reg, REG_RAX));
             }
@@ -536,7 +562,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             {
                 LSCHK(emit_mov(&state->emt, REG_R15, REG_RDX));
                 LSCHK(emit_mov(&state->emt, REG_RAX, dst_reg));
-                LSCHK(emit_cdq(&state->emt));
+                LSCHK(emit_cqo(&state->emt));
                 LSCHK(emit_idiv(&state->emt, src_reg));
                 LSCHK(emit_mov(&state->emt, dst_reg, REG_RAX));
                 LSCHK(emit_mov(&state->emt, REG_RDX, REG_R15));
@@ -551,7 +577,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             {
                 LSCHK(emit_mov(&state->emt, REG_R15, REG_RDX));
                 LSCHK(emit_mov(&state->emt, REG_RAX, dst_reg));
-                LSCHK(emit_cdq(&state->emt));
+                LSCHK(emit_cqo(&state->emt));
                 LSCHK(emit_idiv(&state->emt, REG_R15));
                 LSCHK(emit_mov(&state->emt, dst_reg, REG_RDX));
             }
@@ -559,7 +585,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             {
                 LSCHK(emit_mov(&state->emt, REG_R15, REG_RDX));
                 LSCHK(emit_mov(&state->emt, REG_RAX, dst_reg));
-                LSCHK(emit_cdq(&state->emt));
+                LSCHK(emit_cqo(&state->emt));
                 LSCHK(emit_idiv(&state->emt, src_reg));
                 LSCHK(emit_mov(&state->emt, dst_reg, REG_RDX));
                 LSCHK(emit_mov(&state->emt, REG_RDX, REG_R15));
@@ -570,37 +596,49 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 
         case AST_OPER_EQUAL:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_sete(&state->emt, dst_reg));
+            LSCHK(emit_mov(&state->emt, dst_reg, 0));
+            LSCHK(emit_mov(&state->emt, src_reg, 1));
+            LSCHK(emit_cmove(&state->emt, dst_reg, src_reg));
 
             break;
         
         case AST_OPER_NEQUAL:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_setne(&state->emt, dst_reg));
+            LSCHK(emit_mov(&state->emt, dst_reg, 0));
+            LSCHK(emit_mov(&state->emt, src_reg, 1));
+            LSCHK(emit_cmovne(&state->emt, dst_reg, src_reg));
 
             break;
 
         case AST_OPER_LESS:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_setl(&state->emt, dst_reg));
+            LSCHK(emit_mov(&state->emt, dst_reg, 0));
+            LSCHK(emit_mov(&state->emt, src_reg, 1));
+            LSCHK(emit_cmovl(&state->emt, dst_reg, src_reg));
 
             break;
         
         case AST_OPER_MORE:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_setg(&state->emt, dst_reg));
+            LSCHK(emit_mov(&state->emt, dst_reg, 0));
+            LSCHK(emit_mov(&state->emt, src_reg, 1));
+            LSCHK(emit_cmovg(&state->emt, dst_reg, src_reg));
 
             break;
 
         case AST_OPER_ELESS:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_setle(&state->emt, dst_reg));
+            LSCHK(emit_mov(&state->emt, dst_reg, 0));
+            LSCHK(emit_mov(&state->emt, src_reg, 1));
+            LSCHK(emit_cmovle(&state->emt, dst_reg, src_reg));
 
             break;
 
         case AST_OPER_EMORE:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_setge(&state->emt, dst_reg));
+            LSCHK(emit_mov(&state->emt, dst_reg, 0));
+            LSCHK(emit_mov(&state->emt, src_reg, 1));
+            LSCHK(emit_cmovge(&state->emt, dst_reg, src_reg));
 
             break;
 
