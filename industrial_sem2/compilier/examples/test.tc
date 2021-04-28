@@ -1,0 +1,17 @@
+fn sum(a, b, c, d, e, f, g, h)
+{
+    return a + b + c + d + e + f + g + h;
+}
+
+fn main()
+{
+    let a = input();
+    let b = input();
+    let c = input();
+    let d = input();
+    let e = input();
+    let f = input();
+    let g = input();
+    let h = input();
+    print(sum(a, b, c, d, e, f, g, h));
+}

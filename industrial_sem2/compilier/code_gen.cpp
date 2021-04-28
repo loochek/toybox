@@ -2,24 +2,31 @@
 #include "utils/string_view.hpp"
 #include "utils/list.hpp"
 #include "binary_emitter.hpp"
+#include "var_table.hpp"
 
-/**
- * WARNING: this is prototype
- */
+/// TODO: make this values non-hardcoded
+const int STACK_FRAME_SIZE = 256;
+const int MAX_REGISTER_ARGS = 6;
+const int VAR_ZONE_SIZE = 128; // up to 16 local variables
 
-const amd64_reg_t alloc_order[] = { REG_RDI, REG_RSI, REG_RCX, REG_RDX, REG_R8, REG_R9 , REG_R10, REG_R11, REG_RBX, REG_R12, REG_R13, REG_R14 };
+// rbp - VAR_ZONE_SIZE - temporary values stack used for expressions evaluation
+// rsp - zone of stack arguments for calling functions
+
+const amd64_reg_t alloc_order[] = { REG_RDI, REG_RSI, REG_RCX, REG_RDX, REG_R8, REG_R9, REG_R10, REG_R11, REG_RBX, REG_R12, REG_R13, REG_R14 };
 
 struct gen_state_t
 {
-    list_t<string_view_t> var_table;
-    compilation_error_t  *comp_err;
+    compilation_error_t *comp_err;
     emitter_t emt;
+    var_table_t var_table;
     
-    /// used for generating unique labels
+    // used for generating unique labels
     int label_uid_cnt;
 
-    /// stores a name of current function - used by return statement
+    // stores a name of current function - used by return statement
     string_view_t curr_func_name;
+
+    int temp_stack_cnt;
 };
 
 
@@ -38,7 +45,7 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state);
 /**
  * Helper function, generates code for function arguments declaration
  */
-static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *reg_offset, gen_state_t *state);
+static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_state_t *state);
 
 /**
  * Generates code for statement tree
@@ -101,48 +108,18 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_state_t *state);
 
 
-// Var table stuff --------------------------------------------------------
-
-/**
- * Puts a new variable to the variable table
- * 
- * \param \c state Code gen state
- * \param \c name Variable name
- */
-static lstatus_t var_table_add(gen_state_t *state, string_view_t name);
-
-/**
- * Tells offset of the variable in the stack frame
- * \param \c state Code gen state
- * \param \c name Variable name
- * \param \c offset_out Where to write offset
- */
-static lstatus_t var_table_find(gen_state_t *state, string_view_t name, int *offset_out);
-
-/**
- * Cleans up the variable table
- * 
- * \param \c state Code gen state
- */
-static lstatus_t var_table_cleanup(gen_state_t *state);
-
-/// maybe in the future
-// static void var_table_push_scope(gen_state_t *state);
-// static void var_table_pop_scope (gen_state_t *state);
-
-
 lstatus_t code_gen(ast_node_t *ast_root, compilation_error_t *comp_err)
 {
     gen_state_t state = {};
 
     state.comp_err = comp_err;
-    LSCHK(list_construct(&state.var_table));
+    LSCHK(var_table_construct(&state.var_table));
     LSCHK(emitter_construct(&state.emt));
 
     LSCHK(root_func_helper(ast_root, &state));
 
     LSCHK(emitter_destruct(&state.emt));
-    LSCHK(list_destruct(&state.var_table));
+    LSCHK(var_table_destruct(&state.var_table));
 
     return LSTATUS_OK;
 }
@@ -153,8 +130,6 @@ lstatus_t code_gen(ast_node_t *ast_root, compilation_error_t *comp_err)
 
 static lstatus_t root_func_helper(ast_node_t *root_func, gen_state_t *state)
 {
-    lstatus_t status = LSTATUS_OK;
-
     if (root_func == nullptr)
         return LSTATUS_OK;
 
@@ -165,15 +140,9 @@ static lstatus_t root_func_helper(ast_node_t *root_func, gen_state_t *state)
 
         return LSTATUS_OK;
     }
-    else if (root_func->type == AST_FUNC_DECL)
-    {
-        LSCHK(gen_func_decl(root_func, state));
 
-        return LSTATUS_OK;
-    }
-
-    LSTATUS(LSTATUS_BAD_AST, "non function root");
-    return status;
+    LSCHK(gen_func_decl(root_func, state));
+    return LSTATUS_OK;
 }
 
 static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
@@ -183,36 +152,35 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
     string_view_t func_name = func_head->left_branch->ident;
     state->curr_func_name = func_name;
 
+    // function prologue
     LSCHK(emit_label(&state->emt, func_name));
-    LSCHK(emit_push(&state->emt, REG_R15)); 
-    LSCHK(emit_push(&state->emt, REG_R15)); /// TODO: more elegant solution for stack alignment
     LSCHK(emit_push(&state->emt, REG_RBP));
     LSCHK(emit_mov(&state->emt, REG_RBP, REG_RSP));
-    LSCHK(emit_sub(&state->emt, REG_RSP, 128)); /// TODO: dependency on variables count
+    LSCHK(emit_sub(&state->emt, REG_RSP, STACK_FRAME_SIZE)); // 8 for alignment
 
     LSCHK(emit_comment(&state->emt, "placement of arguments"));
 
-    int reg_offset = 0;
-    LSCHK(func_decl_arg_helper(func_head->right_branch, &reg_offset, state));
+    // own scope for arguments
+    LSCHK(var_table_push_scope(&state->var_table));
 
+    int arg_count = 0;
+    LSCHK(func_decl_arg_helper(func_head->right_branch, &arg_count, state));
     LSCHK(emit_comment(&state->emt, "function body"));
-
     LSCHK(gen_statement(func_decl->right_branch, state));
 
+    LSCHK(var_table_pop_scope(&state->var_table));
+
+    // epilogue
     LSCHK(emit_label(&state->emt, ".%.*s_exit", func_name.length, func_name.str));
 
-    LSCHK(emit_add(&state->emt, REG_RSP, 128));
+    LSCHK(emit_add(&state->emt, REG_RSP, STACK_FRAME_SIZE));
     LSCHK(emit_pop(&state->emt, REG_RBP));
-    LSCHK(emit_pop(&state->emt, REG_R15));
-    LSCHK(emit_pop(&state->emt, REG_R15)); /// TODO: more elegant solution for stack alignment
     LSCHK(emit_ret(&state->emt));
-
-    LSCHK(var_table_cleanup(state));
 
     return LSTATUS_OK;
 }
 
-static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *reg_offset, gen_state_t *state)
+static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_state_t *state)
 {
     lstatus_t status = LSTATUS_OK;
 
@@ -221,33 +189,36 @@ static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *reg_offset, gen
 
     if (arg_node->type == AST_COMPOUND)
     {
-        LSCHK(func_decl_arg_helper(arg_node->left_branch , reg_offset, state));
-        LSCHK(func_decl_arg_helper(arg_node->right_branch, reg_offset, state));
+        LSCHK(func_decl_arg_helper(arg_node->left_branch , arg_count, state));
+        LSCHK(func_decl_arg_helper(arg_node->right_branch, arg_count, state));
 
         return LSTATUS_OK;
     }
-    else if (arg_node->type == AST_IDENTIFIER)
+
+    if (*arg_count < MAX_REGISTER_ARGS)
     {
-        status = var_table_add(state, arg_node->ident);
-        if (status == LSTATUS_ALREADY_PRESENT)
-        {
-            CODE_GEN_ERROR("variable %.*s already defined",
-                           arg_node->row, arg_node->col, arg_node->ident.length, arg_node->ident.str);
-            return LSTATUS_CODE_GEN_FAIL;
-        }
-        else if (status != LSTATUS_OK)
-            return status;
-
+        // variable is passed in register, it must be stored on the stack
         int var_offset = 0;
-        LSCHK(var_table_find(state, arg_node->ident, &var_offset));
-
-        LSCHK(emit_mov(&state->emt, REG_RBP, -var_offset * 8, alloc_order[*reg_offset]));
-        (*reg_offset)++;
-
-        return LSTATUS_OK;
+        status = var_table_add(&state->var_table, arg_node->ident, &var_offset);
+        LSCHK(emit_mov(&state->emt, REG_RBP, var_offset, alloc_order[*arg_count]));
+    }
+    else
+    {
+        // variable is passed on stack
+        // +16 - skip saved rbp and return address
+        int var_offset = (*arg_count - MAX_REGISTER_ARGS) * 8 + 16;
+        status = var_table_add(&state->var_table, arg_node->ident, var_offset);
     }
 
-    LSTATUS(LSTATUS_BAD_AST, "bad function declaration");
+    (*arg_count)++;
+    
+    if (status == LSTATUS_ALREADY_PRESENT)
+    {
+        CODE_GEN_ERROR("variable %.*s already defined",
+                        arg_node->row, arg_node->col, arg_node->ident.length, arg_node->ident.str);
+        return LSTATUS_CODE_GEN_FAIL;
+    }
+    
     return status;
 }
 
@@ -266,8 +237,9 @@ static lstatus_t gen_statement(ast_node_t *stmt, gen_state_t *state)
         break;
 
     case AST_SCOPE:
-        /// TODO: scopes
+        LSCHK(var_table_push_scope(&state->var_table));
         LSCHK(gen_statement(stmt->left_branch, state));
+        LSCHK(var_table_pop_scope(&state->var_table));
         break;
 
     case AST_EXPR_STMT:
@@ -291,7 +263,7 @@ static lstatus_t gen_statement(ast_node_t *stmt, gen_state_t *state)
         break;
 
     default:
-        LSTATUS(LSTATUS_BAD_AST, "bad statement tree");
+        LSTATUS(LSTATUS_BAD_AST, "unknown statement type");
         return status;
     }
 
@@ -304,7 +276,8 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
 
     ast_node_t *var_name_ident = var_decl->left_branch;
 
-    status = var_table_add(state, var_name_ident->ident);
+    int var_offset = 0;
+    status = var_table_add(&state->var_table, var_name_ident->ident, &var_offset);
     if (status == LSTATUS_ALREADY_PRESENT)
     {
         CODE_GEN_ERROR("variable %.*s already defined",
@@ -317,15 +290,11 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
 
     if (var_decl->right_branch != nullptr)
     {
-        LSCHK(emit_comment(&state->emt, "%variable initialization"));
+        LSCHK(emit_comment(&state->emt, "variable initialization"));
 
         // 0 is alloc_order[0]
         LSCHK(evaluate_expression(var_decl->right_branch, 0, state));
-
-        int var_offset = 0;
-        LSCHK(var_table_find(state, var_name_ident->ident, &var_offset));
-
-        LSCHK(emit_mov(&state->emt, REG_RBP, -var_offset * 8, alloc_order[0]));
+        LSCHK(emit_mov(&state->emt, REG_RBP, var_offset, alloc_order[0]));
     }
 
     return LSTATUS_OK;
@@ -451,8 +420,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     case AST_IDENTIFIER:
     {
         int var_offset = 0;
-
-        status = var_table_find(state, expr->ident, &var_offset);
+        status = var_table_find(&state->var_table, expr->ident, &var_offset);
         if (status == LSTATUS_NOT_FOUND)
         {
             CODE_GEN_ERROR("variable %.*s is not defined",
@@ -462,7 +430,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         else if (status != LSTATUS_OK)
             return status;
 
-        LSCHK(emit_mov(&state->emt, alloc_order[alloc_offset], REG_RBP, -var_offset * 8));
+        LSCHK(emit_mov(&state->emt, alloc_order[alloc_offset], REG_RBP, var_offset));
 
         break;
     }
@@ -470,8 +438,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     case AST_OPER_ASSIGN:
     {
         int var_offset = 0;
-
-        status = var_table_find(state, expr->left_branch->ident, &var_offset);
+        status = var_table_find(&state->var_table, expr->left_branch->ident, &var_offset);
         if (status == LSTATUS_NOT_FOUND)
         {
             CODE_GEN_ERROR("variable %.*s is not defined",
@@ -483,20 +450,19 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             return status;
 
         LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset, state));
-
-        LSCHK(emit_mov(&state->emt, REG_RBP, -var_offset * 8, alloc_order[alloc_offset]));
+        LSCHK(emit_mov(&state->emt, REG_RBP, var_offset, alloc_order[alloc_offset]));
 
         break;
     }
 
     case AST_CALL:
     {
-        // push all currently used caller-save immediate registers - [rdi;alloc_offset)
+        // push all currently used caller-save scratch registers into  - [rdi;alloc_offset)
         for (int i = 0; i < alloc_offset; i++)
-            LSCHK(emit_push(&state->emt, alloc_order[i]));
-        
-        if (alloc_offset % 2) /// TODO: more elegant solution for stack alignment
-            LSCHK(emit_push(&state->emt, REG_RDI));
+        {
+            LSCHK(emit_mov(&state->emt, REG_RBP, -(VAR_ZONE_SIZE + 8 * state->temp_stack_cnt), alloc_order[i]));
+            state->temp_stack_cnt++;
+        }
         
         int call_alloc_offset = 0;
         LSCHK(func_call_arg_helper(expr->right_branch, &call_alloc_offset, state));
@@ -504,12 +470,12 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         LSCHK(emit_call(&state->emt, expr->left_branch->ident));
         LSCHK(emit_mov(&state->emt, alloc_order[alloc_offset], REG_RAX));
 
-        // pop caller-save immediate registers - [rdi;alloc_offset)
+        // pop caller-save scratch registers - [rdi;alloc_offset)
         for (int i = alloc_offset - 1; i >= 0; i--)
-            LSCHK(emit_pop(&state->emt, alloc_order[i]));
-
-        if (alloc_offset % 2) /// TODO: more elegant solution for stack alignment
-            LSCHK(emit_pop(&state->emt, REG_RDI));
+        {
+            state->temp_stack_cnt--;
+            LSCHK(emit_mov(&state->emt, alloc_order[i], REG_RBP, -(VAR_ZONE_SIZE + 8 * state->temp_stack_cnt)));
+        }
 
         break;
     }
@@ -643,7 +609,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
 
         default:
-            LSTATUS(LSTATUS_BAD_AST, "bad expression tree");
+            LSTATUS(LSTATUS_BAD_AST, "unknown expression operator");
             return status;
         }
 
@@ -667,63 +633,20 @@ static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_s
     {
         LSCHK(func_call_arg_helper(args->left_branch , alloc_offset, state));
         LSCHK(func_call_arg_helper(args->right_branch, alloc_offset, state));
+        return LSTATUS_OK;
     }
-    else
+
+    /// TODO: replace this shitty code
+
+    if (*alloc_offset < MAX_REGISTER_ARGS)
     {
         LSCHK(evaluate_expression(args, *alloc_offset, state));
         (*alloc_offset)++;
-    }
-
-    return LSTATUS_OK;
-}
-
-static lstatus_t var_table_find(gen_state_t *state, string_view_t name, int *offset_out)
-{
-    list_iter_t var_table_iter = NULLITER, var_table_end = NULLITER;
-
-    LSCHK(list_begin(&state->var_table, &var_table_iter));
-    LSCHK(list_end(&state->var_table, &var_table_end));
-
-    int var_offset = 0;
-    while (!list_iter_cmp(var_table_iter, var_table_end))
-    {
-        string_view_t *var_name = nullptr;
-        LSCHK(list_data(&state->var_table, var_table_iter, &var_name));
-
-        if (strview_equ(&name, var_name))
-        {
-            *offset_out = var_offset + 1;
-            return LSTATUS_OK;
-        }
-
-        LSCHK(list_next(&state->var_table, &var_table_iter));
-        var_offset++;
-    }
-
-    return LSTATUS_NOT_FOUND;
-}
-
-static lstatus_t var_table_add(gen_state_t *state, string_view_t name)
-{
-    lstatus_t status = LSTATUS_OK;
-
-    int offset_out = 0;
-    status = var_table_find(state, name, &offset_out);
-    if (status == LSTATUS_NOT_FOUND)
-    {
-        LSCHK(list_push_front(&state->var_table, name));
         return LSTATUS_OK;
     }
-    else if (status == LSTATUS_OK)
-        return LSTATUS_ALREADY_PRESENT;
-    else
-        return status;
-}
 
-static lstatus_t var_table_cleanup(gen_state_t *state)
-{
-    LSCHK(list_destruct(&state->var_table));
-    LSCHK(list_construct(&state->var_table));
-
-    return LSTATUS_OK;
+    LSCHK(evaluate_expression(args, MAX_REGISTER_ARGS, state));
+    LSCHK(emit_mov(&state->emt, REG_RSP, 8 * (*alloc_offset - MAX_REGISTER_ARGS), alloc_order[MAX_REGISTER_ARGS]));
+    (*alloc_offset)++;
+    return LSTATUS_OK;    
 }

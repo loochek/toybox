@@ -7,6 +7,7 @@ build:
 		lexer.cpp \
 		parser.cpp \
 		code_gen.cpp \
+		var_table.cpp \
 		binary_emitter.cpp \
 		ast.cpp \
 		compilation_error.cpp \

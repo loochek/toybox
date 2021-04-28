@@ -467,7 +467,10 @@ lstatus_t list_pop_back(list_t<T> *list)
 
     list->linear = false;
 
-    LIST_DATA(list->tail) = 0;
+#ifdef DEBUG
+    LIST_DATA(list->tail) = list_poison<T>();
+#endif
+
     int new_tail = LIST_NEXT(list->tail);
     status = free_cell(list, list->tail);
     if (status != LSTATUS_OK)
@@ -622,6 +625,7 @@ lstatus_t list_data(list_t<T> *list, list_iter_t iter, T **elem)
 {
     lstatus_t status = LSTATUS_OK;
     LIST_CHECK(list);
+    LIST_CHECK_ITER(iter);
 
     if (iter.value >= list->buffer_size)
     {
