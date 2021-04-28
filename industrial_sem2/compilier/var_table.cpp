@@ -18,6 +18,9 @@ lstatus_t var_table_construct(var_table_t *table)
 
 lstatus_t var_table_destruct(var_table_t *table)
 {
+    if (table == nullptr)
+        return LSTATUS_OK;
+        
     list_iter_t curr_scope_iter = NULLITER, end_scope_iter = NULLITER;
     LSCHK(list_begin(&table->scopes, &curr_scope_iter));
     LSCHK(list_end(&table->scopes, &end_scope_iter));

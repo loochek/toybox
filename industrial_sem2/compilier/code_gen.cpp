@@ -12,6 +12,7 @@ const int VAR_ZONE_SIZE = 128; // up to 16 local variables
 // rbp - VAR_ZONE_SIZE - temporary values stack used for expressions evaluation
 // rsp - zone of stack arguments for calling functions
 
+const int SCRATCH_REGS_COUNT = 2;
 const amd64_reg_t alloc_order[] = { REG_RDI, REG_RSI, REG_RCX, REG_RDX, REG_R8, REG_R9, REG_R10, REG_R11, REG_RBX, REG_R12, REG_R13, REG_R14 };
 
 struct gen_state_t
@@ -108,20 +109,43 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_state_t *state);
 
 
+// Other stuff --------------------------------------------------------
+
+/**
+ * Pushes a register on temporary values stack
+ * 
+ * \param \c src_reg Register to push
+ * \param \c state Gen state
+ */
+static lstatus_t push_tmp_val(amd64_reg_t src_reg, gen_state_t *state);
+
+/**
+ * Pops a register from temporary values stack
+ * 
+ * \param \c src_reg Register to pop
+ * \param \c state Gen state
+ */
+static lstatus_t pop_tmp_val(amd64_reg_t src_reg, gen_state_t *state);
+
+
+#define LSCHK_LOCAL(expr) { status = expr; if (status != LSTATUS_OK) goto cleanup; }
+
 lstatus_t code_gen(ast_node_t *ast_root, compilation_error_t *comp_err)
 {
+    lstatus_t status = LSTATUS_OK;
+    
     gen_state_t state = {};
 
     state.comp_err = comp_err;
-    LSCHK(var_table_construct(&state.var_table));
-    LSCHK(emitter_construct(&state.emt));
+    LSCHK_LOCAL(var_table_construct(&state.var_table));
+    LSCHK_LOCAL(emitter_construct(&state.emt));
+    LSCHK_LOCAL(root_func_helper(ast_root, &state));
 
-    LSCHK(root_func_helper(ast_root, &state));
-
+cleanup:
     LSCHK(emitter_destruct(&state.emt));
     LSCHK(var_table_destruct(&state.var_table));
 
-    return LSTATUS_OK;
+    return status;
 }
 
 
@@ -459,10 +483,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     {
         // push all currently used caller-save scratch registers into  - [rdi;alloc_offset)
         for (int i = 0; i < alloc_offset; i++)
-        {
-            LSCHK(emit_mov(&state->emt, REG_RBP, -(VAR_ZONE_SIZE + 8 * state->temp_stack_cnt), alloc_order[i]));
-            state->temp_stack_cnt++;
-        }
+            LSCHK(push_tmp_val(alloc_order[i], state));
         
         int call_alloc_offset = 0;
         LSCHK(func_call_arg_helper(expr->right_branch, &call_alloc_offset, state));
@@ -472,10 +493,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 
         // pop caller-save scratch registers - [rdi;alloc_offset)
         for (int i = alloc_offset - 1; i >= 0; i--)
-        {
-            state->temp_stack_cnt--;
-            LSCHK(emit_mov(&state->emt, alloc_order[i], REG_RBP, -(VAR_ZONE_SIZE + 8 * state->temp_stack_cnt)));
-        }
+            LSCHK(pop_tmp_val(alloc_order[i], state));
 
         break;
     }
@@ -483,12 +501,28 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     default:
     {
         if (expr->right_branch->regs_used > expr->left_branch->regs_used)
-        {
+        {   
             LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset    , state));
             LSCHK(expr_eval_recursive(expr->left_branch , alloc_offset + 1, state));
 
             src_reg = alloc_order[alloc_offset];
             dst_reg = alloc_order[alloc_offset + 1];
+        }
+        else if (expr->right_branch->regs_used == expr->left_branch->regs_used &&
+                 expr->regs_used > SCRATCH_REGS_COUNT - alloc_offset)
+        {
+            // if remaining scratch registers are not enough to calculate expression,
+            // we must sacrifice access to the memory in order to continue working properly
+
+            int saved_val_pos = state->temp_stack_cnt++;
+
+            LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset, state));
+            LSCHK(push_tmp_val(alloc_order[alloc_offset], state));
+            LSCHK(expr_eval_recursive(expr->left_branch, alloc_offset, state));
+            LSCHK(pop_tmp_val(alloc_order[alloc_offset + 1], state));
+        
+            src_reg = alloc_order[alloc_offset + 1];
+            dst_reg = alloc_order[alloc_offset];
         }
         else
         {
@@ -498,7 +532,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             src_reg = alloc_order[alloc_offset + 1];
             dst_reg = alloc_order[alloc_offset];
         }
-        
+
         switch (expr->type)
         {
         case AST_OPER_ADD:
@@ -649,4 +683,18 @@ static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_s
     LSCHK(emit_mov(&state->emt, REG_RSP, 8 * (*alloc_offset - MAX_REGISTER_ARGS), alloc_order[MAX_REGISTER_ARGS]));
     (*alloc_offset)++;
     return LSTATUS_OK;    
+}
+
+static lstatus_t push_tmp_val(amd64_reg_t src_reg, gen_state_t *state)
+{
+    LSCHK(emit_mov(&state->emt, REG_RBP, -(VAR_ZONE_SIZE + 8 * state->temp_stack_cnt), src_reg));
+    state->temp_stack_cnt++;
+    return LSTATUS_OK;
+}
+
+static lstatus_t pop_tmp_val(amd64_reg_t dst_reg, gen_state_t *state)
+{
+    state->temp_stack_cnt--;
+    LSCHK(emit_mov(&state->emt, dst_reg, REG_RBP, -(VAR_ZONE_SIZE + 8 * state->temp_stack_cnt)));
+    return LSTATUS_OK;
 }

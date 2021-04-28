@@ -47,8 +47,10 @@ lstatus_t emitter_construct(emitter_t *emt)
 
 lstatus_t emitter_destruct(emitter_t *emt)
 {
-    fclose(emt->file);
+    if (emt == nullptr)
+        return LSTATUS_OK;
 
+    fclose(emt->file);
     return LSTATUS_OK;
 }
 
