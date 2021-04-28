@@ -220,6 +220,8 @@ static lstatus_t grammar_fncl(ast_node_t **node_out, parser_state_t *state)
     call_node->type = AST_CALL;
     call_node->left_branch  = func_name;
     call_node->right_branch = args_root;
+    call_node->row = func_name->row;
+    call_node->col = func_name->col;
 
     *node_out = call_node;
     return LSTATUS_OK;
@@ -303,6 +305,8 @@ static lstatus_t grammar_mudi(ast_node_t **node_out, parser_state_t *state)
              curr_lexem->type == LEX_MOD;}))
     {
         ast_node_type_t oper_type = lex_to_ast(curr_lexem->type);
+        int oper_row = curr_lexem->row;
+        int oper_col = curr_lexem->col;
         NEXT_LEXEM();
 
         LSCHK(grammar_prim(&second_arg, state));
@@ -311,6 +315,8 @@ static lstatus_t grammar_mudi(ast_node_t **node_out, parser_state_t *state)
         oper_node->type         = oper_type;
         oper_node->left_branch  = subtree_root;
         oper_node->right_branch = second_arg;
+        oper_node->row = oper_row;
+        oper_node->col = oper_col;
         
         subtree_root = oper_node;
 
@@ -346,6 +352,8 @@ static lstatus_t grammar_adsu(ast_node_t **node_out, parser_state_t *state)
              curr_lexem->type == LEX_SUB;}))
     {
         ast_node_type_t oper_type = lex_to_ast(curr_lexem->type);
+        int oper_row = curr_lexem->row;
+        int oper_col = curr_lexem->col;
         NEXT_LEXEM();
 
         LSCHK(grammar_mudi(&second_arg, state));
@@ -354,6 +362,8 @@ static lstatus_t grammar_adsu(ast_node_t **node_out, parser_state_t *state)
         oper_node->type         = oper_type;
         oper_node->left_branch  = subtree_root;
         oper_node->right_branch = second_arg;
+        oper_node->row = oper_row;
+        oper_node->col = oper_col;
         
         subtree_root = oper_node;
 
@@ -393,6 +403,8 @@ static lstatus_t grammar_cmp(ast_node_t **node_out, parser_state_t *state)
              curr_lexem->type == LEX_NEQUAL;}))
     {
         ast_node_type_t oper_type = lex_to_ast(curr_lexem->type);
+        int oper_row = curr_lexem->row;
+        int oper_col = curr_lexem->col;
         NEXT_LEXEM();
 
         LSCHK(grammar_adsu(&second_arg, state));
@@ -401,6 +413,8 @@ static lstatus_t grammar_cmp(ast_node_t **node_out, parser_state_t *state)
         oper_node->type         = oper_type;
         oper_node->left_branch  = subtree_root;
         oper_node->right_branch = second_arg;
+        oper_node->row = oper_row;
+        oper_node->col = oper_col;
         
         subtree_root = oper_node;
 
@@ -435,6 +449,8 @@ static lstatus_t grammar_assn(ast_node_t **node_out, parser_state_t *state)
     FETCH_LEXEM();
     if (curr_lexem->type == LEX_ASSIGN)
     {
+        int assn_row = curr_lexem->row;
+        int assn_col = curr_lexem->col;
         NEXT_LEXEM();
 
         LSCHK_LOCAL(grammar_expr(&value, state));
@@ -443,6 +459,8 @@ static lstatus_t grammar_assn(ast_node_t **node_out, parser_state_t *state)
         assn_node->type         = AST_OPER_ASSIGN;
         assn_node->left_branch  = var;
         assn_node->right_branch = value;
+        assn_node->row = assn_row;
+        assn_node->col = assn_col;
         
         *node_out = assn_node;
         return LSTATUS_OK;
@@ -505,6 +523,8 @@ static lstatus_t grammar_expr_stmt(ast_node_t **node_out, parser_state_t *state)
     marker_node->type         = AST_EXPR_STMT;
     marker_node->left_branch  = expr;
     marker_node->right_branch = NULL;
+    marker_node->row = expr->row;
+    marker_node->col = expr->col;
 
     *node_out = marker_node;
     return LSTATUS_OK;
@@ -526,10 +546,14 @@ static lstatus_t grammar_var_decl_stmt(ast_node_t **node_out, parser_state_t *st
 
     ast_node_t *ident_node = nullptr, *init_val = nullptr, *decl_node = nullptr;
 
+    int let_row = 0, let_col = 0;
+
     FETCH_LEXEM();
     if (curr_lexem->type != LEX_KW_LET)
         PARSING_ERROR("expected let keyword");
 
+    let_row = curr_lexem->row;
+    let_col = curr_lexem->col;
     NEXT_LEXEM();
 
     LSCHK_LOCAL(grammar_idnt(&ident_node, state));
@@ -551,6 +575,8 @@ static lstatus_t grammar_var_decl_stmt(ast_node_t **node_out, parser_state_t *st
     decl_node->type = AST_VAR_DECL;
     decl_node->left_branch = ident_node;
     decl_node->right_branch = init_val;
+    decl_node->row = let_row;
+    decl_node->col = let_col;
 
     *node_out = decl_node;
     return LSTATUS_OK;
@@ -572,11 +598,15 @@ static lstatus_t grammar_if_stmt(ast_node_t **node_out, parser_state_t *state)
     list_iter_t old_lexem_iter = state->curr_lexem_iter;
 
     ast_node_t *condition = nullptr, *if_body = nullptr, *if_node = nullptr;
+
+    int if_row = 0, if_col = 0;
     
     FETCH_LEXEM();
     if (curr_lexem->type != LEX_KW_IF)
         PARSING_ERROR("expected if keyword");
 
+    if_row = curr_lexem->row;
+    if_col = curr_lexem->col;
     NEXT_LEXEM();
 
     FETCH_LEXEM();
@@ -599,6 +629,8 @@ static lstatus_t grammar_if_stmt(ast_node_t **node_out, parser_state_t *state)
     if_node->type         = AST_IF;
     if_node->left_branch  = condition;
     if_node->right_branch = if_body;
+    if_node->row = if_row;
+    if_node->col = if_col;
 
     *node_out = if_node;
     return LSTATUS_OK;
@@ -620,11 +652,15 @@ static lstatus_t grammar_while_stmt(ast_node_t **node_out, parser_state_t *state
     list_iter_t old_lexem_iter = state->curr_lexem_iter;
 
     ast_node_t *condition = nullptr, *while_body = nullptr, *while_node = nullptr;
+
+    int while_row = 0, while_col = 0;
     
     FETCH_LEXEM();
     if (curr_lexem->type != LEX_KW_WHILE)
         PARSING_ERROR("expected while keyword");
 
+    while_row = curr_lexem->row;
+    while_col = curr_lexem->col;
     NEXT_LEXEM();
 
     FETCH_LEXEM();
@@ -647,6 +683,8 @@ static lstatus_t grammar_while_stmt(ast_node_t **node_out, parser_state_t *state
     while_node->type         = AST_WHILE;
     while_node->left_branch  = condition;
     while_node->right_branch = while_body;
+    while_node->row = while_row;
+    while_node->col = while_col;
 
     *node_out = while_node;
     return LSTATUS_OK;
@@ -669,10 +707,14 @@ static lstatus_t grammar_ret_stmt(ast_node_t **node_out, parser_state_t *state)
 
     ast_node_t *ret_expr = nullptr, *ret_node = nullptr;
 
+    int ret_row = 0, ret_col = 0;
+
     FETCH_LEXEM();
     if (curr_lexem->type != LEX_KW_RETURN)
         PARSING_ERROR("expected return keyword");
 
+    ret_row = curr_lexem->row;
+    ret_col = curr_lexem->col;
     NEXT_LEXEM();
 
     TRY_TO_PARSE(grammar_expr(&ret_expr, state), {});
@@ -687,6 +729,8 @@ static lstatus_t grammar_ret_stmt(ast_node_t **node_out, parser_state_t *state)
     ret_node->type = AST_RETURN;
     ret_node->left_branch  = ret_expr;
     ret_node->right_branch = NULL;
+    ret_node->row = ret_row;
+    ret_node->col = ret_col;
 
     *node_out = ret_node;
     return LSTATUS_OK;
@@ -813,11 +857,15 @@ static lstatus_t grammar_fn_decl_stmt(ast_node_t **node_out, parser_state_t *sta
 
     ast_node_t *args_root = nullptr, *arg = nullptr, *comp_node = nullptr, 
                *func_body = nullptr, *decl_node = nullptr, *decl_head_node = nullptr;
+
+    int fn_row = 0, fn_col = 0;
     
     FETCH_LEXEM();
     if (curr_lexem->type != LEX_KW_FN)
         PARSING_ERROR("expected fn keyword");
 
+    fn_row = curr_lexem->row;
+    fn_col = curr_lexem->col;
     NEXT_LEXEM();
 
     ALLOC_NODE(decl_head_node);
@@ -873,6 +921,8 @@ static lstatus_t grammar_fn_decl_stmt(ast_node_t **node_out, parser_state_t *sta
     decl_node->type         = AST_FUNC_DECL;
     decl_node->left_branch  = decl_head_node;
     decl_node->right_branch = func_body;
+    decl_node->row = fn_row;
+    decl_node->col = fn_col;
 
     *node_out = decl_node;
     return LSTATUS_OK;

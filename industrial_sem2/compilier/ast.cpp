@@ -18,10 +18,10 @@ const char *ast_types_display_names[] =
     "=",           // AST_OPER_ASSIGN
     "==",          // AST_OPER_EQUAL
     "!=",          // AST_OPER_NQUAL
-    "<",           // AST_OPER_LESS
-    ">",           // AST_OPER_MORE
-    "<=",          // AST_OPER_ELESS
-    ">=",          // AST_OPER_EMORE
+    "&lt;",        // AST_OPER_LESS
+    "&gt;",        // AST_OPER_MORE
+    "&lt;=",       // AST_OPER_ELESS
+    "&gt;=",       // AST_OPER_EMORE
     "()",          // AST_OPER_CALL
 
     "IF",
@@ -42,7 +42,9 @@ void ast_visualize(ast_node_t *tree_root)
 {
     FILE *file = fopen("tree.dot", "w");
 
-    fprintf(file, "digraph\n{\n");
+    fprintf(file, "digraph\n"
+                  "{\n"
+                  "node [shape=record];\n");
 
     ast_visualize_rec(tree_root, 1, file);
 
@@ -197,24 +199,50 @@ static void ast_visualize_rec(ast_node_t *node, int node_id, FILE *file)
     if (node == NULL)
         return;
 
-    if (node->type == AST_NUMBER)
+    switch (node->type)
     {
-        fprintf(file, "%d [shape=box, style=filled, color=\"#7c9ccf\", label=%d]\n",
-                node_id, node->number);
-        return;
-    }
+    case AST_NUMBER:
+        fprintf(file, "%d [fillcolor=cyan, style=filled, label=\"%d | { %d | %d }\"]\n",
+                node_id, node->number, node->row, node->col);
+        break;
 
-    if (node->type == AST_IDENTIFIER)
-    {
-        fprintf(file, "%d [shape=box, style=filled, color=\"#7c9ccf\", label=\"%.*s\"]\n",
-                node_id, node->ident.length, node->ident.str);
-        return;
-    }
+    case AST_IDENTIFIER:
+        fprintf(file, "%d [fillcolor=darkseagreen1, style=filled, label=\"%.*s | { %d | %d }\"]\n",
+                node_id, node->ident.length, node->ident.str, node->row, node->col);
+        break;
 
-    if (AST_OPER_ADD <= node->type && node->type <= AST_CALL)
-        fprintf(file, "%d [shape=diamond, label=\"%s\"]\n", node_id, ast_types_display_names[node->type]);
-    else
-        fprintf(file, "%d [shape=box, label=\"%s\"]\n", node_id, ast_types_display_names[node->type]);
+    case AST_COMPOUND:
+        fprintf(file, "%d [fillcolor=azure2, style=filled, label=\"%s\"]\n",
+                node_id, ast_types_display_names[node->type]);
+        break;
+
+    case AST_SCOPE:
+        fprintf(file, "%d [fillcolor=bisque3, style=filled, label=\"%s\"]\n",
+                node_id, ast_types_display_names[node->type]);
+        break;
+    
+    case AST_OPER_ADD:
+    case AST_OPER_SUB:
+    case AST_OPER_MUL:
+    case AST_OPER_DIV:
+    case AST_OPER_MOD:
+    case AST_OPER_ASSIGN:
+    case AST_OPER_EQUAL:
+    case AST_OPER_NEQUAL:
+    case AST_OPER_LESS:
+    case AST_OPER_MORE:
+    case AST_OPER_ELESS:
+    case AST_OPER_EMORE:
+    case AST_CALL:
+        fprintf(file, "%d [fillcolor=coral, style=filled, label=\"%s | { %d | %d }\"]\n",
+                node_id, ast_types_display_names[node->type], node->row, node->col);
+        break;
+
+    default:
+        fprintf(file, "%d [fillcolor=gold, style=filled, label=\"%s | { %d | %d }\"]\n",
+                node_id, ast_types_display_names[node->type], node->row, node->col);
+        break;
+    }
 
     ast_visualize_rec(node->left_branch , node_id * 2    , file);
     ast_visualize_rec(node->right_branch, node_id * 2 + 1, file);
