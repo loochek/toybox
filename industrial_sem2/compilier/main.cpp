@@ -48,6 +48,13 @@ int main()
         ERROR_HANDLER();
     }
 
+    status = ast_optimize(tree_root, &tree_root, nullptr);
+    if (status != LSTATUS_OK)
+    {
+        LS_ERR_PRINT();
+        ERROR_HANDLER();
+    }
+
     status = code_gen(tree_root, &comp_err);
     if (status == LSTATUS_CODE_GEN_FAIL)
     {

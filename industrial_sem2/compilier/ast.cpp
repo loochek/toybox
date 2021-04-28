@@ -53,6 +53,130 @@ void ast_visualize(ast_node_t *tree_root)
     system("google-chrome tree.svg");
 }
 
+lstatus_t ast_optimize(ast_node_t *node, ast_node_t **node_out, memory_pool_t<ast_node_t> *pool)
+{
+    if (node == nullptr)
+        return LSTATUS_OK;
+
+    LSCHK(ast_optimize(node->left_branch , &node->left_branch , pool));
+    LSCHK(ast_optimize(node->right_branch, &node->right_branch, pool));
+
+    switch (node->type)
+    {
+    case AST_OPER_ADD:
+        if (node->left_branch->type == AST_NUMBER && node->right_branch->type == AST_NUMBER)
+        {
+            node->type = AST_NUMBER;
+            node->number = node->left_branch->number + node->right_branch->number;
+            *node_out = node;
+        }
+        else if (node->left_branch->type == AST_NUMBER && node->left_branch->number == 0)
+        {
+            LSCHK(memory_pool_free(pool, node->left_branch));
+            *node_out = node->right_branch;
+        }
+        else if (node->right_branch->type == AST_NUMBER && node->right_branch->number == 0)
+        {
+            LSCHK(memory_pool_free(pool, node->right_branch));
+            *node_out = node->left_branch;
+        }
+        break;
+
+    case AST_OPER_SUB:
+        if (node->left_branch->type == AST_NUMBER && node->right_branch->type == AST_NUMBER)
+        {
+            node->type = AST_NUMBER;
+            node->number = node->left_branch->number - node->right_branch->number;
+            *node_out = node;
+        }
+        else if (node->right_branch->type == AST_NUMBER && node->right_branch->number == 0)
+        {
+            LSCHK(memory_pool_free(pool, node->right_branch));
+            *node_out = node->left_branch;
+        }
+        break;
+    
+    case AST_OPER_MUL:
+        if (node->left_branch->type == AST_NUMBER && node->right_branch->type == AST_NUMBER)
+        {
+            node->type = AST_NUMBER;
+            node->number = node->left_branch->number * node->right_branch->number;
+            *node_out = node;
+        }
+        else if (node->left_branch->type  == AST_NUMBER && node->left_branch->number  == 0 ||
+                 node->right_branch->type == AST_NUMBER && node->right_branch->number == 0)
+        {
+            node->type = AST_NUMBER;
+            node->number = 0;
+            *node_out = node;
+        }
+        else if (node->left_branch->type == AST_NUMBER && node->left_branch->number == 1)
+        {
+            LSCHK(memory_pool_free(pool, node->left_branch));
+            *node_out = node->right_branch;
+        }
+        else if (node->right_branch->type == AST_NUMBER && node->right_branch->number == 1)
+        {
+            LSCHK(memory_pool_free(pool, node->right_branch));
+            *node_out = node->left_branch;
+        }
+        break;
+
+    case AST_OPER_DIV:
+        if (node->left_branch->type == AST_NUMBER && node->right_branch->type == AST_NUMBER &&
+            node->right_branch->number != 0)
+        {
+            node->type = AST_NUMBER;
+            node->number = node->left_branch->number / node->right_branch->number;
+            *node_out = node;
+        }
+        else if (node->left_branch->type == AST_NUMBER && node->left_branch->number == 0 &&
+                 !(node->right_branch->type == AST_NUMBER && node->right_branch->number == 0))
+        {
+            node->type = AST_NUMBER;
+            node->number = 0;
+            *node_out = node;
+        }
+        else if (node->right_branch->type == AST_NUMBER && node->right_branch->number == 1)
+        {
+            LSCHK(memory_pool_free(pool, node->right_branch));
+            *node_out = node->left_branch;
+        }
+        break;
+
+    case AST_OPER_MOD:
+        if (node->left_branch->type == AST_NUMBER && node->right_branch->type == AST_NUMBER &&
+            node->right_branch->number != 0)
+        {
+            node->type = AST_NUMBER;
+            node->number = node->left_branch->number % node->right_branch->number;
+            *node_out = node;
+        }
+        if (node->right_branch->type == AST_NUMBER && node->right_branch->number == 1)
+        {
+            node->type = AST_NUMBER;
+            node->number = 0;
+            *node_out = node;
+        }
+        break;
+
+    default:
+        *node_out = node;
+        break;
+    }
+
+    if ((*node_out)->type == AST_NUMBER)
+    {
+        LSCHK(memory_pool_free(pool, node->left_branch));
+        LSCHK(memory_pool_free(pool, node->right_branch));
+        node->left_branch  = nullptr;
+        node->right_branch = nullptr;
+        *node_out = node;
+    }
+
+    return LSTATUS_OK;
+}
+
 lstatus_t ast_destroy(ast_node_t *node, memory_pool_t<ast_node_t> *pool)
 {
     if (node == nullptr)
