@@ -28,10 +28,10 @@ lstatus_t var_table_destruct(var_table_t *table)
 
     while (!list_iter_cmp(curr_scope_iter, end_scope_iter))
     {
-        list_t<var_entry_t> *curr_scope = nullptr;
+        scope_t *curr_scope = nullptr;
         LSCHK(list_data(&table->scopes, curr_scope_iter, &curr_scope));
 
-        LSCHK(list_destruct(curr_scope));
+        LSCHK(list_destruct(&curr_scope->vars));
 
         LSCHK(list_next(&table->scopes, &curr_scope_iter));   
     }
@@ -50,10 +50,10 @@ lstatus_t var_table_find(var_table_t *table, string_view_t name, int *offset_out
 
     while (!list_iter_cmp(curr_scope_iter, end_scope_iter))
     {
-        list_t<var_entry_t> *curr_scope = nullptr;
+        scope_t *curr_scope = nullptr;
         LSCHK(list_data(&table->scopes, curr_scope_iter, &curr_scope));
 
-        status = var_table_find_in_scope(curr_scope, name, offset_out);
+        status = var_table_find_in_scope(&curr_scope->vars, name, offset_out);
         if (status == LSTATUS_OK)
             return LSTATUS_OK;
         else if (status != LSTATUS_NOT_FOUND)
@@ -73,6 +73,14 @@ lstatus_t var_table_add(var_table_t *table, string_view_t name, int *offset_out)
 
     LSCHK(var_table_add(table, name, *offset_out));
 
+    list_iter_t top_scope_iter = NULLITER;
+    LSCHK(list_begin(&table->scopes, &top_scope_iter));
+
+    scope_t *top_scope = nullptr;
+    LSCHK(list_data(&table->scopes, top_scope_iter, &top_scope));
+
+    top_scope->curr_scope_frame_var_cnt++;
+
     table->curr_frame_var_cnt++;
     if (table->curr_frame_var_cnt > table->max_var_cnt)
         table->max_var_cnt = table->curr_frame_var_cnt;
@@ -87,14 +95,14 @@ lstatus_t var_table_add(var_table_t *table, string_view_t name, int offset)
     list_iter_t top_scope_iter = NULLITER;
     LSCHK(list_begin(&table->scopes, &top_scope_iter));
 
-    list_t<var_entry_t> *top_scope = nullptr;
+    scope_t *top_scope = nullptr;
     LSCHK(list_data(&table->scopes, top_scope_iter, &top_scope));
 
     int offset_out = 0;
-    status = var_table_find_in_scope(top_scope, name, &offset_out);
+    status = var_table_find_in_scope(&top_scope->vars, name, &offset_out);
     if (status == LSTATUS_NOT_FOUND)
     {
-        LSCHK(list_push_front(top_scope, (var_entry_t){ name, offset }));
+        LSCHK(list_push_front(&top_scope->vars, (var_entry_t){ name, offset }));
         return LSTATUS_OK;
     }
     else if (status == LSTATUS_OK)
@@ -105,8 +113,10 @@ lstatus_t var_table_add(var_table_t *table, string_view_t name, int offset)
 
 lstatus_t var_table_push_scope(var_table_t *table)
 {
-    list_t<var_entry_t> new_scope = {};
-    LSCHK(list_construct(&new_scope));
+    scope_t new_scope = {};
+    LSCHK(list_construct(&new_scope.vars));
+    new_scope.curr_scope_frame_var_cnt = 0;
+    
     LSCHK(list_push_back(&table->scopes, new_scope));
     return LSTATUS_OK;
 }
@@ -116,14 +126,12 @@ lstatus_t var_table_pop_scope(var_table_t *table)
     list_iter_t top_scope_iter = NULLITER;
     LSCHK(list_begin(&table->scopes, &top_scope_iter));
 
-    list_t<var_entry_t> *top_scope = nullptr;
+    scope_t *top_scope = nullptr;
     LSCHK(list_data(&table->scopes, top_scope_iter, &top_scope));
 
-    int scope_size = 0;
-    LSCHK(list_size(top_scope, &scope_size));
-    table->curr_frame_var_cnt -= scope_size;
+    table->curr_frame_var_cnt -= top_scope->curr_scope_frame_var_cnt;
 
-    LSCHK(list_destruct(top_scope));
+    LSCHK(list_destruct(&top_scope->vars));
 
     LSCHK(list_pop_back(&table->scopes));
     return LSTATUS_OK;

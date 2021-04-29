@@ -11,12 +11,22 @@ struct var_entry_t
     int offset;
 };
 
+struct scope_t
+{
+    list_t<var_entry_t> vars;
+   
+    // number of variables of current frame in current scope
+    int curr_scope_frame_var_cnt;
+};
+
 /**
  * A structure used for variable management during code generation
  */
 struct var_table_t
 {
-    list_t<list_t<var_entry_t>> scopes;
+    list_t<scope_t> scopes;
+
+    // number of variables of current frame
     int curr_frame_var_cnt;
 
     // data for determining size of the stack frame of the current function

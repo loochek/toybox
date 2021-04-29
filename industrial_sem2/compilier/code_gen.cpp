@@ -193,8 +193,10 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
     // enable emitter idle mode to pseude-compile without output
     state->emt.idle = true;
 
-    // reset counter of var table
+    // reset all counters
     state->var_table.max_var_cnt = 0;
+    state->max_temp_stack_cnt = 0;
+    state->max_stack_arg_cnt = 0;
 
     // no need for emitting prologue and epilogue
     // (first pass is also to determine their contents)
@@ -284,7 +286,7 @@ static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_
         int var_offset = (*arg_count - MAX_REGISTER_ARGS) * VAR_SIZE + 16;
         status = var_table_add(&state->var_table, arg_node->ident, var_offset);
 
-        LSCHK(emit_comment(&state->emt, "= argument %.*s is already on the stack at rbp-%d =",
+        LSCHK(emit_comment(&state->emt, "= argument %.*s is already on the stack at rbp+%d =",
                            var_name.length, var_name.str, var_offset));
     }
 
@@ -371,7 +373,6 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
     {
         LSCHK(emit_comment(&state->emt, "=== %.*s's initialization ===", var_name.length, var_name.str));
 
-        LSCHK(emit_comment(&state->emt, "= value calculating ="));
         // 0 is alloc_order[0]
         LSCHK(evaluate_expression(var_decl->right_branch, 0, state));
 
@@ -399,11 +400,9 @@ static lstatus_t gen_if(ast_node_t *if_node, gen_state_t *state)
     LSCHK(emit_comment(&state->emt, "=== if statement at line %d ===", if_node->row));
     LSCHK(emit_comment(&state->emt, "= if condition ="));
     
-    LSCHK(emit_comment(&state->emt, "- calculation -"));
     // 0 is alloc_order[0]
     LSCHK(evaluate_expression(if_node->left_branch, 0, state));
 
-    LSCHK(emit_comment(&state->emt, "- testing -"));
     LSCHK(emit_test(&state->emt, alloc_order[0], alloc_order[0]));
     LSCHK(emit_jz(&state->emt, ".if_skip_%d", if_id));
 
@@ -424,11 +423,9 @@ static lstatus_t gen_while(ast_node_t *while_node, gen_state_t *state)
     LSCHK(emit_label(&state->emt, ".while_%d", while_id));
     LSCHK(emit_comment(&state->emt, "= while condition ="));
 
-    LSCHK(emit_comment(&state->emt, "- calculation -"));
     // 0 is alloc_order[0]
     LSCHK(evaluate_expression(while_node->left_branch, 0, state));
 
-    LSCHK(emit_comment(&state->emt, "- testing -"));
     LSCHK(emit_test(&state->emt, alloc_order[0], alloc_order[0]));
     LSCHK(emit_jz(&state->emt, ".while_end_%d", while_id));
 
@@ -505,7 +502,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     {
     case AST_NUMBER:
     {
-        LSCHK(emit_comment(&state->emt, "loading constant to register"))
         LSCHK(emit_mov(&state->emt, alloc_order[alloc_offset], expr->number));
         break;
     }
@@ -525,7 +521,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         else if (status != LSTATUS_OK)
             return status;
 
-        LSCHK(emit_comment(&state->emt, "loading %.*s to register", var_name.length, var_name.str));
         LSCHK(emit_mov(&state->emt, alloc_order[alloc_offset], REG_RBP, var_offset));
 
         break;
@@ -547,9 +542,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         else if (status != LSTATUS_OK)
             return status;
 
-        LSCHK(emit_comment(&state->emt, "- calculating value for %.*s -", var_name.length, var_name.str));
         LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset, state));
-        LSCHK(emit_comment(&state->emt, "assigning value to %.*s", var_name.length, var_name.str));
         LSCHK(emit_mov(&state->emt, REG_RBP, var_offset, alloc_order[alloc_offset]));
 
         break;
@@ -559,9 +552,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     {
         string_view_t func_name = expr->left_branch->ident;
 
-        LSCHK(emit_comment(&state->emt, "-- calling %.*s --", func_name.length, func_name.str));
-
-        LSCHK(emit_comment(&state->emt, "saving scratch registers"));
         // push all currently used caller-save scratch registers into  - [rdi;alloc_offset)
         for (int i = 0; i < alloc_offset; i++)
             LSCHK(push_tmp_val(alloc_order[i], state));
@@ -569,11 +559,8 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         int call_alloc_offset = 0;
         LSCHK(func_call_arg_helper(expr->right_branch, &call_alloc_offset, state));
 
-        LSCHK(emit_comment(&state->emt, "calling and storing result"));
         LSCHK(emit_call(&state->emt, expr->left_branch->ident));
         LSCHK(emit_mov(&state->emt, alloc_order[alloc_offset], REG_RAX));
-
-        LSCHK(emit_comment(&state->emt, "restoring scratch registers"));
 
         // pop caller-save scratch registers - [rdi;alloc_offset)
         for (int i = alloc_offset - 1; i >= 0; i--)
@@ -597,8 +584,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         {
             // if remaining scratch registers are not enough to calculate expression,
             // we must sacrifice access to the memory in order to continue working properly
-
-            int saved_val_pos = state->temp_stack_cnt++;
 
             LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset, state));
             LSCHK(push_tmp_val(alloc_order[alloc_offset], state));
@@ -679,7 +664,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
 
         case AST_OPER_EQUAL:
-            LSCHK(emit_comment(&state->emt, "- == -"));
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -688,7 +672,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
         
         case AST_OPER_NEQUAL:
-            LSCHK(emit_comment(&state->emt, "- != -"));
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -697,8 +680,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
 
         case AST_OPER_LESS:
-            LSCHK(emit_comment(&state->emt, "- < -"));
-
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -707,8 +688,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
         
         case AST_OPER_MORE:
-            LSCHK(emit_comment(&state->emt, "- > -"));
-
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -717,8 +696,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
 
         case AST_OPER_ELESS:
-            LSCHK(emit_comment(&state->emt, "- <= -"));
-
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -727,8 +704,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
 
         case AST_OPER_EMORE:
-            LSCHK(emit_comment(&state->emt, "- >= -"));
-
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -766,8 +741,6 @@ static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_s
 
     /// TODO: replace this shitty code
 
-    LSCHK(emit_comment(&state->emt, "-- calculating argument %d --", *alloc_offset));
-
     if (*alloc_offset < MAX_REGISTER_ARGS)
     {
         LSCHK(evaluate_expression(args, *alloc_offset, state));
@@ -776,7 +749,6 @@ static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_s
     }
 
     LSCHK(evaluate_expression(args, MAX_REGISTER_ARGS, state));
-    LSCHK(emit_comment(&state->emt, "store argument on the stack"));
     LSCHK(emit_mov(&state->emt, REG_RSP, 8 * (*alloc_offset - MAX_REGISTER_ARGS), alloc_order[MAX_REGISTER_ARGS]));
     (*alloc_offset)++;
 
