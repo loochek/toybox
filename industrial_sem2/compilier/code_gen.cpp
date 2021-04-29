@@ -564,7 +564,8 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     {
         string_view_t func_name = expr->left_branch->ident;
 
-        // push all currently used caller-save scratch registers into  - [rdi;alloc_offset)
+        // push all currently used caller-save
+        // scratch registers - scratch_stack[0;alloc_offset) - on the temporary stack
         for (int i = 0; i < alloc_offset; i++)
             LSCHK(push_tmp_val(scratch_stack[i], state));
         
@@ -574,7 +575,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         LSCHK(emit_call(&state->emt, expr->left_branch->ident));
         LSCHK(emit_mov(&state->emt, scratch_stack[alloc_offset], REG_RAX));
 
-        // pop caller-save scratch registers - [rdi;alloc_offset)
+        // pop caller-save scratch registers - scratch_stack[0;alloc_offset)
         for (int i = alloc_offset - 1; i >= 0; i--)
             LSCHK(pop_tmp_val(scratch_stack[i], state));
 
