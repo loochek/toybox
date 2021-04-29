@@ -1,6 +1,6 @@
 #include "binary_emitter.hpp"
 
-static const char *regs_str_repr[] =
+static const char *regs64_str_repr[] =
 {
     "dummy",
     "rax",
@@ -18,24 +18,28 @@ static const char *regs_str_repr[] =
     "r14",
     "r15",
     "rbp",
-    "rsp",
+    "rsp"
+};
 
-    // "al",
-    // "bl",
-    // "cl",
-    // "dl",
-    // "sil",
-    // "dil",
-    // "r8b",
-    // "r9b",
-    // "r10b",
-    // "r11b",
-    // "r12b",
-    // "r13b",
-    // "r14b",
-    // "r15b",
-    // "bpl",
-    // "spl",
+static const char *regs8_str_repr[] =
+{
+    "dummy",
+    "al",
+    "bl",
+    "cl",
+    "dl",
+    "sil",
+    "dil",
+    "r8b",
+    "r9b",
+    "r10b",
+    "r11b",
+    "r12b",
+    "r13b",
+    "r14b",
+    "r15b",
+    "bpl",
+    "spl"
 };
 
 lstatus_t emitter_construct(emitter_t *emt)
@@ -55,174 +59,183 @@ lstatus_t emitter_destruct(emitter_t *emt)
     return LSTATUS_OK;
 }
 
-lstatus_t emit_mov(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    mov %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    mov %s, %s\n", regs64_str_repr[dst], regs64_str_repr[src]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_mov(emitter_t *emt, amd64_reg_t dst, int imm_src)
+lstatus_t emit_movsx(emitter_t *emt, reg64_t dst, reg8_t src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    mov %s, %d\n", regs_str_repr[dst], imm_src);
+    fprintf(emt->file, "    movsx %s, %s\n", regs64_str_repr[dst], regs8_str_repr[src]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_mov(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src_base, int src_offset)
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst, int imm_src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    mov %s, [%s%+d]\n", regs_str_repr[dst], regs_str_repr[src_base], src_offset);
+    fprintf(emt->file, "    mov %s, %d\n", regs64_str_repr[dst], imm_src);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_mov(emitter_t *emt, amd64_reg_t dst_base, int dst_offset, amd64_reg_t src)
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src_base, int src_offset)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    mov [%s%+d], %s\n", regs_str_repr[dst_base], dst_offset, regs_str_repr[src]);
+    fprintf(emt->file, "    mov %s, [%s%+d]\n", regs64_str_repr[dst], regs64_str_repr[src_base], src_offset);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_add(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst_base, int dst_offset, reg64_t src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    add %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    mov [%s%+d], %s\n", regs64_str_repr[dst_base], dst_offset, regs64_str_repr[src]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_add(emitter_t *emt, amd64_reg_t dst, int imm_src)
+lstatus_t emit_add(emitter_t *emt, reg64_t dst, reg64_t src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    add %s, %d\n", regs_str_repr[dst], imm_src);
+    fprintf(emt->file, "    add %s, %s\n", regs64_str_repr[dst], regs64_str_repr[src]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_sub(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_add(emitter_t *emt, reg64_t dst, int imm_src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    sub %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    add %s, %d\n", regs64_str_repr[dst], imm_src);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_sub(emitter_t *emt, amd64_reg_t dst, int imm_src)
+lstatus_t emit_sub(emitter_t *emt, reg64_t dst, reg64_t src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    sub %s, %d\n", regs_str_repr[dst], imm_src);
+    fprintf(emt->file, "    sub %s, %s\n", regs64_str_repr[dst], regs64_str_repr[src]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_imul(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_sub(emitter_t *emt, reg64_t dst, int imm_src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    imul %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    sub %s, %d\n", regs64_str_repr[dst], imm_src);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_idiv(emitter_t *emt, amd64_reg_t divider)
+lstatus_t emit_imul(emitter_t *emt, reg64_t dst, reg64_t src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    idiv %s\n", regs_str_repr[divider]);
+    fprintf(emt->file, "    imul %s, %s\n", regs64_str_repr[dst], regs64_str_repr[src]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_xor(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_idiv(emitter_t *emt, reg64_t divider)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    xor %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    idiv %s\n", regs64_str_repr[divider]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_cmp(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_xor(emitter_t *emt, reg64_t dst, reg64_t src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    cmp %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    xor %s, %s\n", regs64_str_repr[dst], regs64_str_repr[src]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_test(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_cmp(emitter_t *emt, reg64_t dst, reg64_t src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    test %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    cmp %s, %s\n", regs64_str_repr[dst], regs64_str_repr[src]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_cmove(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_test(emitter_t *emt, reg64_t dst, reg64_t src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    cmove %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    test %s, %s\n", regs64_str_repr[dst], regs64_str_repr[src]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_cmovne(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_sete(emitter_t *emt, reg8_t dst)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    cmovne %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    sete %s\n", regs8_str_repr[dst]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_cmovl(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_setne(emitter_t *emt, reg8_t dst)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    cmovl %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    setne %s\n", regs8_str_repr[dst]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_cmovg(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_setl(emitter_t *emt, reg8_t dst)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    cmovg %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    setl %s\n", regs8_str_repr[dst]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_cmovle(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_setg(emitter_t *emt, reg8_t dst)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    cmovle %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    setg %s\n", regs8_str_repr[dst]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_cmovge(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src)
+lstatus_t emit_setle(emitter_t *emt, reg8_t dst)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    cmovge %s, %s\n", regs_str_repr[dst], regs_str_repr[src]);
+    fprintf(emt->file, "    setle %s\n", regs8_str_repr[dst]);
+    return LSTATUS_OK;
+}
+
+lstatus_t emit_setge(emitter_t *emt, reg8_t dst)
+{
+    if (emt->idle)
+        return LSTATUS_OK;
+
+    fprintf(emt->file, "    setge %s\n", regs8_str_repr[dst]);
     return LSTATUS_OK;
 }
 
@@ -235,21 +248,21 @@ lstatus_t emit_cqo(emitter_t *emt)
     return LSTATUS_OK;
 }
 
-lstatus_t emit_push(emitter_t *emt, amd64_reg_t src)
+lstatus_t emit_push(emitter_t *emt, reg64_t src)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    push %s\n", regs_str_repr[src]);
+    fprintf(emt->file, "    push %s\n", regs64_str_repr[src]);
     return LSTATUS_OK;
 }
 
-lstatus_t emit_pop(emitter_t *emt, amd64_reg_t dst)
+lstatus_t emit_pop(emitter_t *emt, reg64_t dst)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
-    fprintf(emt->file, "    pop %s\n", regs_str_repr[dst]);
+    fprintf(emt->file, "    pop %s\n", regs64_str_repr[dst]);
     return LSTATUS_OK;
 }
 
@@ -357,4 +370,9 @@ lstatus_t emit_comment(emitter_t *emt, const char *comment_fmt, ...)
     
     fprintf(emt->file, "\n");
     return LSTATUS_OK;
+}
+
+reg8_t reg64_to_8(reg64_t reg64)
+{
+    return (reg8_t)reg64;
 }

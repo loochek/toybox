@@ -4,6 +4,8 @@
 #include "binary_emitter.hpp"
 #include "var_table.hpp"
 
+/// TODO: push r12-r15 if they are used
+
 /**
  * Implementation of AMD64 code generator
  * Follows System V AMD64 ABI as targeting ELF and Linux
@@ -19,7 +21,7 @@ const int STACK_ALIGNMENT = 16;
  * first 6 registers are also used for passing arguments according to ABI
  * this fact is widely used in code
  */
-const amd64_reg_t scratch_stack[] = { REG_RDI, REG_RSI, REG_RCX, REG_RDX, REG_R8, REG_R9, REG_R10, REG_R11, REG_RBX, REG_R12, REG_R13, REG_R14 };
+const reg64_t scratch_stack[] = { REG_RDI, REG_RSI, REG_RCX, REG_RDX, REG_R8, REG_R9, REG_R10, REG_R11, REG_RBX, REG_R12, REG_R13, REG_R14 };
 
 const int SCRATCH_REGS_COUNT = 12;
 
@@ -139,7 +141,7 @@ static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_s
  * \param \c src_reg Register to push
  * \param \c state Gen state
  */
-static lstatus_t push_tmp_val(amd64_reg_t src_reg, gen_state_t *state);
+static lstatus_t push_tmp_val(reg64_t src_reg, gen_state_t *state);
 
 /**
  * Pops a register from temporary values stack
@@ -147,7 +149,7 @@ static lstatus_t push_tmp_val(amd64_reg_t src_reg, gen_state_t *state);
  * \param \c src_reg Register to pop
  * \param \c state Gen state
  */
-static lstatus_t pop_tmp_val(amd64_reg_t src_reg, gen_state_t *state);
+static lstatus_t pop_tmp_val(reg64_t src_reg, gen_state_t *state);
 
 
 #define LSCHK_LOCAL(expr) { status = expr; if (status != LSTATUS_OK) goto cleanup; }
@@ -508,7 +510,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 {
     lstatus_t status = LSTATUS_OK;
 
-    amd64_reg_t dst_reg = REG_DUMMY, src_reg = REG_DUMMY;
+    reg64_t dst_reg = REG_DUMMY64, src_reg = REG_DUMMY64;
 
     switch (expr->type)
     {
@@ -678,49 +680,43 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 
         case AST_OPER_EQUAL:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_mov(&state->emt, dst_reg, 0));
-            LSCHK(emit_mov(&state->emt, src_reg, 1));
-            LSCHK(emit_cmove(&state->emt, dst_reg, src_reg));
+            LSCHK(emit_sete(&state->emt, reg64_to_8(dst_reg)));
+            LSCHK(emit_movsx(&state->emt, dst_reg, reg64_to_8(dst_reg)));
 
             break;
         
         case AST_OPER_NEQUAL:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_mov(&state->emt, dst_reg, 0));
-            LSCHK(emit_mov(&state->emt, src_reg, 1));
-            LSCHK(emit_cmovne(&state->emt, dst_reg, src_reg));
+            LSCHK(emit_setne(&state->emt, reg64_to_8(dst_reg)));
+            LSCHK(emit_movsx(&state->emt, dst_reg, reg64_to_8(dst_reg)));
 
             break;
 
         case AST_OPER_LESS:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_mov(&state->emt, dst_reg, 0));
-            LSCHK(emit_mov(&state->emt, src_reg, 1));
-            LSCHK(emit_cmovl(&state->emt, dst_reg, src_reg));
+            LSCHK(emit_setl(&state->emt, reg64_to_8(dst_reg)));
+            LSCHK(emit_movsx(&state->emt, dst_reg, reg64_to_8(dst_reg)));
 
             break;
         
         case AST_OPER_MORE:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_mov(&state->emt, dst_reg, 0));
-            LSCHK(emit_mov(&state->emt, src_reg, 1));
-            LSCHK(emit_cmovg(&state->emt, dst_reg, src_reg));
+            LSCHK(emit_setg(&state->emt, reg64_to_8(dst_reg)));
+            LSCHK(emit_movsx(&state->emt, dst_reg, reg64_to_8(dst_reg)));
 
             break;
 
         case AST_OPER_ELESS:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_mov(&state->emt, dst_reg, 0));
-            LSCHK(emit_mov(&state->emt, src_reg, 1));
-            LSCHK(emit_cmovle(&state->emt, dst_reg, src_reg));
+            LSCHK(emit_setle(&state->emt, reg64_to_8(dst_reg)));
+            LSCHK(emit_movsx(&state->emt, dst_reg, reg64_to_8(dst_reg)));
 
             break;
 
         case AST_OPER_EMORE:
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
-            LSCHK(emit_mov(&state->emt, dst_reg, 0));
-            LSCHK(emit_mov(&state->emt, src_reg, 1));
-            LSCHK(emit_cmovge(&state->emt, dst_reg, src_reg));
+            LSCHK(emit_setge(&state->emt, reg64_to_8(dst_reg)));
+            LSCHK(emit_movsx(&state->emt, dst_reg, reg64_to_8(dst_reg)));
 
             break;
 
@@ -773,7 +769,7 @@ static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_s
     return LSTATUS_OK;    
 }
 
-static lstatus_t push_tmp_val(amd64_reg_t src_reg, gen_state_t *state)
+static lstatus_t push_tmp_val(reg64_t src_reg, gen_state_t *state)
 {
     LSCHK(emit_mov(&state->emt, REG_RBP, -(state->temp_stack_offset + VAR_SIZE * (state->temp_stack_cnt + 1)), src_reg));
     state->temp_stack_cnt++;
@@ -784,7 +780,7 @@ static lstatus_t push_tmp_val(amd64_reg_t src_reg, gen_state_t *state)
     return LSTATUS_OK;
 }
 
-static lstatus_t pop_tmp_val(amd64_reg_t dst_reg, gen_state_t *state)
+static lstatus_t pop_tmp_val(reg64_t dst_reg, gen_state_t *state)
 {
     state->temp_stack_cnt--;
     LSCHK(emit_mov(&state->emt, dst_reg, REG_RBP, -(state->temp_stack_offset + VAR_SIZE * (state->temp_stack_cnt + 1))));

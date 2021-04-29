@@ -15,7 +15,7 @@ int main()
     ast_node_t *tree_root = nullptr;
     compilation_error_t comp_err = {};
 
-    status = create_buffer_from_file("examples/test.tc", &src);
+    status = create_buffer_from_file("examples/equ.tc", &src);
     if (status != LSTATUS_OK)
     {
         LS_ERR_PRINT();

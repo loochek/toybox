@@ -5,9 +5,9 @@
 #include "utils/lstatus.hpp"
 #include "utils/string_view.hpp"
 
-enum amd64_reg_t
+enum reg64_t
 {
-    REG_DUMMY,
+    REG_DUMMY64,
     REG_RAX,
     REG_RBX,
     REG_RCX,
@@ -24,23 +24,27 @@ enum amd64_reg_t
     REG_R15,
     REG_RBP,
     REG_RSP,
+};
 
-    // REG_AL,
-    // REG_BL,
-    // REG_CL,
-    // REG_DL,
-    // REG_SIL,
-    // REG_DIL,
-    // REG_R8B,
-    // REG_R9B,
-    // REG_R10B,
-    // REG_R11B,
-    // REG_R12B,
-    // REG_R13B,
-    // REG_R14B,
-    // REG_R15B,
-    // REG_BPL,
-    // REG_SPL,
+enum reg8_t
+{
+    REG_DUMMY8,
+    REG_AL,
+    REG_BL,
+    REG_CL,
+    REG_DL,
+    REG_SIL,
+    REG_DIL,
+    REG_R8B,
+    REG_R9B,
+    REG_R10B,
+    REG_R11B,
+    REG_R12B,
+    REG_R13B,
+    REG_R14B,
+    REG_R15B,
+    REG_BPL,
+    REG_SPL
 };
 
 /**
@@ -75,7 +79,16 @@ lstatus_t emitter_destruct(emitter_t *emt);
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_mov  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src);
+
+/**
+ * movsx %dst, %src
+ * 
+ * \param \c src Source register
+ * \param \c dst Destination register
+ * \param \c emt Emitter object
+ */
+lstatus_t emit_movsx(emitter_t *emt, reg64_t dst, reg8_t src);
 
 /**
  * mov %dst, imm_src
@@ -84,7 +97,7 @@ lstatus_t emit_mov  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
  * \param \c src Immediate source value
  * \param \c emt Emitter object
  */
-lstatus_t emit_mov  (emitter_t *emt, amd64_reg_t dst, int imm_src);
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst, int imm_src);
 
 /**
  * mov %dst, [%src_base + src_offset]
@@ -94,7 +107,7 @@ lstatus_t emit_mov  (emitter_t *emt, amd64_reg_t dst, int imm_src);
  * \param \c src_offset Memory offset immediate value
  * \param \c emt Emitter object
  */
-lstatus_t emit_mov  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src_base, int src_offset);
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src_base, int src_offset);
 
 /**
  * mov [%dst_base + dst_offset], %src
@@ -104,7 +117,7 @@ lstatus_t emit_mov  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src_base, int 
  * \param \c src Source register
  * \param \c emt Emitter object
  */
-lstatus_t emit_mov  (emitter_t *emt, amd64_reg_t dst_base, int dst_offset, amd64_reg_t src);
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst_base, int dst_offset, reg64_t src);
 
 /**
  * add %dst, %src
@@ -113,7 +126,7 @@ lstatus_t emit_mov  (emitter_t *emt, amd64_reg_t dst_base, int dst_offset, amd64
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_add  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_add(emitter_t *emt, reg64_t dst, reg64_t src);
 
 /**
  * add %dst, imm_src
@@ -122,7 +135,7 @@ lstatus_t emit_add  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
  * \param \c src Immediate source value
  * \param \c emt Emitter object
  */
-lstatus_t emit_add  (emitter_t *emt, amd64_reg_t dst, int imm_src);
+lstatus_t emit_add(emitter_t *emt, reg64_t dst, int imm_src);
 
 /**
  * sub %dst, %src
@@ -131,7 +144,7 @@ lstatus_t emit_add  (emitter_t *emt, amd64_reg_t dst, int imm_src);
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_sub  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_sub(emitter_t *emt, reg64_t dst, reg64_t src);
 
 /**
  * sub %dst, imm_src
@@ -140,7 +153,7 @@ lstatus_t emit_sub  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
  * \param \c src Immediate source value
  * \param \c emt Emitter object
  */
-lstatus_t emit_sub  (emitter_t *emt, amd64_reg_t dst, int imm_src);
+lstatus_t emit_sub(emitter_t *emt, reg64_t dst, int imm_src);
 
 /**
  * imul %dst, %src
@@ -149,7 +162,7 @@ lstatus_t emit_sub  (emitter_t *emt, amd64_reg_t dst, int imm_src);
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_imul (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_imul(emitter_t *emt, reg64_t dst, reg64_t src);
 
 /**
  * idiv %divider
@@ -157,7 +170,7 @@ lstatus_t emit_imul (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
  * \param \c divider Divider register
  * \param \c emt Emitter object
  */
-lstatus_t emit_idiv (emitter_t *emt, amd64_reg_t divider);
+lstatus_t emit_idiv(emitter_t *emt, reg64_t divider);
 
 /**
  * xor %dst, %src
@@ -166,7 +179,7 @@ lstatus_t emit_idiv (emitter_t *emt, amd64_reg_t divider);
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_xor  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_xor(emitter_t *emt, reg64_t dst, reg64_t src);
 
 /**
  * cmp %dst, %src
@@ -175,7 +188,7 @@ lstatus_t emit_xor  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_cmp  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_cmp(emitter_t *emt, reg64_t dst, reg64_t src);
 
 /**
  * test %dst, %src
@@ -184,62 +197,62 @@ lstatus_t emit_cmp  (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_test (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_test(emitter_t *emt, reg64_t dst, reg64_t src);
 
 /**
- * cmove %dst
+ * sete %dst
  *
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_cmove (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_sete(emitter_t *emt, reg8_t dst);
 
 /**
- * cmovne %dst
+ * setne %dst
  *
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_cmovne(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_setne(emitter_t *emt, reg8_t dst);
 
 /**
- * cmovl %dst
+ * setl %dst
  *
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_cmovl (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_setl(emitter_t *emt, reg8_t dst);
 
 /**
- * cmovg %dst
+ * setg %dst
  *
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_cmovg (emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_setg(emitter_t *emt, reg8_t dst);
 
 /**
- * cmovle %dst
+ * setle %dst
  *
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_cmovle(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_setle(emitter_t *emt, reg8_t dst);
 
 /**
- * cmovge %dst
+ * setge %dst
  *
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_cmovge(emitter_t *emt, amd64_reg_t dst, amd64_reg_t src);
+lstatus_t emit_setge(emitter_t *emt, reg8_t dst);
 
 /**
  * cqo
  *
  * \param \c emt Emitter object
  */
-lstatus_t emit_cqo  (emitter_t *emt);
+lstatus_t emit_cqo(emitter_t *emt);
 
 /**
  * push %src
@@ -247,7 +260,7 @@ lstatus_t emit_cqo  (emitter_t *emt);
  * \param \c dst Source register
  * \param \c emt Emitter object
  */
-lstatus_t emit_push (emitter_t *emt, amd64_reg_t src);
+lstatus_t emit_push(emitter_t *emt, reg64_t src);
 
 /**
  * pop %dst
@@ -255,7 +268,7 @@ lstatus_t emit_push (emitter_t *emt, amd64_reg_t src);
  * \param \c dst Destination register
  * \param \c emt Emitter object
  */
-lstatus_t emit_pop  (emitter_t *emt, amd64_reg_t dst);
+lstatus_t emit_pop(emitter_t *emt, reg64_t dst);
 
 /**
  * call label
@@ -263,7 +276,7 @@ lstatus_t emit_pop  (emitter_t *emt, amd64_reg_t dst);
  * \param \c label Label
  * \param \c emt Emitter object
  */
-lstatus_t emit_call (emitter_t *emt, string_view_t label);
+lstatus_t emit_call(emitter_t *emt, string_view_t label);
 
 /**
  * call label_fmt
@@ -273,7 +286,7 @@ lstatus_t emit_call (emitter_t *emt, string_view_t label);
  * \param \c label_fmt Label
  * \param \c ... Format args
  */
-lstatus_t emit_call (emitter_t *emt, const char *label_fmt, ...);
+lstatus_t emit_call(emitter_t *emt, const char *label_fmt, ...);
 
 /**
  * jmp label_fmt
@@ -283,7 +296,7 @@ lstatus_t emit_call (emitter_t *emt, const char *label_fmt, ...);
  * \param \c label_fmt Label
  * \param \c ... Format args
  */
-lstatus_t emit_jmp  (emitter_t *emt, const char *label_fmt, ...);
+lstatus_t emit_jmp(emitter_t *emt, const char *label_fmt, ...);
 
 /**
  * jz label_fmt
@@ -293,14 +306,14 @@ lstatus_t emit_jmp  (emitter_t *emt, const char *label_fmt, ...);
  * \param \c label_fmt Label
  * \param \c ... Format args
  */
-lstatus_t emit_jz   (emitter_t *emt, const char *label_fmt, ...);
+lstatus_t emit_jz(emitter_t *emt, const char *label_fmt, ...);
 
 /**
  * ret
  *
  * \param \c emt Emitter object
  */
-lstatus_t emit_ret  (emitter_t *emt);
+lstatus_t emit_ret(emitter_t *emt);
 
 /**
  * label:
@@ -329,5 +342,12 @@ lstatus_t emit_label(emitter_t *emt, const char *label_fmt, ...);
  * \param \c ... Format args
  */
 lstatus_t emit_comment(emitter_t *emt, const char *comment_fmt, ...);
+
+/**
+ * Returns a LSB of a given 64bit register
+ * 
+ * \param \c reg64 Register
+ */
+reg8_t reg64_to_8(reg64_t reg64);
 
 #endif
