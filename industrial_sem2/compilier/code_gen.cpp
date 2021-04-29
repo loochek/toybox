@@ -4,15 +4,12 @@
 #include "binary_emitter.hpp"
 #include "var_table.hpp"
 
-/// TODO: make this values non-hardcoded
-const int STACK_FRAME_SIZE = 256;
 const int MAX_REGISTER_ARGS = 6;
-const int VAR_ZONE_SIZE = 128; // up to 16 local variables
 
-// rbp - VAR_ZONE_SIZE - temporary values stack used for expressions evaluation
-// rsp - zone of stack arguments for calling functions
+const int VAR_SIZE = 8;
+const int STACK_ALIGNMENT = 16;
 
-const int SCRATCH_REGS_COUNT = 2;
+const int SCRATCH_REGS_COUNT = 12;
 const amd64_reg_t alloc_order[] = { REG_RDI, REG_RSI, REG_RCX, REG_RDX, REG_R8, REG_R9, REG_R10, REG_R11, REG_RBX, REG_R12, REG_R13, REG_R14 };
 
 struct gen_state_t
@@ -24,10 +21,19 @@ struct gen_state_t
     // used for generating unique labels
     int label_uid_cnt;
 
-    // stores a name of current function - used by return statement
+    // stores a name of the current function - used by return statement
     string_view_t curr_func_name;
 
+    // current size of temporary values stack
     int temp_stack_cnt;
+
+    // data for determining size of the stack frame of the current function
+    int max_temp_stack_cnt;
+    int max_stack_arg_cnt;
+
+    // values determined during the first pass
+    int stack_frame_size;
+    int temp_stack_offset;
 };
 
 
@@ -42,6 +48,11 @@ static lstatus_t root_func_helper(ast_node_t *root_func, gen_state_t *state);
  * Generates code for function declaration
  */
 static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state);
+
+/**
+ * Helper function, generates code of function body
+ */
+static lstatus_t func_decl_gen_body(ast_node_t *func_decl, gen_state_t *state);
 
 /**
  * Helper function, generates code for function arguments declaration
@@ -176,30 +187,66 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
     string_view_t func_name = func_head->left_branch->ident;
     state->curr_func_name = func_name;
 
-    // function prologue
+    // first pass: determining stack frame size and which caller-save registers are used
+    // also semantic errors are caught
+
+    // enable emitter idle mode to pseude-compile without output
+    state->emt.idle = true;
+
+    // reset counter of var table
+    state->var_table.max_var_cnt = 0;
+
+    // no need for emitting prologue and epilogue
+    // (first pass is also to determine their contents)
+    LSCHK(func_decl_gen_body(func_decl, state));
+
+    state->emt.idle = false;
+
+    // determining some data according to first pass results
+
+    state->stack_frame_size = (state->var_table.max_var_cnt +
+                              state->max_temp_stack_cnt +
+                              state->max_stack_arg_cnt) * VAR_SIZE;
+
+    if (state->stack_frame_size % STACK_ALIGNMENT != 0)
+    {
+        state->stack_frame_size /= STACK_ALIGNMENT;
+        state->stack_frame_size++;
+        state->stack_frame_size *= STACK_ALIGNMENT;
+    }
+
+    state->temp_stack_offset = state->var_table.max_var_cnt * VAR_SIZE;
+
+    // second pass: normal code generation using data determined during the first pass
+
+    // prologue
     LSCHK(emit_label(&state->emt, func_name));
+    LSCHK(emit_comment(&state->emt, "=== %.*s's prologue ===", func_name.length, func_name.str));
     LSCHK(emit_push(&state->emt, REG_RBP));
     LSCHK(emit_mov(&state->emt, REG_RBP, REG_RSP));
-    LSCHK(emit_sub(&state->emt, REG_RSP, STACK_FRAME_SIZE)); // 8 for alignment
+    LSCHK(emit_sub(&state->emt, REG_RSP, state->stack_frame_size));
 
-    LSCHK(emit_comment(&state->emt, "placement of arguments"));
-
-    // own scope for arguments
-    LSCHK(var_table_push_scope(&state->var_table));
-
-    int arg_count = 0;
-    LSCHK(func_decl_arg_helper(func_head->right_branch, &arg_count, state));
-    LSCHK(emit_comment(&state->emt, "function body"));
-    LSCHK(gen_statement(func_decl->right_branch, state));
-
-    LSCHK(var_table_pop_scope(&state->var_table));
+    LSCHK(func_decl_gen_body(func_decl, state));
 
     // epilogue
     LSCHK(emit_label(&state->emt, ".%.*s_exit", func_name.length, func_name.str));
-
-    LSCHK(emit_add(&state->emt, REG_RSP, STACK_FRAME_SIZE));
+    LSCHK(emit_comment(&state->emt, "=== %.*s's epilogue ===", func_name.length, func_name.str));
+    LSCHK(emit_add(&state->emt, REG_RSP, state->stack_frame_size));
     LSCHK(emit_pop(&state->emt, REG_RBP));
     LSCHK(emit_ret(&state->emt));
+
+    return LSTATUS_OK;
+}
+
+static lstatus_t func_decl_gen_body(ast_node_t *func_decl, gen_state_t *state)
+{
+    ast_node_t *func_head = func_decl->left_branch;
+    int arg_count = 0;
+
+    LSCHK(var_table_push_scope(&state->var_table));
+    LSCHK(func_decl_arg_helper(func_head->right_branch, &arg_count, state));
+    LSCHK(gen_statement(func_decl->right_branch, state));
+    LSCHK(var_table_pop_scope(&state->var_table));
 
     return LSTATUS_OK;
 }
@@ -219,19 +266,26 @@ static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_
         return LSTATUS_OK;
     }
 
+    string_view_t var_name = arg_node->ident;
+
     if (*arg_count < MAX_REGISTER_ARGS)
     {
         // variable is passed in register, it must be stored on the stack
         int var_offset = 0;
-        status = var_table_add(&state->var_table, arg_node->ident, &var_offset);
+        status = var_table_add(&state->var_table, var_name, &var_offset);
+
+        LSCHK(emit_comment(&state->emt, "= storing argument %.*s on the stack =", var_name.length, var_name.str));
         LSCHK(emit_mov(&state->emt, REG_RBP, var_offset, alloc_order[*arg_count]));
     }
     else
     {
-        // variable is passed on stack
+        // variable is passed on the stack
         // +16 - skip saved rbp and return address
-        int var_offset = (*arg_count - MAX_REGISTER_ARGS) * 8 + 16;
+        int var_offset = (*arg_count - MAX_REGISTER_ARGS) * VAR_SIZE + 16;
         status = var_table_add(&state->var_table, arg_node->ident, var_offset);
+
+        LSCHK(emit_comment(&state->emt, "= argument %.*s is already on the stack at rbp-%d =",
+                           var_name.length, var_name.str, var_offset));
     }
 
     (*arg_count)++;
@@ -298,15 +352,16 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
 {
     lstatus_t status = LSTATUS_OK;
 
-    ast_node_t *var_name_ident = var_decl->left_branch;
+    ast_node_t *var_name_node = var_decl->left_branch;
+    string_view_t var_name = var_name_node->ident;
 
     int var_offset = 0;
-    status = var_table_add(&state->var_table, var_name_ident->ident, &var_offset);
+    status = var_table_add(&state->var_table, var_name, &var_offset);
     if (status == LSTATUS_ALREADY_PRESENT)
     {
         CODE_GEN_ERROR("variable %.*s already defined",
-                       var_name_ident->row, var_name_ident->col,
-                       var_name_ident->ident.length, var_name_ident->ident.str);
+                       var_name_node->row, var_name_node->col,
+                       var_name.length, var_name.str);
         return LSTATUS_CODE_GEN_FAIL;
     }
     else if (status != LSTATUS_OK)
@@ -314,10 +369,13 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
 
     if (var_decl->right_branch != nullptr)
     {
-        LSCHK(emit_comment(&state->emt, "variable initialization"));
+        LSCHK(emit_comment(&state->emt, "=== %.*s's initialization ===", var_name.length, var_name.str));
 
+        LSCHK(emit_comment(&state->emt, "= value calculating ="));
         // 0 is alloc_order[0]
         LSCHK(evaluate_expression(var_decl->right_branch, 0, state));
+
+        LSCHK(emit_comment(&state->emt, "= store %.*s's value =", var_name.length, var_name.str));
         LSCHK(emit_mov(&state->emt, REG_RBP, var_offset, alloc_order[0]));
     }
 
@@ -326,7 +384,7 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
 
 static lstatus_t gen_expr_stmt(ast_node_t *expr_stmt, gen_state_t *state)
 {
-    LSCHK(emit_comment(&state->emt, "expression statement"));
+    LSCHK(emit_comment(&state->emt, "=== expression statement at line %d ===", expr_stmt->row));
     // 0 is alloc_order[0]
     LSCHK(evaluate_expression(expr_stmt->left_branch, 0, state));
     // ignore calculated value
@@ -338,14 +396,18 @@ static lstatus_t gen_if(ast_node_t *if_node, gen_state_t *state)
     int if_id = state->label_uid_cnt;
     state->label_uid_cnt++;
 
-    LSCHK(emit_comment(&state->emt, "if condition"));
+    LSCHK(emit_comment(&state->emt, "=== if statement at line %d ===", if_node->row));
+    LSCHK(emit_comment(&state->emt, "= if condition ="));
+    
+    LSCHK(emit_comment(&state->emt, "- calculation -"));
     // 0 is alloc_order[0]
     LSCHK(evaluate_expression(if_node->left_branch, 0, state));
 
+    LSCHK(emit_comment(&state->emt, "- testing -"));
     LSCHK(emit_test(&state->emt, alloc_order[0], alloc_order[0]));
     LSCHK(emit_jz(&state->emt, ".if_skip_%d", if_id));
 
-    LSCHK(emit_comment(&state->emt, "if body"));
+    LSCHK(emit_comment(&state->emt, "=== if body ==="));
 
     LSCHK(gen_statement(if_node->right_branch, state));
     LSCHK(emit_label(&state->emt, ".if_skip_%d", if_id));
@@ -358,17 +420,19 @@ static lstatus_t gen_while(ast_node_t *while_node, gen_state_t *state)
     int while_id = state->label_uid_cnt;
     state->label_uid_cnt++;
 
+    LSCHK(emit_comment(&state->emt, "=== while statement at line %d ===", while_node->row));
     LSCHK(emit_label(&state->emt, ".while_%d", while_id));
+    LSCHK(emit_comment(&state->emt, "= while condition ="));
 
-    LSCHK(emit_comment(&state->emt, "while condition"));
-
+    LSCHK(emit_comment(&state->emt, "- calculation -"));
     // 0 is alloc_order[0]
     LSCHK(evaluate_expression(while_node->left_branch, 0, state));
 
+    LSCHK(emit_comment(&state->emt, "- testing -"));
     LSCHK(emit_test(&state->emt, alloc_order[0], alloc_order[0]));
     LSCHK(emit_jz(&state->emt, ".while_end_%d", while_id));
 
-    LSCHK(emit_comment(&state->emt, "while body"));
+    LSCHK(emit_comment(&state->emt, "=== while body ==="));
     LSCHK(gen_statement(while_node->right_branch, state));
 
     LSCHK(emit_jmp(&state->emt, ".while_%d", while_id));
@@ -380,16 +444,20 @@ static lstatus_t gen_while(ast_node_t *while_node, gen_state_t *state)
 
 static lstatus_t gen_ret_stmt(ast_node_t *ret_stmt, gen_state_t *state)
 {
-    LSCHK(emit_comment(&state->emt, "return"));
+    LSCHK(emit_comment(&state->emt, "=== return statement at line %d ===", ret_stmt->row));
 
     if (ret_stmt->left_branch != nullptr)
     {
+        LSCHK(emit_comment(&state->emt, "= calculating return value ="));
         // 0 is alloc_order[0]
         LSCHK(evaluate_expression(ret_stmt->left_branch, 0, state));
+
+        LSCHK(emit_comment(&state->emt, "= storing return value in rax ="));
         LSCHK(emit_mov(&state->emt, REG_RAX, alloc_order[0]));
     }
     else
     {
+        LSCHK(emit_comment(&state->emt, "= return without value - zeroing ="));
         LSCHK(emit_xor(&state->emt, REG_RAX, REG_RAX));
     }
 
@@ -437,6 +505,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     {
     case AST_NUMBER:
     {
+        LSCHK(emit_comment(&state->emt, "loading constant to register"))
         LSCHK(emit_mov(&state->emt, alloc_order[alloc_offset], expr->number));
         break;
     }
@@ -444,16 +513,19 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     case AST_IDENTIFIER:
     {
         int var_offset = 0;
-        status = var_table_find(&state->var_table, expr->ident, &var_offset);
+        string_view_t var_name = expr->ident;
+
+        status = var_table_find(&state->var_table, var_name, &var_offset);
         if (status == LSTATUS_NOT_FOUND)
         {
             CODE_GEN_ERROR("variable %.*s is not defined",
-                           expr->row, expr->col, expr->ident.length, expr->ident.str);
+                           expr->row, expr->col, var_name.length, var_name.str);
             return LSTATUS_CODE_GEN_FAIL;
         }
         else if (status != LSTATUS_OK)
             return status;
 
+        LSCHK(emit_comment(&state->emt, "loading %.*s to register", var_name.length, var_name.str));
         LSCHK(emit_mov(&state->emt, alloc_order[alloc_offset], REG_RBP, var_offset));
 
         break;
@@ -462,18 +534,22 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     case AST_OPER_ASSIGN:
     {
         int var_offset = 0;
-        status = var_table_find(&state->var_table, expr->left_branch->ident, &var_offset);
+        string_view_t var_name = expr->left_branch->ident;
+
+        status = var_table_find(&state->var_table, var_name, &var_offset);
         if (status == LSTATUS_NOT_FOUND)
         {
             CODE_GEN_ERROR("variable %.*s is not defined",
                            expr->left_branch->row, expr->left_branch->col,
-                           expr->left_branch->ident.length, expr->left_branch->ident.str);
+                           var_name.length, var_name.str);
             return LSTATUS_CODE_GEN_FAIL;
         }
         else if (status != LSTATUS_OK)
             return status;
 
+        LSCHK(emit_comment(&state->emt, "- calculating value for %.*s -", var_name.length, var_name.str));
         LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset, state));
+        LSCHK(emit_comment(&state->emt, "assigning value to %.*s", var_name.length, var_name.str));
         LSCHK(emit_mov(&state->emt, REG_RBP, var_offset, alloc_order[alloc_offset]));
 
         break;
@@ -481,6 +557,11 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 
     case AST_CALL:
     {
+        string_view_t func_name = expr->left_branch->ident;
+
+        LSCHK(emit_comment(&state->emt, "-- calling %.*s --", func_name.length, func_name.str));
+
+        LSCHK(emit_comment(&state->emt, "saving scratch registers"));
         // push all currently used caller-save scratch registers into  - [rdi;alloc_offset)
         for (int i = 0; i < alloc_offset; i++)
             LSCHK(push_tmp_val(alloc_order[i], state));
@@ -488,8 +569,11 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         int call_alloc_offset = 0;
         LSCHK(func_call_arg_helper(expr->right_branch, &call_alloc_offset, state));
 
+        LSCHK(emit_comment(&state->emt, "calling and storing result"));
         LSCHK(emit_call(&state->emt, expr->left_branch->ident));
         LSCHK(emit_mov(&state->emt, alloc_order[alloc_offset], REG_RAX));
+
+        LSCHK(emit_comment(&state->emt, "restoring scratch registers"));
 
         // pop caller-save scratch registers - [rdi;alloc_offset)
         for (int i = alloc_offset - 1; i >= 0; i--)
@@ -548,7 +632,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
 
         case AST_OPER_DIV:
-            LSCHK(emit_comment(&state->emt, "--division--"));
+            LSCHK(emit_comment(&state->emt, "- division -"));
 
             if (src_reg == REG_RDX)
             {
@@ -568,11 +652,11 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
                 LSCHK(emit_mov(&state->emt, REG_RDX, REG_R15));
             }
 
-            LSCHK(emit_comment(&state->emt, "--division end--"));
+            LSCHK(emit_comment(&state->emt, "- division end -"));
             break;
 
         case AST_OPER_MOD:
-            LSCHK(emit_comment(&state->emt, "--modulo--"));
+            LSCHK(emit_comment(&state->emt, "- modulo -"));
             if (src_reg == REG_RDX)
             {
                 LSCHK(emit_mov(&state->emt, REG_R15, REG_RDX));
@@ -591,10 +675,11 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
                 LSCHK(emit_mov(&state->emt, REG_RDX, REG_R15));
             }
 
-            LSCHK(emit_comment(&state->emt, "--modulo end--"));
+            LSCHK(emit_comment(&state->emt, "- modulo end -"));
             break;
 
         case AST_OPER_EQUAL:
+            LSCHK(emit_comment(&state->emt, "- == -"));
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -603,6 +688,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
         
         case AST_OPER_NEQUAL:
+            LSCHK(emit_comment(&state->emt, "- != -"));
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -611,6 +697,8 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
 
         case AST_OPER_LESS:
+            LSCHK(emit_comment(&state->emt, "- < -"));
+
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -619,6 +707,8 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
         
         case AST_OPER_MORE:
+            LSCHK(emit_comment(&state->emt, "- > -"));
+
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -627,6 +717,8 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
 
         case AST_OPER_ELESS:
+            LSCHK(emit_comment(&state->emt, "- <= -"));
+
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -635,6 +727,8 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             break;
 
         case AST_OPER_EMORE:
+            LSCHK(emit_comment(&state->emt, "- >= -"));
+
             LSCHK(emit_cmp(&state->emt, dst_reg, src_reg));
             LSCHK(emit_mov(&state->emt, dst_reg, 0));
             LSCHK(emit_mov(&state->emt, src_reg, 1));
@@ -672,6 +766,8 @@ static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_s
 
     /// TODO: replace this shitty code
 
+    LSCHK(emit_comment(&state->emt, "-- calculating argument %d --", *alloc_offset));
+
     if (*alloc_offset < MAX_REGISTER_ARGS)
     {
         LSCHK(evaluate_expression(args, *alloc_offset, state));
@@ -680,21 +776,30 @@ static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_s
     }
 
     LSCHK(evaluate_expression(args, MAX_REGISTER_ARGS, state));
+    LSCHK(emit_comment(&state->emt, "store argument on the stack"));
     LSCHK(emit_mov(&state->emt, REG_RSP, 8 * (*alloc_offset - MAX_REGISTER_ARGS), alloc_order[MAX_REGISTER_ARGS]));
     (*alloc_offset)++;
+
+    if (*alloc_offset - MAX_REGISTER_ARGS > state->max_stack_arg_cnt)
+        state->max_stack_arg_cnt = *alloc_offset - MAX_REGISTER_ARGS;
+
     return LSTATUS_OK;    
 }
 
 static lstatus_t push_tmp_val(amd64_reg_t src_reg, gen_state_t *state)
 {
-    LSCHK(emit_mov(&state->emt, REG_RBP, -(VAR_ZONE_SIZE + 8 * state->temp_stack_cnt), src_reg));
+    LSCHK(emit_mov(&state->emt, REG_RBP, -(state->temp_stack_offset + VAR_SIZE * (state->temp_stack_cnt + 1)), src_reg));
     state->temp_stack_cnt++;
+
+    if (state->temp_stack_cnt > state->max_temp_stack_cnt)
+        state->max_temp_stack_cnt = state->temp_stack_cnt;
+
     return LSTATUS_OK;
 }
 
 static lstatus_t pop_tmp_val(amd64_reg_t dst_reg, gen_state_t *state)
 {
     state->temp_stack_cnt--;
-    LSCHK(emit_mov(&state->emt, dst_reg, REG_RBP, -(VAR_ZONE_SIZE + 8 * state->temp_stack_cnt)));
+    LSCHK(emit_mov(&state->emt, dst_reg, REG_RBP, -(state->temp_stack_offset + VAR_SIZE * (state->temp_stack_cnt + 1))));
     return LSTATUS_OK;
 }

@@ -50,6 +50,8 @@ enum amd64_reg_t
 struct emitter_t
 {
     FILE *file;
+
+    bool idle;
 };
 
 /**

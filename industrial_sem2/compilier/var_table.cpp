@@ -13,6 +13,7 @@ lstatus_t var_table_construct(var_table_t *table)
 {
     LSCHK(list_construct(&table->scopes));
     table->curr_frame_var_cnt = 0;
+    table->max_var_cnt = 0;
     return LSTATUS_OK;
 }
 
@@ -73,6 +74,9 @@ lstatus_t var_table_add(var_table_t *table, string_view_t name, int *offset_out)
     LSCHK(var_table_add(table, name, *offset_out));
 
     table->curr_frame_var_cnt++;
+    if (table->curr_frame_var_cnt > table->max_var_cnt)
+        table->max_var_cnt = table->curr_frame_var_cnt;
+        
     return LSTATUS_OK;
 }
 

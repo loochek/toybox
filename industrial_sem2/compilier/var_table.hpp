@@ -18,6 +18,9 @@ struct var_table_t
 {
     list_t<list_t<var_entry_t>> scopes;
     int curr_frame_var_cnt;
+
+    // data for determining size of the stack frame of the current function
+    int max_var_cnt;
 };
 
 /**

@@ -77,7 +77,7 @@ lstatus_t lexer_tokenize(const char *src, list_t<lexem_t> *lexems, compilation_e
 {
     lstatus_t status = LSTATUS_OK;
 
-    lexer_state_t state = { src, 0 };
+    lexer_state_t state = { src, 0, 1, 1 };
     bool should_stop = false;
 
     while (!should_stop)
@@ -125,7 +125,7 @@ static void skip_non_program(lexer_state_t *state)
             if (state->src[state->curr_pos] == '\n')
             {
                 state->curr_row++;
-                state->curr_col = 0;
+                state->curr_col = 1;
             }
             else
                 state->curr_col++;
