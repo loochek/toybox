@@ -4,14 +4,10 @@
 #include "binary_emitter.hpp"
 #include "var_table.hpp"
 
-/// TODO: push r12-r15 if they are used
-
 /**
  * Implementation of AMD64 code generator
  * Follows System V AMD64 ABI as targeting ELF and Linux
  */
-
-const int MAX_REGISTER_ARGS = 6;
 
 const int VAR_SIZE = 8;
 const int STACK_ALIGNMENT = 16;
@@ -24,6 +20,8 @@ const int STACK_ALIGNMENT = 16;
 const reg64_t scratch_stack[] = { REG_RDI, REG_RSI, REG_RCX, REG_RDX, REG_R8, REG_R9, REG_R10, REG_R11, REG_RBX, REG_R12, REG_R13, REG_R14 };
 
 const int SCRATCH_REGS_COUNT = 12;
+const int MAX_REGISTER_ARGS = 6;
+const int CALLEE_SAVE_COUNT = 8;
 
 struct gen_state_t
 {
@@ -47,6 +45,11 @@ struct gen_state_t
     // values determined during the first pass
     int stack_frame_size;
     int temp_stack_offset;
+
+    // flagged registers are saved and can be trashed in function body
+    bool must_save[REG64_COUNT];
+    // used for calculating offsets of stack arguments 
+    int saved_regs_count;
 };
 
 
@@ -210,6 +213,10 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
     state->var_table.max_var_cnt = 0;
     state->max_temp_stack_cnt = 0;
     state->max_stack_arg_cnt = 0;
+    state->saved_regs_count = 0;
+
+    for (int reg = 0; reg < REG64_COUNT; reg++)
+        state->must_save[reg] = false;
 
     // no need for emitting prologue and epilogue
     // (first pass is also to determine their contents)
@@ -219,9 +226,18 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
 
     // determining some data according to first pass results
 
+    state->saved_regs_count = 0;
+    for (int reg = 0; reg < REG64_COUNT; reg++)
+    {
+        if (state->must_save[reg])
+            state->saved_regs_count++;
+    }
+
     state->stack_frame_size = (state->var_table.max_var_cnt +
                               state->max_temp_stack_cnt +
                               state->max_stack_arg_cnt) * VAR_SIZE;
+
+    state->stack_frame_size += state->saved_regs_count * VAR_SIZE;
 
     if (state->stack_frame_size % STACK_ALIGNMENT != 0)
     {
@@ -230,6 +246,8 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
         state->stack_frame_size *= STACK_ALIGNMENT;
     }
 
+    state->stack_frame_size -= state->saved_regs_count * VAR_SIZE;
+
     state->temp_stack_offset = state->var_table.max_var_cnt * VAR_SIZE;
 
     // second pass: normal code generation using data determined during the first pass
@@ -237,6 +255,13 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
     // prologue
     LSCHK(emit_label(&state->emt, func_name));
     LSCHK(emit_comment(&state->emt, "=== %.*s's prologue ===", func_name.length, func_name.str));
+
+    for (int reg = 0; reg < REG64_COUNT; reg++)
+    {
+        if (state->must_save[reg])
+            LSCHK(emit_push(&state->emt, (reg64_t)reg));
+    }
+
     LSCHK(emit_push(&state->emt, REG_RBP));
     LSCHK(emit_mov(&state->emt, REG_RBP, REG_RSP));
     LSCHK(emit_sub(&state->emt, REG_RSP, state->stack_frame_size));
@@ -248,6 +273,13 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
     LSCHK(emit_comment(&state->emt, "=== %.*s's epilogue ===", func_name.length, func_name.str));
     LSCHK(emit_add(&state->emt, REG_RSP, state->stack_frame_size));
     LSCHK(emit_pop(&state->emt, REG_RBP));
+
+    for (int reg = REG64_COUNT - 1; reg >= 0; reg--)
+    {
+        if (state->must_save[reg])
+            LSCHK(emit_pop(&state->emt, (reg64_t)reg));
+    }
+
     LSCHK(emit_ret(&state->emt));
 
     return LSTATUS_OK;
@@ -297,7 +329,8 @@ static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_
     {
         // variable is passed on the stack
         // +16 - skip saved rbp and return address
-        int var_offset = (*arg_count - MAX_REGISTER_ARGS) * VAR_SIZE + 16;
+        // + state->saved_regs_count * VAR_SIZE - skip saved registers
+        int var_offset = (*arg_count - MAX_REGISTER_ARGS + state->saved_regs_count) * VAR_SIZE + 16;
         status = var_table_add(&state->var_table, arg_node->ident, var_offset);
 
         LSCHK(emit_comment(&state->emt, "= argument %.*s is already on the stack at rbp+%d =",
@@ -510,6 +543,10 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 {
     lstatus_t status = LSTATUS_OK;
 
+    // flag register for saving if it's not callee-save
+    if (alloc_offset >= CALLEE_SAVE_COUNT)
+        state->must_save[scratch_stack[alloc_offset]] = true;
+
     reg64_t dst_reg = REG_DUMMY64, src_reg = REG_DUMMY64;
 
     switch (expr->type)
@@ -633,6 +670,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 
         case AST_OPER_DIV:
             LSCHK(emit_comment(&state->emt, "- division -"));
+            state->must_save[REG_R15] = true;
 
             if (src_reg == REG_RDX)
             {
@@ -657,6 +695,8 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 
         case AST_OPER_MOD:
             LSCHK(emit_comment(&state->emt, "- modulo -"));
+            state->must_save[REG_R15] = true;
+
             if (src_reg == REG_RDX)
             {
                 LSCHK(emit_mov(&state->emt, REG_R15, REG_RDX));

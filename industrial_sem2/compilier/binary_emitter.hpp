@@ -5,6 +5,8 @@
 #include "utils/lstatus.hpp"
 #include "utils/string_view.hpp"
 
+const int REG64_COUNT = 17;
+
 enum reg64_t
 {
     REG_DUMMY64,
@@ -54,7 +56,6 @@ enum reg8_t
 struct emitter_t
 {
     FILE *file;
-
     bool idle;
 };
 
