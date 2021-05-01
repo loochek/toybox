@@ -5,8 +5,17 @@
 #include <cstdint>
 #include "utils/lstatus.hpp"
 #include "utils/string_view.hpp"
+#include "utils/list.hpp"
+#include "compilation_error.hpp"
+
+/**
+ * Provides an interface for generating binary files from a given assembly sequence.
+ * Supports internal symbols resolving and generating debug listings 
+ */
 
 const int REG64_COUNT = 17;
+
+const int MAX_LABEL_NAME_LEN = 30;
 
 enum reg64_t
 {
@@ -51,17 +60,46 @@ enum reg8_t
 };
 
 /**
+ * "Symbol resolution request"
+ * created by instructions like call, jmp, ...
+ */
+struct fixup_t
+{
+    char label[MAX_LABEL_NAME_LEN + 1];
+
+    int fixup_addr;
+    int next_instr_addr;
+};
+
+/**
+ * Thing that can resolve fixups
+ * created by labels
+ */
+struct symbol_t
+{
+    char label[MAX_LABEL_NAME_LEN + 1];
+    int addr;
+};
+
+/**
  * Binary emitter object
- * Generates debug assembly and produces ELF file
  */
 struct emitter_t
 {
+    bool listing_enable;
     FILE *listing_file;
+    
     bool idle;
 
-    // main program buffer
+    // program buffer stuff
     unsigned char *prg_buffer;
     int prg_buffer_size;
+
+    // current position of a "program counter"
+    int curr_pc;
+
+    list_t<symbol_t> symbol_table;
+    list_t<fixup_t>  fixups;
 };
 
 /**
@@ -141,7 +179,7 @@ lstatus_t emit_add(emitter_t *emt, reg64_t dst, reg64_t src);
  * \param \c src Immediate source value
  * \param \c emt Emitter object
  */
-lstatus_t emit_add(emitter_t *emt, reg64_t dst, int64_t imm_src);
+lstatus_t emit_add(emitter_t *emt, reg64_t dst, int32_t imm_src);
 
 /**
  * sub %dst, %src
@@ -159,7 +197,7 @@ lstatus_t emit_sub(emitter_t *emt, reg64_t dst, reg64_t src);
  * \param \c src Immediate source value
  * \param \c emt Emitter object
  */
-lstatus_t emit_sub(emitter_t *emt, reg64_t dst, int64_t imm_src);
+lstatus_t emit_sub(emitter_t *emt, reg64_t dst, int32_t imm_src);
 
 /**
  * imul %dst, %src
@@ -355,5 +393,13 @@ lstatus_t emit_comment(emitter_t *emt, const char *comment_fmt, ...);
  * \param \c reg64 Register
  */
 reg8_t reg64_to_8(reg64_t reg64);
+
+/**
+ * Tries to resolve fixups using collected symbols
+ * 
+ * \param \c emt Emitter object
+ * \param \c comp_err Compilation error object
+ */
+lstatus_t symbol_resolve(emitter_t *emt);
 
 #endif

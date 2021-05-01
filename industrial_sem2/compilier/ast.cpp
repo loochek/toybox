@@ -202,7 +202,7 @@ static void ast_visualize_rec(ast_node_t *node, int node_id, FILE *file)
     switch (node->type)
     {
     case AST_NUMBER:
-        fprintf(file, "%d [fillcolor=cyan, style=filled, label=\"%d | { %d | %d }\"]\n",
+        fprintf(file, "%d [fillcolor=cyan, style=filled, label=\"%ld | { %d | %d }\"]\n",
                 node_id, node->number, node->row, node->col);
         break;
 
