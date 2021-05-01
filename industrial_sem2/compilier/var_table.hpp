@@ -8,7 +8,7 @@
 struct var_entry_t
 {
     string_view_t name;
-    int offset;
+    int32_t offset;
 };
 
 struct scope_t
@@ -55,7 +55,7 @@ lstatus_t var_table_destruct(var_table_t *table);
  * \param \c name Variable name
  * \param \c offset_out Where to write allocated offset
  */
-lstatus_t var_table_add(var_table_t *table, string_view_t name, int *offset_out);
+lstatus_t var_table_add(var_table_t *table, string_view_t name, int32_t *offset_out);
 
 /**
  * Puts a new variable with custom offset in the current scope
@@ -65,7 +65,7 @@ lstatus_t var_table_add(var_table_t *table, string_view_t name, int *offset_out)
  * \param \c name Variable name
  * \param \c offset Offset
  */
-lstatus_t var_table_add(var_table_t *table, string_view_t name, int offset);
+lstatus_t var_table_add(var_table_t *table, string_view_t name, int32_t offset);
 
 /**
  * Tells offset of the variable according to scopes
@@ -74,7 +74,7 @@ lstatus_t var_table_add(var_table_t *table, string_view_t name, int offset);
  * \param \c name Variable name
  * \param \c offset_out Where to write offset
  */
-lstatus_t var_table_find(var_table_t *table, string_view_t name, int *offset_out);
+lstatus_t var_table_find(var_table_t *table, string_view_t name, int32_t *offset_out);
 
 /**
  * Pushes a new scope in the var table

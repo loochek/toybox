@@ -2,6 +2,7 @@
 #define BINARY_EMITTER_HPP
 
 #include <cstdio>
+#include <cstdint>
 #include "utils/lstatus.hpp"
 #include "utils/string_view.hpp"
 
@@ -9,11 +10,12 @@ const int REG64_COUNT = 17;
 
 enum reg64_t
 {
-    REG_DUMMY64,
     REG_RAX,
-    REG_RBX,
     REG_RCX,
     REG_RDX,
+    REG_RBX,
+    REG_RSP,
+    REG_RBP,
     REG_RSI,
     REG_RDI,
     REG_R8,
@@ -24,17 +26,17 @@ enum reg64_t
     REG_R13,
     REG_R14,
     REG_R15,
-    REG_RBP,
-    REG_RSP,
+    REG_DUMMY64,
 };
 
 enum reg8_t
 {
-    REG_DUMMY8,
     REG_AL,
-    REG_BL,
     REG_CL,
     REG_DL,
+    REG_BL,
+    REG_SPL,
+    REG_BPL,
     REG_SIL,
     REG_DIL,
     REG_R8B,
@@ -45,8 +47,7 @@ enum reg8_t
     REG_R13B,
     REG_R14B,
     REG_R15B,
-    REG_BPL,
-    REG_SPL
+    REG_DUMMY8
 };
 
 /**
@@ -55,8 +56,12 @@ enum reg8_t
  */
 struct emitter_t
 {
-    FILE *file;
+    FILE *listing_file;
     bool idle;
+
+    // main program buffer
+    unsigned char *prg_buffer;
+    int prg_buffer_size;
 };
 
 /**
@@ -98,7 +103,7 @@ lstatus_t emit_movsx(emitter_t *emt, reg64_t dst, reg8_t src);
  * \param \c src Immediate source value
  * \param \c emt Emitter object
  */
-lstatus_t emit_mov(emitter_t *emt, reg64_t dst, int imm_src);
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst, int64_t imm_src);
 
 /**
  * mov %dst, [%src_base + src_offset]
@@ -108,7 +113,7 @@ lstatus_t emit_mov(emitter_t *emt, reg64_t dst, int imm_src);
  * \param \c src_offset Memory offset immediate value
  * \param \c emt Emitter object
  */
-lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src_base, int src_offset);
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src_base, int32_t src_offset);
 
 /**
  * mov [%dst_base + dst_offset], %src
@@ -118,7 +123,7 @@ lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src_base, int src_offset
  * \param \c src Source register
  * \param \c emt Emitter object
  */
-lstatus_t emit_mov(emitter_t *emt, reg64_t dst_base, int dst_offset, reg64_t src);
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst_base, int32_t dst_offset, reg64_t src);
 
 /**
  * add %dst, %src
@@ -136,7 +141,7 @@ lstatus_t emit_add(emitter_t *emt, reg64_t dst, reg64_t src);
  * \param \c src Immediate source value
  * \param \c emt Emitter object
  */
-lstatus_t emit_add(emitter_t *emt, reg64_t dst, int imm_src);
+lstatus_t emit_add(emitter_t *emt, reg64_t dst, int64_t imm_src);
 
 /**
  * sub %dst, %src
@@ -154,7 +159,7 @@ lstatus_t emit_sub(emitter_t *emt, reg64_t dst, reg64_t src);
  * \param \c src Immediate source value
  * \param \c emt Emitter object
  */
-lstatus_t emit_sub(emitter_t *emt, reg64_t dst, int imm_src);
+lstatus_t emit_sub(emitter_t *emt, reg64_t dst, int64_t imm_src);
 
 /**
  * imul %dst, %src

@@ -53,7 +53,7 @@ struct lexem_t
 
     union
     {
-        int number;
+        int64_t number;
         string_view_t ident;
     };
 };

@@ -318,7 +318,7 @@ static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_
     if (*arg_count < MAX_REGISTER_ARGS)
     {
         // variable is passed in register, it must be stored on the stack
-        int var_offset = 0;
+        int32_t var_offset = 0;
         status = var_table_add(&state->var_table, var_name, &var_offset);
 
         LSCHK(emit_comment(&state->emt, "= storing argument %.*s on the stack =",
@@ -330,7 +330,7 @@ static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_
         // variable is passed on the stack
         // +16 - skip saved rbp and return address
         // + state->saved_regs_count * VAR_SIZE - skip saved registers
-        int var_offset = (*arg_count - MAX_REGISTER_ARGS + state->saved_regs_count) * VAR_SIZE + 16;
+        int32_t var_offset = (*arg_count - MAX_REGISTER_ARGS + state->saved_regs_count) * VAR_SIZE + 16;
         status = var_table_add(&state->var_table, arg_node->ident, var_offset);
 
         LSCHK(emit_comment(&state->emt, "= argument %.*s is already on the stack at rbp+%d =",
@@ -404,7 +404,7 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
     ast_node_t *var_name_node = var_decl->left_branch;
     string_view_t var_name = var_name_node->ident;
 
-    int var_offset = 0;
+    int32_t var_offset = 0;
     status = var_table_add(&state->var_table, var_name, &var_offset);
     if (status == LSTATUS_ALREADY_PRESENT)
     {
@@ -559,7 +559,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 
     case AST_IDENTIFIER:
     {
-        int var_offset = 0;
+        int32_t var_offset = 0;
         string_view_t var_name = expr->ident;
 
         status = var_table_find(&state->var_table, var_name, &var_offset);
@@ -579,7 +579,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 
     case AST_OPER_ASSIGN:
     {
-        int var_offset = 0;
+        int32_t var_offset = 0;
         string_view_t var_name = expr->left_branch->ident;
 
         status = var_table_find(&state->var_table, var_name, &var_offset);

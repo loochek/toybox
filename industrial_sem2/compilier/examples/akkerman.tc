@@ -1,0 +1,17 @@
+fn akkerman(m, n)
+{
+    if (m == 0)
+        return n + 1;
+    
+    if (n == 0)
+        return akkerman(m - 1, 1);
+    
+    return akkerman(m - 1, akkerman(m, n - 1));
+}
+
+fn main()
+{
+    let m = input();
+    let n = input();
+    print(akkerman(m, n));
+}
