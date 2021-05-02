@@ -2,6 +2,8 @@
 #include <cstring>
 
 #include "binary_emitter.hpp"
+#include "stdlib/stdlib_blob.hpp"
+#include "elf.hpp"
 
 static const char *regs64_str_repr[] =
 {
@@ -44,6 +46,11 @@ static const char *regs8_str_repr[] =
     "r15b",
     "dummy"
 };
+
+static const char *ENTRY_POINT_NAME = "_start";
+static const char *START_FUNC_NAME  = "main";
+
+static const int LOAD_ADDRESS = 0x400000;
 
 /**
  * Emits a byte to the program buffer
@@ -116,6 +123,29 @@ static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm, int32_t 
 static lstatus_t emit_rex(emitter_t *emt, bool rex_w, reg64_t reg, reg64_t rm);
 
 /**
+ * Emits program start code
+ *
+ * \param \c emt Emitter object
+ */
+static lstatus_t emit_start_code(emitter_t *emt);
+
+/**
+ * Emits standart library code
+ *
+ * \param \c emt Emitter object
+ */
+static lstatus_t emit_stdlib(emitter_t *emt);
+
+/**
+ * Finds a symbol in a symbol table
+ * 
+ * \param \c emt Emitter object
+ * \param \c label Symbol of a label to find
+ * \param \c addr_out Where to write address of a symbol
+ */
+static lstatus_t symbol_find(emitter_t *emt, const char *label, int *addr_out);
+
+/**
  * Tries to resolve fixups using collected symbols
  * 
  * \param \c emt Emitter object
@@ -131,6 +161,7 @@ lstatus_t emitter_construct(emitter_t *emt)
     /// TODO: 
     emt->prg_buffer = (unsigned char*)calloc(1000, sizeof(unsigned char));
     emt->prg_buffer_size = 1000;
+
     emt->curr_pc = 0;
 
     LSCHK(list_construct(&emt->fixups));
@@ -152,6 +183,73 @@ lstatus_t emitter_destruct(emitter_t *emt)
     fclose(emt->listing_file);
     return LSTATUS_OK;
 }
+
+lstatus_t create_elf(emitter_t *emt, const char *file_name)
+{
+    // complete program
+    LSCHK(emit_start_code(emt));
+    LSCHK(emit_stdlib(emt));
+
+    // "link"
+    LSCHK(symbol_resolve(emt));
+
+    // determine program entry address
+    int prg_entry_addr = 0;
+    LSCHK(symbol_find(emt, ENTRY_POINT_NAME, &prg_entry_addr));
+
+    // create elf
+    FILE *elf_file = fopen(file_name, "wb");
+
+    // minimal elf definition:
+    // - elf header
+    // - single program header - tells the system how to load our program to the memory
+    // - our emitted program buffer
+
+    elf64_header_t elf_header = {};
+    elf_header.signature[0] = 0x7F;
+    elf_header.signature[1] = 'E';
+    elf_header.signature[2] = 'L';
+    elf_header.signature[3] = 'F';
+
+    elf_header.elf_class   = 0x02; // ELF64
+    elf_header.endianess   = 0x01; // little-endian
+    elf_header.version1    = 0x01; // version
+    elf_header.abi         = 0x00; // System V
+    elf_header.abi_version = 0x00; // not specified
+    elf_header.type        = 0x2;  // ET_EXEC (executable)
+    elf_header.machine     = 0x3E; // AMD x86-64
+    elf_header.version2    = 0x01; // version again
+
+    elf_header.entry_addr      = prg_entry_addr + LOAD_ADDRESS
+                                 + sizeof(elf64_header_t) + sizeof(elf64_prg_header_t); // entry address
+    elf_header.ph_table_offset = sizeof(elf64_header_t); // right after this header
+    elf_header.sh_table_offset = 0x00; // no sections used
+    elf_header.flags           = 0x00; // no flags
+    elf_header.header_size     = sizeof(elf64_header_t);
+    elf_header.ph_entry_size   = sizeof(elf64_prg_header_t);
+    elf_header.ph_entries_num  = 0x01; // only one
+    elf_header.sh_entry_size   = 0x00; // no sections used
+    elf_header.sh_entries_num  = 0x00; // no sections used
+    elf_header.shstrndx        = 0x00; // no sections used
+
+    elf64_prg_header_t prg_header = {};
+    prg_header.type            = 0x01;         // PT_LOAD
+    prg_header.flags           = 0x01 | 0x04;  // execute and read
+    prg_header.seg_file_offset = 0x00;         // right after headers
+    prg_header.seg_virt_addr   = LOAD_ADDRESS; // where to load
+    prg_header.seg_phys_addr   = 0x0;          // irrelevant for AMD64
+    prg_header.seg_file_size   = emt->curr_pc; // code size
+    prg_header.seg_mem_size    = emt->curr_pc; // code size
+    prg_header.alignment       = 0x200000;     // default
+
+    fwrite(&elf_header, sizeof(elf64_header_t)    , 1, elf_file);
+    fwrite(&prg_header, sizeof(elf64_prg_header_t), 1, elf_file);
+    fwrite(emt->prg_buffer, sizeof(uint8_t), emt->curr_pc, elf_file);
+
+    fclose(elf_file);
+    return LSTATUS_OK;
+}
+
 
 lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src)
 {
@@ -266,7 +364,7 @@ lstatus_t emit_sub(emitter_t *emt, reg64_t dst, int32_t imm_src)
 
     LSCHK(emit_rex(emt, true, REG_RBP, dst)); // reg field must be 5 - opcode extension
     LSCHK(emit_byte(emt, 0x81)); // SUB r/m64, imm32
-    LSCHK(emit_operands(emt, REG_RAX, dst));
+    LSCHK(emit_operands(emt, REG_RBP, dst));
     LSCHK(emit_dword(emt, imm_src));
 
     fprintf(emt->listing_file, "    sub %s, %d\n", regs64_str_repr[dst], imm_src);
@@ -432,6 +530,18 @@ lstatus_t emit_cqo(emitter_t *emt)
     LSCHK(emit_byte(emt, 0x99)); // CQO
 
     fprintf(emt->listing_file, "    cqo\n");
+    return LSTATUS_OK;
+}
+
+lstatus_t emit_syscall(emitter_t *emt)
+{
+    if (emt->idle)
+        return LSTATUS_OK;
+
+    LSCHK(emit_byte(emt, 0x0F)); // SYSCALL
+    LSCHK(emit_byte(emt, 0x05)); // SYSCALL
+
+    fprintf(emt->listing_file, "    syscall\n");
     return LSTATUS_OK;
 }
 
@@ -626,6 +736,9 @@ reg8_t reg64_to_8(reg64_t reg64)
 
 static lstatus_t emit_byte(emitter_t *emt, uint8_t byte)
 {
+    if (emt->idle)
+        return LSTATUS_OK;
+
     lstatus_t status = LSTATUS_OK;
 
     if (emt->prg_buffer_size - emt->curr_pc < sizeof(uint8_t))
@@ -642,6 +755,9 @@ static lstatus_t emit_byte(emitter_t *emt, uint8_t byte)
 
 static lstatus_t emit_dword(emitter_t *emt, int32_t dword)
 {
+    if (emt->idle)
+        return LSTATUS_OK;
+
     lstatus_t status = LSTATUS_OK;
 
     if (emt->prg_buffer_size - emt->curr_pc < sizeof(int32_t))
@@ -658,6 +774,9 @@ static lstatus_t emit_dword(emitter_t *emt, int32_t dword)
 
 static lstatus_t emit_qword(emitter_t *emt, int64_t qword)
 {
+    if (emt->idle)
+        return LSTATUS_OK;
+
     lstatus_t status = LSTATUS_OK;
 
     if (emt->prg_buffer_size - emt->curr_pc < sizeof(int64_t))
@@ -674,6 +793,9 @@ static lstatus_t emit_qword(emitter_t *emt, int64_t qword)
 
 static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm)
 {
+    if (emt->idle)
+        return LSTATUS_OK;
+
     uint8_t modrm = 0xC0; // first two bits are 11
     modrm |= (reg & 0x7) << 3;
     modrm |= rm & 0x7;
@@ -684,6 +806,9 @@ static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm)
 
 static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm, int32_t rm_disp)
 {
+    if (emt->idle)
+        return LSTATUS_OK;
+
     uint8_t modrm = 0x80; // first two bits are 10
     modrm |= (reg & 0x7) << 3;
     modrm |= rm & 0x7;
@@ -704,6 +829,9 @@ static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm, int32_t 
 
 static lstatus_t emit_rex(emitter_t *emt, bool rex_w, reg64_t reg, reg64_t rm)
 {
+    if (emt->idle)
+        return LSTATUS_OK;
+
     uint8_t rex = 0x40;
     rex |= rex_w << 3;
     rex |= (reg & 0x8) >> 1;
@@ -711,6 +839,80 @@ static lstatus_t emit_rex(emitter_t *emt, bool rex_w, reg64_t reg, reg64_t rm)
 
     LSCHK(emit_byte(emt, rex));
     return LSTATUS_OK;
+}
+
+static lstatus_t emit_start_code(emitter_t *emt)
+{
+    if (emt->idle)
+        return LSTATUS_OK;
+
+    symbol_t symbol = {};
+    symbol.addr = emt->curr_pc;
+    strncpy(symbol.label, ENTRY_POINT_NAME, MAX_LABEL_NAME_LEN);
+    LSCHK(list_push_front(&emt->symbol_table, symbol));
+
+    LSCHK(emit_call(emt, START_FUNC_NAME));
+    LSCHK(emit_mov(emt, REG_RDI, REG_RAX));
+    LSCHK(emit_mov(emt, REG_RAX, 0x3C)); // exit syscall
+    LSCHK(emit_syscall(emt));
+
+    return LSTATUS_OK;
+}
+
+static lstatus_t emit_stdlib(emitter_t *emt)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    if (emt->idle)
+        return LSTATUS_OK;
+
+    int blob_addr = emt->curr_pc;
+    int blob_size = sizeof(stdlib_blob) / sizeof(uint8_t);
+
+    if (emt->prg_buffer_size - emt->curr_pc < blob_size)
+    {
+        LSTATUS(LSTATUS_BAD_ALLOC, "reallocation of prg buffer is not yet implemented");
+        return status;
+    }
+
+    memcpy(&emt->prg_buffer[emt->curr_pc], &stdlib_blob, blob_size);
+    emt->curr_pc += blob_size;
+
+    LSCHK(emit_comment(emt, "there must be a blob with definition of symbols:"));
+    for (int i = 0; i < sizeof(stdlib_symbols) / sizeof(symbol_t); i++)
+    {
+        // fix offset and append to the symbol table
+        symbol_t symbol = stdlib_symbols[i];
+        symbol.addr += blob_addr;
+        LSCHK(list_push_front(&emt->symbol_table, symbol));
+
+        LSCHK(emit_comment(emt, "  - %s", symbol.label));
+    }
+
+    return LSTATUS_OK;
+}
+
+static lstatus_t symbol_find(emitter_t *emt, const char *label, int *addr_out)
+{
+    list_iter_t symbol_iter = NULLITER, symbol_end = NULLITER;
+    LSCHK(list_begin(&emt->symbol_table, &symbol_iter));
+    LSCHK(list_end  (&emt->symbol_table, &symbol_end));
+
+    while (!list_iter_cmp(symbol_iter, symbol_end))
+    {
+        symbol_t *symbol = nullptr;
+        LSCHK(list_data(&emt->symbol_table, symbol_iter, &symbol));
+
+        if (strcmp(symbol->label, label) == 0)
+        {
+            *addr_out = symbol->addr;
+            return LSTATUS_OK;
+        }
+
+        LSCHK(list_next(&emt->symbol_table, &symbol_iter));
+    }
+
+    return LSTATUS_NOT_FOUND;
 }
 
 static lstatus_t symbol_resolve(emitter_t *emt)
@@ -730,30 +932,19 @@ static lstatus_t symbol_resolve(emitter_t *emt)
         LSCHK(list_begin(&emt->symbol_table, &symbol_iter));
         LSCHK(list_end  (&emt->symbol_table, &symbol_end));
 
-        bool fixup_resolved = false;
-        while (!list_iter_cmp(symbol_iter, symbol_end))
-        {
-            symbol_t *symbol = nullptr;
-            LSCHK(list_data(&emt->symbol_table, symbol_iter, &symbol));
-
-            if (strcmp(fixup->label, symbol->label) == 0)
-            {
-                // resolving
-                int32_t offset = fixup->next_instr_addr - symbol->addr;
-                memcpy(&emt->prg_buffer[fixup->fixup_addr], &offset, sizeof(int32_t));
-                
-                fixup_resolved = true;
-                break;
-            }
-
-            LSCHK(list_next(&emt->symbol_table, &symbol_iter));
-        }
-
-        if (!fixup_resolved)
+        int sym_addr = 0;
+        status = symbol_find(emt, fixup->label, &sym_addr);
+        if (status == LSTATUS_NOT_FOUND)
         {
             LSTATUS(LSTATUS_SYM_RESOLVE_ERR, "unable to resolve symbol %s", fixup->label);
             return status;
         }
+        else if (status != LSTATUS_OK)
+            return status;
+
+        // resolving
+        int32_t offset = sym_addr - fixup->next_instr_addr;
+        memcpy(&emt->prg_buffer[fixup->fixup_addr], &offset, sizeof(int32_t));
 
         LSCHK(list_next(&emt->fixups, &fixup_iter));
     }

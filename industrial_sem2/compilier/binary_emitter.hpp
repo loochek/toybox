@@ -86,7 +86,6 @@ struct symbol_t
  */
 struct emitter_t
 {
-    bool listing_enable;
     FILE *listing_file;
     
     // emit functions are dummies if idle mode is enabled
@@ -94,7 +93,7 @@ struct emitter_t
     bool idle;
 
     // program buffer stuff
-    unsigned char *prg_buffer;
+    uint8_t *prg_buffer;
     int prg_buffer_size;
 
     // current position of a "program counter"
@@ -117,6 +116,15 @@ lstatus_t emitter_construct(emitter_t *emt);
  * \param \c emt Emitter object
  */
 lstatus_t emitter_destruct(emitter_t *emt);
+
+/**
+ * Resolves all symbols resolution requests and creates an ELF file with emitted code and standart library
+ * Start code calls function called main and does exit syscall with a return value of main
+ * 
+ * \param \c emt Emitter object
+ * \param \c file_name Output file name
+ */
+lstatus_t create_elf(emitter_t *emt, const char *file_name);
 
 /**
  * mov %dst, %src
@@ -214,7 +222,8 @@ lstatus_t emit_imul(emitter_t *emt, reg64_t dst, reg64_t src);
  * idiv %divider
  * 
  * \param \c divider Divider register
- * \param \c emt Emitter object
+ * \param \c emt Emitter obj	Contains index of the section header table entry that contains the section names.
+0x34	0x40	ect
  */
 lstatus_t emit_idiv(emitter_t *emt, reg64_t divider);
 
@@ -299,6 +308,13 @@ lstatus_t emit_setge(emitter_t *emt, reg8_t dst);
  * \param \c emt Emitter object
  */
 lstatus_t emit_cqo(emitter_t *emt);
+
+/**
+ * syscall
+ *
+ * \param \c emt Emitter object
+ */
+lstatus_t emit_syscall(emitter_t *emt);
 
 /**
  * push %src
@@ -395,14 +411,5 @@ lstatus_t emit_comment(emitter_t *emt, const char *comment_fmt, ...);
  * \param \c reg64 Register
  */
 reg8_t reg64_to_8(reg64_t reg64);
-
-/**
- * Resolves all symbols relations and creates an ELF file with emitted code and standart library
- * Start code calls function called main and does exit syscall with a return value of main
- * 
- * \param \c emt Emitter object
- * \param \c file_name Output file name
- */
-lstatus_t create_elf(emitter_t *emt, const char *file_name);
 
 #endif

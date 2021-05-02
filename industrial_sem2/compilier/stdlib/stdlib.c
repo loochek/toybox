@@ -3,8 +3,6 @@
 
 #define BUFFER_LENGTH 32
 
-long long print(long long x);
-
 long long input()
 {
     char buffer[32];

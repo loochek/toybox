@@ -168,7 +168,7 @@ lstatus_t code_gen(ast_node_t *ast_root, compilation_error_t *comp_err)
     LSCHK_LOCAL(emitter_construct(&state.emt));
     LSCHK_LOCAL(root_func_helper(ast_root, &state));
 
-    LSCHK_LOCAL(symbol_resolve(&state.emt));
+    LSCHK_LOCAL(create_elf(&state.emt, "a.out"));
 
 cleanup:
     LSCHK(emitter_destruct(&state.emt));
