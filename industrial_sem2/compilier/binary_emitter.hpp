@@ -107,8 +107,9 @@ struct emitter_t
  * Initializes emitter object
  * 
  * \param \c emt Emitter object
+ * \param \c lst_file_name Listing file name
  */
-lstatus_t emitter_construct(emitter_t *emt);
+lstatus_t emitter_construct(emitter_t *emt, const char *lst_file_name);
 
 /**
  * Deinitializes emitter object
@@ -122,9 +123,10 @@ lstatus_t emitter_destruct(emitter_t *emt);
  * Start code calls function called main and does exit syscall with a return value of main
  * 
  * \param \c emt Emitter object
+ * \param \c comp_err Compilation error object
  * \param \c file_name Output file name
  */
-lstatus_t create_elf(emitter_t *emt, const char *file_name);
+lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *file_name);
 
 /**
  * mov %dst, %src

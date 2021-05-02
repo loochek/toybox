@@ -21,9 +21,7 @@ long long input()
     );
 
     buffer[bytes_read] = '\0';
-
-    print(bytes_read);
-
+    
     long long num = 0;
     char sign = 1;
     

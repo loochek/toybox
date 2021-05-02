@@ -157,7 +157,8 @@ static lstatus_t pop_tmp_val(reg64_t src_reg, gen_state_t *state);
 
 #define LSCHK_LOCAL(expr) { status = expr; if (status != LSTATUS_OK) goto cleanup; }
 
-lstatus_t code_gen(ast_node_t *ast_root, compilation_error_t *comp_err)
+lstatus_t code_gen(ast_node_t *ast_root, compilation_error_t *comp_err,
+                   const char *elf_file_name, const char *lst_file_name)
 {
     lstatus_t status = LSTATUS_OK;
     
@@ -165,10 +166,12 @@ lstatus_t code_gen(ast_node_t *ast_root, compilation_error_t *comp_err)
 
     state.comp_err = comp_err;
     LSCHK_LOCAL(var_table_construct(&state.var_table));
-    LSCHK_LOCAL(emitter_construct(&state.emt));
+    LSCHK_LOCAL(emitter_construct(&state.emt, lst_file_name));
     LSCHK_LOCAL(root_func_helper(ast_root, &state));
 
-    LSCHK_LOCAL(create_elf(&state.emt, "a.out"));
+    status = create_elf(&state.emt, comp_err, elf_file_name);
+    if (status == LSTATUS_SYM_RESOLVE_ERR)
+        status = LSTATUS_CODE_GEN_FAIL;
 
 cleanup:
     LSCHK(emitter_destruct(&state.emt));

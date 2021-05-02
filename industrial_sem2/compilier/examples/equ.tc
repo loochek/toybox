@@ -1,7 +1,7 @@
 fn sqr(x)
 {
     let l = 0;
-    let r = 1000000;
+    let r = 1000000000;
     
     while (r - l > 1)
     {
@@ -23,7 +23,7 @@ fn linear(b, c)
     {
         if (c == 0)
         {
-            print(9999);
+            prfint(9999);
             return;
         }
         

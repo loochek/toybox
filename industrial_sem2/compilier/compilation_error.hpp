@@ -25,6 +25,7 @@ struct compilation_error_t
 
 /**
  * Prints pretty formatted error message
+ * If row equals -1, row and collumn are not displayed
  * 
  * \param \c comp_error Compilation error structure
  */

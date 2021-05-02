@@ -52,6 +52,8 @@ static const char *START_FUNC_NAME  = "main";
 
 static const int LOAD_ADDRESS = 0x400000;
 
+static const int PRG_BUFFER_INIT_SIZE = 128;
+
 /**
  * Emits a byte to the program buffer
  * 
@@ -147,27 +149,59 @@ static lstatus_t symbol_find(emitter_t *emt, const char *label, int *addr_out);
 
 /**
  * Tries to resolve fixups using collected symbols
+ * Provides pretty error if failed
  * 
  * \param \c emt Emitter object
  * \param \c comp_err Compilation error object
  */
-static lstatus_t symbol_resolve(emitter_t *emt);
+static lstatus_t symbol_resolve(emitter_t *emt, compilation_error_t *comp_err);
 
-lstatus_t emitter_construct(emitter_t *emt)
+/**
+ * Expands program buffer
+ * 
+ * \param \c emt Emitter object
+ */
+static lstatus_t prg_buf_expand(emitter_t *emt);
+
+
+#define LSCHK_LOCAL(expr) { status = expr; if (status != LSTATUS_OK) goto error_handler; }
+#define ERROR_HANDLER() goto error_handler
+
+lstatus_t emitter_construct(emitter_t *emt, const char *lst_file_name)
 {
-    emt->listing_file = fopen("output.asm", "w");
+    lstatus_t status = LSTATUS_OK;
+
     emt->idle = false;
-
-    /// TODO: 
-    emt->prg_buffer = (unsigned char*)calloc(1000, sizeof(unsigned char));
-    emt->prg_buffer_size = 1000;
-
+    emt->prg_buffer = nullptr;
     emt->curr_pc = 0;
+    emt->prg_buffer_size = PRG_BUFFER_INIT_SIZE;
 
-    LSCHK(list_construct(&emt->fixups));
-    LSCHK(list_construct(&emt->symbol_table));
-    
+    emt->listing_file = fopen(lst_file_name, "w");
+    if (emt->listing_file == nullptr)
+    {
+        LSTATUS(LSTATUS_FILE_IO_ERR, "unable to open file: %s", lst_file_name);
+        ERROR_HANDLER();
+    }
+
+    emt->prg_buffer = (unsigned char*)calloc(PRG_BUFFER_INIT_SIZE, sizeof(unsigned char));
+    if (emt->prg_buffer == nullptr)
+    {
+        LSTATUS(LSTATUS_BAD_ALLOC, "");
+        ERROR_HANDLER();
+    }
+
+    LSCHK_LOCAL(list_construct(&emt->fixups));
+    LSCHK_LOCAL(list_construct(&emt->symbol_table));
+
     return LSTATUS_OK;
+    
+error_handler:
+    free(emt->prg_buffer);
+
+    list_destruct(&emt->fixups);
+    list_destruct(&emt->symbol_table);
+
+    return status;
 }
 
 lstatus_t emitter_destruct(emitter_t *emt)
@@ -184,18 +218,20 @@ lstatus_t emitter_destruct(emitter_t *emt)
     return LSTATUS_OK;
 }
 
-lstatus_t create_elf(emitter_t *emt, const char *file_name)
+lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *file_name)
 {
     // complete program
     LSCHK(emit_start_code(emt));
     LSCHK(emit_stdlib(emt));
 
     // "link"
-    LSCHK(symbol_resolve(emt));
+    LSCHK(symbol_resolve(emt, comp_err));
 
     // determine program entry address
     int prg_entry_addr = 0;
     LSCHK(symbol_find(emt, ENTRY_POINT_NAME, &prg_entry_addr));
+
+    int file_size = emt->curr_pc + sizeof(elf64_header_t) + sizeof(elf64_prg_header_t);
 
     // create elf
     FILE *elf_file = fopen(file_name, "wb");
@@ -238,8 +274,8 @@ lstatus_t create_elf(emitter_t *emt, const char *file_name)
     prg_header.seg_file_offset = 0x00;         // right after headers
     prg_header.seg_virt_addr   = LOAD_ADDRESS; // where to load
     prg_header.seg_phys_addr   = 0x0;          // irrelevant for AMD64
-    prg_header.seg_file_size   = emt->curr_pc; // code size
-    prg_header.seg_mem_size    = emt->curr_pc; // code size
+    prg_header.seg_file_size   = file_size;    // code size
+    prg_header.seg_mem_size    = file_size;    // code size
     prg_header.alignment       = 0x200000;     // default
 
     fwrite(&elf_header, sizeof(elf64_header_t)    , 1, elf_file);
@@ -335,9 +371,9 @@ lstatus_t emit_add(emitter_t *emt, reg64_t dst, int32_t imm_src)
     if (emt->idle)
         return LSTATUS_OK;
 
-    LSCHK(emit_rex(emt, true, REG_RAX, dst)); // reg field must be 0 - opcode extension
+    LSCHK(emit_rex(emt, true, REG_RAX, dst));
     LSCHK(emit_byte(emt, 0x81)); // ADD r/m64, imm32
-    LSCHK(emit_operands(emt, REG_RAX, dst));
+    LSCHK(emit_operands(emt, REG_RAX, dst)); // reg field must be 0 - opcode extension
     LSCHK(emit_dword(emt, imm_src));
 
     fprintf(emt->listing_file, "    add %s, %d\n", regs64_str_repr[dst], imm_src);
@@ -362,9 +398,9 @@ lstatus_t emit_sub(emitter_t *emt, reg64_t dst, int32_t imm_src)
     if (emt->idle)
         return LSTATUS_OK;
 
-    LSCHK(emit_rex(emt, true, REG_RBP, dst)); // reg field must be 5 - opcode extension
+    LSCHK(emit_rex(emt, true, REG_RAX, dst));
     LSCHK(emit_byte(emt, 0x81)); // SUB r/m64, imm32
-    LSCHK(emit_operands(emt, REG_RBP, dst));
+    LSCHK(emit_operands(emt, REG_RBP, dst)); // reg field must be 5 - opcode extension
     LSCHK(emit_dword(emt, imm_src));
 
     fprintf(emt->listing_file, "    sub %s, %d\n", regs64_str_repr[dst], imm_src);
@@ -392,7 +428,7 @@ lstatus_t emit_idiv(emitter_t *emt, reg64_t divider)
 
     LSCHK(emit_rex(emt, true, REG_RAX, divider));
     LSCHK(emit_byte(emt, 0xF7)); // IDIV r/m64
-    LSCHK(emit_operands(emt, REG_RAX, divider));
+    LSCHK(emit_operands(emt, REG_RDI, divider)); // reg field must be 7 - opcode extension
 
     fprintf(emt->listing_file, "    idiv %s\n", regs64_str_repr[divider]);
     return LSTATUS_OK;
@@ -742,10 +778,7 @@ static lstatus_t emit_byte(emitter_t *emt, uint8_t byte)
     lstatus_t status = LSTATUS_OK;
 
     if (emt->prg_buffer_size - emt->curr_pc < sizeof(uint8_t))
-    {
-        LSTATUS(LSTATUS_BAD_ALLOC, "reallocation of prg buffer is not yet implemented");
-        return status;
-    }
+        LSCHK(prg_buf_expand(emt));
 
     memcpy(&emt->prg_buffer[emt->curr_pc], &byte, sizeof(uint8_t));
     emt->curr_pc += sizeof(uint8_t);
@@ -761,10 +794,7 @@ static lstatus_t emit_dword(emitter_t *emt, int32_t dword)
     lstatus_t status = LSTATUS_OK;
 
     if (emt->prg_buffer_size - emt->curr_pc < sizeof(int32_t))
-    {
-        LSTATUS(LSTATUS_BAD_ALLOC, "reallocation of prg buffer is not yet implemented");
-        return status;
-    }
+        LSCHK(prg_buf_expand(emt));
 
     memcpy(&emt->prg_buffer[emt->curr_pc], &dword, sizeof(int32_t));
     emt->curr_pc += sizeof(int32_t);
@@ -780,10 +810,7 @@ static lstatus_t emit_qword(emitter_t *emt, int64_t qword)
     lstatus_t status = LSTATUS_OK;
 
     if (emt->prg_buffer_size - emt->curr_pc < sizeof(int64_t))
-    {
-        LSTATUS(LSTATUS_BAD_ALLOC, "reallocation of prg buffer is not yet implemented");
-        return status;
-    }
+        LSCHK(prg_buf_expand(emt));
 
     memcpy(&emt->prg_buffer[emt->curr_pc], &qword, sizeof(int64_t));
     emt->curr_pc += sizeof(int64_t);
@@ -846,15 +873,12 @@ static lstatus_t emit_start_code(emitter_t *emt)
     if (emt->idle)
         return LSTATUS_OK;
 
-    symbol_t symbol = {};
-    symbol.addr = emt->curr_pc;
-    strncpy(symbol.label, ENTRY_POINT_NAME, MAX_LABEL_NAME_LEN);
-    LSCHK(list_push_front(&emt->symbol_table, symbol));
-
+    LSCHK(emit_label(emt, ENTRY_POINT_NAME));
     LSCHK(emit_call(emt, START_FUNC_NAME));
     LSCHK(emit_mov(emt, REG_RDI, REG_RAX));
     LSCHK(emit_mov(emt, REG_RAX, 0x3C)); // exit syscall
     LSCHK(emit_syscall(emt));
+    
 
     return LSTATUS_OK;
 }
@@ -870,10 +894,7 @@ static lstatus_t emit_stdlib(emitter_t *emt)
     int blob_size = sizeof(stdlib_blob) / sizeof(uint8_t);
 
     if (emt->prg_buffer_size - emt->curr_pc < blob_size)
-    {
-        LSTATUS(LSTATUS_BAD_ALLOC, "reallocation of prg buffer is not yet implemented");
-        return status;
-    }
+        LSCHK(prg_buf_expand(emt));
 
     memcpy(&emt->prg_buffer[emt->curr_pc], &stdlib_blob, blob_size);
     emt->curr_pc += blob_size;
@@ -915,7 +936,7 @@ static lstatus_t symbol_find(emitter_t *emt, const char *label, int *addr_out)
     return LSTATUS_NOT_FOUND;
 }
 
-static lstatus_t symbol_resolve(emitter_t *emt)
+static lstatus_t symbol_resolve(emitter_t *emt, compilation_error_t *comp_err)
 {
     lstatus_t status = LSTATUS_OK;
 
@@ -936,7 +957,8 @@ static lstatus_t symbol_resolve(emitter_t *emt)
         status = symbol_find(emt, fixup->label, &sym_addr);
         if (status == LSTATUS_NOT_FOUND)
         {
-            LSTATUS(LSTATUS_SYM_RESOLVE_ERR, "unable to resolve symbol %s", fixup->label);
+            COMPILATION_ERROR(comp_err, -1, -1, "unable to resolve symbol %s", fixup->label);
+            status = LSTATUS_SYM_RESOLVE_ERR;
             return status;
         }
         else if (status != LSTATUS_OK)
@@ -948,6 +970,23 @@ static lstatus_t symbol_resolve(emitter_t *emt)
 
         LSCHK(list_next(&emt->fixups, &fixup_iter));
     }
+
+    return LSTATUS_OK;
+}
+
+static lstatus_t prg_buf_expand(emitter_t *emt)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    uint8_t *new_buf = (uint8_t*)realloc(emt->prg_buffer, emt->prg_buffer_size * 2 * sizeof(uint8_t));
+    if (new_buf == nullptr)
+    {
+        LSTATUS(LSTATUS_BAD_ALLOC, "reallocation failed");
+        return status;
+    }
+
+    emt->prg_buffer = new_buf;
+    emt->prg_buffer_size *= 2;
 
     return LSTATUS_OK;
 }
