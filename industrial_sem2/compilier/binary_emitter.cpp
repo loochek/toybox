@@ -115,15 +115,27 @@ static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm, int32_t 
  */
 static lstatus_t emit_rex(emitter_t *emt, bool rex_w, reg64_t reg, reg64_t rm);
 
+/**
+ * Tries to resolve fixups using collected symbols
+ * 
+ * \param \c emt Emitter object
+ * \param \c comp_err Compilation error object
+ */
+static lstatus_t symbol_resolve(emitter_t *emt);
+
 lstatus_t emitter_construct(emitter_t *emt)
 {
     emt->listing_file = fopen("output.asm", "w");
     emt->idle = false;
 
+    /// TODO: 
     emt->prg_buffer = (unsigned char*)calloc(1000, sizeof(unsigned char));
     emt->prg_buffer_size = 1000;
     emt->curr_pc = 0;
 
+    LSCHK(list_construct(&emt->fixups));
+    LSCHK(list_construct(&emt->symbol_table));
+    
     return LSTATUS_OK;
 }
 
@@ -132,9 +144,8 @@ lstatus_t emitter_destruct(emitter_t *emt)
     if (emt == nullptr)
         return LSTATUS_OK;
 
-    FILE *bin = fopen("prg.bin", "wb");
-    fwrite(emt->prg_buffer, sizeof(unsigned char), emt->curr_pc, bin);
-    fclose(bin);
+    LSCHK(list_destruct(&emt->fixups));
+    LSCHK(list_destruct(&emt->symbol_table));
 
     free(emt->prg_buffer);
 
@@ -472,23 +483,24 @@ lstatus_t emit_call(emitter_t *emt, const char *label_fmt, ...)
     if (emt->idle)
         return LSTATUS_OK;
 
+    char label[MAX_LABEL_NAME_LEN + 1] = {};
+
+    va_list args = {};
+    va_start(args, label_fmt);
+    vsnprintf(label, MAX_LABEL_NAME_LEN, label_fmt, args);
+    va_end(args);
+
     fixup_t fixup = {};
     fixup.fixup_addr = emt->curr_pc + 1;
-    strncpy(fixup.label, label_fmt, MAX_LABEL_NAME_LEN);
+    strcpy(fixup.label, label);
 
     LSCHK(emit_byte(emt, 0xE8)); // CALL rel32
-    LSCHK(emit_dword(emt, 0x00)); // TODO
+    LSCHK(emit_dword(emt, 0x00));
 
     fixup.next_instr_addr = emt->curr_pc;
     LSCHK(list_push_front(&emt->fixups, fixup));
 
-    fprintf(emt->listing_file, "    call ");
-
-    va_list args = {};
-    va_start(args, label_fmt);
-    vfprintf(emt->listing_file, label_fmt, args);
-    va_end(args);
-
+    fprintf(emt->listing_file, "    call %s\n", label);
     return LSTATUS_OK;
 }
 
@@ -497,25 +509,24 @@ lstatus_t emit_jmp(emitter_t *emt, const char *label_fmt, ...)
     if (emt->idle)
         return LSTATUS_OK;
 
+    char label[MAX_LABEL_NAME_LEN + 1] = {};
+
+    va_list args = {};
+    va_start(args, label_fmt);
+    vsnprintf(label, MAX_LABEL_NAME_LEN, label_fmt, args);
+    va_end(args);
+
     fixup_t fixup = {};
     fixup.fixup_addr = emt->curr_pc + 1;
-    strncpy(fixup.label, label_fmt, MAX_LABEL_NAME_LEN);
+    strcpy(fixup.label, label);
 
     LSCHK(emit_byte(emt, 0xE9)); // JMP rel32
-    LSCHK(emit_dword(emt, 0x00)); // TODO
+    LSCHK(emit_dword(emt, 0x00));
 
     fixup.next_instr_addr = emt->curr_pc;
     LSCHK(list_push_front(&emt->fixups, fixup));
 
-    fprintf(emt->listing_file, "    jmp ");
-
-    va_list args = {};
-    va_start(args, label_fmt);
-    vfprintf(emt->listing_file, label_fmt, args);
-    va_end(args);
-
-    fprintf(emt->listing_file, "\n");
-
+    fprintf(emt->listing_file, "    jmp %s\n", label);
     return LSTATUS_OK;
 }
 
@@ -524,26 +535,25 @@ lstatus_t emit_jz(emitter_t *emt, const char *label_fmt, ...)
     if (emt->idle)
         return LSTATUS_OK;
 
+    char label[MAX_LABEL_NAME_LEN + 1] = {};
+
+    va_list args = {};
+    va_start(args, label_fmt);
+    vsnprintf(label, MAX_LABEL_NAME_LEN, label_fmt, args);
+    va_end(args);
+
     fixup_t fixup = {};
     fixup.fixup_addr = emt->curr_pc + 2;
-    strncpy(fixup.label, label_fmt, MAX_LABEL_NAME_LEN);
+    strcpy(fixup.label, label);
 
     LSCHK(emit_byte(emt, 0x0F)); // JZ rel32
     LSCHK(emit_byte(emt, 0x84)); // JZ rel32
-    LSCHK(emit_dword(emt, 0x00)); // TODO
-
-    fprintf(emt->listing_file, "    jz ");
+    LSCHK(emit_dword(emt, 0x00));
 
     fixup.next_instr_addr = emt->curr_pc;
     LSCHK(list_push_front(&emt->fixups, fixup));
 
-    va_list args = {};
-    va_start(args, label_fmt);
-    vfprintf(emt->listing_file, label_fmt, args);
-    va_end(args);
-
-    fprintf(emt->listing_file, "\n");
-
+    fprintf(emt->listing_file, "    jz %s\n", label);
     return LSTATUS_OK;
 }
 
@@ -577,17 +587,19 @@ lstatus_t emit_label(emitter_t *emt, const char *label_fmt, ...)
     if (emt->idle)
         return LSTATUS_OK;
 
-    symbol_t symbol = {};
-    symbol.addr = emt->curr_pc;
-    strncpy(symbol.label, label_fmt, MAX_LABEL_NAME_LEN);
-    LSCHK(list_push_front(&emt->symbol_table, symbol));
+    char label[MAX_LABEL_NAME_LEN + 1] = {};
 
     va_list args = {};
     va_start(args, label_fmt);
-    vfprintf(emt->listing_file, label_fmt, args);
+    vsnprintf(label, MAX_LABEL_NAME_LEN, label_fmt, args);
     va_end(args);
 
-    fprintf(emt->listing_file, ":\n");
+    symbol_t symbol = {};
+    symbol.addr = emt->curr_pc;
+    strcpy(symbol.label, label);
+    LSCHK(list_push_front(&emt->symbol_table, symbol));
+
+    fprintf(emt->listing_file, "%s:\n", label);
     return LSTATUS_OK;
 }
 
@@ -701,7 +713,7 @@ static lstatus_t emit_rex(emitter_t *emt, bool rex_w, reg64_t reg, reg64_t rm)
     return LSTATUS_OK;
 }
 
-lstatus_t symbol_resolve(emitter_t *emt)
+static lstatus_t symbol_resolve(emitter_t *emt)
 {
     lstatus_t status = LSTATUS_OK;
 

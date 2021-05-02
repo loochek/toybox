@@ -89,6 +89,8 @@ struct emitter_t
     bool listing_enable;
     FILE *listing_file;
     
+    // emit functions are dummies if idle mode is enabled
+    // used for pseudo-compiling
     bool idle;
 
     // program buffer stuff
@@ -395,11 +397,12 @@ lstatus_t emit_comment(emitter_t *emt, const char *comment_fmt, ...);
 reg8_t reg64_to_8(reg64_t reg64);
 
 /**
- * Tries to resolve fixups using collected symbols
+ * Resolves all symbols relations and creates an ELF file with emitted code and standart library
+ * Start code calls function called main and does exit syscall with a return value of main
  * 
  * \param \c emt Emitter object
- * \param \c comp_err Compilation error object
+ * \param \c file_name Output file name
  */
-lstatus_t symbol_resolve(emitter_t *emt);
+lstatus_t create_elf(emitter_t *emt, const char *file_name);
 
 #endif
