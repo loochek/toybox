@@ -26,7 +26,7 @@ long long input()
     char sign = 1;
     
     char *ptr = buffer;
-    while (!('0' <= *ptr && *ptr <= '9' || *ptr == '+' || *ptr == '-'))
+    while (!('0' <= *ptr && *ptr <= '9' || *ptr == '+' || *ptr == '-' || *ptr == '\0'))
         ptr++;
     
     if (*ptr == '-')
@@ -60,23 +60,28 @@ long long print(long long x)
     
     int sign = 1;
     
-    if (x < 0)
-    {
-        sign = -1;
-        x = -x;
-    }
-    
-    while (x > 0)
-    {
-        *ptr = '0' + x % 10;
-        ptr--;
-        x /= 10;
-    }
-    
-    if (sign < 0)
-        *ptr = '-';
+    if (x == 0)
+        *ptr = '0';
     else
-        ptr++;
+    {
+        if (x < 0)
+        {
+            sign = -1;
+            x = -x;
+        }
+        
+        while (x > 0)
+        {
+            *ptr = '0' + x % 10;
+            ptr--;
+            x /= 10;
+        }
+        
+        if (sign < 0)
+            *ptr = '-';
+        else
+            ptr++;
+    }
     
     int len = buffer + sizeof(buffer) - ptr;
     
