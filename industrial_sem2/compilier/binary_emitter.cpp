@@ -876,12 +876,12 @@ static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm, int32_t 
     modrm |= rm & 0x7;
     LSCHK(emit_byte(emt, modrm));
     
-    if (reg == REG_RSP || reg == REG_R12)
+    if (rm == REG_RSP || rm == REG_R12)
     {
         // https://wiki.osdev.org/X86-64_Instruction_Encoding#SIB
-        uint8_t sib = 0x80; // first two bits are 10
-        sib |= 0x4 << 3;
-        sib |= (rm & 0x7);
+        uint8_t sib = 0x00; // first two bits are 00 - no scale
+        sib |= 0x4 << 3;    // index is 100
+        sib |= (rm & 0x7);  // base is rm
         LSCHK(emit_byte(emt, sib));
     }
 
