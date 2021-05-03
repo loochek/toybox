@@ -1,7 +1,6 @@
 *Hopefully, I have described my programming language enough*
 
 ## General language concepts
-
 ### Syntax
 - Identifier
     - A string of uppercase and lowercase English letters, digits, and underscores that doesn't start with a digit
@@ -26,7 +25,7 @@
     - Expression can be wrapped with parentheses
 - Operator
     - Makes a new expression from one or two other expressions
-    - Default operators: + - * / % == != < > <= >= =
+    - Default operators: + - * / % == != \< \> \<= \>= =
     - Special operator = takes identifier as left argument
 - Statement
     - There are several types of expressions:
@@ -47,7 +46,7 @@
                 - Example:
                     - { a = 5; gg(234); { a = 10; } }
         - Function declaration statement
-            - Syntax: fn <name>(<params>) <compound stmt>
+            - Syntax: fn \<name\>(\<params\>) \<compound stmt\>
             - (where name is some identifier, params are empty or identifiers delimetered with comma)
                 - Example:
                     - fn foo(a, b) { z = 10; }
@@ -55,21 +54,20 @@
         - Variable declaration statement:
             - Syntax: let x;
             - (or)
-            - Syntax: let x = <expression>;
+            - Syntax: let x = \<expression\>;
                 - Examples:
                     - let a;
                     - let a = 10;
         - Return statement
             - Syntax: return;
             - (or)
-            - Syntax: return <expr>;
+            - Syntax: return \<expr\>;
             - Examples:
                 - return;
                 - return 123 + 12;
-- Formal description of the syntax can be found in parser.cpp
+- Formal description of the syntax can be found in [parser.cpp](parser.cpp)
                     
 ### Semantics
-
 - The only data type is signed 64-bit integer
 - Identifier
     - is a name of variable or function
@@ -90,8 +88,8 @@
     - Parentheses can be used in an expression to control order of calculations
     - Default order:
         - Parenthesed expression, function call, variable, numeric literal
-        - * / %
-        - + -
+        - multiplication, division and modulo
+        - addition and subtraction
         - comparsions, assignment
         - (operators on the same level are calculated consistently)
         
@@ -102,11 +100,11 @@
 
 - Control flow
     - Program consists of function
-        - A function is a statement to execute
-            - Function must have return value
-                - A return value is controlled by return statement, 0 by default
-            - Function can have arguments
-                - Arguments are variables with values predefined when called and can be used like regular variables
+    - A function is a execution unit
+    - Function must have return value
+        - A return value is controlled by return statement, 0 by default
+    - Function can have arguments
+        - Arguments are variables with values predefined when called and can be used like regular variables
 - Statement
     - Expression statement
         - Just omits its value
@@ -118,10 +116,26 @@
         - A set of statements to execute
         - Statements are executed consistently
     - Function declaration statement
-        - Declares a function
-        - TODO: scope
+        - Defines a function
     - Variable declaration statement
-        - Declares a variable
-        - TODO: scope
+        - Declares a variable and, maybe, initializes it
+    - Return statement
+        - Defines return point and value of a function
+        
+- Variable scopes
+    - Are defined by compound statements, also function arguments are in their own scope
+    - Variables in one scope must have different names
+    - Variables in nested scopes can have the same name - in this case, the variable from the top scope is used
+    - Variable is no longer accessible when out of its scope
+    
+- Function names
+    - There are no any standarts - Tiny Compilier just uses the first occurence of a function definition due its symbol resolver logic
+    
 - At the beginning of execution, the function called 'main' is called
-- Formal description of the semantics can be found in TODO
+
+## Standart library
+- fn input()
+    - Asks user for a number from stdin
+    - Understands minus and plus at the beginning
+- fn print(x)
+    - Prints number x to stdout
