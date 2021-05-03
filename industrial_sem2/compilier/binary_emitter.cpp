@@ -812,7 +812,7 @@ static lstatus_t emit_byte(emitter_t *emt, uint8_t byte)
 
     lstatus_t status = LSTATUS_OK;
 
-    if (emt->prg_buffer_size - emt->curr_pc < sizeof(uint8_t))
+    while (emt->prg_buffer_size - emt->curr_pc < sizeof(uint8_t))
         LSCHK(prg_buf_expand(emt));
 
     memcpy(&emt->prg_buffer[emt->curr_pc], &byte, sizeof(uint8_t));
@@ -828,7 +828,7 @@ static lstatus_t emit_dword(emitter_t *emt, int32_t dword)
 
     lstatus_t status = LSTATUS_OK;
 
-    if (emt->prg_buffer_size - emt->curr_pc < sizeof(int32_t))
+    while (emt->prg_buffer_size - emt->curr_pc < sizeof(int32_t))
         LSCHK(prg_buf_expand(emt));
 
     memcpy(&emt->prg_buffer[emt->curr_pc], &dword, sizeof(int32_t));
@@ -844,7 +844,7 @@ static lstatus_t emit_qword(emitter_t *emt, int64_t qword)
 
     lstatus_t status = LSTATUS_OK;
 
-    if (emt->prg_buffer_size - emt->curr_pc < sizeof(int64_t))
+    while (emt->prg_buffer_size - emt->curr_pc < sizeof(int64_t))
         LSCHK(prg_buf_expand(emt));
 
     memcpy(&emt->prg_buffer[emt->curr_pc], &qword, sizeof(int64_t));
@@ -927,7 +927,7 @@ static lstatus_t emit_stdlib(emitter_t *emt)
     int blob_addr = emt->curr_pc;
     int blob_size = sizeof(stdlib_blob) / sizeof(uint8_t);
 
-    if (emt->prg_buffer_size - emt->curr_pc < blob_size)
+    while (emt->prg_buffer_size - emt->curr_pc < blob_size)
         LSCHK(prg_buf_expand(emt));
 
     memcpy(&emt->prg_buffer[emt->curr_pc], &stdlib_blob, blob_size);
