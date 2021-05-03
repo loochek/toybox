@@ -1,7 +1,8 @@
+CC=clang
 CXX=clang++
 CXXFLAGS=-g -fsanitize=address
 
-build:
+build: build_stdlib
 	$(CXX) $(CXXFLAGS) -o tc \
 		main.cpp \
 		lexer.cpp \
@@ -16,5 +17,10 @@ build:
 		utils/lstatus.cpp \
 		utils/string_view.cpp
 
+build_stdlib:
+	cd stdlib; \
+	$(CC) -O3 -c -o stdlib.o stdlib.c; \
+	./header_gen.py
+
 clean:
-	rm -f tc *.dot *.svg *.o *.lst a.out
+	rm -f tc *.dot *.svg *.o *.lst a.out stdlib/*.o stdlib/stdlib_blob.hpp
