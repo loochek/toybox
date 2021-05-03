@@ -16,12 +16,5 @@ build:
 		utils/lstatus.cpp \
 		utils/string_view.cpp
 
-run: build
-	./tc
-	cat prologue.asm output.asm > prg.asm
-	nasm -f elf64 prg.asm
-	clang -c stdlib.c
-	clang -o prg stdlib.o prg.o
-
 clean:
-	rm -f tc *.dot *.svg *.o prg.asm output.asm prg
+	rm -f tc *.dot *.svg *.o *.lst a.out

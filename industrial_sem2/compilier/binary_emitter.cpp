@@ -164,8 +164,9 @@ static lstatus_t symbol_resolve(emitter_t *emt, compilation_error_t *comp_err);
 static lstatus_t prg_buf_expand(emitter_t *emt);
 
 
-#define LSCHK_LOCAL(expr) { status = expr; if (status != LSTATUS_OK) goto error_handler; }
-#define ERROR_HANDLER() goto error_handler
+#define LSCHK_LOCAL(expr, num) { status = expr; if (status != LSTATUS_OK) ERROR_HANDLER(num); }
+#define ERROR_HANDLER(num) goto error_handler##num
+
 
 lstatus_t emitter_construct(emitter_t *emt, const char *lst_file_name)
 {
@@ -179,33 +180,39 @@ lstatus_t emitter_construct(emitter_t *emt, const char *lst_file_name)
     emt->listing_file = fopen(lst_file_name, "w");
     if (emt->listing_file == nullptr)
     {
-        LSTATUS(LSTATUS_FILE_IO_ERR, "unable to open file: %s", lst_file_name);
-        ERROR_HANDLER();
+        LSTATUS(LSTATUS_FILE_IO_ERR, "unable to open listing file");
+        ERROR_HANDLER(0);
     }
 
     emt->prg_buffer = (unsigned char*)calloc(PRG_BUFFER_INIT_SIZE, sizeof(unsigned char));
     if (emt->prg_buffer == nullptr)
     {
         LSTATUS(LSTATUS_BAD_ALLOC, "");
-        ERROR_HANDLER();
+        ERROR_HANDLER(1);
     }
 
-    LSCHK_LOCAL(list_construct(&emt->fixups));
-    LSCHK_LOCAL(list_construct(&emt->symbol_table));
-
+    LSCHK_LOCAL(list_construct(&emt->fixups), 2);
+    LSCHK_LOCAL(list_construct(&emt->symbol_table), 3);
     return LSTATUS_OK;
-    
-error_handler:
+
+
+error_handler3:
+    LSCHK(list_destruct(&emt->fixups));
+
+error_handler2:
     free(emt->prg_buffer);
+    
+error_handler1:
+    fclose(emt->listing_file);
 
-    list_destruct(&emt->fixups);
-    list_destruct(&emt->symbol_table);
-
+error_handler0:
     return status;
 }
 
 lstatus_t emitter_destruct(emitter_t *emt)
 {
+    lstatus_t status = LSTATUS_OK;
+
     if (emt == nullptr)
         return LSTATUS_OK;
 
@@ -214,12 +221,19 @@ lstatus_t emitter_destruct(emitter_t *emt)
 
     free(emt->prg_buffer);
 
-    fclose(emt->listing_file);
+    if (fclose(emt->listing_file) != 0)
+    {
+        LSTATUS(LSTATUS_FILE_IO_ERR, "unable to close listing file");
+        return status;
+    }
+
     return LSTATUS_OK;
 }
 
 lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *file_name)
 {
+    lstatus_t status = LSTATUS_OK;
+
     // complete program
     LSCHK(emit_start_code(emt));
     LSCHK(emit_stdlib(emt));
@@ -231,10 +245,7 @@ lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *
     int prg_entry_addr = 0;
     LSCHK(symbol_find(emt, ENTRY_POINT_NAME, &prg_entry_addr));
 
-    int file_size = emt->curr_pc + sizeof(elf64_header_t) + sizeof(elf64_prg_header_t);
-
-    // create elf
-    FILE *elf_file = fopen(file_name, "wb");
+    int elf_file_size = emt->curr_pc + sizeof(elf64_header_t) + sizeof(elf64_prg_header_t);
 
     // minimal elf definition:
     // - elf header
@@ -269,21 +280,45 @@ lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *
     elf_header.shstrndx        = 0x00; // no sections used
 
     elf64_prg_header_t prg_header = {};
-    prg_header.type            = 0x01;         // PT_LOAD
-    prg_header.flags           = 0x01 | 0x04;  // execute and read
-    prg_header.seg_file_offset = 0x00;         // right after headers
-    prg_header.seg_virt_addr   = LOAD_ADDRESS; // where to load
-    prg_header.seg_phys_addr   = 0x0;          // irrelevant for AMD64
-    prg_header.seg_file_size   = file_size;    // code size
-    prg_header.seg_mem_size    = file_size;    // code size
-    prg_header.alignment       = 0x200000;     // default
+    prg_header.type            = 0x01;          // PT_LOAD
+    prg_header.flags           = 0x01 | 0x04;   // execute and read
+    prg_header.seg_file_offset = 0x00;          // right after headers
+    prg_header.seg_virt_addr   = LOAD_ADDRESS;  // where to load
+    prg_header.seg_phys_addr   = 0x0;           // irrelevant for AMD64
+    prg_header.seg_file_size   = elf_file_size; // code size
+    prg_header.seg_mem_size    = elf_file_size; // code size
+    prg_header.alignment       = 0x200000;      // default
 
-    fwrite(&elf_header, sizeof(elf64_header_t)    , 1, elf_file);
-    fwrite(&prg_header, sizeof(elf64_prg_header_t), 1, elf_file);
-    fwrite(emt->prg_buffer, sizeof(uint8_t), emt->curr_pc, elf_file);
+    FILE *elf_file = fopen(file_name, "wb");
+    if (elf_file == nullptr)
+    {
+        LSTATUS(LSTATUS_FILE_IO_ERR, "unable to open output ELF file");
+        ERROR_HANDLER(0);
+    }
 
-    fclose(elf_file);
+    if (fwrite(&elf_header, sizeof(elf64_header_t), 1, elf_file) != 1)
+        ERROR_HANDLER(1);
+
+    if (fwrite(&prg_header, sizeof(elf64_prg_header_t), 1, elf_file) != 1)
+        ERROR_HANDLER(1);
+
+    if (fwrite(emt->prg_buffer, sizeof(uint8_t), emt->curr_pc, elf_file) != emt->curr_pc)
+        ERROR_HANDLER(1);
+
+    if (fclose(elf_file) != 0)
+    {
+        LSTATUS(LSTATUS_FILE_IO_ERR, "unable to close output ELF file");
+        ERROR_HANDLER(0);
+    }
+
     return LSTATUS_OK;
+
+error_handler1:
+    LSTATUS(LSTATUS_FILE_IO_ERR, "unable to write ELF file");
+    fclose(elf_file);
+
+error_handler0:
+    return status;
 }
 
 
@@ -879,7 +914,6 @@ static lstatus_t emit_start_code(emitter_t *emt)
     LSCHK(emit_mov(emt, REG_RAX, 0x3C)); // exit syscall
     LSCHK(emit_syscall(emt));
     
-
     return LSTATUS_OK;
 }
 

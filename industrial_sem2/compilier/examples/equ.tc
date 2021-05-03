@@ -23,7 +23,7 @@ fn linear(b, c)
     {
         if (c == 0)
         {
-            prfint(9999);
+            print(9999);
             return;
         }
         

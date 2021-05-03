@@ -19,7 +19,7 @@ lstatus_t create_buffer_from_file(const char* file_name, char **buffer_out)
     file = fopen(file_name, "r");
     if (file == nullptr)
     {
-        LSTATUS(LSTATUS_FILE_IO_ERR, "file pointer is null");
+        LSTATUS(LSTATUS_FILE_IO_ERR, "can't open file %s", file_name);
         ERROR_HANDLER();
     }
 

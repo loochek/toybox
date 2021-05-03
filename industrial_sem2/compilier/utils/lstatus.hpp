@@ -49,6 +49,7 @@ extern const char *__lstatus_str_repr[];
  */
 #define LSCHK(expr) { lstatus_t __status_loc = expr; if (__status_loc != LSTATUS_OK) return __status_loc; }
 
-#define LS_ERR_PRINT() fprintf(stderr, "[ERROR] %s: %s\n", __lstatus_str_repr[status], __lstatus_msg)
+#define LS_ERR_PRINT() fprintf(stderr, "\u001b[31m[INTERNAL ERROR]\u001b[0m %s: %s. Sorry about that\n", \
+                                       __lstatus_str_repr[status], __lstatus_msg)
 
 #endif
