@@ -9,8 +9,7 @@ fn sqr(x)
         
         if (m * m > x)
             r = m;
-            
-        if (m * m <= x)
+        else
             l = m;
     }
     

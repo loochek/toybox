@@ -38,6 +38,8 @@
                     - fn(23,1231,132);
         - If statement:
             - Syntax: if (expression) statement
+            - (or)
+            - Syntax: if (expression) statement else statement
         - While statement
             - Syntax: while (expression) statement
         - Compound statement
@@ -110,6 +112,7 @@
         - Just omits its value
     - If statement:
         - Executes statement if the expression is not equals to 0
+            - otherwise, an else statement is executed if present
     - While statement
         - Executes statement while the expression is not equals to 0
     - Compound statement

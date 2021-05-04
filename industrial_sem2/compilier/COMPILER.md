@@ -24,9 +24,14 @@ Parser reads lexems sequence and builds an abstract syntax tree (e.g. AST) of a 
 - Statements
     - expresion statements -> AST_EXPR_STMT
         - Left node is an expression
-    - if and while -> AST_IF and AST_WHILE
+    - if -> AST_IF
         - Left node is a condition expression
-        - Right node is an if/while body statement
+        - Right node is AST_IF_BRANCHES
+            - Left branch is an if body statement
+            - Right branch is an else body statement if present
+    - while -> AST_WHILE
+        - Left node is a condition expression
+        - Right node is an while body statement
     - Variable declaration -> AST_VAR_DECL
         - Left node is a variable name
         - Right node is an initial value expression

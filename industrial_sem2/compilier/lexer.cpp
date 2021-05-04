@@ -19,6 +19,7 @@ static const lexer_template_t KEYWORDS[] =
     { LEX_KW_FN    , "fn"     },
     { LEX_KW_LET   , "let"    },
     { LEX_KW_IF    , "if"     },
+    { LEX_KW_ELSE  , "else"   },
     { LEX_KW_WHILE , "while"  },
     { LEX_KW_RETURN, "return" }
 };

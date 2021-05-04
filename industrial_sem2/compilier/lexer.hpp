@@ -18,6 +18,7 @@ enum lexem_type_t
 
     LEX_KW_FN,
     LEX_KW_IF,
+    LEX_KW_ELSE,
     LEX_KW_WHILE,
     LEX_KW_LET,
     LEX_KW_RETURN,

@@ -25,6 +25,7 @@ const char *ast_types_display_names[] =
     "()",          // AST_OPER_CALL
 
     "IF",
+    "IF_BRANCHES",
     "WHILE",
     "RETURN",
     "VAR_DECL",
@@ -218,6 +219,12 @@ static void ast_visualize_rec(ast_node_t *node, int node_id, FILE *file)
 
     case AST_SCOPE:
         fprintf(file, "%d [fillcolor=bisque3, style=filled, label=\"%s\"]\n",
+                node_id, ast_types_display_names[node->type]);
+        break;
+
+    case AST_FUNC_HEAD:
+    case AST_IF_BRANCHES:
+        fprintf(file, "%d [fillcolor=darkturquoise, style=filled, label=\"%s\"]\n",
                 node_id, ast_types_display_names[node->type]);
         break;
     

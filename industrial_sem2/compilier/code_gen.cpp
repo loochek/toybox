@@ -459,12 +459,33 @@ static lstatus_t gen_if(ast_node_t *if_node, gen_state_t *state)
     LSCHK(evaluate_expression(if_node->left_branch, 0, state));
 
     LSCHK(emit_test(&state->emt, scratch_stack[0], scratch_stack[0]));
-    LSCHK(emit_jz(&state->emt, ".if_skip_%d", if_id));
 
-    LSCHK(emit_comment(&state->emt, "=== if body ==="));
+    ast_node_t *if_branches = if_node->right_branch;
+    if (if_branches->right_branch != nullptr)
+    {
+        // if with else
+        LSCHK(emit_jz(&state->emt, ".if_else_%d", if_id));
 
-    LSCHK(gen_statement(if_node->right_branch, state));
-    LSCHK(emit_label(&state->emt, ".if_skip_%d", if_id));
+        LSCHK(emit_comment(&state->emt, "=== if body ==="));
+        LSCHK(gen_statement(if_branches->left_branch, state));
+        LSCHK(emit_jmp(&state->emt, ".if_skip_%d", if_id));
+
+        LSCHK(emit_label(&state->emt, ".if_else_%d", if_id));
+        LSCHK(emit_comment(&state->emt, "=== else body ==="));
+        LSCHK(gen_statement(if_branches->right_branch, state));
+
+        LSCHK(emit_label(&state->emt, ".if_skip_%d", if_id));
+    }
+    else
+    {
+        // if without else
+        LSCHK(emit_jz(&state->emt, ".if_skip_%d", if_id));
+
+        LSCHK(emit_comment(&state->emt, "=== if body ==="));
+        LSCHK(gen_statement(if_branches->left_branch, state));
+
+        LSCHK(emit_label(&state->emt, ".if_skip_%d", if_id));
+    }
 
     return LSTATUS_OK;
 }

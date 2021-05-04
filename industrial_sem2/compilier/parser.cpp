@@ -18,7 +18,7 @@
  * VAR_DECL_STMT ::= 'let' IDNT {'=' EXPR }? ';'
  * STMT ::= {COMP_STMT | EXPR_STMT | IF_STATEMENT | WHILE_STMT | VAR_DECL_STMT | RET_STMT}
  * COMP_STMT ::= '{' STMT* '}'
- * IF_STMT   ::= 'if' '('EXPR')' STMT
+ * IF_STMT   ::= 'if' '('EXPR')' STMT { 'else' STMT }?
  * WHILE_STMT::= 'while' '('EXPR')' STMT
  * RET_STMT  ::= 'return' EXPR? ;
  * 
@@ -597,7 +597,8 @@ static lstatus_t grammar_if_stmt(ast_node_t **node_out, parser_state_t *state)
     lexem_t *curr_lexem = nullptr;
     list_iter_t old_lexem_iter = state->curr_lexem_iter;
 
-    ast_node_t *condition = nullptr, *if_body = nullptr, *if_node = nullptr;
+    ast_node_t *condition = nullptr, *if_body = nullptr, *if_branches = nullptr,
+               *if_body_else = nullptr, *if_node = nullptr;
 
     int if_row = 0, if_col = 0;
     
@@ -625,10 +626,22 @@ static lstatus_t grammar_if_stmt(ast_node_t **node_out, parser_state_t *state)
 
     LSCHK_LOCAL(grammar_stmt(&if_body, state));
 
+    FETCH_LEXEM();
+    if (curr_lexem->type == LEX_KW_ELSE)
+    {
+        NEXT_LEXEM();
+        LSCHK_LOCAL(grammar_stmt(&if_body_else, state));
+    }
+
+    ALLOC_NODE(if_branches);
+    if_branches->type         = AST_IF_BRANCHES;
+    if_branches->left_branch  = if_body;
+    if_branches->right_branch = if_body_else;
+
     ALLOC_NODE(if_node);
     if_node->type         = AST_IF;
     if_node->left_branch  = condition;
-    if_node->right_branch = if_body;
+    if_node->right_branch = if_branches;
     if_node->row = if_row;
     if_node->col = if_col;
 

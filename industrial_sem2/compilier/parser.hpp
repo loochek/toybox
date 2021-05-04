@@ -4,8 +4,6 @@
 #include "ast.hpp"
 #include "lexer.hpp"
 
-/// TODO: handle rows and collumns in complex structures
-
 /**
  * Builds an AST from the sequence of lexems
  * 

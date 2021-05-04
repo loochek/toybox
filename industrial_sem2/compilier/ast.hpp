@@ -33,6 +33,7 @@ enum ast_node_type_t
     AST_CALL,
 
     AST_IF,
+    AST_IF_BRANCHES,
     AST_WHILE,
     AST_RETURN,
 
