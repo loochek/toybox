@@ -1,6 +1,6 @@
 CC=clang
 CXX=clang++
-CXXFLAGS=-g -fsanitize=address
+CXXFLAGS=-g -DDEBUG -fsanitize=address
 
 build: build_stdlib
 	$(CXX) $(CXXFLAGS) -o tc \
