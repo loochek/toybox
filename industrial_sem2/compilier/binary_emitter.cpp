@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstring>
+#include <sys/stat.h>
 
 #include "binary_emitter.hpp"
 #include "stdlib/stdlib_blob.hpp"
@@ -289,6 +290,8 @@ lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *
     prg_header.seg_mem_size    = elf_file_size; // code size
     prg_header.alignment       = 0x200000;      // default
 
+    bool write_failed = false;
+
     FILE *elf_file = fopen(file_name, "wb");
     if (elf_file == nullptr)
     {
@@ -297,13 +300,19 @@ lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *
     }
 
     if (fwrite(&elf_header, sizeof(elf64_header_t), 1, elf_file) != 1)
-        ERROR_HANDLER(1);
+        write_failed = true;
 
     if (fwrite(&prg_header, sizeof(elf64_prg_header_t), 1, elf_file) != 1)
-        ERROR_HANDLER(1);
+        write_failed = true;
 
     if (fwrite(emt->prg_buffer, sizeof(uint8_t), emt->curr_pc, elf_file) != emt->curr_pc)
+        write_failed = true;
+
+    if (write_failed)
+    {
+        LSTATUS(LSTATUS_FILE_IO_ERR, "unable to write ELF file");
         ERROR_HANDLER(1);
+    }
 
     if (fclose(elf_file) != 0)
     {
@@ -311,10 +320,15 @@ lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *
         ERROR_HANDLER(0);
     }
 
+    if (chmod(file_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) != 0)
+    {
+        LSTATUS(LSTATUS_FILE_IO_ERR, "unable to set permissions for output ELF file");
+        ERROR_HANDLER(0);
+    }
+
     return LSTATUS_OK;
 
 error_handler1:
-    LSTATUS(LSTATUS_FILE_IO_ERR, "unable to write ELF file");
     fclose(elf_file);
 
 error_handler0:
