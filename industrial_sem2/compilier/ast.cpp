@@ -37,7 +37,36 @@ const char *ast_types_display_names[] =
     "COMPOUND"
 };
 
+/**
+ * Helper function for recursive AST visualizing
+ */
 static void ast_visualize_rec(ast_node_t *node, int node_id, FILE *file);
+
+/**
+ * Helper function for AST validation
+ */
+static lstatus_t ast_validate_root(ast_node_t *node);
+
+/**
+ * Helper function for AST validation
+ */
+static lstatus_t ast_validate_func_decl_args(ast_node_t *node);
+
+/**
+ * Helper function for AST validation
+ */
+static lstatus_t ast_validate_stmt(ast_node_t *node);
+
+/**
+ * Helper function for AST validation
+ */
+static lstatus_t ast_validate_expr(ast_node_t *node);
+
+/**
+ * Helper function for AST validation
+ */
+static lstatus_t ast_validate_func_call_args(ast_node_t *node);
+
 
 void ast_visualize(ast_node_t *tree_root)
 {
@@ -195,9 +224,14 @@ lstatus_t ast_destroy(ast_node_t *node, memory_pool_t<ast_node_t> *pool)
     return LSTATUS_OK;
 }
 
+lstatus_t ast_validate(ast_node_t *node)
+{
+    return ast_validate_root(node);
+}
+
 static void ast_visualize_rec(ast_node_t *node, int node_id, FILE *file)
 {
-    if (node == NULL)
+    if (node == nullptr)
         return;
 
     switch (node->type)
@@ -258,4 +292,288 @@ static void ast_visualize_rec(ast_node_t *node, int node_id, FILE *file)
         fprintf(file, "%d->%d\n", node_id, node_id * 2);
     if (node->right_branch != NULL)
         fprintf(file, "%d->%d\n", node_id, node_id * 2 + 1);
+}
+
+static lstatus_t ast_validate_expr(ast_node_t *node)
+{
+    lstatus_t status = LSTATUS_OK;
+    
+    if (node == nullptr)
+        return LSTATUS_OK;
+
+    switch (node->type)
+    {
+    case AST_DUMMY:
+        LSTATUS(LSTATUS_BAD_AST, "dummy node in AST")
+        return status;
+
+    case AST_NUMBER:
+        return LSTATUS_OK;
+
+    case AST_IDENTIFIER:
+        if (node->ident.str == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer identifier string")
+            return status;
+        }
+
+        return LSTATUS_OK;
+
+    case AST_OPER_ADD:
+    case AST_OPER_SUB:
+    case AST_OPER_MUL:
+    case AST_OPER_DIV:
+    case AST_OPER_MOD:
+    case AST_OPER_EQUAL:
+    case AST_OPER_NEQUAL:
+    case AST_OPER_LESS:
+    case AST_OPER_MORE:
+    case AST_OPER_ELESS:
+    case AST_OPER_EMORE:
+        if (node->left_branch == nullptr || node->right_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer child of operator node")
+            return status;
+        }
+
+        LSCHK(ast_validate_expr(node->left_branch));
+        LSCHK(ast_validate_expr(node->right_branch));
+        return LSTATUS_OK;
+
+    case AST_OPER_ASSIGN:
+        if (node->left_branch == nullptr || node->right_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer child of operator node")
+            return status;
+        }
+
+        if (node->left_branch->type != AST_IDENTIFIER)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "non-identifier left branch of assignment")
+            return status;
+        }
+
+        if (node->left_branch->ident.str == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer identifier string")
+            return status;
+        }
+
+        LSCHK(ast_validate_expr(node->right_branch));
+        return LSTATUS_OK;
+
+    case AST_CALL:
+        if (node->left_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer left child of function call node")
+            return status;
+        }
+
+        if (node->left_branch->ident.str == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer identifier string")
+            return status;
+        }
+
+        LSCHK(ast_validate_func_call_args(node->right_branch));
+        return LSTATUS_OK;
+
+    default:
+        LSTATUS(LSTATUS_BAD_AST, "bad expression node")
+        return status;
+    }
+}
+
+static lstatus_t ast_validate_func_call_args(ast_node_t *node)
+{
+    lstatus_t status = LSTATUS_OK;
+    
+    if (node == nullptr)
+        return LSTATUS_OK;
+
+    switch (node->type)
+    {
+    case AST_COMPOUND:
+        if (node->left_branch == nullptr || node->right_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer child of compound node")
+            return status;
+        }
+
+        LSCHK(ast_validate_func_call_args(node->left_branch));
+        LSCHK(ast_validate_func_call_args(node->right_branch));
+        return LSTATUS_OK;
+
+    default:
+        LSCHK(ast_validate_expr(node));
+        return LSTATUS_OK;
+    }
+}
+
+static lstatus_t ast_validate_stmt(ast_node_t *node)
+{
+    lstatus_t status = LSTATUS_OK;
+    
+    if (node == nullptr)
+        return LSTATUS_OK;
+
+    switch (node->type)
+    {
+    case AST_COMPOUND:
+        if (node->left_branch == nullptr || node->right_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer child of compound node")
+            return status;
+        }
+
+        LSCHK(ast_validate_stmt(node->left_branch));
+        LSCHK(ast_validate_stmt(node->right_branch));
+        return LSTATUS_OK;
+
+    case AST_SCOPE:
+        LSCHK(ast_validate_stmt(node->left_branch));
+        return LSTATUS_OK;
+
+    case AST_EXPR_STMT:
+        LSCHK(ast_validate_expr(node->left_branch));
+        return LSTATUS_OK;
+
+    case AST_VAR_DECL:
+        if (node->left_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer left child of var decl node")
+            return status;
+        }
+
+        if (node->left_branch->ident.str == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer identifier string")
+            return status;
+        }
+
+        LSCHK(ast_validate_expr(node->right_branch));
+        return LSTATUS_OK;
+
+    case AST_RETURN:
+        LSCHK(ast_validate_expr(node->left_branch));
+        return LSTATUS_OK;
+
+    case AST_IF:
+        LSCHK(ast_validate_expr(node->left_branch));
+
+        if (node->right_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer right child of if node")
+            return status;
+        }
+
+        if (node->right_branch->type != AST_IF_BRANCHES)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "right child of if node is not AST_IF_BRANCHES")
+            return status;
+        }
+
+        LSCHK(ast_validate_stmt(node->right_branch->left_branch));
+        LSCHK(ast_validate_stmt(node->right_branch->right_branch));
+        return LSTATUS_OK;
+
+    case AST_WHILE:
+        LSCHK(ast_validate_expr(node->left_branch));
+        LSCHK(ast_validate_stmt(node->right_branch));
+        return LSTATUS_OK;
+
+    default:
+        LSTATUS(LSTATUS_BAD_AST, "bad statement node");
+        return status;
+    }
+}
+
+static lstatus_t ast_validate_root(ast_node_t *node)
+{
+    lstatus_t status = LSTATUS_OK;
+    
+    if (node == nullptr)
+        return LSTATUS_OK;
+
+    switch (node->type)
+    {
+    case AST_COMPOUND:
+        if (node->left_branch == nullptr || node->right_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer child of compound node")
+            return status;
+        }
+
+        LSCHK(ast_validate_root(node->left_branch));
+        LSCHK(ast_validate_root(node->right_branch));
+        return LSTATUS_OK;
+
+    case AST_FUNC_DECL:
+        if (node->left_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer left child of func decl node")
+            return status;
+        }
+
+        if (node->left_branch->type != AST_FUNC_HEAD)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "left child of func decl node is not AST_FUNC_HEAD")
+            return status;
+        }
+
+        if (node->left_branch->left_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer left child of func head node")
+            return status;
+        }
+
+        if (node->left_branch->left_branch->type != AST_IDENTIFIER)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "left child of func head node is not identifier")
+            return status;
+        }
+
+        LSCHK(ast_validate_func_decl_args(node->left_branch->right_branch));
+        LSCHK(ast_validate_stmt(node->right_branch));
+        return LSTATUS_OK;
+
+    default:
+        LSTATUS(LSTATUS_BAD_AST, "bad root node");
+        return status;
+    }
+}
+
+static lstatus_t ast_validate_func_decl_args(ast_node_t *node)
+{
+    lstatus_t status = LSTATUS_OK;
+    
+    if (node == nullptr)
+        return LSTATUS_OK;
+
+    switch (node->type)
+    {
+    case AST_COMPOUND:
+        if (node->left_branch == nullptr || node->right_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer child of compound node")
+            return status;
+        }
+
+        LSCHK(ast_validate_func_decl_args(node->left_branch));
+        LSCHK(ast_validate_func_decl_args(node->right_branch));
+        return LSTATUS_OK;
+    
+    case AST_IDENTIFIER:
+        if (node->ident.str == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer identifier string")
+            return status;
+        }
+
+        return LSTATUS_OK;
+
+    default:
+        LSTATUS(LSTATUS_BAD_AST, "bad func decl arg node");
+        return status;
+    }
 }

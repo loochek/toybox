@@ -81,10 +81,16 @@ void ast_visualize(ast_node_t *tree_root);
 lstatus_t ast_optimize(ast_node_t *node, ast_node_t **node_out, memory_pool_t<ast_node_t> *pool);
 
 /**
- * Recursively destroys the AST
+ * Recursively destroys an AST
  * \param \c node AST node
  * \param \c pool Node pool
  */
 lstatus_t ast_destroy(ast_node_t *node, memory_pool_t<ast_node_t> *pool);
+
+/**
+ * Checks an AST to be a valid program tree
+ * \param \c node AST node
+ */
+lstatus_t ast_validate(ast_node_t *node);
 
 #endif

@@ -161,6 +161,7 @@ lstatus_t code_gen(ast_node_t *ast_root, compilation_error_t *comp_err,
                    const char *elf_file_name, const char *lst_file_name)
 {
     lstatus_t status = LSTATUS_OK;
+    LSCHK(ast_validate(ast_root));
     
     gen_state_t state = {};
 
