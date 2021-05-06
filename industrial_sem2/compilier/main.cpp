@@ -72,7 +72,7 @@ cleanup2:
     free(src);
 
 cleanup1:
-    LSCHK(memory_pool_construct(&pool));
+    LSCHK(memory_pool_destruct(&pool));
 
 cleanup0:
     return status;
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
             show_ast = true;
         else if (strcmp(argv[arg_cnt], "--about") == 0)
         {
-            printf("Tiny Compilier 0.98\n"
+            printf("Tiny Compilier 0.99\n"
                    "Copyleft loochek 2021\n");
             return 0;
         }
