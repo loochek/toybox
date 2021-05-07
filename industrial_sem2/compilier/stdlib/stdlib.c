@@ -49,7 +49,7 @@ long long input()
 
 long long print(long long x)
 {
-    char buffer[32] = {0};
+    char buffer[32];
     
     // last pos
     char *ptr = buffer + sizeof(buffer) - 1;
