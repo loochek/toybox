@@ -250,8 +250,10 @@ lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *
 
     // minimal elf definition:
     // - elf header
-    // - single program header - tells the system how to load our program to the memory
+    // - single program header - tells the system to load ELF contents to the LOAD_ADDRESS
     // - our emitted program buffer
+
+    // note that headers are also loaded into process memory
 
     elf64_header_t elf_header = {};
     elf_header.signature[0] = 0x7F;
@@ -268,8 +270,8 @@ lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *
     elf_header.machine     = 0x3E; // AMD x86-64
     elf_header.version2    = 0x01; // version again
 
-    elf_header.entry_addr      = prg_entry_addr + LOAD_ADDRESS
-                                 + sizeof(elf64_header_t) + sizeof(elf64_prg_header_t); // entry address
+    elf_header.entry_addr      = prg_entry_addr + LOAD_ADDRESS // entry address
+                                 + sizeof(elf64_header_t) + sizeof(elf64_prg_header_t);
     elf_header.ph_table_offset = sizeof(elf64_header_t); // right after this header
     elf_header.sh_table_offset = 0x00; // no sections used
     elf_header.flags           = 0x00; // no flags
@@ -283,11 +285,11 @@ lstatus_t create_elf(emitter_t *emt, compilation_error_t *comp_err, const char *
     elf64_prg_header_t prg_header = {};
     prg_header.type            = 0x01;          // PT_LOAD
     prg_header.flags           = 0x01 | 0x04;   // execute and read
-    prg_header.seg_file_offset = 0x00;          // right after headers
+    prg_header.seg_file_offset = 0x00;          // load whole file
     prg_header.seg_virt_addr   = LOAD_ADDRESS;  // where to load
     prg_header.seg_phys_addr   = 0x0;           // irrelevant for AMD64
-    prg_header.seg_file_size   = elf_file_size; // code size
-    prg_header.seg_mem_size    = elf_file_size; // code size
+    prg_header.seg_file_size   = elf_file_size; // load whole file
+    prg_header.seg_mem_size    = elf_file_size; // load whole file
     prg_header.alignment       = 0x200000;      // default
 
     bool write_failed = false;
