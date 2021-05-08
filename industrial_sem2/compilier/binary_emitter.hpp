@@ -166,6 +166,19 @@ lstatus_t emit_mov(emitter_t *emt, reg64_t dst, int64_t imm_src);
 lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src_base, int32_t src_offset);
 
 /**
+ * mov %dst, [%src_base + %src_index * scale + src_offset]
+ *
+ * \param \c dst Destination register
+ * \param \c src_base Memory base register
+ * \param \c src_index Index register
+ * \param \c src_scale Index scale (1, 2, 4 or 8)
+ * \param \c src_offset Memory offset immediate value
+ * \param \c emt Emitter object
+ */
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst,
+                   reg64_t src_base, reg64_t src_index, int src_scale, int32_t src_offset);
+
+/**
  * mov [%dst_base + dst_offset], %src
  *
  * \param \c dst_base Memory base register
@@ -174,6 +187,19 @@ lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src_base, int32_t src_of
  * \param \c emt Emitter object
  */
 lstatus_t emit_mov(emitter_t *emt, reg64_t dst_base, int32_t dst_offset, reg64_t src);
+
+/**
+ * mov [%dst_base + %dst_index * 8 + dst_offset], %src
+ *
+ * \param \c dst_base Memory base register
+ * \param \c dst_index Index register
+ * \param \c dst_scale Index scale (1, 2, 4 or 8)
+ * \param \c dst_offset Memory offset immediate value
+ * \param \c src Source register
+ * \param \c emt Emitter object
+ */
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst_base, reg64_t dst_index, int dst_scale, int32_t dst_offset,
+                   reg64_t src);
 
 /**
  * add %dst, %src

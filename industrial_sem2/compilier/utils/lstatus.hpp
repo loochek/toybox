@@ -24,7 +24,8 @@ enum lstatus_t
     LSTATUS_NOT_FOUND,
     LSTATUS_ALREADY_PRESENT,
     LSTATUS_CODE_GEN_FAIL,
-    LSTATUS_SYM_RESOLVE_ERR
+    LSTATUS_SYM_RESOLVE_ERR,
+    LSTATUS_BIN_ENC_FAIL
 };
 
 /// Stores an info message from the last LSTATUS call

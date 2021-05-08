@@ -8,11 +8,12 @@
  * NUM  ::= [0-9]+ (aka LEX_NUMBER)
  * FNCL ::= IDNT({EXPR{,EXPR}*}+)
  * IDX  ::= IDNT'['EXPR']'
- * PRIM ::= '('EXPR')' | FNCL | IDX | NUM | IDNT // (order is important!)
+ * VAR  ::= IDX | IDNT
+ * PRIM ::= '('EXPR')' | FNCL | VAR | NUM            // order is important!
  * MUDI ::= PRI{[*\%]PRI}*
  * ADSU ::= MUDI{[+-]MUDI}*
  * CMP  ::= ADSU{['<''>''==''!=''<=''>=']ADSU}*
- * ASSN ::= IDNT=EXPR
+ * ASSN ::= VAR=EXPR
  * EXPR ::= ASSN | CMP
  * 
  * EXPR_STMT ::= EXPR;
@@ -41,6 +42,7 @@ struct parser_state_t
 static lstatus_t grammar_idnt(ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_num (ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_fncl(ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_var (ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_idx (ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_prim(ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_mudi(ast_node_t **node_out, parser_state_t *state);
@@ -286,6 +288,31 @@ error_handler:
     return status;
 }
 
+static lstatus_t grammar_var(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
+
+    ast_node_t *var = nullptr;
+    
+    TRY_TO_PARSE(grammar_idx(&var, state),
+    {
+        *node_out = var;
+        return LSTATUS_OK;
+    });
+
+    LSCHK_LOCAL(grammar_idnt(&var, state));
+
+    *node_out = var;
+    return LSTATUS_OK;
+
+error_handler:
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
+
 static lstatus_t grammar_prim(ast_node_t **node_out, parser_state_t *state)
 {
     lstatus_t status = LSTATUS_OK;
@@ -319,19 +346,13 @@ static lstatus_t grammar_prim(ast_node_t **node_out, parser_state_t *state)
         return LSTATUS_OK;
     });
 
-    TRY_TO_PARSE(grammar_idx(&node, state),
+    TRY_TO_PARSE(grammar_var(&node, state),
     {
         *node_out = node;
         return LSTATUS_OK;
     });
 
-    TRY_TO_PARSE(grammar_num(&node, state),
-    {
-        *node_out = node;
-        return LSTATUS_OK;
-    });
-    
-    LSCHK_LOCAL(grammar_idnt(&node, state));
+    LSCHK_LOCAL(grammar_num(&node, state));
 
     *node_out = node;
     return LSTATUS_OK;
@@ -499,7 +520,7 @@ static lstatus_t grammar_assn(ast_node_t **node_out, parser_state_t *state)
 
     ast_node_t *var = nullptr, *value = nullptr, *assn_node = nullptr;
 
-    LSCHK_LOCAL(grammar_idnt(&var, state));
+    LSCHK_LOCAL(grammar_var(&var, state));
 
     FETCH_LEXEM();
     if (curr_lexem->type == LEX_ASSIGN)
