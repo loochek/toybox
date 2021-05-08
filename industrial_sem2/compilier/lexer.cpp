@@ -47,6 +47,8 @@ static const lexer_template_t SPEC_SEQ[] =
     { LEX_COMPOUND_END , "}"  },
     { LEX_OPEN_BRACKET , "("  },
     { LEX_CLOSE_BRACKET, ")"  },
+    { LEX_INDEX_OPEN   , "["  },
+    { LEX_INDEX_CLOSE  , "]"  },
     { LEX_COMMA        , ","  },
     { LEX_SEMICOLON    , ";"  }
 };

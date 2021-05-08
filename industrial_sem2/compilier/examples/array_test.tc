@@ -1,0 +1,7 @@
+fn main()
+{
+    let arr[10];
+    arr = 12;
+    
+    print(arr);
+}

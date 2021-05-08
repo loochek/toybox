@@ -9,6 +9,8 @@
  * Follows System V AMD64 ABI as targeting ELF and Linux
  */
 
+/// TODO: array access (requires emitter changes)
+
 const int VAR_SIZE = 8;
 const int STACK_ALIGNMENT = 16;
 
@@ -84,6 +86,11 @@ static lstatus_t gen_statement(ast_node_t *stmt, gen_state_t *state);
  * Generates code for variable declaration
  */
 static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state);
+
+/**
+ * Generates code for array declaration
+ */
+static lstatus_t gen_arr_decl(ast_node_t *var_decl, gen_state_t *state);
 
 /**
  * Generates code for expression statement
@@ -219,7 +226,7 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
     state->emt.idle = true;
 
     // reset all counters
-    state->var_table.max_var_cnt = 0;
+    state->var_table.max_var_section_size = 0;
     state->max_temp_stack_cnt = 0;
     state->max_stack_arg_cnt = 0;
     state->saved_regs_count = 0;
@@ -242,9 +249,8 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
             state->saved_regs_count++;
     }
 
-    state->stack_frame_size = (state->var_table.max_var_cnt +
-                              state->max_temp_stack_cnt +
-                              state->max_stack_arg_cnt) * VAR_SIZE;
+    state->stack_frame_size = (state->max_temp_stack_cnt + state->max_stack_arg_cnt) * VAR_SIZE + 
+                              state->var_table.max_var_section_size;
 
     state->stack_frame_size += state->saved_regs_count * VAR_SIZE;
 
@@ -257,7 +263,7 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
 
     state->stack_frame_size -= state->saved_regs_count * VAR_SIZE;
 
-    state->temp_stack_offset = state->var_table.max_var_cnt * VAR_SIZE;
+    state->temp_stack_offset = state->var_table.max_var_section_size;
 
     // second pass: normal code generation using data determined during the first pass
 
@@ -328,7 +334,7 @@ static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_
     {
         // variable is passed in register, it must be stored on the stack
         int32_t var_offset = 0;
-        status = var_table_add(&state->var_table, var_name, &var_offset);
+        status = var_table_add(&state->var_table, var_name, VAR_SIZE, &var_offset);
 
         LSCHK(emit_comment(&state->emt, "= storing argument %.*s on the stack =",
                            var_name.length, var_name.str));
@@ -340,7 +346,7 @@ static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_
         // +16 - skip saved rbp and return address
         // + state->saved_regs_count * VAR_SIZE - skip saved registers
         int32_t var_offset = (*arg_count - MAX_REGISTER_ARGS + state->saved_regs_count) * VAR_SIZE + 16;
-        status = var_table_add(&state->var_table, arg_node->ident, var_offset);
+        status = var_table_add(&state->var_table, arg_node->ident, VAR_SIZE, var_offset);
 
         LSCHK(emit_comment(&state->emt, "= argument %.*s is already on the stack at rbp+%d =",
                            var_name.length, var_name.str, var_offset));
@@ -386,6 +392,10 @@ static lstatus_t gen_statement(ast_node_t *stmt, gen_state_t *state)
         LSCHK(gen_var_decl(stmt, state));
         break;
 
+    case AST_ARR_DECL:
+        LSCHK(gen_arr_decl(stmt, state));
+        break;
+
     case AST_IF:
         LSCHK(gen_if(stmt, state));
         break;
@@ -414,7 +424,7 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
     string_view_t var_name = var_name_node->ident;
 
     int32_t var_offset = 0;
-    status = var_table_add(&state->var_table, var_name, &var_offset);
+    status = var_table_add(&state->var_table, var_name, VAR_SIZE, &var_offset);
     if (status == LSTATUS_ALREADY_PRESENT)
     {
         CODE_GEN_ERROR("variable %.*s already defined",
@@ -437,6 +447,29 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
     }
 
     return LSTATUS_OK;
+}
+
+static lstatus_t gen_arr_decl(ast_node_t *var_decl, gen_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    ast_node_t *arr_name_node = var_decl->left_branch;
+    string_view_t arr_name = arr_name_node->ident;
+
+    ast_node_t *size_node = var_decl->right_branch;
+    int arr_size = size_node->number;
+
+    int32_t var_offset = 0;
+    status = var_table_add(&state->var_table, arr_name, VAR_SIZE * arr_size, &var_offset);
+    if (status == LSTATUS_ALREADY_PRESENT)
+    {
+        CODE_GEN_ERROR("variable %.*s already defined",
+                       arr_name_node->row, arr_name_node->col,
+                       arr_name.length, arr_name.str);
+        return LSTATUS_CODE_GEN_FAIL;
+    }
+
+    return status;
 }
 
 static lstatus_t gen_expr_stmt(ast_node_t *expr_stmt, gen_state_t *state)

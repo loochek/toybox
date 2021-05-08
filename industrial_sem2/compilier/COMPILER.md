@@ -11,6 +11,9 @@ For example: `fn test(a, b, c) { a = 10 };` is split into such sequence: fn keyw
 Parser reads lexems sequence and builds an abstract syntax tree (e.g. AST) of a program. Each node have a type, left and right children. Tiny Compilier can show AST by passing `--show-ast` command line option. This section provides information about AST nodes and describes how different language structures are translated into AST.
 
 - Identifier -> AST_IDENTIFIER
+- Indexed identifier -> AST_INDEX
+    - Left node is an identifier
+    - Right node is an expression
 - Number -> AST_NUMBER
 - Operators -> AST_OPER_***
     - Left node is a left argument
@@ -19,7 +22,7 @@ Parser reads lexems sequence and builds an abstract syntax tree (e.g. AST) of a 
     - Left node is a function name
     - Right node is arguments glued with AST_COMPOUND
 - Expressions
-    - Trees, where leaves are AST_IDENTIFIER, AST_IDENTIFIER or AST_CALL, non-leaf nodes are operators
+    - Trees, where leaves are AST_IDENTIFIER, AST_NUMBER, AST_INDEX or AST_CALL. Non-leaf nodes are operators
     - Classic expression trees
 - Statements
     - expresion statements -> AST_EXPR_STMT
@@ -32,9 +35,13 @@ Parser reads lexems sequence and builds an abstract syntax tree (e.g. AST) of a 
     - while -> AST_WHILE
         - Left node is a condition expression
         - Right node is an while body statement
-    - Variable declaration -> AST_VAR_DECL
-        - Left node is a variable name
-        - Right node is an initial value expression
+    - Variable declaration -> AST_VAR_DECL or AST_ARR_DECL
+        - AST_VAR_DECL if usual variable
+            - Left node is a variable name
+            - Right node is an initial value expression
+        - AST_ARR_DECL if array variable:
+            - Left node is an array name
+            - Right node is AST_NUMBER - size of the array
     - return -> AST_RETURN
         - Left node is a return value expression
     - Compound expression -> statements glued with AST_COMPOUND

@@ -9,6 +9,7 @@ const char *ast_types_display_names[] =
 
     "",            // AST_NUMBER
     "",            // AST_IDENTIFIER
+    "[]",          // AST_INDEX
 
     "+",           // AST_OPER_ADD
     "-",           // AST_OPER_SUB
@@ -29,6 +30,7 @@ const char *ast_types_display_names[] =
     "WHILE",
     "RETURN",
     "VAR_DECL",
+    "ARR_DECL",
     "FUNC_DECL",
     "FUNC_HEAD",
     "EXPR_STMT",
@@ -246,6 +248,11 @@ static void ast_visualize_rec(ast_node_t *node, int node_id, FILE *file)
                 node_id, node->ident.length, node->ident.str, node->row, node->col);
         break;
 
+    case AST_INDEX:
+        fprintf(file, "%d [fillcolor=wheat2, style=filled, label=\"%s | { %d | %d }\"]\n",
+                node_id, ast_types_display_names[node->type], node->row, node->col);
+        break;
+
     case AST_COMPOUND:
         fprintf(file, "%d [fillcolor=azure2, style=filled, label=\"%s\"]\n",
                 node_id, ast_types_display_names[node->type]);
@@ -317,6 +324,28 @@ static lstatus_t ast_validate_expr(ast_node_t *node)
             return status;
         }
 
+        return LSTATUS_OK;
+
+    case AST_INDEX:
+        if (node->left_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer left child of index node")
+            return status;
+        }
+
+        if (node->left_branch->type != AST_IDENTIFIER)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "non-identifier left branch of index")
+            return status;
+        }
+
+        if (node->left_branch->ident.str == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer identifier string")
+            return status;
+        }
+
+        LSCHK(ast_validate_expr(node->right_branch));
         return LSTATUS_OK;
 
     case AST_OPER_ADD:
@@ -445,6 +474,12 @@ static lstatus_t ast_validate_stmt(ast_node_t *node)
             return status;
         }
 
+        if (node->left_branch->type != AST_IDENTIFIER)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "non-identifier left branch of var decl")
+            return status;
+        }
+
         if (node->left_branch->ident.str == nullptr)
         {
             LSTATUS(LSTATUS_BAD_AST, "null-pointer identifier string")
@@ -452,6 +487,33 @@ static lstatus_t ast_validate_stmt(ast_node_t *node)
         }
 
         LSCHK(ast_validate_expr(node->right_branch));
+        return LSTATUS_OK;
+
+    case AST_ARR_DECL:
+        if (node->left_branch == nullptr || node->right_branch == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer children of arr decl node")
+            return status;
+        }
+
+        if (node->left_branch->type != AST_IDENTIFIER)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "non-identifier left branch of arr decl")
+            return status;
+        }
+
+        if (node->left_branch->ident.str == nullptr)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "null-pointer identifier string")
+            return status;
+        }
+
+        if (node->right_branch->type != AST_NUMBER)
+        {
+            LSTATUS(LSTATUS_BAD_AST, "non-number right branch of arr decl")
+            return status;
+        }
+
         return LSTATUS_OK;
 
     case AST_RETURN:
