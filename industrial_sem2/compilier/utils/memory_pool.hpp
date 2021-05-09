@@ -124,6 +124,7 @@ lstatus_t memory_pool_alloc(memory_pool_t<T> *pool, T **ptr_out)
     pool_object_t<T> *obj = pool->free_head;
     pool->free_head = obj->next_free;
 
+    obj->elem = {};
     *ptr_out = &obj->elem;
     return LSTATUS_OK;
 
