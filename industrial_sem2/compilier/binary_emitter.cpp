@@ -94,36 +94,103 @@ static lstatus_t emit_qword(emitter_t *emt, int64_t qword);
 static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm);
 
 /**
- * Emits a ModRM byte of a register-indirect addressing mode with 32bit displacement:
+ * Emits an argument of a register-indirect addressing mode with 32bit displacement:
+ * 
+ * ModRM:
  * ModRM.mod = 10
  * ModRM.reg = 3 least significant bits of reg
  * ModRM.rm  = 3 least significant bits of rm
  * 
- * Operand 1: reg
- * Operand 2: [rm + disp32]
+ * if (rm == RSP || rm == R12), SIB is emitted:
+ * SIB.scale = 0
+ * SIB.index = RSP
+ * SIB.base  = rm
+ * 
+ * Reg operand: reg
+ * R/M operand: [rm_base + disp32]
  * 
  * Which operand is the source and which is the destination depends on the opcode
  * 
  * \param \c emt Emitter object
  * \param \c reg Reg
- * \param \c rm R/M
+ * \param \c rm_base R/M base
  * \param \c rm_disp R/M displacement
  */
-static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm, int32_t rm_disp);
+static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm_base, int32_t rm_disp);
 
 /**
- * Emits a REX byte - 64-bit operand size:
- * REX.X = 0 (SIB.index is not used)
+ * Emits an argument of a register-indirect addressing mode with
+ * index register and 32bit displacement:
+ * 
+ * ModRM:
+ * ModRM.mod = 10
+ * ModRM.reg = 3 least significant bits of reg
+ * ModRM.rm  = REG_RSP
+ * 
+ * SIB:
+ * SIB.scale = rm_scale
+ * SIB.index = rm_index
+ * SIB.base  = rm_base
+ * 
+ * Imm: rm_disp
+ * 
+ * Reg operand: reg
+ * R/M operand: [rm_base + rm_index * rm_scale + rm_disp32]
+ * 
+ * Which operand is the source and which is the destination depends on the opcode
+ * 
+ * \param \c emt Emitter object
+ * \param \c reg Reg
+ * \param \c rm_base R/M base
+ * \param \c rm_index R/M index
+ * \param \c rm_scale R/M scale
+ * \param \c rm_disp R/M displacement
+ */
+static lstatus_t emit_operands(emitter_t *emt, reg64_t reg,
+                               reg64_t rm_base, reg64_t rm_index, int rm_scale, int32_t rm_disp);
+
+/**
+ * Emits a REX byte:
  * REX.W = rex_w
  * REX.R = most significant bit of reg
+ * REX.X = 0
  * REX.B = most significant bit of rm
  * 
  * \param \c emt Emitter object
  * \param \c rex_w REX.W value
  * \param \c reg Reg
+ * \param \c index Index
  * \param \c rm R\M
  */
 static lstatus_t emit_rex(emitter_t *emt, bool rex_w, reg64_t reg, reg64_t rm);
+
+/**
+ * Emits a REX byte:
+ * REX.W = rex_w
+ * REX.R = most significant bit of reg
+ * REX.X = most significant bit of index
+ * REX.B = most significant bit of rm
+ * 
+ * \param \c emt Emitter object
+ * \param \c rex_w REX.W value
+ * \param \c reg Reg
+ * \param \c index Index
+ * \param \c rm R\M
+ */
+static lstatus_t emit_rex(emitter_t *emt, bool rex_w, reg64_t reg, reg64_t index, reg64_t rm);
+
+/**
+ * Emits a SIB byte:
+ * SIB.scale = log(scale)
+ * SIB.index = 3 least significant bits of index
+ * SIB.base  = 3 least significant bits of base
+ * 
+ * \param \c emt Emitter object
+ * \param \c scale Scale (1, 2, 4 or 8)
+ * \param \c index Index register
+ * \param \c base Base register
+ */
+static lstatus_t emit_sib(emitter_t *emt, int scale, reg64_t index, reg64_t base);
 
 /**
  * Emits program start code
@@ -387,7 +454,23 @@ lstatus_t emit_mov(emitter_t *emt, reg64_t dst, reg64_t src_base, int32_t src_of
     LSCHK(emit_byte(emt, 0x8B)); // MOV r64,r/m64
     LSCHK(emit_operands(emt, dst, src_base, src_offset));
 
-    fprintf(emt->listing_file, "    mov %s, [%s%+d]\n", regs64_str_repr[dst], regs64_str_repr[src_base], src_offset);
+    fprintf(emt->listing_file, "    mov %s, [%s%+d]\n",
+            regs64_str_repr[dst], regs64_str_repr[src_base], src_offset);
+    return LSTATUS_OK;
+}
+
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst,
+                   reg64_t src_base, reg64_t src_index, int src_scale, int32_t src_offset)
+{
+    if (emt->idle)
+        return LSTATUS_OK;
+
+    LSCHK(emit_rex(emt, true, dst, src_index, src_base));
+    LSCHK(emit_byte(emt, 0x8B)); // MOV r64,r/m64
+    LSCHK(emit_operands(emt, dst, src_base, src_index, src_scale, src_offset));
+
+    fprintf(emt->listing_file, "    mov %s, [%s+%s*%d%+d]\n",
+            regs64_str_repr[dst], regs64_str_repr[src_base], regs64_str_repr[src_index], src_scale, src_offset);
     return LSTATUS_OK;
 }
 
@@ -400,7 +483,23 @@ lstatus_t emit_mov(emitter_t *emt, reg64_t dst_base, int32_t dst_offset, reg64_t
     LSCHK(emit_byte(emt, 0x89)); // MOV r/m64,r64
     LSCHK(emit_operands(emt, src, dst_base, dst_offset));
 
-    fprintf(emt->listing_file, "    mov [%s%+d], %s\n", regs64_str_repr[dst_base], dst_offset, regs64_str_repr[src]);
+    fprintf(emt->listing_file, "    mov [%s%+d], %s\n",
+            regs64_str_repr[dst_base], dst_offset, regs64_str_repr[src]);
+    return LSTATUS_OK;
+}
+
+lstatus_t emit_mov(emitter_t *emt, reg64_t dst_base, reg64_t dst_index, int dst_scale, int32_t dst_offset,
+                   reg64_t src)
+{
+    if (emt->idle)
+        return LSTATUS_OK;
+    
+    LSCHK(emit_rex(emt, true, src, dst_index, dst_base));
+    LSCHK(emit_byte(emt, 0x89)); // MOV r/m64,r64
+    LSCHK(emit_operands(emt, src, dst_base, dst_index, dst_scale, dst_offset));
+
+    fprintf(emt->listing_file, "    mov [%s+%s*%d%+d], %s\n",
+            regs64_str_repr[dst_base], regs64_str_repr[dst_index], dst_scale, dst_offset, regs64_str_repr[src]);
     return LSTATUS_OK;
 }
 
@@ -876,46 +975,98 @@ static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm)
 
     uint8_t modrm = 0xC0; // first two bits are 11
     modrm |= (reg & 0x7) << 3;
-    modrm |= rm & 0x7;
+    modrm |= (rm & 0x7);
 
     LSCHK(emit_byte(emt, modrm));
     return LSTATUS_OK;
 }
 
-static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm, int32_t rm_disp)
+static lstatus_t emit_operands(emitter_t *emt, reg64_t reg, reg64_t rm_base, int32_t rm_disp)
 {
     if (emt->idle)
         return LSTATUS_OK;
 
     uint8_t modrm = 0x80; // first two bits are 10
-    modrm |= (reg & 0x7) << 3;
-    modrm |= rm & 0x7;
+    modrm |= (reg     & 0x7) << 3;
+    modrm |= (rm_base & 0x7);
     LSCHK(emit_byte(emt, modrm));
     
-    if (rm == REG_RSP || rm == REG_R12)
+    if (rm_base == REG_RSP || rm_base == REG_R12)
+        LSCHK(emit_sib(emt, 1, REG_RSP, rm_base));
+
+    LSCHK(emit_dword(emt, rm_disp));
+    return LSTATUS_OK;
+}
+
+static lstatus_t emit_operands(emitter_t *emt, reg64_t reg,
+                               reg64_t rm_base, reg64_t rm_index, int rm_scale, int32_t rm_disp)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    if (emt->idle)
+        return LSTATUS_OK;
+
+    if (rm_index == REG_RSP)
     {
-        // https://wiki.osdev.org/X86-64_Instruction_Encoding#SIB
-        uint8_t sib = 0x00; // first two bits are 00 - no scale
-        sib |= 0x4 << 3;    // index is 100
-        sib |= (rm & 0x7);  // base is rm
-        LSCHK(emit_byte(emt, sib));
+        LSTATUS(LSTATUS_BIN_ENC_FAIL, "RSP can't be used as index register");
+        return status;
     }
 
+    uint8_t modrm = 0x80; // first two bits are 10
+    modrm |= (reg & 0x7) << 3;
+    modrm |= REG_RSP;
+    LSCHK(emit_byte(emt, modrm));
+
+    LSCHK(emit_sib(emt, rm_scale, rm_index, rm_base));
     LSCHK(emit_dword(emt, rm_disp));
     return LSTATUS_OK;
 }
 
 static lstatus_t emit_rex(emitter_t *emt, bool rex_w, reg64_t reg, reg64_t rm)
 {
+    return emit_rex(emt, rex_w, reg, REG_RAX, rm);
+}
+
+static lstatus_t emit_rex(emitter_t *emt, bool rex_w, reg64_t reg, reg64_t index, reg64_t rm)
+{
     if (emt->idle)
         return LSTATUS_OK;
 
     uint8_t rex = 0x40;
     rex |= rex_w << 3;
-    rex |= (reg & 0x8) >> 1;
-    rex |= (rm  & 0x8) >> 3;
+    rex |= (reg   & 0x8) >> 1;
+    rex |= (index & 0x8) >> 2;
+    rex |= (rm    & 0x8) >> 3;
 
     LSCHK(emit_byte(emt, rex));
+    return LSTATUS_OK;
+}
+
+static lstatus_t emit_sib(emitter_t *emt, int scale, reg64_t index, reg64_t base)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    if (emt->idle)
+        return LSTATUS_OK;
+    
+    if (scale != 1 && scale != 2 && scale != 4 && scale != 8)
+    {
+        LSTATUS(LSTATUS_BIN_ENC_FAIL, "scale must be 1, 2, 4 or 8");
+        return status;
+    }
+
+    uint8_t sib = 0x00;
+
+    // set scale
+    if (scale == 2 || scale == 8)
+        sib |= 0x1 << 6;
+    if (scale == 4 || scale == 8)
+        sib |= 0x1 << 7;
+
+    sib |= (index & 0x7) << 3;
+    sib |= (base  & 0x7);
+
+    LSCHK(emit_byte(emt, sib));
     return LSTATUS_OK;
 }
 

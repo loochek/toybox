@@ -13,9 +13,11 @@
             - Examples:
                 - foo()
                 - bar(4, foobar)
+        - Identifiers can have an expression in square brackets on the right (_indexed identifiers_)
         - Examples:
             - 5
             - var
+            - arr\[a + 1\]
             - foo(1, 2, 3, foobar)
     - Other expressions are created as a combination of two expressions linked by some operator
         - Examples:
@@ -26,40 +28,47 @@
 - Operator
     - Makes a new expression from one or two other expressions
     - Default operators: + - * / % == != \< \> \<= \>= =
-    - Special operator = takes identifier as left argument
+    - Special operator = takes identifier or indexed identifier as left argument
 - Statement
     - There are several types of expressions:
         - Expression statement
             - Expression as statement
             - Syntax: expression;
-                - Examples:
-                    - a = 5;
-                    - 5 + 4;
-                    - fn(23,1231,132);
+            - Examples:
+                - a = 5;
+                - 5 + 4;
+                - fn(23,1231,132);
         - If statement:
             - Syntax: if (expression) statement
             - (or)
             - Syntax: if (expression) statement else statement
+            - Examples:
+                - if (a == 4) return 5;
+                - if (a == 4) return 5; else return 6;
         - While statement
             - Syntax: while (expression) statement
+            - Example:
+                - while (a <= 4) a = a + 1;
         - Compound statement
             - Syntax: { statement1 statement2 ... }
             - combination of other statements
-                - Example:
-                    - { a = 5; gg(234); { a = 10; } }
+            - Example:
+                - { a = 5; gg(234); { a = 10; } }
         - Function declaration statement
             - Syntax: fn \<name\>(\<params\>) \<compound stmt\>
             - (where name is some identifier, params are empty or identifiers delimetered with comma)
-                - Example:
-                    - fn foo(a, b) { z = 10; }
-
+            - Example:
+                - fn foo(a, b) { z = 10; }
         - Variable declaration statement:
             - Syntax: let x;
             - (or)
             - Syntax: let x = \<expression\>;
-                - Examples:
-                    - let a;
-                    - let a = 10;
+            - (or)
+            - Syntax: let x\[number\];
+            - Examples:
+                - let a;
+                - let a = 10;
+                - let arr\[10\];
         - Return statement
             - Syntax: return;
             - (or)
@@ -72,16 +81,21 @@
 ### Semantics
 - The only data type is signed 64-bit integer
 - Identifier
-    - is a name of variable or function
+    - Is a name of variable or function
+    - Indexed identifiers used with variables
 - Numeric literal
-    - returns its value as an expression
+    - Returns its value as an expression
 - Variable
-    - is some memory cell
-    - returns its value as an expression
-    - is created as the result of variable declaration statement
-    - a value of the variable can be set during declaration and updated by an assignment operator 
-- Expression
+    - Identifier in terms of syntax
+    - Is some memory cell
+    - Returns its value as an expression
+    - Is created as the result of variable declaration statement
+    - A value of the variable can be set during declaration and updated by an assignment operator 
     - Must have value as calculation result
+    - There are special variables called _arrays_ - a bunch of variables, which variable to access is determined by some expression
+        - A specific variable is accessed through square brackets (indexed identifiers)
+            - Usual variables can be also used with brackets, but it's considered as undefined behavior
+        - Array variables can be accesed without brackets - as synonym to \[0\]
 - Operator
     - Takes return values of arguments and returns its value according to them
     - Operator = updates a value of the variable with return value of an expression.
@@ -122,6 +136,8 @@
         - Defines a function
     - Variable declaration statement
         - Declares a variable and, maybe, initializes it
+        - (or)
+        - Declares an array variable of given size
     - Return statement
         - Defines return point and value of a function
         

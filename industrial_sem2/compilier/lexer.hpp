@@ -29,6 +29,8 @@ enum lexem_type_t
     LEX_SEMICOLON,
     LEX_COMPOUND_BEG,
     LEX_COMPOUND_END,
+    LEX_INDEX_OPEN,
+    LEX_INDEX_CLOSE,
 
     LEX_ADD,
     LEX_SUB,

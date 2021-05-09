@@ -16,6 +16,7 @@ enum ast_node_type_t
 
     AST_NUMBER,
     AST_IDENTIFIER,
+    AST_INDEX,
     
     AST_OPER_ADD,
     AST_OPER_SUB,
@@ -38,6 +39,7 @@ enum ast_node_type_t
     AST_RETURN,
 
     AST_VAR_DECL,
+    AST_ARR_DECL,
     AST_FUNC_DECL,
     AST_FUNC_HEAD,
     AST_EXPR_STMT,

@@ -1,0 +1,41 @@
+
+fn main()
+{
+    let n = 1001;
+    let prime[1001];
+    
+    let i = 0;
+    while (i < n)
+    {
+        prime[i] = 1;
+        i = i + 1;
+    }
+    
+    prime[1] = 0;
+    
+    let curr_num = 2;
+    while (curr_num < n)
+    {
+        if (prime[curr_num])
+        {
+            let mult = curr_num * 2;
+        
+            while (mult < n)
+            {
+                prime[mult] = 0;
+                mult = mult + curr_num;
+            }
+        }
+        
+        curr_num = curr_num + 1;
+    }
+    
+    i = 2;
+    while (i < n)
+    {
+        if (prime[i])
+            print(i);
+            
+        i = i + 1;
+    }
+}

@@ -9,14 +9,14 @@ struct var_entry_t
 {
     string_view_t name;
     int32_t offset;
+    int size;
 };
 
 struct scope_t
 {
     list_t<var_entry_t> vars;
-   
-    // number of variables of current frame in current scope
-    int curr_scope_frame_var_cnt;
+    // size of current frame variables of the scope
+    int curr_scope_frame_var_size;
 };
 
 /**
@@ -26,11 +26,12 @@ struct var_table_t
 {
     list_t<scope_t> scopes;
 
-    // number of variables of current frame
-    int curr_frame_var_cnt;
+    // current size of the variables section in bytes
+    int curr_var_section_size;
 
-    // data for determining size of the stack frame of the current function
-    int max_var_cnt;
+    // max size of the variables section in bytes
+    // used for determining size of the stack frame of the current function
+    int max_var_section_size;
 };
 
 /**
@@ -52,20 +53,22 @@ lstatus_t var_table_destruct(var_table_t *table);
  * Allocates a new variable on the stack in the current scope
  * 
  * \param \c table Var table
- * \param \c name Variable name
+ * \param \c name Name of the variable
+ * \param \c size Size of the variable in bytes
  * \param \c offset_out Where to write allocated offset
  */
-lstatus_t var_table_add(var_table_t *table, string_view_t name, int32_t *offset_out);
+lstatus_t var_table_add(var_table_t *table, string_view_t name, int size, int32_t *offset_out);
 
 /**
  * Puts a new variable with custom offset in the current scope
  * Used for stack arguments
  * 
  * \param \c table Var table
- * \param \c name Variable name
+ * \param \c name Name of the variable
+ * \param \c size Size of the variable in bytes
  * \param \c offset Offset
  */
-lstatus_t var_table_add(var_table_t *table, string_view_t name, int32_t offset);
+lstatus_t var_table_add(var_table_t *table, string_view_t name, int size, int32_t offset);
 
 /**
  * Tells offset of the variable according to scopes

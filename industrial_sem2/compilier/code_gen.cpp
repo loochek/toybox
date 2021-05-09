@@ -86,6 +86,11 @@ static lstatus_t gen_statement(ast_node_t *stmt, gen_state_t *state);
 static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state);
 
 /**
+ * Generates code for array declaration
+ */
+static lstatus_t gen_arr_decl(ast_node_t *var_decl, gen_state_t *state);
+
+/**
  * Generates code for expression statement
  */
 static lstatus_t gen_expr_stmt(ast_node_t *expr_stmt, gen_state_t *state);
@@ -219,7 +224,7 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
     state->emt.idle = true;
 
     // reset all counters
-    state->var_table.max_var_cnt = 0;
+    state->var_table.max_var_section_size = 0;
     state->max_temp_stack_cnt = 0;
     state->max_stack_arg_cnt = 0;
     state->saved_regs_count = 0;
@@ -242,9 +247,8 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
             state->saved_regs_count++;
     }
 
-    state->stack_frame_size = (state->var_table.max_var_cnt +
-                              state->max_temp_stack_cnt +
-                              state->max_stack_arg_cnt) * VAR_SIZE;
+    state->stack_frame_size = (state->max_temp_stack_cnt + state->max_stack_arg_cnt) * VAR_SIZE + 
+                              state->var_table.max_var_section_size;
 
     state->stack_frame_size += state->saved_regs_count * VAR_SIZE;
 
@@ -257,7 +261,7 @@ static lstatus_t gen_func_decl(ast_node_t *func_decl, gen_state_t *state)
 
     state->stack_frame_size -= state->saved_regs_count * VAR_SIZE;
 
-    state->temp_stack_offset = state->var_table.max_var_cnt * VAR_SIZE;
+    state->temp_stack_offset = state->var_table.max_var_section_size;
 
     // second pass: normal code generation using data determined during the first pass
 
@@ -328,7 +332,7 @@ static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_
     {
         // variable is passed in register, it must be stored on the stack
         int32_t var_offset = 0;
-        status = var_table_add(&state->var_table, var_name, &var_offset);
+        status = var_table_add(&state->var_table, var_name, VAR_SIZE, &var_offset);
 
         LSCHK(emit_comment(&state->emt, "= storing argument %.*s on the stack =",
                            var_name.length, var_name.str));
@@ -340,7 +344,7 @@ static lstatus_t func_decl_arg_helper(ast_node_t *arg_node, int *arg_count, gen_
         // +16 - skip saved rbp and return address
         // + state->saved_regs_count * VAR_SIZE - skip saved registers
         int32_t var_offset = (*arg_count - MAX_REGISTER_ARGS + state->saved_regs_count) * VAR_SIZE + 16;
-        status = var_table_add(&state->var_table, arg_node->ident, var_offset);
+        status = var_table_add(&state->var_table, arg_node->ident, VAR_SIZE, var_offset);
 
         LSCHK(emit_comment(&state->emt, "= argument %.*s is already on the stack at rbp+%d =",
                            var_name.length, var_name.str, var_offset));
@@ -386,6 +390,10 @@ static lstatus_t gen_statement(ast_node_t *stmt, gen_state_t *state)
         LSCHK(gen_var_decl(stmt, state));
         break;
 
+    case AST_ARR_DECL:
+        LSCHK(gen_arr_decl(stmt, state));
+        break;
+
     case AST_IF:
         LSCHK(gen_if(stmt, state));
         break;
@@ -414,7 +422,7 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
     string_view_t var_name = var_name_node->ident;
 
     int32_t var_offset = 0;
-    status = var_table_add(&state->var_table, var_name, &var_offset);
+    status = var_table_add(&state->var_table, var_name, VAR_SIZE, &var_offset);
     if (status == LSTATUS_ALREADY_PRESENT)
     {
         CODE_GEN_ERROR("variable %.*s already defined",
@@ -437,6 +445,29 @@ static lstatus_t gen_var_decl(ast_node_t *var_decl, gen_state_t *state)
     }
 
     return LSTATUS_OK;
+}
+
+static lstatus_t gen_arr_decl(ast_node_t *var_decl, gen_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    ast_node_t *arr_name_node = var_decl->left_branch;
+    string_view_t arr_name = arr_name_node->ident;
+
+    ast_node_t *size_node = var_decl->right_branch;
+    int arr_size = size_node->number;
+
+    int32_t var_offset = 0;
+    status = var_table_add(&state->var_table, arr_name, VAR_SIZE * arr_size, &var_offset);
+    if (status == LSTATUS_ALREADY_PRESENT)
+    {
+        CODE_GEN_ERROR("variable %.*s already defined",
+                       arr_name_node->row, arr_name_node->col,
+                       arr_name.length, arr_name.str);
+        return LSTATUS_CODE_GEN_FAIL;
+    }
+
+    return status;
 }
 
 static lstatus_t gen_expr_stmt(ast_node_t *expr_stmt, gen_state_t *state)
@@ -547,19 +578,28 @@ static void calculate_regs_nums(ast_node_t *expr)
 
     if (expr->type == AST_NUMBER || expr->type == AST_IDENTIFIER || expr->type == AST_CALL)
         expr->regs_used = 1;
-    else if (expr->type == AST_OPER_ASSIGN)
+    else if (expr->type == AST_OPER_ASSIGN && expr->left_branch->type == AST_IDENTIFIER ||
+             expr->type == AST_INDEX)
+    {
+        calculate_regs_nums(expr->right_branch);
         expr->regs_used = expr->right_branch->regs_used;
+    }
     else
     {
-        calculate_regs_nums(expr->left_branch);
-        calculate_regs_nums(expr->right_branch);
+        ast_node_t *left_branch = expr->left_branch, *right_branch = expr->right_branch;
+
+        if (expr->type == AST_OPER_ASSIGN && expr->left_branch->type == AST_INDEX)
+            left_branch = expr->left_branch->right_branch;
         
-        if (expr->left_branch->regs_used == expr->right_branch->regs_used)
-            expr->regs_used = expr->left_branch->regs_used + 1;
-        else if (expr->left_branch->regs_used > expr->right_branch->regs_used)
-            expr->regs_used = expr->left_branch->regs_used;
+        calculate_regs_nums(left_branch);
+        calculate_regs_nums(right_branch);
+        
+        if (left_branch->regs_used == right_branch->regs_used)
+            expr->regs_used = left_branch->regs_used + 1;
+        else if (left_branch->regs_used > right_branch->regs_used)
+            expr->regs_used = left_branch->regs_used;
         else
-            expr->regs_used = expr->right_branch->regs_used;
+            expr->regs_used = right_branch->regs_used;
     }
 }
 
@@ -576,8 +616,6 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     // flag register for saving if it's not callee-save
     if (alloc_offset >= CALLEE_SAVE_COUNT)
         state->must_save[scratch_stack[alloc_offset]] = true;
-
-    reg64_t dst_reg = REG_DUMMY64, src_reg = REG_DUMMY64;
 
     switch (expr->type)
     {
@@ -603,11 +641,10 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
             return status;
 
         LSCHK(emit_mov(&state->emt, scratch_stack[alloc_offset], REG_RBP, var_offset));
-
         break;
     }
 
-    case AST_OPER_ASSIGN:
+    case AST_INDEX:
     {
         int32_t var_offset = 0;
         string_view_t var_name = expr->left_branch->ident;
@@ -616,16 +653,15 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         if (status == LSTATUS_NOT_FOUND)
         {
             CODE_GEN_ERROR("variable %.*s is not defined",
-                           expr->left_branch->row, expr->left_branch->col,
-                           var_name.length, var_name.str);
+                           expr->row, expr->col, var_name.length, var_name.str);
             return LSTATUS_CODE_GEN_FAIL;
         }
         else if (status != LSTATUS_OK)
             return status;
 
-        LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset, state));
-        LSCHK(emit_mov(&state->emt, REG_RBP, var_offset, scratch_stack[alloc_offset]));
-
+        LSCHK(evaluate_expression(expr->right_branch, alloc_offset, state));
+        LSCHK(emit_mov(&state->emt, scratch_stack[alloc_offset],
+              REG_RBP, scratch_stack[alloc_offset], VAR_SIZE, var_offset));
         break;
     }
 
@@ -653,36 +689,76 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
     
     default:
     {
-        if (expr->right_branch->regs_used > expr->left_branch->regs_used)
-        {   
-            LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset    , state));
-            LSCHK(expr_eval_recursive(expr->left_branch , alloc_offset + 1, state));
+        // implementation AST_OPER_ASSIGN for identifiers, see implementation for AST_INDEX below
+        if (expr->type == AST_OPER_ASSIGN && expr->left_branch->type == AST_IDENTIFIER)
+        {
+            int32_t var_offset = 0;
+            string_view_t var_name = expr->left_branch->ident;
 
-            src_reg = scratch_stack[alloc_offset];
-            dst_reg = scratch_stack[alloc_offset + 1];
+            status = var_table_find(&state->var_table, var_name, &var_offset);
+            if (status == LSTATUS_NOT_FOUND)
+            {
+                CODE_GEN_ERROR("variable %.*s is not defined",
+                            expr->left_branch->row, expr->left_branch->col,
+                            var_name.length, var_name.str);
+                return LSTATUS_CODE_GEN_FAIL;
+            }
+            else if (status != LSTATUS_OK)
+                return status;
+
+            LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset, state));
+            LSCHK(emit_mov(&state->emt, REG_RBP, var_offset, scratch_stack[alloc_offset]));
+
+            break;
         }
-        else if (expr->right_branch->regs_used == expr->left_branch->regs_used &&
+
+        // handle two-operand operators
+
+        ast_node_t *dst_node = expr->left_branch, *src_node = expr->right_branch;
+        if (expr->type == AST_OPER_ASSIGN && expr->left_branch->type == AST_INDEX)
+        {
+            // AST_OPER_ASSIGN with indexed variable 
+            // has common logic of arguments calculation, but different layout
+            dst_node = expr->right_branch;
+            src_node = expr->left_branch->right_branch;
+        }
+
+        reg64_t dst_reg = REG_DUMMY64, src_reg = REG_DUMMY64;
+
+        if (src_node->regs_used > dst_node->regs_used)
+        {   
+            LSCHK(expr_eval_recursive(src_node, alloc_offset    , state));
+            LSCHK(expr_eval_recursive(dst_node, alloc_offset + 1, state));
+
+            dst_reg = scratch_stack[alloc_offset + 1];
+            src_reg = scratch_stack[alloc_offset];
+            // must mov %src, %dst in the end
+        }
+        else if (dst_node->regs_used == src_node->regs_used &&
                  expr->regs_used > SCRATCH_REGS_COUNT - alloc_offset)
         {
             // if remaining scratch registers are not enough to calculate expression,
             // we must sacrifice access to the memory in order to continue working properly
 
-            LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset, state));
+            LSCHK(expr_eval_recursive(src_node, alloc_offset, state));
             LSCHK(push_tmp_val(scratch_stack[alloc_offset], state));
-            LSCHK(expr_eval_recursive(expr->left_branch, alloc_offset, state));
+            LSCHK(expr_eval_recursive(dst_node, alloc_offset, state));
             LSCHK(pop_tmp_val(scratch_stack[alloc_offset + 1], state));
         
-            src_reg = scratch_stack[alloc_offset + 1];
             dst_reg = scratch_stack[alloc_offset];
+            src_reg = scratch_stack[alloc_offset + 1];
         }
         else
         {
-            LSCHK(expr_eval_recursive(expr->left_branch , alloc_offset    , state));
-            LSCHK(expr_eval_recursive(expr->right_branch, alloc_offset + 1, state));
+            LSCHK(expr_eval_recursive(dst_node, alloc_offset    , state));
+            LSCHK(expr_eval_recursive(src_node, alloc_offset + 1, state));
 
-            src_reg = scratch_stack[alloc_offset + 1];
             dst_reg = scratch_stack[alloc_offset];
+            src_reg = scratch_stack[alloc_offset + 1];
         }
+
+        // first operand value in dst_reg, second operand value in src_reg
+        // result must be in dst_reg
 
         switch (expr->type)
         {
@@ -790,13 +866,35 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
 
             break;
 
+        case AST_OPER_ASSIGN:
+        {
+            int32_t var_offset = 0;
+            ast_node_t *index = expr->left_branch;
+            string_view_t var_name = index->left_branch->ident;
+
+            status = var_table_find(&state->var_table, var_name, &var_offset);
+            if (status == LSTATUS_NOT_FOUND)
+            {
+                CODE_GEN_ERROR("variable %.*s is not defined",
+                            expr->left_branch->row, expr->left_branch->col,
+                            var_name.length, var_name.str);
+                return LSTATUS_CODE_GEN_FAIL;
+            }
+            else if (status != LSTATUS_OK)
+                return status;
+            
+            // calculated index in src_reg, value to assign in dst_reg
+            LSCHK(emit_mov(&state->emt, REG_RBP, src_reg, VAR_SIZE, var_offset, dst_reg));
+            break;
+        }
+
         default:
             LSTATUS(LSTATUS_BAD_AST, "unknown expression operator");
             return status;
         }
 
         // move result into base register if needed
-        if (expr->right_branch->regs_used > expr->left_branch->regs_used)
+        if (src_node->regs_used > dst_node->regs_used)
             LSCHK(emit_mov(&state->emt, src_reg, dst_reg));
 
         break;
@@ -829,7 +927,8 @@ static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_s
         // argument value must be stored on the stack 
         // scratch_stack[MAX_REGISTER_ARGS:...) are free for calculations
         LSCHK(evaluate_expression(args, MAX_REGISTER_ARGS, state));
-        LSCHK(emit_mov(&state->emt, REG_RSP, 8 * (*alloc_offset - MAX_REGISTER_ARGS), scratch_stack[MAX_REGISTER_ARGS]));
+        LSCHK(emit_mov(&state->emt, REG_RSP, VAR_SIZE * (*alloc_offset - MAX_REGISTER_ARGS),
+                       scratch_stack[MAX_REGISTER_ARGS]));
         (*alloc_offset)++;
 
         if (*alloc_offset - MAX_REGISTER_ARGS > state->max_stack_arg_cnt)

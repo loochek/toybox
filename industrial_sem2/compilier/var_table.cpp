@@ -12,8 +12,8 @@ static lstatus_t var_table_find_in_scope(list_t<var_entry_t> *scope, string_view
 lstatus_t var_table_construct(var_table_t *table)
 {
     LSCHK(list_construct(&table->scopes));
-    table->curr_frame_var_cnt = 0;
-    table->max_var_cnt = 0;
+    table->curr_var_section_size = 0;
+    table->max_var_section_size  = 0;
     return LSTATUS_OK;
 }
 
@@ -65,13 +65,12 @@ lstatus_t var_table_find(var_table_t *table, string_view_t name, int32_t *offset
     return LSTATUS_NOT_FOUND;
 }
 
-lstatus_t var_table_add(var_table_t *table, string_view_t name, int32_t *offset_out)
+lstatus_t var_table_add(var_table_t *table, string_view_t name, int size, int32_t *offset_out)
 {
-    // RBP-8 - address of the first variable in the frame
-    // (as RBP is pointing to saved RBP)
-    *offset_out = -8 * (table->curr_frame_var_cnt + 1);
+    // according that RBP is pointing to saved RBP
+    *offset_out = - table->curr_var_section_size - size;
 
-    LSCHK(var_table_add(table, name, *offset_out));
+    LSCHK(var_table_add(table, name, size, *offset_out));
 
     list_iter_t top_scope_iter = NULLITER;
     LSCHK(list_begin(&table->scopes, &top_scope_iter));
@@ -79,16 +78,16 @@ lstatus_t var_table_add(var_table_t *table, string_view_t name, int32_t *offset_
     scope_t *top_scope = nullptr;
     LSCHK(list_data(&table->scopes, top_scope_iter, &top_scope));
 
-    top_scope->curr_scope_frame_var_cnt++;
+    top_scope->curr_scope_frame_var_size += size;
 
-    table->curr_frame_var_cnt++;
-    if (table->curr_frame_var_cnt > table->max_var_cnt)
-        table->max_var_cnt = table->curr_frame_var_cnt;
+    table->curr_var_section_size += size;;
+    if (table->curr_var_section_size > table->max_var_section_size)
+        table->max_var_section_size = table->curr_var_section_size;
         
     return LSTATUS_OK;
 }
 
-lstatus_t var_table_add(var_table_t *table, string_view_t name, int32_t offset)
+lstatus_t var_table_add(var_table_t *table, string_view_t name, int size, int32_t offset)
 {
     lstatus_t status = LSTATUS_OK;
 
@@ -102,7 +101,7 @@ lstatus_t var_table_add(var_table_t *table, string_view_t name, int32_t offset)
     status = var_table_find_in_scope(&top_scope->vars, name, &offset_out);
     if (status == LSTATUS_NOT_FOUND)
     {
-        LSCHK(list_push_front(&top_scope->vars, (var_entry_t){ name, offset }));
+        LSCHK(list_push_front(&top_scope->vars, (var_entry_t){ name, offset, size }));
         return LSTATUS_OK;
     }
     else if (status == LSTATUS_OK)
@@ -115,7 +114,6 @@ lstatus_t var_table_push_scope(var_table_t *table)
 {
     scope_t new_scope = {};
     LSCHK(list_construct(&new_scope.vars));
-    new_scope.curr_scope_frame_var_cnt = 0;
     
     LSCHK(list_push_back(&table->scopes, new_scope));
     return LSTATUS_OK;
@@ -129,7 +127,7 @@ lstatus_t var_table_pop_scope(var_table_t *table)
     scope_t *top_scope = nullptr;
     LSCHK(list_data(&table->scopes, top_scope_iter, &top_scope));
 
-    table->curr_frame_var_cnt -= top_scope->curr_scope_frame_var_cnt;
+    table->curr_var_section_size -= top_scope->curr_scope_frame_var_size;
 
     LSCHK(list_destruct(&top_scope->vars));
 

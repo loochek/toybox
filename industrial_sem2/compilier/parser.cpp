@@ -7,16 +7,20 @@
  * IDNT ::= [a-zA-Z_][a-zA-Z_0-9]* (aka LEX_IDENTIFIER)
  * NUM  ::= [0-9]+ (aka LEX_NUMBER)
  * FNCL ::= IDNT({EXPR{,EXPR}*}+)
- * PRIM ::= '('EXPR')' | FNCL | NUM | IDNT
+ * IDX  ::= IDNT'['EXPR']'
+ * VAR  ::= IDX | IDNT
+ * PRIM ::= '('EXPR')' | FNCL | VAR | NUM            // order is important!
  * MUDI ::= PRI{[*\%]PRI}*
  * ADSU ::= MUDI{[+-]MUDI}*
  * CMP  ::= ADSU{['<''>''==''!=''<=''>=']ADSU}*
- * ASSN ::= IDNT=EXPR
+ * ASSN ::= VAR=EXPR
  * EXPR ::= ASSN | CMP
  * 
  * EXPR_STMT ::= EXPR;
  * VAR_DECL_STMT ::= 'let' IDNT {'=' EXPR }? ';'
- * STMT ::= {COMP_STMT | EXPR_STMT | IF_STATEMENT | WHILE_STMT | VAR_DECL_STMT | RET_STMT}
+ * ARR_DECL_STMT ::= 'let' IDNT '[' NUM ']' ';'
+ * STMT ::= {COMP_STMT | EXPR_STMT | IF_STATEMENT | WHILE_STMT | ARR_DECL_STMT | VAR_DECL_STMT | RET_STMT}
+ * // (ARR_DECL_STMT must be before VAR_DECL_STMT!)
  * COMP_STMT ::= '{' STMT* '}'
  * IF_STMT   ::= 'if' '('EXPR')' STMT { 'else' STMT }?
  * WHILE_STMT::= 'while' '('EXPR')' STMT
@@ -38,6 +42,8 @@ struct parser_state_t
 static lstatus_t grammar_idnt(ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_num (ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_fncl(ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_var (ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_idx (ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_prim(ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_mudi(ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_adsu(ast_node_t **node_out, parser_state_t *state);
@@ -47,6 +53,7 @@ static lstatus_t grammar_expr(ast_node_t **node_out, parser_state_t *state);
 
 static lstatus_t grammar_expr_stmt    (ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_var_decl_stmt(ast_node_t **node_out, parser_state_t *state);
+static lstatus_t grammar_arr_decl_stmt(ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_if_stmt      (ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_while_stmt   (ast_node_t **node_out, parser_state_t *state);
 static lstatus_t grammar_ret_stmt     (ast_node_t **node_out, parser_state_t *state);
@@ -130,7 +137,7 @@ static lstatus_t grammar_idnt(ast_node_t **node_out, parser_state_t *state)
 error_handler:
     state->curr_lexem_iter = old_lexem_iter;
 
-    LSCHK(memory_pool_free(state->pool, node));
+    DESTROY_NODE(node);
     return status;
 }
 
@@ -161,7 +168,7 @@ static lstatus_t grammar_num(ast_node_t **node_out, parser_state_t *state)
 error_handler:
     state->curr_lexem_iter = old_lexem_iter;
     
-    LSCHK(memory_pool_free(state->pool, node));
+    DESTROY_NODE(node);
     return status;
 }
 
@@ -237,6 +244,75 @@ error_handler:
     return status;
 }
 
+static lstatus_t grammar_idx(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
+
+    ast_node_t *idnt = nullptr, *expr = nullptr, *index = nullptr;
+
+    LSCHK_LOCAL(grammar_idnt(&idnt, state));
+
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_INDEX_OPEN)
+        PARSING_ERROR("expected [");
+
+    NEXT_LEXEM();
+
+    LSCHK_LOCAL(grammar_expr(&expr, state));
+
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_INDEX_CLOSE)
+        PARSING_ERROR("expected ]");
+
+    NEXT_LEXEM();
+
+    ALLOC_NODE(index);
+    index->type = AST_INDEX;
+    index->left_branch  = idnt;
+    index->right_branch = expr;
+    index->row = idnt->row;
+    index->col = idnt->col;
+
+    *node_out = index;
+    return LSTATUS_OK;
+
+error_handler:
+    state->curr_lexem_iter = old_lexem_iter;
+
+    DESTROY_NODE(idnt);
+    DESTROY_NODE(expr);
+    DESTROY_NODE(index);
+    return status;
+}
+
+static lstatus_t grammar_var(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
+
+    ast_node_t *var = nullptr;
+    
+    TRY_TO_PARSE(grammar_idx(&var, state),
+    {
+        *node_out = var;
+        return LSTATUS_OK;
+    });
+
+    LSCHK_LOCAL(grammar_idnt(&var, state));
+
+    *node_out = var;
+    return LSTATUS_OK;
+
+error_handler:
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
+
 static lstatus_t grammar_prim(ast_node_t **node_out, parser_state_t *state)
 {
     lstatus_t status = LSTATUS_OK;
@@ -270,13 +346,13 @@ static lstatus_t grammar_prim(ast_node_t **node_out, parser_state_t *state)
         return LSTATUS_OK;
     });
 
-    TRY_TO_PARSE(grammar_num(&node, state),
+    TRY_TO_PARSE(grammar_var(&node, state),
     {
         *node_out = node;
         return LSTATUS_OK;
     });
-    
-    LSCHK_LOCAL(grammar_idnt(&node, state));
+
+    LSCHK_LOCAL(grammar_num(&node, state));
 
     *node_out = node;
     return LSTATUS_OK;
@@ -444,7 +520,7 @@ static lstatus_t grammar_assn(ast_node_t **node_out, parser_state_t *state)
 
     ast_node_t *var = nullptr, *value = nullptr, *assn_node = nullptr;
 
-    LSCHK_LOCAL(grammar_idnt(&var, state));
+    LSCHK_LOCAL(grammar_var(&var, state));
 
     FETCH_LEXEM();
     if (curr_lexem->type == LEX_ASSIGN)
@@ -584,6 +660,65 @@ static lstatus_t grammar_var_decl_stmt(ast_node_t **node_out, parser_state_t *st
 error_handler:
     DESTROY_NODE(ident_node);
     DESTROY_NODE(init_val);
+    DESTROY_NODE(decl_node);
+
+    state->curr_lexem_iter = old_lexem_iter;
+    return status;
+}
+
+static lstatus_t grammar_arr_decl_stmt(ast_node_t **node_out, parser_state_t *state)
+{
+    lstatus_t status = LSTATUS_OK;
+
+    lexem_t *curr_lexem = nullptr;
+    list_iter_t old_lexem_iter = state->curr_lexem_iter;
+
+    ast_node_t *ident_node = nullptr, *size_node = nullptr, *decl_node = nullptr;
+
+    int let_row = 0, let_col = 0;
+
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_KW_LET)
+        PARSING_ERROR("expected let keyword");
+
+    let_row = curr_lexem->row;
+    let_col = curr_lexem->col;
+    NEXT_LEXEM();
+
+    LSCHK_LOCAL(grammar_idnt(&ident_node, state));
+
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_INDEX_OPEN)
+        PARSING_ERROR("expected [");
+
+    NEXT_LEXEM();
+
+    LSCHK_LOCAL(grammar_num(&size_node, state));
+
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_INDEX_CLOSE)
+        PARSING_ERROR("expected ]");
+    
+    NEXT_LEXEM();
+    FETCH_LEXEM();
+    if (curr_lexem->type != LEX_SEMICOLON)
+        PARSING_ERROR("expected ;");
+
+    NEXT_LEXEM();
+
+    ALLOC_NODE(decl_node);
+    decl_node->type = AST_ARR_DECL;
+    decl_node->left_branch  = ident_node;
+    decl_node->right_branch = size_node;
+    decl_node->row = let_row;
+    decl_node->col = let_col;
+
+    *node_out = decl_node;
+    return LSTATUS_OK;
+
+error_handler:
+    DESTROY_NODE(ident_node);
+    DESTROY_NODE(size_node);
     DESTROY_NODE(decl_node);
 
     state->curr_lexem_iter = old_lexem_iter;
@@ -766,6 +901,12 @@ static lstatus_t grammar_stmt(ast_node_t **node_out, parser_state_t *state)
     ast_node_t *stmt = nullptr;
 
     TRY_TO_PARSE(grammar_comp_stmt(&stmt, state),
+    {
+        *node_out = stmt;
+        return LSTATUS_OK;
+    });
+
+    TRY_TO_PARSE(grammar_arr_decl_stmt(&stmt, state),
     {
         *node_out = stmt;
         return LSTATUS_OK;

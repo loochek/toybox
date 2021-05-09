@@ -1,6 +1,8 @@
 #ifndef MEMORY_POOL_HPP
 #define MEMORY_POOL_HPP
 
+/// TODO: fix it
+
 #include "list.hpp"
 
 template<typename T>
