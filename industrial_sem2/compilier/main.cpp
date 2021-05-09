@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
             show_ast = true;
         else if (strcmp(argv[arg_cnt], "--about") == 0)
         {
-            printf("Tiny Compilier 1.0\n"
+            printf("Tiny Compilier 2.0\n"
                    "Copyleft loochek 2021\n");
             return 0;
         }
