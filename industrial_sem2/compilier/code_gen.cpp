@@ -715,7 +715,7 @@ static lstatus_t expr_eval_recursive(ast_node_t *expr, int alloc_offset, gen_sta
         // handle two-operand operators
 
         ast_node_t *dst_node = expr->left_branch, *src_node = expr->right_branch;
-        if (expr->type == AST_OPER_ASSIGN)
+        if (expr->type == AST_OPER_ASSIGN && expr->left_branch->type == AST_INDEX)
         {
             // AST_OPER_ASSIGN with indexed variable 
             // has common logic of arguments calculation, but different layout
@@ -927,7 +927,8 @@ static lstatus_t func_call_arg_helper(ast_node_t *args, int *alloc_offset, gen_s
         // argument value must be stored on the stack 
         // scratch_stack[MAX_REGISTER_ARGS:...) are free for calculations
         LSCHK(evaluate_expression(args, MAX_REGISTER_ARGS, state));
-        LSCHK(emit_mov(&state->emt, REG_RSP, 8 * (*alloc_offset - MAX_REGISTER_ARGS), scratch_stack[MAX_REGISTER_ARGS]));
+        LSCHK(emit_mov(&state->emt, REG_RSP, VAR_SIZE * (*alloc_offset - MAX_REGISTER_ARGS),
+                       scratch_stack[MAX_REGISTER_ARGS]));
         (*alloc_offset)++;
 
         if (*alloc_offset - MAX_REGISTER_ARGS > state->max_stack_arg_cnt)
