@@ -236,7 +236,7 @@ stack_status_t OVERLOAD(stack_validate)(OVERLOAD(my_stack) *self)
     if (self == NULL)
             return STACK_NULL_POINTER;
 
-#ifdef STACK_SEC_HASHING
+#ifdef STACK_SEC_CANARY
     if (self->security_marker1 != SECURITY_MARKER)
         return STACK_CANARY_FAULT;
     if (self->security_marker2 != SECURITY_MARKER)

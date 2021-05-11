@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-g -fsanitize=address -DFRAMEBUFFER -DBUILD_NUMBER=$(shell cat build_number.txt)
+CFLAGS=-O3 -DFRAMEBUFFER -DBUILD_NUMBER=$(shell cat build_number.txt)
 export CC
 export CFLAGS
 

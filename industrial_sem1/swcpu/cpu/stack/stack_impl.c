@@ -1,3 +1,5 @@
+#include "../../common/config.h"
+
 #include <stdio.h>
 #include <stdint.h>
 
@@ -6,9 +8,7 @@
  
 // переключатели защиты
 // убедитесь, что при подключении обьявления они были в одинаковом состоянии!
-#define STACK_SEC_HASHING
-#define STACK_SEC_CANARY
-#define STACK_SEC_POISON
+
 
 // константы настроек
 static const size_t SECURITY_MARKER = 0xABADBABE;

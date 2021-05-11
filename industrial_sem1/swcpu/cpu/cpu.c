@@ -1,3 +1,5 @@
+#include "../common/config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -15,10 +17,6 @@
 #endif
 
 // The CPU
-
-#define STACK_SEC_HASHING
-#define STACK_SEC_CANARY
-#define STACK_SEC_POISON
 
 #define TYPE cpuval
 #define elem_t double
