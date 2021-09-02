@@ -8,7 +8,7 @@
 
 static double plot_func(double x)
 {
-    return x / sin(x);
+    return sin(x) * x;
 }
 
 lstatus_e app_run()
@@ -39,7 +39,7 @@ lstatus_e app_run()
 
     plot_set_func(&plot2, plot_func);
 
-    sfRenderWindow_setFramerateLimit(window, 10);
+    sfRenderWindow_setFramerateLimit(window, 60);
 
     while (sfRenderWindow_isOpen(window))
     {
@@ -49,8 +49,26 @@ lstatus_e app_run()
             if (event.type == sfEvtClosed)
                 sfRenderWindow_close(window);
         }
+
+        if (sfKeyboard_isKeyPressed(sfKeyUp))
+            plot_move_viewport(&plot2, 0, 1.0);
+
+        if (sfKeyboard_isKeyPressed(sfKeyDown))
+            plot_move_viewport(&plot2, 0, -1.0);
+
+        if (sfKeyboard_isKeyPressed(sfKeyRight))
+            plot_move_viewport(&plot2, 1.0, 0);
+
+        if (sfKeyboard_isKeyPressed(sfKeyLeft))
+            plot_move_viewport(&plot2, -1.0, 0);
+
+        if (sfKeyboard_isKeyPressed(sfKeyZ))
+            plot_scale(&plot2, 1.1);
+
+        if (sfKeyboard_isKeyPressed(sfKeyX))
+            plot_scale(&plot2, 1.0 / 1.1);
         
-        sfRenderWindow_clear(window, sfBlack);
+        sfRenderWindow_clear(window, sfRed);
         plot_draw(&plot1, window, (sfVector2f){ 100, 100 });
         plot_draw(&plot2, window, (sfVector2f){ 400, 100 });
         sfRenderWindow_display(window);

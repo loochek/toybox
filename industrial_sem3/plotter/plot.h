@@ -10,11 +10,11 @@ typedef struct
 {
     plot_func_t func;
 
-    /// Viewport width in pixels
-    int viewport_width;
+    /// Viewport width
+    double viewport_width;
 
-    /// Viewport height in pixels
-    int viewport_height;
+    /// Viewport height
+    double viewport_height;
 
     /// Width of a plot fragment visible through viewport
     double plot_width;
@@ -62,10 +62,10 @@ void plot_set_viewport_plot_size(plot_t *plot, double width, double height);
  * Sets viewport size for a plot
  * 
  * \param plot Plot instanse
- * \param width Viewport width in pixels
- * \param height Viewport height in pixels
+ * \param width Viewport width
+ * \param height Viewport height
  */
-void plot_set_viewport_size(plot_t *plot, int width, int height);
+void plot_set_viewport_size(plot_t *plot, double width, double height);
 
 /**
  * Sets function to draw
@@ -76,13 +76,30 @@ void plot_set_viewport_size(plot_t *plot, int width, int height);
 void plot_set_func(plot_t *plot, plot_func_t func);
 
 /**
+ * Moves viewport
+ * 
+ * \param plot Plot instanse
+ * \param x_offs X offset in plot coords
+ * \param y_offs Y offset in plot coords
+ */
+void plot_move_viewport(plot_t *plot, double x_offs, double y_offs);
+
+/**
+ * Scale viewport relative to offset
+ * 
+ * \param plot Plot instanse
+ * \param scale Scale factor
+ */
+void plot_scale(plot_t *plot, double scale);
+
+/**
  * Draws the plot
  * 
  * \param plot Plot instanse
  * \param canvas SFML render window
- * \param position Plot position
+ * \param viewport_pos Viewport position
  */
-void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f position);
+void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_pos);
 
 /**
  * Deinitializes a plot structure
