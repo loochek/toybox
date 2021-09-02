@@ -31,7 +31,7 @@ typedef struct
 } plot_t;
 
 /**
- * Initializes a plot structure
+ * Initializes a plot instance
  * 
  * \param plot Plot instanse
  */

@@ -1,9 +1,9 @@
 CC = clang
-CFLAGS = -fsanitize=address
+CFLAGS = -O3
 LDFLAGS = -lcsfml-graphics -lcsfml-window -lcsfml-system -lm
 
 build:
-	$(CC) $(CFLAGS) -o plotter main.c plot.c lstatus.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o plotter main.c sfml_app.c plot.c lstatus.c $(LDFLAGS)
 
 clean:
 	rm -f plotter
