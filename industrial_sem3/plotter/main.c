@@ -8,7 +8,7 @@
 
 static double plot_func(double x)
 {
-    return sin(x) * x;
+    return 1/ sin(x);
 }
 
 lstatus_e app_run()
@@ -37,7 +37,11 @@ lstatus_e app_run()
         goto cleanup2;
     }
 
+    plot_set_viewport_size(&plot1, 200, 200);
+    plot_set_scale_factor(&plot1, 1 / 20.0);
+
     plot_set_func(&plot2, plot_func);
+    plot_set_viewport_size(&plot2, 500, 500);
 
     sfRenderWindow_setFramerateLimit(window, 60);
 
@@ -63,10 +67,10 @@ lstatus_e app_run()
             plot_move_viewport(&plot2, -1.0, 0);
 
         if (sfKeyboard_isKeyPressed(sfKeyZ))
-            plot_scale(&plot2, 1.1);
+            plot_scale(&plot2, 1.01);
 
         if (sfKeyboard_isKeyPressed(sfKeyX))
-            plot_scale(&plot2, 1.0 / 1.1);
+            plot_scale(&plot2, 1 / 1.01);
         
         sfRenderWindow_clear(window, sfRed);
         plot_draw(&plot1, window, (sfVector2f){ 100, 100 });

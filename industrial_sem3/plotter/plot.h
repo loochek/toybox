@@ -16,17 +16,14 @@ typedef struct
     /// Viewport height
     double viewport_height;
 
-    /// Width of a plot fragment visible through viewport
-    double plot_width;
+    /// Viewport center X coord
+    double plot_origin_x;
 
-    /// Height of a plot fragment visible through viewport
-    double plot_height;
+    /// Viewport center Y coord
+    double plot_origin_y;
 
-    /// Viewport left up corner coord
-    double plot_offset_x;
-
-    /// Viewport left up corner coord
-    double plot_offset_y;
+    /// SFML-to-plot coordinate multiplier
+    double scale_factor;
 
     sfRectangleShape *background;
     sfCircleShape    *dot_drawer;
@@ -41,22 +38,13 @@ typedef struct
 lstatus_e plot_init(plot_t *plot);
 
 /**
- * Sets viewport offset in plot coordinates
+ * Sets viewport origin in plot coordinates
  * 
  * \param plot Plot instanse
- * \param x_offs X offset
- * \param y_offs Y offset
+ * \param x X coordinate
+ * \param y Y coordinate
  */
-void plot_set_viewport_offset(plot_t *plot, double x_offs, double y_offs);
-
-/**
- * Sets size of a plot fragment visible through viewport
- * 
- * \param plot Plot instanse
- * \param width Plot fragment width in plot coords
- * \param height Plot fragment height in plot coords
- */
-void plot_set_viewport_plot_size(plot_t *plot, double width, double height);
+void plot_set_viewport_origin(plot_t *plot, double x, double y);
 
 /**
  * Sets viewport size for a plot
@@ -66,6 +54,14 @@ void plot_set_viewport_plot_size(plot_t *plot, double width, double height);
  * \param height Viewport height
  */
 void plot_set_viewport_size(plot_t *plot, double width, double height);
+
+/**
+ * Sets viewport scale factor
+ * 
+ * \param plot Plot instanse
+ * \param scale_factor Scale factor
+ */
+void plot_set_scale_factor(plot_t *plot, double scale_factor);
 
 /**
  * Sets function to draw

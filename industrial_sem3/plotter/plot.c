@@ -3,8 +3,16 @@
 #include <stdbool.h>
 #include "plot.h"
 
-static const float ARROW_WIDTH  = 7.0;
-static const float ARROW_HEIGHT = 10.0;
+static const float ARROW_WIDTH  = 7.0f;
+static const float ARROW_HEIGHT = 10.0f;
+
+static const float GRAPH_THICKNESS = 2.0f;
+static const float AXIS_THICKNESS  = 1.0f;
+
+static const double GRAPH_BASE_STEP = 0.1;
+
+static const double DEFAULT_VIEWPORT_SIZE = 200.0;
+static const double DEFAULT_SCALE_FACTOR  = 1 / 10.0;
 
 static void draw_line(plot_t *plot, sfRenderWindow *window,
                       sfVector2f p1, sfVector2f p2, float thickness, sfColor color);
@@ -12,10 +20,7 @@ static void draw_line(plot_t *plot, sfRenderWindow *window,
 static void draw_arrow(plot_t *plot, sfRenderWindow *window,
                        sfVector2f p1, sfVector2f p2, float thickness, sfColor color);
 
-static double default_plot_func(double x)
-{
-    return x * x;
-}
+static double default_plot_func(double x);
 
 lstatus_e plot_init(plot_t *plot)
 {
@@ -46,8 +51,8 @@ lstatus_e plot_init(plot_t *plot)
 
     // Drawers setup
 
-    sfCircleShape_setRadius(plot->dot_drawer, 2.0f);
-    sfCircleShape_setOrigin(plot->dot_drawer, (sfVector2f){ 2.f, 2.f });
+    sfCircleShape_setRadius(plot->dot_drawer, GRAPH_THICKNESS);
+    sfCircleShape_setOrigin(plot->dot_drawer, (sfVector2f){ GRAPH_THICKNESS, GRAPH_THICKNESS });
     
     sfCircleShape_setFillColor(plot->dot_drawer, sfBlack);
     sfCircleShape_setPointCount(plot->dot_drawer, 10);
@@ -56,9 +61,9 @@ lstatus_e plot_init(plot_t *plot)
 
     plot->func = default_plot_func;
 
-    plot_set_viewport_size(plot, 200, 200);
-    plot_set_viewport_plot_size(plot, 100.0, 100.0);
-    plot_set_viewport_offset(plot, -50.0, 50.0);
+    plot_set_viewport_size(plot, DEFAULT_VIEWPORT_SIZE, DEFAULT_VIEWPORT_SIZE);
+    plot_set_viewport_origin(plot, 0, 0);
+    plot->scale_factor = DEFAULT_SCALE_FACTOR;
 
     return LSTATUS_OK;
 
@@ -72,20 +77,12 @@ error_handler0:
     return status;
 }
 
-void plot_set_viewport_offset(plot_t *plot, double x_offs, double y_offs)
+void plot_set_viewport_origin(plot_t *plot, double x, double y)
 {
     assert(plot != NULL);
 
-    plot->plot_offset_x = x_offs;
-    plot->plot_offset_y = y_offs;
-}
-
-void plot_set_viewport_plot_size(plot_t *plot, double width, double height)
-{
-    assert(plot != NULL);
-
-    plot->plot_width  = width;
-    plot->plot_height = height;
+    plot->plot_origin_x = x;
+    plot->plot_origin_y = y;
 }
 
 void plot_set_viewport_size(plot_t *plot, double width, double height)
@@ -96,6 +93,13 @@ void plot_set_viewport_size(plot_t *plot, double width, double height)
     plot->viewport_height = height;
 
     sfRectangleShape_setSize(plot->background, (sfVector2f){ plot->viewport_width, plot->viewport_height });
+}
+
+void plot_set_scale_factor(plot_t *plot, double scale_factor)
+{
+    assert(plot != NULL);
+
+    plot->scale_factor = scale_factor;
 }
 
 void plot_set_func(plot_t *plot, plot_func_t func)
@@ -109,22 +113,30 @@ void plot_move_viewport(plot_t *plot, double x_offs, double y_offs)
 {
     assert(plot != NULL);
 
-    plot->plot_offset_x += x_offs;
-    plot->plot_offset_y += y_offs;
+    plot->plot_origin_x += x_offs * plot->scale_factor;
+    plot->plot_origin_y += y_offs * plot->scale_factor;
 }
 
 void plot_scale(plot_t *plot, double scale)
 {
     assert(plot != NULL);
 
-    plot->plot_height *= scale;
-    plot->plot_width  *= scale;
+    plot->scale_factor *= scale;
 }
 
 void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_position)
 {
     assert(plot != NULL);
     assert(canvas != NULL);
+
+    /// Height of a plot fragment visible through viewport
+    double plot_height = plot->viewport_height * plot->scale_factor;
+    /// Width of a plot fragment visible through viewport
+    double plot_width = plot->viewport_width * plot->scale_factor;
+    /// Viewport left up corner X coord
+    double plot_offset_x = plot->plot_origin_x - plot_width / 2.0;
+    /// Viewport left up corner Y coord
+    double plot_offset_y = plot->plot_origin_y + plot_height / 2.0;
 
     // Background drawing
 
@@ -133,7 +145,7 @@ void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_positio
 
     // Axis drawing
 
-    double viewport_x_axis_offs = (double)plot->viewport_height / plot->plot_height * plot->plot_offset_y;
+    double viewport_x_axis_offs = (double)plot->viewport_height / plot_height * plot_offset_y;
     
     if (viewport_x_axis_offs > 0 && viewport_x_axis_offs < plot->viewport_height)
     {
@@ -141,10 +153,10 @@ void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_positio
                                     viewport_position.y + viewport_x_axis_offs };
         sfVector2f x_axis_end   = { viewport_position.x + plot->viewport_width,
                                     viewport_position.y + viewport_x_axis_offs };
-        draw_arrow(plot, canvas, x_axis_begin, x_axis_end, 1.0f, sfBlack);
+        draw_arrow(plot, canvas, x_axis_begin, x_axis_end, AXIS_THICKNESS, sfBlack);
     }
 
-    double viewport_y_axis_offs = (double)plot->viewport_width / plot->plot_width * (-plot->plot_offset_x);
+    double viewport_y_axis_offs = (double)plot->viewport_width / plot_width * (-plot_offset_x);
     
     if (viewport_y_axis_offs > 0 && viewport_y_axis_offs < plot->viewport_width)
     {
@@ -152,7 +164,7 @@ void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_positio
                                     viewport_position.y + plot->viewport_height};
         sfVector2f y_axis_end   = { viewport_position.x + viewport_y_axis_offs,
                                     viewport_position.y };
-        draw_arrow(plot, canvas, y_axis_begin, y_axis_end, 1.0f, sfBlack);
+        draw_arrow(plot, canvas, y_axis_begin, y_axis_end, AXIS_THICKNESS, sfBlack);
     }
 
     // Plot drawing
@@ -160,15 +172,15 @@ void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_positio
     double prev_viewport_x_offs = -1.0, prev_viewport_y_offs = -1.0;
     bool prev_outside = false;
 
-    for (double x_offs = 0; x_offs < plot->plot_width; x_offs += 0.2)
+    for (double x_offs = 0; x_offs < plot_width; x_offs += GRAPH_BASE_STEP * plot->scale_factor)
     {
-        double x = plot->plot_offset_x + x_offs;
+        double x = plot_offset_x + x_offs;
         double y = plot->func(x);
 
-        double y_offs = plot->plot_offset_y - y;
+        double y_offs = plot_offset_y - y;
 
-        double viewport_x_offs = (double)plot->viewport_width  / plot->plot_width  * x_offs;
-        double viewport_y_offs = (double)plot->viewport_height / plot->plot_height * y_offs;
+        double viewport_x_offs = (double)plot->viewport_width  / plot_width  * x_offs;
+        double viewport_y_offs = (double)plot->viewport_height / plot_height * y_offs;
 
         sfVector2f point_pos = { viewport_position.x + viewport_x_offs,
                                  viewport_position.y + viewport_y_offs };
@@ -203,7 +215,7 @@ void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_positio
 
                 point_pos = (sfVector2f){ prev_point_pos.x + line_vec.x, prev_point_pos.y + line_vec.y };
 
-                draw_line(plot, canvas, prev_point_pos, point_pos, 2.0f, sfBlack);
+                draw_line(plot, canvas, prev_point_pos, point_pos, GRAPH_THICKNESS, sfBlack);
             }
             
             prev_viewport_x_offs = viewport_x_offs;
@@ -238,14 +250,14 @@ void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_positio
 
             prev_point_pos = (sfVector2f){ point_pos.x + line_vec.x, point_pos.y + line_vec.y };
 
-            draw_line(plot, canvas, prev_point_pos, point_pos, 2.0f, sfBlack);
+            draw_line(plot, canvas, prev_point_pos, point_pos, GRAPH_THICKNESS, sfBlack);
         }
 
         sfCircleShape_setPosition(plot->dot_drawer, point_pos);
         sfRenderWindow_drawCircleShape(canvas, plot->dot_drawer, NULL);
 
         if (prev_viewport_x_offs > 0 && !prev_outside)
-            draw_line(plot, canvas, prev_point_pos, point_pos, 2.0f, sfBlack);
+            draw_line(plot, canvas, prev_point_pos, point_pos, GRAPH_THICKNESS, sfBlack);
 
         prev_viewport_x_offs = viewport_x_offs;
         prev_viewport_y_offs = viewport_y_offs;
@@ -310,4 +322,9 @@ static void draw_arrow(plot_t *plot, sfRenderWindow *window,
     sfConvexShape_setPoint(plot->line_drawer, 2, vert2);
 
     sfRenderWindow_drawConvexShape(window, plot->line_drawer, NULL);
+}
+
+static double default_plot_func(double x)
+{
+    return x * x;
 }
