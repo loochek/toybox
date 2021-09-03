@@ -15,33 +15,48 @@ lstatus_e app_init(sfml_app_t *app)
         goto error_handler0;
     }
 
-    sfRenderWindow_setFramerateLimit(app->window, 60);
-
-    status = plot_init(&app->plot1);
-    if (status != LSTATUS_OK)
+    app->font = sfFont_createFromFile("Roboto-Light.ttf");
+    if (app->font == NULL)
     {
+        LSTATUS(LSTATUS_SFML_FAIL, "unable to create SFML object");
         goto error_handler1;
     }
 
-    status = plot_init(&app->plot2);
+    sfRenderWindow_setFramerateLimit(app->window, 60);
+
+    status = plot_init(&app->plot1, app->font);
     if (status != LSTATUS_OK)
     {
         goto error_handler2;
     }
 
+    status = plot_init(&app->plot2, app->font);
+    if (status != LSTATUS_OK)
+    {
+        goto error_handler3;
+    }
+
     plot_set_viewport_size(&app->plot1, 200, 200);
     plot_set_scale_factor(&app->plot1, 1 / 20.0);
-    plot_set_viewport_origin(&app->plot1, 0.0, 4.0);
+    plot_set_viewport_origin(&app->plot1, 0.0, 3.0);
 
     plot_set_func(&app->plot2, plot_func);
     plot_set_viewport_size(&app->plot2, 500, 500);
 
-    plot_add_vector(&app->plot2, (applied_vector_t){ (sfVector2f){ 2.0, 4.0 }, (sfVector2f){ -2.0, -4.0 } });
+    plot_add_vector(&app->plot2, (applied_vector_t){ (sfVector2f){ 0.0, 0.0 }, (sfVector2f){ 0.0, 1.0 } });
+    plot_add_vector(&app->plot2, (applied_vector_t){ (sfVector2f){ 0.0, 1.0 }, (sfVector2f){ 0.0, 1.0 } });
+    plot_add_vector(&app->plot2, (applied_vector_t){ (sfVector2f){ 0.0, 1.0 }, (sfVector2f){ -0.5, -1.0 } });
+    plot_add_vector(&app->plot2, (applied_vector_t){ (sfVector2f){ 0.0, 1.0 }, (sfVector2f){  0.5, -1.0 } });
+    plot_add_vector(&app->plot2, (applied_vector_t){ (sfVector2f){ 0.0, 2.0 }, (sfVector2f){ -0.5, -1.0 } });
+    plot_add_vector(&app->plot2, (applied_vector_t){ (sfVector2f){ 0.0, 2.0 }, (sfVector2f){  0.5, -1.0 } });
 
     return LSTATUS_OK;
 
-error_handler2:
+error_handler3:
     plot_deinit(&app->plot1);
+
+error_handler2:
+    sfFont_destroy(app->font);
 
 error_handler1:
     sfRenderWindow_destroy(app->window);
@@ -91,10 +106,11 @@ void app_deinit(sfml_app_t *app)
     plot_deinit(&app->plot2);
     plot_deinit(&app->plot1);
 
+    sfFont_destroy(app->font);
     sfRenderWindow_destroy(app->window);
 }
 
 static double plot_func(double x)
 {
-    return x * x;
+    return x * sin(x);
 }

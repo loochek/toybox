@@ -34,6 +34,7 @@ typedef struct
     sfRectangleShape *background;
     sfCircleShape    *dot_drawer;
     sfConvexShape    *line_drawer;
+    sfText           *text_drawer;
 
     /// Vectors to be drawn on the plot
     applied_vector_t *vectors;
@@ -44,8 +45,9 @@ typedef struct
  * Initializes a plot instance
  * 
  * \param plot Plot instanse
+ * \param font Font to be used by the plot renderer
  */
-lstatus_e plot_init(plot_t *plot);
+lstatus_e plot_init(plot_t *plot, sfFont *font);
 
 /**
  * Sets viewport origin in plot coordinates
