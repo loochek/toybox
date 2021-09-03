@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
@@ -6,13 +7,16 @@
 static const float ARROW_WIDTH  = 7.0f;
 static const float ARROW_HEIGHT = 10.0f;
 
-static const float GRAPH_THICKNESS = 2.0f;
-static const float AXIS_THICKNESS  = 1.0f;
+static const float GRAPH_THICKNESS  = 2.0f;
+static const float AXIS_THICKNESS   = 1.0f;
+static const float VECTOR_THICKNESS = 1.0f;
 
-static const double GRAPH_BASE_STEP = 0.1;
+static const double GRAPH_BASE_STEP = 5.0;
 
 static const double DEFAULT_VIEWPORT_SIZE = 200.0;
 static const double DEFAULT_SCALE_FACTOR  = 1 / 10.0;
+
+static const int MAX_VEC_COUNT = 128;
 
 static void draw_line(plot_t *plot, sfRenderWindow *window,
                       sfVector2f p1, sfVector2f p2, float thickness, sfColor color);
@@ -49,6 +53,15 @@ lstatus_e plot_init(plot_t *plot)
         goto error_handler2;
     }
 
+    plot->vectors = calloc(MAX_VEC_COUNT, sizeof(applied_vector_t));
+    if (plot->vectors == NULL)
+    {
+        LSTATUS(LSTATUS_BAD_ALLOC, "unable to allocate memory");
+        goto error_handler3;
+    }
+
+    plot->vec_count = 0;
+
     // Drawers setup
 
     sfCircleShape_setRadius(plot->dot_drawer, GRAPH_THICKNESS);
@@ -66,6 +79,9 @@ lstatus_e plot_init(plot_t *plot)
     plot->scale_factor = DEFAULT_SCALE_FACTOR;
 
     return LSTATUS_OK;
+
+error_handler3:
+    sfConvexShape_destroy(plot->line_drawer);
 
 error_handler2:
     sfCircleShape_destroy(plot->dot_drawer);
@@ -122,6 +138,16 @@ void plot_scale(plot_t *plot, double scale)
     assert(plot != NULL);
 
     plot->scale_factor *= scale;
+}
+
+void plot_add_vector(plot_t *plot, applied_vector_t vec)
+{
+    assert(plot != NULL);
+
+    if (plot->vec_count >= MAX_VEC_COUNT)
+        return;
+
+    plot->vectors[plot->vec_count++] = vec;
 }
 
 void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_position)
@@ -257,11 +283,49 @@ void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_positio
         sfRenderWindow_drawCircleShape(canvas, plot->dot_drawer, NULL);
 
         if (prev_viewport_x_offs > 0 && !prev_outside)
-            draw_line(plot, canvas, prev_point_pos, point_pos, GRAPH_THICKNESS, sfBlack);
+           draw_line(plot, canvas, prev_point_pos, point_pos, GRAPH_THICKNESS, sfBlack);
 
         prev_viewport_x_offs = viewport_x_offs;
         prev_viewport_y_offs = viewport_y_offs;
         prev_outside = false;
+    }
+
+    // Vectors drawing
+    
+    for (int i = 0; i < plot->vec_count; i++)
+    {
+        applied_vector_t curr_vec = plot->vectors[i];
+
+        sfVector2f vec_start = curr_vec.origin;
+        sfVector2f vec_end   = { vec_start.x + curr_vec.vector.x,
+                                 vec_start.y + curr_vec.vector.y };
+
+        double start_x_offs = vec_start.x - plot_offset_x;
+        double start_y_offs = plot_offset_y - vec_start.y;
+
+        double end_x_offs = vec_end.x - plot_offset_x;
+        double end_y_offs = plot_offset_y - vec_end.y;
+
+        double start_viewport_x_offs = (double)plot->viewport_width  / plot_width  * start_x_offs;
+        double start_viewport_y_offs = (double)plot->viewport_height / plot_height * start_y_offs;
+
+        double end_viewport_x_offs = (double)plot->viewport_width  / plot_width  * end_x_offs;
+        double end_viewport_y_offs = (double)plot->viewport_height / plot_height * end_y_offs;
+
+        if (start_viewport_x_offs < 0 || start_viewport_x_offs > plot->viewport_width ||
+            start_viewport_y_offs < 0 || start_viewport_y_offs > plot->viewport_height ||
+            end_viewport_x_offs < 0   || end_viewport_x_offs   > plot->viewport_width ||
+            end_viewport_y_offs < 0   || end_viewport_y_offs   > plot->viewport_height)
+        {
+            continue;
+        }
+
+        sfVector2f vec_start_viewport = { viewport_position.x + start_viewport_x_offs,
+                                          viewport_position.y + start_viewport_y_offs };
+        sfVector2f vec_end_viewport   = { viewport_position.x + end_viewport_x_offs,
+                                          viewport_position.y + end_viewport_y_offs };
+
+        draw_arrow(plot, canvas, vec_start_viewport, vec_end_viewport, VECTOR_THICKNESS, sfCyan);
     }
 }
 
@@ -270,6 +334,7 @@ void plot_deinit(plot_t *plot)
     sfRectangleShape_destroy(plot->background);
     sfCircleShape_destroy(plot->dot_drawer);
     sfConvexShape_destroy(plot->line_drawer);
+    free(plot->vectors);
 }
 
 static void draw_line(plot_t *plot, sfRenderWindow *window,

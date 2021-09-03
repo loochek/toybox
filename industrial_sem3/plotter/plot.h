@@ -8,6 +8,12 @@ typedef double (*plot_func_t)(double x);
 
 typedef struct
 {
+    sfVector2f origin;
+    sfVector2f vector;
+} applied_vector_t;
+
+typedef struct
+{
     plot_func_t func;
 
     /// Viewport width
@@ -28,6 +34,10 @@ typedef struct
     sfRectangleShape *background;
     sfCircleShape    *dot_drawer;
     sfConvexShape    *line_drawer;
+
+    /// Vectors to be drawn on the plot
+    applied_vector_t *vectors;
+    int vec_count;
 } plot_t;
 
 /**
@@ -87,6 +97,13 @@ void plot_move_viewport(plot_t *plot, double x_offs, double y_offs);
  * \param scale Scale factor
  */
 void plot_scale(plot_t *plot, double scale);
+
+/**
+ * Adds a vector to be drawn on the plot
+ * 
+ * \param vec Applied vector
+ */
+void plot_add_vector(plot_t *plot, applied_vector_t vec);
 
 /**
  * Draws the plot

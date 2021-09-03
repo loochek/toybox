@@ -36,6 +36,8 @@ lstatus_e app_init(sfml_app_t *app)
     plot_set_func(&app->plot2, plot_func);
     plot_set_viewport_size(&app->plot2, 500, 500);
 
+    plot_add_vector(&app->plot2, (applied_vector_t){ (sfVector2f){ 2.0, 4.0 }, (sfVector2f){ -2.0, -4.0 } });
+
     return LSTATUS_OK;
 
 error_handler2:
@@ -94,5 +96,5 @@ void app_deinit(sfml_app_t *app)
 
 static double plot_func(double x)
 {
-    return x * sin(x);
+    return x * x;
 }

@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -O3
+CFLAGS = -g
 LDFLAGS = -lcsfml-graphics -lcsfml-window -lcsfml-system -lm
 
 build:
