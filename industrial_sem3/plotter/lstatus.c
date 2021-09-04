@@ -8,4 +8,5 @@ const char *lstatus_str_repr[] =
     "LSTATUS_BAD_ALLOC",
     "LSTATUS_IO_FAIL",
     "LSTATUS_SFML_FAIL",
+    "LSTATUS_OUT_OF_CAPACITY"
 };

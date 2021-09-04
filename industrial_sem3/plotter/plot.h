@@ -105,7 +105,7 @@ void plot_scale(plot_t *plot, double scale);
  * 
  * \param vec Applied vector
  */
-void plot_add_vector(plot_t *plot, applied_vector_t vec);
+lstatus_e plot_add_vector(plot_t *plot, applied_vector_t vec);
 
 /**
  * Draws the plot

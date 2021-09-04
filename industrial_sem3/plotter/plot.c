@@ -24,6 +24,9 @@ static const double GRAPH_STEP = 1.0;
 static const double DEFAULT_VIEWPORT_SIZE = 200.0;
 static const double DEFAULT_SCALE_FACTOR  = 1 / 10.0;
 
+static const int LABEL_FONT_SIZE = 20;
+static const int DOT_VERT_COUNT  = 10;
+
 static const int MAX_VEC_COUNT = 128;
 
 
@@ -90,11 +93,11 @@ lstatus_e plot_init(plot_t *plot, sfFont *font)
     sfCircleShape_setOrigin(plot->dot_drawer, (sfVector2f){ GRAPH_THICKNESS, GRAPH_THICKNESS });
     
     sfCircleShape_setFillColor(plot->dot_drawer, sfBlack);
-    sfCircleShape_setPointCount(plot->dot_drawer, 10);
+    sfCircleShape_setPointCount(plot->dot_drawer, DOT_VERT_COUNT);
 
     sfText_setFont(plot->text_drawer, font);
     sfText_setFillColor(plot->text_drawer, sfBlack);
-    sfText_setCharacterSize(plot->text_drawer, 20);
+    sfText_setCharacterSize(plot->text_drawer, LABEL_FONT_SIZE);
 
     // Default params
 
@@ -169,14 +172,20 @@ void plot_scale(plot_t *plot, double scale)
     plot->scale_factor *= scale;
 }
 
-void plot_add_vector(plot_t *plot, applied_vector_t vec)
+lstatus_e plot_add_vector(plot_t *plot, applied_vector_t vec)
 {
     assert(plot != NULL);
 
+    lstatus_e status = LSTATUS_OK;
+
     if (plot->vec_count >= MAX_VEC_COUNT)
-        return;
+    {
+        LSTATUS(LSTATUS_OUT_OF_CAPACITY, "unable to add vectors more than MAX_VEC_COUNT");
+        return status;
+    }
 
     plot->vectors[plot->vec_count++] = vec;
+    return LSTATUS_OK;
 }
 
 void plot_draw(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_position)
@@ -262,8 +271,6 @@ static void draw_axis(plot_t *plot, sfRenderWindow *canvas, sfVector2f viewport_
                                     viewport_position.y };
 
         draw_arrow(plot, canvas, y_axis_begin, y_axis_end, AXIS_THICKNESS, sfBlack);
-
-        char buf[20] = {0};
 
         // Top Y label
 

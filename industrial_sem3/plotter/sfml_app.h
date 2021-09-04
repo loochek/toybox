@@ -13,6 +13,7 @@ typedef struct
 {
     sfRenderWindow *window;
     sfFont         *font;
+    sfClock        *clock;
 
     plot_t plot1;
     plot_t plot2;
