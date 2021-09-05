@@ -54,35 +54,35 @@ lstatus_e plot_init(plot_t *plot, sfFont *font)
     if (plot->background == NULL)
     {
         LSTATUS(LSTATUS_SFML_FAIL, "unable to create SFML object");
-        goto error_handler0;
+        HANDLE_ERROR(0);
     }
 
     plot->dot_drawer = sfCircleShape_create();
     if (plot->dot_drawer == NULL)
     {
         LSTATUS(LSTATUS_SFML_FAIL, "unable to create SFML object");
-        goto error_handler1;
+        HANDLE_ERROR(1);
     }
 
     plot->line_drawer = sfConvexShape_create();
     if (plot->line_drawer == NULL)
     {
         LSTATUS(LSTATUS_SFML_FAIL, "unable to create SFML object");
-        goto error_handler2;
+        HANDLE_ERROR(2);
     }
 
     plot->text_drawer = sfText_create();
     if (plot->text_drawer == NULL)
     {
         LSTATUS(LSTATUS_SFML_FAIL, "unable to create SFML object");
-        goto error_handler3;
+        HANDLE_ERROR(3);
     }
 
     plot->vectors = calloc(MAX_VEC_COUNT, sizeof(applied_vector_t));
     if (plot->vectors == NULL)
     {
         LSTATUS(LSTATUS_BAD_ALLOC, "unable to allocate memory");
-        goto error_handler4;
+        HANDLE_ERROR(4);
     }
 
     plot->vec_count = 0;

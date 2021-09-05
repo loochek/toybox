@@ -15,21 +15,21 @@ lstatus_e app_init(sfml_app_t *app)
     if (app->window == NULL)
     {
         LSTATUS(LSTATUS_SFML_FAIL, "unable to create SFML object");
-        goto error_handler0;
+        HANDLE_ERROR(0);
     }
 
     app->clock = sfClock_create();
     if (app->clock == NULL)
     {
         LSTATUS(LSTATUS_SFML_FAIL, "unable to create SFML object");
-        goto error_handler1;
+        HANDLE_ERROR(1);
     }
 
     app->font = sfFont_createFromFile("Roboto-Light.ttf");
     if (app->font == NULL)
     {
         LSTATUS(LSTATUS_SFML_FAIL, "unable to create SFML object");
-        goto error_handler2;
+        HANDLE_ERROR(2);
     }
 
     sfRenderWindow_setFramerateLimit(app->window, 60);
@@ -37,13 +37,13 @@ lstatus_e app_init(sfml_app_t *app)
     status = plot_init(&app->plot1, app->font);
     if (status != LSTATUS_OK)
     {
-        goto error_handler3;
+        HANDLE_ERROR(3);
     }
 
     status = plot_init(&app->plot2, app->font);
     if (status != LSTATUS_OK)
     {
-        goto error_handler4;
+        HANDLE_ERROR(4);
     }
 
     plot_set_viewport_size(&app->plot1, 200, 200);

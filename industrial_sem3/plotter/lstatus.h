@@ -42,4 +42,9 @@ extern const char *lstatus_str_repr[];
  */
 #define LSCHK(expr) { lstatus_e __status = expr; if (__status != LSTATUS_OK) return __status; }
 
+// Goto wrappers used for error handling 
+
+#define HANDLE_ERROR(num) goto error_handler##num
+#define CLEANUP(num)      goto cleanup##num
+
 #endif
