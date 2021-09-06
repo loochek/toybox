@@ -1,9 +1,9 @@
-CC = clang
-CFLAGS = -O3
-LDFLAGS = -lcsfml-graphics -lcsfml-window -lcsfml-system -lm
+CC = clang++
+CFLAGS = -fsanitize=address
+LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -lm
 
 build:
-	$(CC) $(CFLAGS) -o plotter main.c sfml_app.c plot.c lstatus.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o plotter main.cpp SFMLApp.cpp Plot.cpp Vec2.cpp $(LDFLAGS)
 
 clean:
 	rm -f plotter
