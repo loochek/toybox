@@ -1,5 +1,5 @@
-#ifndef VEC2F_HPP
-#define VEC2F_HPP
+#ifndef VEC2_HPP
+#define VEC2_HPP
 
 #include <SFML/System.hpp>
 
@@ -9,6 +9,7 @@
 class Vec2
 {
 public:
+    /// Initializes vector with zeroes
     Vec2() : x(0), y(0) {};
     Vec2(double x, double y) : x(x), y(y) {};
     Vec2(const sf::Vector2f &sfVec) : x(sfVec.x), y(sfVec.y) {};

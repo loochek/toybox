@@ -71,7 +71,7 @@ public:
     void scale(double scale);
 
     /**
-     * Adds a vector to be drawn on the plot
+     * Adds a vector to be drawn on the plot at the next draw call
      * 
      * \param vec Applied vector
      */

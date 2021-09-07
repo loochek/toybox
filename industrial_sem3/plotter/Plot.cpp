@@ -27,6 +27,11 @@ static const int DOT_VERT_COUNT  = 10;
 
 static const int MAX_VEC_COUNT = 128;
 
+static sf::Color PLOT_COLOR = sf::Color::Black;
+static sf::Color AXIS_COLOR = sf::Color::Black;
+static sf::Color VEC_COLOR  = sf::Color(98, 153, 57);
+
+
 static double defaultPlotFunc(double x);
 
 
@@ -40,10 +45,10 @@ Plot::Plot()
     dotDrawer.setRadius(GRAPH_THICKNESS);
     dotDrawer.setOrigin(GRAPH_THICKNESS, GRAPH_THICKNESS);
     
-    dotDrawer.setFillColor(sf::Color::Black);
+    dotDrawer.setFillColor(PLOT_COLOR);
     dotDrawer.setPointCount(DOT_VERT_COUNT);
 
-    textDrawer.setFillColor(sf::Color::Black);
+    textDrawer.setFillColor(AXIS_COLOR);
     textDrawer.setCharacterSize(LABEL_FONT_SIZE);
 
     // Default params
@@ -119,6 +124,8 @@ void Plot::draw(sf::RenderWindow &canvas, sf::Vector2f viewportPos)
     drawAxis   (canvas, viewportPos);
     drawPlot   (canvas, viewportPos);
     drawVectors(canvas, viewportPos);
+
+    vecCount = 0;
 }
 
 void Plot::drawAxis(sf::RenderWindow &canvas, sf::Vector2f viewportPosition)
@@ -134,7 +141,7 @@ void Plot::drawAxis(sf::RenderWindow &canvas, sf::Vector2f viewportPosition)
         sf::Vector2f XAxisBegin = viewportPosition + sf::Vector2f(0             , viewportXAxisOffs);
         sf::Vector2f XAxisEnd   = viewportPosition + sf::Vector2f(viewportSize.x, viewportXAxisOffs);
 
-        drawArrow(canvas, XAxisBegin, XAxisEnd, AXIS_THICKNESS, sf::Color::Black);
+        drawArrow(canvas, XAxisBegin, XAxisEnd, AXIS_THICKNESS, AXIS_COLOR);
 
         // Right X label
 
@@ -172,7 +179,7 @@ void Plot::drawAxis(sf::RenderWindow &canvas, sf::Vector2f viewportPosition)
         sf::Vector2f YAxisBegin = viewportPosition + sf::Vector2f(viewportYAxisOffs, viewportSize.y);
         sf::Vector2f YAxisEnd   = viewportPosition + sf::Vector2f(viewportYAxisOffs, 0);
 
-        drawArrow(canvas, YAxisBegin, YAxisEnd, AXIS_THICKNESS, sf::Color::Black);
+        drawArrow(canvas, YAxisBegin, YAxisEnd, AXIS_THICKNESS, AXIS_COLOR);
 
         // Top Y label
 
@@ -250,7 +257,7 @@ void Plot::drawPlot(sf::RenderWindow &canvas, sf::Vector2f viewportPos)
 
                 lineVec *= clipFactor;
                 pointPos = prevPointPos + lineVec;
-                drawLine(canvas, prevPointPos, pointPos, GRAPH_THICKNESS, sf::Color::Black);
+                drawLine(canvas, prevPointPos, pointPos, GRAPH_THICKNESS, PLOT_COLOR);
             }
             
             prevViewportOffs = viewportOffs;
@@ -284,10 +291,10 @@ void Plot::drawPlot(sf::RenderWindow &canvas, sf::Vector2f viewportPos)
 
             lineVec *= clipFactor;
             prevPointPos = pointPos + lineVec;
-            drawLine(canvas, prevPointPos, pointPos, GRAPH_THICKNESS, sf::Color::Black);
+            drawLine(canvas, prevPointPos, pointPos, GRAPH_THICKNESS, PLOT_COLOR);
         }
         else if (prevViewportOffs.x > -0.5)
-            drawLine(canvas, prevPointPos, pointPos, GRAPH_THICKNESS, sf::Color::Black);
+            drawLine(canvas, prevPointPos, pointPos, GRAPH_THICKNESS, PLOT_COLOR);
 
         prevViewportOffs = viewportOffs;
         prevOutside = false;
@@ -323,7 +330,7 @@ void Plot::drawVectors(sf::RenderWindow &canvas, sf::Vector2f viewportPos)
         sf::Vector2f vecStartViewport = viewportPos + startViewportOffs;
         sf::Vector2f vecEndViewport   = viewportPos + endViewportOffs;
 
-        drawArrow(canvas, vecStartViewport, vecEndViewport, VECTOR_THICKNESS, sf::Color::Cyan);
+        drawArrow(canvas, vecStartViewport, vecEndViewport, VECTOR_THICKNESS, VEC_COLOR);
     }
 }
 

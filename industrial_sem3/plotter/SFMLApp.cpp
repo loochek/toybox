@@ -1,9 +1,11 @@
 #include <stdexcept>
 #include <math.h>
 #include "SFMLApp.hpp"
+#include "Mat3.hpp"
 
-static const double MOVEMENT_SPEED = 50.0;
-static const double SCALE_SPEED    = 0.5;
+static const double MOVEMENT_SPEED   = 50.0;
+static const double SCALE_SPEED      = 0.5;
+static const double VEC_ROTATE_SPEED = 2.0;
 
 static double plotFunc(double x);
 
@@ -25,12 +27,7 @@ SFMLApp::SFMLApp()
     plot2.setViewportSize(sf::Vector2f(500, 500));
     plot2.setScaleFactor(0.015);
 
-    plot2.addVector(AppliedVector(sf::Vector2f(0.0, 0.0), sf::Vector2f(0.0, 1.0)));
-    plot2.addVector(AppliedVector(sf::Vector2f(0.0, 1.0), sf::Vector2f(0.0, 1.0)));
-    plot2.addVector(AppliedVector(sf::Vector2f(0.0, 1.0), sf::Vector2f(-0.5, -1.0)));
-    plot2.addVector(AppliedVector(sf::Vector2f(0.0, 1.0), sf::Vector2f( 0.5, -1.0)));
-    plot2.addVector(AppliedVector(sf::Vector2f(0.0, 2.0), sf::Vector2f(-0.5, -1.0)));
-    plot2.addVector(AppliedVector(sf::Vector2f(0.0, 2.0), sf::Vector2f( 0.5, -1.0)));
+    vectorsAngle = 0;
 }
 
 void SFMLApp::run()
@@ -46,33 +43,48 @@ void SFMLApp::run()
                 window.close();
         }
 
-        float elapsed = clock.restart().asSeconds();
+        float elapsedTime = clock.restart().asSeconds();
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-            plot2.moveViewport(Vec2(0, MOVEMENT_SPEED) * elapsed);
+            plot2.moveViewport(Vec2(0, MOVEMENT_SPEED) * elapsedTime);
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
-            plot2.moveViewport(Vec2(0, -MOVEMENT_SPEED) * elapsed);
+            plot2.moveViewport(Vec2(0, -MOVEMENT_SPEED) * elapsedTime);
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
-            plot2.moveViewport(Vec2(MOVEMENT_SPEED, 0) * elapsed);
+            plot2.moveViewport(Vec2(MOVEMENT_SPEED, 0) * elapsedTime);
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
-            plot2.moveViewport(Vec2(-MOVEMENT_SPEED, 0) * elapsed);
+            plot2.moveViewport(Vec2(-MOVEMENT_SPEED, 0) * elapsedTime);
 
-        double scaleFactor = 1.0 + SCALE_SPEED * elapsed;
+        double scaleFactor = 1.0 + SCALE_SPEED * elapsedTime;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Z))
             plot2.scale(scaleFactor);
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::X))
             plot2.scale(1 / scaleFactor);
+
+        handleVectors(elapsedTime);
         
         window.clear(sf::Color::Red);
         plot1.draw(window, sf::Vector2f(100, 100));
         plot2.draw(window, sf::Vector2f(400, 100));
         window.display();
     }
+}
+
+void SFMLApp::handleVectors(float elapsedTime)
+{
+    vectorsAngle += VEC_ROTATE_SPEED * elapsedTime;
+    Mat3 transform  = Mat3::rotationMatrix(vectorsAngle);
+    Mat3 transform2 = Mat3::translationMatrix(0, sin(vectorsAngle) * 1.0);
+
+    plot2.addVector(AppliedVector(Vec2(0.0, 0.0), transform2 * Vec2(0.0, 0.0)));
+    plot2.addVector(AppliedVector(transform2 * Vec2(0.0, 0.0), transform * Vec2(-1.0, -1.0)));
+    plot2.addVector(AppliedVector(transform2 * Vec2(0.0, 0.0), transform * Vec2(1.0, -1.0)));
+    plot2.addVector(AppliedVector(transform2 * Vec2(0.0, 0.0), transform * Vec2(-1.0, 1.0)));
+    plot2.addVector(AppliedVector(transform2 * Vec2(0.0, 0.0), transform * Vec2(1.0, 1.0)));
 }
 
 static double plotFunc(double x)
