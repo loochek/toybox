@@ -27,9 +27,9 @@ static const int DOT_VERT_COUNT  = 10;
 
 static const int MAX_VEC_COUNT = 128;
 
-static sf::Color PLOT_COLOR = sf::Color::Black;
-static sf::Color AXIS_COLOR = sf::Color::Black;
-static sf::Color VEC_COLOR  = sf::Color(98, 153, 57);
+static const sf::Color PLOT_COLOR = sf::Color::Black;
+static const sf::Color AXIS_COLOR = sf::Color::Black;
+static const sf::Color VEC_COLOR  = sf::Color(98, 153, 57);
 
 
 static double defaultPlotFunc(double x);

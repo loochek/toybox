@@ -11,7 +11,9 @@ static double plotFunc(double x);
 
 SFMLApp::SFMLApp()
 {
-    window.create(sf::VideoMode(1280, 720), "plotter");
+    sf::ContextSettings context;
+    context.antialiasingLevel = 8;
+    window.create(sf::VideoMode(1280, 720), "plotter", sf::Style::Default, context);
     window.setFramerateLimit(60);
 
     if (!font.loadFromFile("Roboto-Light.ttf"))
@@ -78,7 +80,7 @@ void SFMLApp::handleVectors(float elapsedTime)
 {
     vectorsAngle += VEC_ROTATE_SPEED * elapsedTime;
     Mat3 transform  = Mat3::rotationMatrix(vectorsAngle);
-    Mat3 transform2 = Mat3::translationMatrix(0, sin(vectorsAngle) * 1.0);
+    Mat3 transform2 = Mat3::translationMatrix(sin(vectorsAngle) * 1.0, sin(vectorsAngle) * 1.0);
 
     plot2.addVector(AppliedVector(Vec2(0.0, 0.0), transform2 * Vec2(0.0, 0.0)));
     plot2.addVector(AppliedVector(transform2 * Vec2(0.0, 0.0), transform * Vec2(-1.0, -1.0)));
