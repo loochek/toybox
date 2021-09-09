@@ -1,6 +1,7 @@
 #ifndef VEC3_HPP
 #define VEC3_HPP
 
+#include <math.h>
 #include <SFML/System.hpp>
 
 namespace MathUtils
@@ -97,18 +98,27 @@ namespace MathUtils
 
         Vec3 normalized()
         {
+            Vec3<T> res;
+
             if (x == 0 && y == 0 && z == 0)
-                return;
+                return res;
 
             double len = length();
-            x /= len;
-            y /= len;
-            z /= len;
+            res.x = x / len;
+            res.y = y / len;
+            res.z = z / len;
+
+            return res;
         }
 
         T length()
         {
             return sqrt(*this ^ *this);
+        }
+
+        Vec3 reflected(Vec3 normal)
+        {
+            return *this - normal * (2 * (*this ^ normal));
         }
         
         T x;

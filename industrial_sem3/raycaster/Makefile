@@ -1,5 +1,5 @@
 CC = clang++
-CFLAGS = -fsanitize=address
+CFLAGS = -O3
 LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -lm
 
 build:
