@@ -4,130 +4,121 @@
 #include <math.h>
 #include <SFML/System.hpp>
 
-namespace MathUtils
+/**
+ * Three-component vector
+ */
+template<typename T>
+class Vec3
 {
-    /**
-     * Three-component vector
-     */
-    template<typename T>
-    class Vec3
+public:
+    /// Initializes a zero vector
+    Vec3() : x(0), y(0), z(0) {};
+    Vec3(T x, T y, T z) : x(x), y(y), z(z) {};
+
+    Vec3 operator+(const Vec3 &other)
     {
-    public:
-        /// Initializes vector with zeroes
-        Vec3() : x(0), y(0), z(0) {};
-        Vec3(T x, T y, T z) : x(x), y(y), z(z) {};
+        return Vec3(x + other.x, y + other.y, z + other.z);
+    }
 
-        Vec3 operator+(const Vec3 &other)
-        {
-            return Vec3(x + other.x, y + other.y, z + other.z);
-        }
+    Vec3 operator-()
+    {
+        return Vec3(-x, -y, -z);
+    }
 
-        Vec3 operator-()
-        {
-            return Vec3(-x, -y, -z);
-        }
+    Vec3 operator-(const Vec3 &other)
+    {
+        return Vec3(x - other.x, y - other.y, z - other.z);
+    }
 
-        Vec3 operator-(const Vec3 &other)
-        {
-            return Vec3(x - other.x, y - other.y, z - other.z);
-        }
+    Vec3 operator*(T multiplier)
+    {
+        return Vec3(x * multiplier, y * multiplier, z * multiplier);
+    }
 
-        Vec3 operator*(T multiplier)
-        {
-            return Vec3(x * multiplier, y * multiplier, z * multiplier);
-        }
+    Vec3 operator/(T divider)
+    {
+        return Vec3(x / divider, y / divider, z / divider);
+    }
 
-        Vec3 operator/(T divider)
-        {
-            return Vec3(x / divider, y / divider, z / divider);
-        }
+    // Per-component multiplication
+    Vec3 operator*(const Vec3 &other)
+    {
+        return Vec3(x * other.x, y * other.y, z * other.z);
+    }
 
-        // Per-component multiplication
-        Vec3 operator*(const Vec3 &other)
-        {
-            return Vec3(x * other.x, y * other.y, z * other.z);
-        }
+    // Per-component division
+    Vec3 operator/(const Vec3 &other)
+    {
+        return Vec3(x / other.x, y / other.y, z / other.z);
+    }
 
-        // Per-component division
-        Vec3 operator/(const Vec3 &other)
-        {
-            return Vec3(x / other.x, y / other.y, z / other.z);
-        }
+    Vec3 &operator+=(const Vec3 &other)
+    {
+        x += other.x;
+        y += other.y;
+        z += other.z;
 
-        Vec3 &operator+=(const Vec3 &other)
-        {
-            x += other.x;
-            y += other.y;
-            z += other.z;
+        return *this;
+    }
 
-            return *this;
-        }
+    Vec3 &operator-=(const Vec3 &other)
+    {
+        x -= other.x;
+        y -= other.y;
+        z -= other.z;
 
-        Vec3 &operator-=(const Vec3 &other)
-        {
-            x -= other.x;
-            y -= other.y;
-            z -= other.z;
+        return *this;
+    }
 
-            return *this;
-        }
+    Vec3 &operator*=(T multiplier)
+    {
+        x *= multiplier;
+        y *= multiplier;
+        z *= multiplier;
 
-        Vec3 &operator*=(T multiplier)
-        {
-            x *= multiplier;
-            y *= multiplier;
-            z *= multiplier;
+        return *this;
+    }
 
-            return *this;
-        }
+    Vec3 &operator/=(T divider)
+    {
+        x /= divider;
+        y /= divider;
+        z /= divider;
 
-        Vec3 &operator/=(T divider)
-        {
-            x /= divider;
-            y /= divider;
-            z /= divider;
+        return *this;
+    }
 
-            return *this;
-        }
+    /// Scalar multiplication
+    T operator^(const Vec3 &other)
+    {
+        return x * other.x + y * other.y + z * other.z;
+    }
 
-        /// Scalar multiplication
-        T operator^(const Vec3 &other)
-        {
-            return x * other.x + y * other.y + z * other.z;
-        }
+    Vec3 normalized()
+    {
+        if (x == 0 && y == 0 && z == 0)
+            return Vec3();
 
-        Vec3 normalized()
-        {
-            Vec3<T> res;
+        double len = length();
+        return *this / len;
+    }
 
-            if (x == 0 && y == 0 && z == 0)
-                return res;
+    T length()
+    {
+        return sqrt(*this ^ *this);
+    }
 
-            double len = length();
-            res.x = x / len;
-            res.y = y / len;
-            res.z = z / len;
+    Vec3 reflected(Vec3 normal)
+    {
+        return *this - normal * (2 * (*this ^ normal));
+    }
+    
+    T x;
+    T y;
+    T z;
+};
 
-            return res;
-        }
-
-        T length()
-        {
-            return sqrt(*this ^ *this);
-        }
-
-        Vec3 reflected(Vec3 normal)
-        {
-            return *this - normal * (2 * (*this ^ normal));
-        }
-        
-        T x;
-        T y;
-        T z;
-    };
-
-    /// Three-component float vector
-    typedef Vec3<float> Vec3f;
-}
+/// Three-component float vector
+typedef Vec3<float> Vec3f;
 
 #endif

@@ -2,20 +2,7 @@
 #define RAYCASTER_HPP
 
 #include <SFML/Graphics.hpp>
-#include "MathUtils.hpp"
-#include "Vec3.hpp"
-
-typedef MathUtils::Vec3f Color;
-
-struct PointLight
-{
-    PointLight(MathUtils::Vec3f position, MathUtils::Vec3f color) : position(position), color(color) {};
-    PointLight(MathUtils::Vec3f position) : position(position), color(MathUtils::Vec3f(1.0f, 1.0f, 1.0f)) {};
-    PointLight() : color(MathUtils::Vec3f(1.0f, 1.0f, 1.0f)) {};
-
-    MathUtils::Vec3f position;
-    Color color;
-};
+#include "3DUtils.hpp"
 
 class Raycaster
 {
@@ -25,21 +12,18 @@ public:
     void draw(sf::RenderTarget &target, float elapsedTime);
 
 private:
-    Color calculateColor(MathUtils::Vec3f rayOrigin, MathUtils::Vec3f surfacePosition, MathUtils::Vec3f normal);
+    Color calculateColor(Vec3f cameraPosition, Vec3f surfacePosition, Vec3f normalVector);
 
     sf::Image   canvas;
     sf::Texture canvasTexture;
     sf::Sprite  canvasSprite;
 
-    MathUtils::Vec3f screenOrigin;
+    Vec3f screenOrigin;
     float screenWidth;
     float screenHeight;
 
-    MathUtils::Sphere sphere;
-    Color sphereColor;
-
+    Sphere sphere;
     PointLight light;
-    Color      ambientLightColor;
 
     float timer;
 };

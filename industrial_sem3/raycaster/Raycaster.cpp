@@ -2,25 +2,18 @@
 #include <math.h>
 #include "Raycaster.hpp"
 
-using MathUtils::Vec3f;
-
 const int VIEWPORT_WIDTH  = 640;
 const int VIEWPORT_HEIGHT = 640;
 
-Raycaster::Raycaster(sf::Vector2f position)
+Raycaster::Raycaster(sf::Vector2f position) : screenOrigin(0.0f, -2.0f, 0.0f), screenWidth(2.0f),
+                                              screenHeight(2.0f), sphere(Vec3f(0.0f, 0.0f, 0.0f), 1.0f)
 {
     canvas.create(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
     canvasSprite.setPosition(position);
 
-    screenOrigin = Vec3f(0.0f, -2.0f, 0.0f);
-    screenWidth  = 2.0f;
-    screenHeight = 2.0f;
-
-    sphere.radius = 1.0f;
-
-    sphereColor = Color(1.0f, 0.0f, 0.0f);
-
-    ambientLightColor = Color(0.1f, 0.1f, 0.1f);
+    light.ambient  = Color(0.2f, 0.0f, 0.0f);
+    light.diffuse  = Color(0.7f, 0.0f, 0.0f);
+    light.specular = Color(1.0f, 0.0f, 0.0f);
 }
 
 void Raycaster::draw(sf::RenderTarget &target, float elapsedTime)
@@ -43,7 +36,7 @@ void Raycaster::draw(sf::RenderTarget &target, float elapsedTime)
             Vec3f rayOrigin = screenPosition + Vec3f(pixelWidth * pixelX, 0, -pixelHeight * pixelY);
 
             Vec3f intersectionPoint;
-            if (!MathUtils::raySphereIntersect(rayOrigin, rayDirection, sphere, &intersectionPoint))
+            if (!raySphereIntersect(rayOrigin, rayDirection, sphere, &intersectionPoint))
             {
                 canvas.setPixel(pixelX, pixelY, sf::Color::Black);
             }
@@ -67,15 +60,15 @@ Color Raycaster::calculateColor(Vec3f rayOrigin, Vec3f surfacePosition, Vec3f no
 {
     normal = normal.normalized();
 
-    Color ambient = ambientLightColor * sphereColor;
+    Color ambient = light.ambient * sphere.material.ambient;
 
     Vec3f lightVectorNorm = (light.position - surfacePosition).normalized();
     float diffuseIntensity = std::max(lightVectorNorm ^ normal, 0.0f);
-    Color diffuse = light.color * sphereColor * diffuseIntensity;
+    Color diffuse = light.diffuse * sphere.material.diffuse * diffuseIntensity;
 
     Vec3f viewVectorNorm  = (rayOrigin - surfacePosition).normalized();
     float specularIntensity = std::max(viewVectorNorm ^ (-lightVectorNorm).reflected(normal), 0.0f);
-    Color specular = light.color * pow(specularIntensity, 10);
+    Color specular = light.specular * pow(specularIntensity, sphere.material.specularFactor);
 
     Color resultColor = ambient + diffuse + specular;
     resultColor.x = std::min(resultColor.x, 1.0f);
