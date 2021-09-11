@@ -1,6 +1,5 @@
+#include <algorithm>
 #include "3DUtils.hpp"
-
-const float EPS = 1e-6;
 
 bool raySphereIntersect(Vec3f rayOrigin, Vec3f rayDirection, Sphere sphere, Vec3f *intersectionPointOut)
 {
@@ -60,4 +59,11 @@ bool raySphereIntersect(Vec3f rayOrigin, Vec3f rayDirection, Sphere sphere, Vec3
 
     *intersectionPointOut = rayOrigin + rayDirection * t;
     return true;
+}
+
+sf::Color convertColor(const Color &color)
+{
+    return sf::Color(std::min(color.x, 1.0f) * 255,
+                     std::min(color.y, 1.0f) * 255,
+                     std::min(color.z, 1.0f) * 255);
 }

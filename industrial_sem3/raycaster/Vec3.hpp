@@ -2,7 +2,6 @@
 #define VEC3_HPP
 
 #include <math.h>
-#include <SFML/System.hpp>
 
 /**
  * Three-component vector

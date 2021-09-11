@@ -1,53 +1,114 @@
-#include <algorithm>
 #include <math.h>
 #include "Raycaster.hpp"
 
-const int VIEWPORT_WIDTH  = 640;
-const int VIEWPORT_HEIGHT = 640;
+const Color FILL_COLOR(0.0f, 0.2f, 0.2f);
 
-Raycaster::Raycaster(sf::Vector2f position) : screenOrigin(0.0f, -2.0f, 0.0f), screenWidth(2.0f),
-                                              screenHeight(2.0f), sphere(Vec3f(0.0f, 0.0f, 0.0f), 1.0f)
+Raycaster::Raycaster(int resolutionWidth, int resolutionHeight, sf::Vector2f canvasPosition) :
+    resolutionWidth(resolutionWidth),
+    resolutionHeight(resolutionHeight),
+    cameraPosition(0.0f, -5.0f, 0.0f),
+    screenWidth   (1.0f),
+    screenHeight  (1.0f * resolutionHeight / resolutionWidth),
+    screenDistance(1.0f)
 {
-    canvas.create(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-    canvasSprite.setPosition(position);
+    canvas.create(resolutionWidth, resolutionHeight);
+    canvasSprite.setPosition(canvasPosition);
 
-    light.ambient  = Color(0.2f, 0.0f, 0.0f);
-    light.diffuse  = Color(0.7f, 0.0f, 0.0f);
-    light.specular = Color(1.0f, 0.0f, 0.0f);
+    // Copper sphere
+
+    spheres[0].material = MAT_COPPER;
+    spheres[0].position = Vec3f(2.0f, 0.0f, 0.0f);
+
+    // Obsidian sphere
+
+    spheres[1].material = MAT_OBSIDIAN;
+    spheres[1].position = Vec3f(-2.0f, 0.0f, 0.0f);
+
+    // Static lamp
+
+    spheres[2].material = MAT_LAMP;
+    spheres[2].position = Vec3f(0.0f, -2.5f, -1.0f);
+    spheres[2].radius = 0.2f;
+
+    lights[0].position  = spheres[2].position;
+
+    // Dynamic lamp
+
+    spheres[3].material = MAT_LAMP;
+    spheres[3].radius = 0.2f;
 }
 
-void Raycaster::draw(sf::RenderTarget &target, float elapsedTime)
+void Raycaster::setCanvasSize(sf::Vector2f size)
 {
-    timer += elapsedTime;
-    light.position = Vec3f(4.0f * sin(timer), -2.0f + 4.0f * cos(timer), 2.0f);
+    canvasSprite.setScale(sf::Vector2f(size.x / resolutionWidth, size.y / resolutionHeight));
+    canvasSize = size;
+}
 
-    Vec3f rayDirection = Vec3f(0.0f, 1.0f, 0.0f);
+void Raycaster::setCameraPosition(Vec3f position)
+{
+    cameraPosition = position;
+}
 
+void Raycaster::moveCamera(Vec3f offset)
+{
+    cameraPosition += offset;
+}
+
+void Raycaster::update(float elapsedTime)
+{
+    // Dynamic lamp
+
+    lampAngle += elapsedTime;
+
+    spheres[3].position = Vec3f(4.0f * sin(lampAngle), 4.0f * cos(lampAngle), 2.0f);
+    lights[1].position = spheres[3].position;
+}
+
+void Raycaster::draw(sf::RenderTarget &target)
+{
     // Position of the left up corner of the screen
-    Vec3f screenPosition = screenOrigin + Vec3f(-screenWidth, 0, screenHeight) / 2;
+    Vec3f screenPosition = cameraPosition + Vec3f(-screenWidth, screenDistance, screenHeight) / 2;
 
-    float pixelWidth  = screenWidth  / VIEWPORT_WIDTH;
-    float pixelHeight = screenHeight / VIEWPORT_HEIGHT;
+    float pixelWidth  = screenWidth  / resolutionWidth;
+    float pixelHeight = screenHeight / resolutionHeight;
 
-    for (int pixelY = 0; pixelY < VIEWPORT_HEIGHT; pixelY++)
+    for (int pixelY = 0; pixelY < resolutionHeight; pixelY++)
     {
-        for (int pixelX = 0; pixelX < VIEWPORT_WIDTH; pixelX++)
+        for (int pixelX = 0; pixelX < resolutionWidth; pixelX++)
         {
-            Vec3f rayOrigin = screenPosition + Vec3f(pixelWidth * pixelX, 0, -pixelHeight * pixelY);
+            Vec3f screenPixelPos = screenPosition + Vec3f(pixelWidth * pixelX, 0, -pixelHeight * pixelY);
+            Vec3f rayDirection   = screenPixelPos - cameraPosition;
 
-            Vec3f intersectionPoint;
-            if (!raySphereIntersect(rayOrigin, rayDirection, sphere, &intersectionPoint))
+            Vec3f    fragmentPosition;
+            Vec3f    fragmentNormal;
+            float    fragmentDistance = INF;
+            Material fragmentMaterial;
+
+            for (int i = 0; i < SPHERES_COUNT; i++)
             {
-                canvas.setPixel(pixelX, pixelY, sf::Color::Black);
+                const Sphere &sphere = spheres[i];
+
+                Vec3f intersectionPoint;
+                if (raySphereIntersect(cameraPosition, rayDirection, sphere, &intersectionPoint))
+                {
+                    float dist = (intersectionPoint - cameraPosition).length();
+                    if (dist < fragmentDistance)
+                    {
+                        fragmentDistance = dist;
+                        fragmentPosition = intersectionPoint;
+                        fragmentNormal   = (fragmentPosition - sphere.position).normalized();
+                        fragmentMaterial = sphere.material;
+                    }
+                }
             }
+                
+            Color pixelColor;
+            if (fragmentDistance == INF)
+                pixelColor = FILL_COLOR;
             else
-            {
-                Color pixelColor = calculateColor(rayOrigin, intersectionPoint, intersectionPoint - sphere.position);
-                sf::Color SFMLColor = sf::Color((int)(255.0f * pixelColor.x),
-                                                (int)(255.0f * pixelColor.y),
-                                                (int)(255.0f * pixelColor.z));
-                canvas.setPixel(pixelX, pixelY, SFMLColor);
-            }
+                pixelColor = calculateColor(fragmentPosition, fragmentNormal, fragmentMaterial);
+            
+            canvas.setPixel(pixelX, pixelY, convertColor(pixelColor));
         }
     }
 
@@ -56,23 +117,29 @@ void Raycaster::draw(sf::RenderTarget &target, float elapsedTime)
     target.draw(canvasSprite);
 }
 
-Color Raycaster::calculateColor(Vec3f rayOrigin, Vec3f surfacePosition, Vec3f normal)
+Color Raycaster::calculateColor(Vec3f fragmentPosition, Vec3f normal, const Material &material)
 {
     normal = normal.normalized();
 
-    Color ambient = light.ambient * sphere.material.ambient;
+    Color resultColor;
 
-    Vec3f lightVectorNorm = (light.position - surfacePosition).normalized();
-    float diffuseIntensity = std::max(lightVectorNorm ^ normal, 0.0f);
-    Color diffuse = light.diffuse * sphere.material.diffuse * diffuseIntensity;
+    for (int i = 0; i < LIGHTS_COUNT; i++)
+    {
+        Color ambient = lights[i].ambient * material.ambient;
 
-    Vec3f viewVectorNorm  = (rayOrigin - surfacePosition).normalized();
-    float specularIntensity = std::max(viewVectorNorm ^ (-lightVectorNorm).reflected(normal), 0.0f);
-    Color specular = light.specular * pow(specularIntensity, sphere.material.specularFactor);
+        Vec3f lightVectorNorm = (lights[i].position - fragmentPosition).normalized();
+        float diffuseIntensity = std::max(lightVectorNorm ^ normal, 0.0f);
+        Color diffuse = lights[i].diffuse * material.diffuse * diffuseIntensity;
 
-    Color resultColor = ambient + diffuse + specular;
-    resultColor.x = std::min(resultColor.x, 1.0f);
-    resultColor.y = std::min(resultColor.y, 1.0f);
-    resultColor.z = std::min(resultColor.z, 1.0f);
+        Vec3f viewVectorNorm = (cameraPosition - fragmentPosition).normalized();
+        float specularIntensity = std::max(viewVectorNorm ^ (-lightVectorNorm).reflected(normal), 0.0f);
+        specularIntensity = powf(specularIntensity, material.specularFactor);
+        Color specular = lights[i].specular * material.specular * specularIntensity;
+
+        resultColor += ambient;
+        resultColor += diffuse;
+        resultColor += specular;
+    }
+
     return resultColor;
 }
