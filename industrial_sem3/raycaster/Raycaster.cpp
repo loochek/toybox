@@ -6,10 +6,10 @@ const Color FILL_COLOR(0.0f, 0.2f, 0.2f);
 Raycaster::Raycaster(int resolutionWidth, int resolutionHeight, sf::Vector2f canvasPosition) :
     resolutionWidth(resolutionWidth),
     resolutionHeight(resolutionHeight),
-    cameraPosition(0.0f, -5.0f, 0.0f),
+    cameraPosition(0.0f, -9.0f, 0.0f),
     screenWidth   (1.0f),
     screenHeight  (1.0f * resolutionHeight / resolutionWidth),
-    screenDistance(1.0f)
+    screenDistance(2.0f)
 {
     canvas.create(resolutionWidth, resolutionHeight);
     canvasSprite.setPosition(canvasPosition);
@@ -98,6 +98,10 @@ void Raycaster::draw(sf::RenderTarget &target)
                         fragmentPosition = intersectionPoint;
                         fragmentNormal   = (fragmentPosition - sphere.position).normalized();
                         fragmentMaterial = sphere.material;
+
+                        // prekol
+                        //srand(fragmentPosition.x * 31 + fragmentPosition.y * 31 * 31 + fragmentPosition.z * 31 * 31 * 31);
+                        //fragmentNormal += Vec3f(rand() * 0.00000000013, rand() * 0.00000000013, rand() * 0.00000000013);
                     }
                 }
             }

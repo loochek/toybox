@@ -15,10 +15,14 @@ typedef Vec3f Color;
 
 struct Material
 {
-    Material() : ambient(0.1f, 0.1f, 0.1f), diffuse(1.0f, 1.0f, 1.0f), specular(1.0f, 1.0f, 1.0f),
-                 specularFactor(10) {};
-    Material(const Color &ambient, const Color &diffuse, const Color &specular, float specularFactor) :
-                 ambient(ambient), diffuse(diffuse), specular(specular), specularFactor(specularFactor) {};
+    Material(const Color &ambient  = Color(0.1f, 0.1f, 0.1f),
+             const Color &diffuse  = Color(1.0f, 1.0f, 1.0f),
+             const Color &specular = Color(1.0f, 1.0f, 1.0f),
+             float specularFactor  = 10) :
+                 ambient(ambient),
+                 diffuse(diffuse),
+                 specular(specular),
+                 specularFactor(specularFactor) {};
 
     Color ambient;
     Color diffuse;
@@ -42,14 +46,14 @@ struct Sphere
 
 struct PointLight
 {
-    PointLight() : position(0.0f, 0.0f, 0.0f), ambient(0.1f, 0.1f, 0.1f), diffuse(1.0f, 1.0f, 1.0f),
-                   specular(1.0f, 1.0f, 1.0f) {};
-    PointLight(const Vec3f &position) : position(position), ambient(0.1f, 0.1f, 0.1f),
-                   diffuse(1.0f, 1.0f, 1.0f), specular(1.0f, 1.0f, 1.0f) {};
-
-    PointLight(const Vec3f &position, const Color &ambient, const Color &diffuse, const Color &specular) :
-                   position(position), ambient(0.1f, 0.1f, 0.1f), diffuse(1.0f, 1.0f, 1.0f),
-                   specular(1.0f, 1.0f, 1.0f) {};
+    PointLight(const Vec3f &position = Vec3f(0.0f, 0.0f, 0.0f),
+               const Color &ambient  = Vec3f(0.1f, 0.1f, 0.1f),
+               const Color &diffuse  = Vec3f(1.0f, 1.0f, 1.0f),
+               const Color &specular = Vec3f(1.0f, 1.0f, 1.0f)) :
+                   position(position),
+                   ambient(ambient),
+                   diffuse(diffuse),
+                   specular(specular) {};
     
     Vec3f position;
     
