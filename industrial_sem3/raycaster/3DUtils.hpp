@@ -33,9 +33,9 @@ struct Material
 
 struct Sphere
 {
-    Sphere() : radius(1.0f), position() {};
-    Sphere(const Vec3f &position, float radius) : position(position), radius(radius) {};
-    Sphere(const Vec3f &position, float radius, const Material &material) :
+    Sphere(const Vec3f &position    = Vec3f(),
+           float radius             = 1.0f,
+           const Material &material = Material()) :
                position(position), radius(radius), material(material) {};
     
     Vec3f position;

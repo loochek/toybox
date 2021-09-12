@@ -9,10 +9,8 @@ const float MOVEMENT_SPEED = 1.0f;
 
 SFMLApp::SFMLApp()
 {
-    // sf::ContextSettings context;
-    // context.antialiasingLevel = 8;
     window.create(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "raycaster", sf::Style::Fullscreen);
-    window.setFramerateLimit(60);
+    window.setVerticalSyncEnabled(true);
 
     raycaster.setCanvasSize(sf::Vector2f(WINDOW_WIDTH, WINDOW_HEIGHT));
 }
