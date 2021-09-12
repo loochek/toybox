@@ -34,11 +34,11 @@ private:
     int resolutionHeight;
 
     Vec3f cameraPosition;
-
-    /// Responsible to the camera FOV
-    float screenDistance;
+    Vec3f cameraDirection;
+    
     float screenWidth;
     float screenHeight;
+    float screenDistance;
 
     Sphere     spheres[SPHERES_COUNT];
     PointLight lights[LIGHTS_COUNT];

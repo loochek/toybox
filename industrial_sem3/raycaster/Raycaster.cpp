@@ -4,12 +4,13 @@
 const Color FILL_COLOR(0.0f, 0.2f, 0.2f);
 
 Raycaster::Raycaster(int resolutionWidth, int resolutionHeight, sf::Vector2f canvasPosition) :
-    resolutionWidth(resolutionWidth),
+    resolutionWidth (resolutionWidth),
     resolutionHeight(resolutionHeight),
-    cameraPosition(0.0f, -9.0f, 0.0f),
-    screenWidth   (1.0f),
-    screenHeight  (1.0f * resolutionHeight / resolutionWidth),
-    screenDistance(2.0f)
+    screenWidth     (1.0f),
+    screenHeight    (1.0f * resolutionHeight / resolutionWidth),
+    screenDistance  (2.0f),
+    cameraPosition  (0.0f, -15.0f, 0.0f),
+    cameraDirection (0.0f, 1.0f, 0.0f)
 {
     canvas.create(resolutionWidth, resolutionHeight);
     canvasSprite.setPosition(canvasPosition);
@@ -66,17 +67,23 @@ void Raycaster::update(float elapsedTime)
 
 void Raycaster::draw(sf::RenderTarget &target)
 {
-    // Position of the left up corner of the screen
-    Vec3f screenPosition = cameraPosition + Vec3f(-screenWidth, screenDistance, screenHeight) / 2;
+    Vec3f screenVectorX = (Vec3f(0.0f, 0.0f, -1.0f) & cameraDirection).normalized();
+    Vec3f screenVectorY = (cameraDirection & screenVectorX).normalized();
 
-    float pixelWidth  = screenWidth  / resolutionWidth;
-    float pixelHeight = screenHeight / resolutionHeight;
+    // Position of the left up corner of the screen
+    Vec3f screenPosition = cameraPosition
+                           + cameraDirection * screenDistance
+                           - screenVectorX * (screenWidth / 2)
+                           - screenVectorY * (screenHeight / 2);
+
+    screenVectorX *= screenWidth  / resolutionWidth;
+    screenVectorY *= screenHeight / resolutionHeight;
 
     for (int pixelY = 0; pixelY < resolutionHeight; pixelY++)
     {
         for (int pixelX = 0; pixelX < resolutionWidth; pixelX++)
         {
-            Vec3f screenPixelPos = screenPosition + Vec3f(pixelWidth * pixelX, 0, -pixelHeight * pixelY);
+            Vec3f screenPixelPos = screenPosition + screenVectorX * pixelX + screenVectorY * pixelY;
             Vec3f rayDirection   = screenPixelPos - cameraPosition;
 
             Vec3f    fragmentPosition;
