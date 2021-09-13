@@ -14,41 +14,72 @@ public:
     Vec3() : x(0), y(0), z(0) {};
     Vec3(T x, T y, T z) : x(x), y(y), z(z) {};
 
-    Vec3 operator+(const Vec3 &other)
+    Vec3 operator+(const Vec3 &other) const
     {
         return Vec3(x + other.x, y + other.y, z + other.z);
     }
 
-    Vec3 operator-()
+    Vec3 operator-() const
     {
         return Vec3(-x, -y, -z);
     }
 
-    Vec3 operator-(const Vec3 &other)
+    Vec3 operator-(const Vec3 &other) const
     {
         return Vec3(x - other.x, y - other.y, z - other.z);
     }
 
-    Vec3 operator*(T multiplier)
+    Vec3 operator*(T multiplier) const
     {
         return Vec3(x * multiplier, y * multiplier, z * multiplier);
     }
 
-    Vec3 operator/(T divider)
+    Vec3 operator/(T divider) const
     {
         return Vec3(x / divider, y / divider, z / divider);
     }
 
     // Per-component multiplication
-    Vec3 operator*(const Vec3 &other)
+    Vec3 operator*(const Vec3 &other) const
     {
         return Vec3(x * other.x, y * other.y, z * other.z);
     }
 
     // Per-component division
-    Vec3 operator/(const Vec3 &other)
+    Vec3 operator/(const Vec3 &other) const
     {
         return Vec3(x / other.x, y / other.y, z / other.z);
+    }
+
+    /// Scalar multiplication
+    T operator^(const Vec3 &other) const
+    {
+        return x * other.x + y * other.y + z * other.z;
+    }
+
+    /// Vector multiplication
+    Vec3 operator&(const Vec3 &other) const
+    {
+        return Vec3(y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x);
+    }
+
+    Vec3 normalized() const
+    {
+        if (x == 0 && y == 0 && z == 0)
+            return Vec3();
+
+        double len = length();
+        return *this / len;
+    }
+
+    T length() const
+    {
+        return sqrt(*this ^ *this);
+    }
+
+    Vec3 reflected(Vec3 normal) const
+    {
+        return *this - normal * (2 * (*this ^ normal));
     }
 
     Vec3 &operator+=(const Vec3 &other)
@@ -85,37 +116,6 @@ public:
         z /= divider;
 
         return *this;
-    }
-
-    /// Scalar multiplication
-    T operator^(const Vec3 &other)
-    {
-        return x * other.x + y * other.y + z * other.z;
-    }
-
-    /// Vector multiplication
-    Vec3 operator&(const Vec3 &other)
-    {
-        return Vec3(y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x);
-    }
-
-    Vec3 normalized()
-    {
-        if (x == 0 && y == 0 && z == 0)
-            return Vec3();
-
-        double len = length();
-        return *this / len;
-    }
-
-    T length()
-    {
-        return sqrt(*this ^ *this);
-    }
-
-    Vec3 reflected(Vec3 normal)
-    {
-        return *this - normal * (2 * (*this ^ normal));
     }
     
     T x;
