@@ -1,8 +1,11 @@
 #include <algorithm>
+#include <cassert>
 #include "3DUtils.hpp"
 
-bool raySphereIntersect(Vec3f rayOrigin, Vec3f rayDirection, Sphere sphere, Vec3f *intersectionPointOut)
+bool raySphereIntersect(Vec3f rayOrigin, Vec3f rayDirection, const Sphere &sphere, Vec3f *intersectionPointOut)
 {
+    assert(intersectionPointOut != nullptr);
+
     /*
         Sphere equation - |x - sphere.position|^2 = r^2
         Ray equation    - r = rayOrigin + rayDirection*t

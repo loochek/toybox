@@ -1,42 +1,36 @@
 #include <math.h>
+#include <cassert>
 #include "Raycaster.hpp"
+
+const int MAX_SPHERES_RENDERCALLS = 10;
+const int MAX_LIGHTS_RENDERCALLS  = 10;
 
 const Color FILL_COLOR(0.0f, 0.2f, 0.2f);
 
-Raycaster::Raycaster(int resolutionWidth, int resolutionHeight, sf::Vector2f canvasPosition) :
-    resolutionWidth (resolutionWidth),
-    resolutionHeight(resolutionHeight),
-    screenWidth     (1.0f),
-    screenHeight    (1.0f * resolutionHeight / resolutionWidth),
-    screenDistance  (2.0f),
-    cameraPosition  (0.0f, -15.0f, 0.0f),
-    cameraDirection (0.0f, 1.0f, 0.0f)
+Raycaster::Raycaster(sf::RenderTarget &target, int resolutionWidth, int resolutionHeight,
+                     sf::Vector2f canvasPosition) :
+    renderTarget          (target),
+    resolutionWidth       (resolutionWidth),
+    resolutionHeight      (resolutionHeight),
+    screenWidth           (1.0f),
+    screenHeight          (1.0f * resolutionHeight / resolutionWidth),
+    screenDistance        (2.0f),
+    cameraPosition        (0.0f, -15.0f, 0.0f),
+    cameraDirection       (0.0f, 1.0f, 0.0f),
+    spheresRendercallCount(0),
+    lightsRendercallCount (0)
 {
+    spheresRendercalls = new const Sphere*    [MAX_SPHERES_RENDERCALLS];
+    lightsRendercalls  = new const PointLight*[MAX_LIGHTS_RENDERCALLS];
+
     canvas.create(resolutionWidth, resolutionHeight);
     canvasSprite.setPosition(canvasPosition);
+}
 
-    // Copper sphere
-
-    spheres[0].material = MAT_COPPER;
-    spheres[0].position = Vec3f(2.0f, 0.0f, 0.0f);
-
-    // Obsidian sphere
-
-    spheres[1].material = MAT_OBSIDIAN;
-    spheres[1].position = Vec3f(-2.0f, 0.0f, 0.0f);
-
-    // Static lamp
-
-    spheres[2].material = MAT_LAMP;
-    spheres[2].position = Vec3f(0.0f, -2.5f, -1.0f);
-    spheres[2].radius = 0.2f;
-
-    lights[0].position  = spheres[2].position;
-
-    // Dynamic lamp
-
-    spheres[3].material = MAT_LAMP;
-    spheres[3].radius = 0.2f;
+Raycaster::~Raycaster()
+{
+    delete[] spheresRendercalls;
+    delete[] lightsRendercalls;
 }
 
 void Raycaster::setCanvasSize(sf::Vector2f size)
@@ -55,17 +49,27 @@ void Raycaster::moveCamera(Vec3f offset)
     cameraPosition += offset;
 }
 
-void Raycaster::update(float elapsedTime)
+void Raycaster::sphereRendercall(const Sphere *sphere)
 {
-    // Dynamic lamp
+    assert(sphere != nullptr);
 
-    lampAngle += elapsedTime;
+    if (spheresRendercallCount >= MAX_SPHERES_RENDERCALLS)
+        return;
 
-    spheres[3].position = Vec3f(4.0f * sin(lampAngle), 4.0f * cos(lampAngle), 2.0f);
-    lights[1].position = spheres[3].position;
+    spheresRendercalls[spheresRendercallCount++] = sphere;
 }
 
-void Raycaster::draw(sf::RenderTarget &target)
+void Raycaster::pointLightRendercall(const PointLight *light)
+{
+    assert(light != nullptr);
+
+    if (lightsRendercallCount >= MAX_LIGHTS_RENDERCALLS)
+        return;
+
+    lightsRendercalls[lightsRendercallCount++] = light;
+}
+
+void Raycaster::draw()
 {
     Vec3f screenVectorX = (Vec3f(0.0f, 0.0f, -1.0f) & cameraDirection).normalized();
     Vec3f screenVectorY = (cameraDirection & screenVectorX).normalized();
@@ -91,20 +95,20 @@ void Raycaster::draw(sf::RenderTarget &target)
             float    fragmentDistance = INF;
             Material fragmentMaterial;
 
-            for (int i = 0; i < SPHERES_COUNT; i++)
+            for (int i = 0; i < spheresRendercallCount; i++)
             {
-                const Sphere &sphere = spheres[i];
+                const Sphere *sphere = spheresRendercalls[i];
 
                 Vec3f intersectionPoint;
-                if (raySphereIntersect(cameraPosition, rayDirection, sphere, &intersectionPoint))
+                if (raySphereIntersect(cameraPosition, rayDirection, *sphere, &intersectionPoint))
                 {
                     float dist = (intersectionPoint - cameraPosition).length();
                     if (dist < fragmentDistance)
                     {
                         fragmentDistance = dist;
                         fragmentPosition = intersectionPoint;
-                        fragmentNormal   = (fragmentPosition - sphere.position).normalized();
-                        fragmentMaterial = sphere.material;
+                        fragmentNormal   = (fragmentPosition - sphere->position).normalized();
+                        fragmentMaterial = sphere->material;
 
                         // prekol
                         //srand(fragmentPosition.x * 31 + fragmentPosition.y * 31 * 31 + fragmentPosition.z * 31 * 31 * 31);
@@ -125,7 +129,10 @@ void Raycaster::draw(sf::RenderTarget &target)
 
     canvasTexture.loadFromImage(canvas);
     canvasSprite.setTexture(canvasTexture);
-    target.draw(canvasSprite);
+    renderTarget.draw(canvasSprite);
+
+    spheresRendercallCount = 0;
+    lightsRendercallCount  = 0;
 }
 
 Color Raycaster::calculateColor(Vec3f fragmentPosition, Vec3f normal, const Material &material)
@@ -134,18 +141,18 @@ Color Raycaster::calculateColor(Vec3f fragmentPosition, Vec3f normal, const Mate
 
     Color resultColor;
 
-    for (int i = 0; i < LIGHTS_COUNT; i++)
+    for (int i = 0; i < lightsRendercallCount; i++)
     {
-        Color ambient = lights[i].ambient * material.ambient;
+        Color ambient = lightsRendercalls[i]->ambient * material.ambient;
 
-        Vec3f lightVectorNorm = (lights[i].position - fragmentPosition).normalized();
+        Vec3f lightVectorNorm = (lightsRendercalls[i]->position - fragmentPosition).normalized();
         float diffuseIntensity = std::max(lightVectorNorm ^ normal, 0.0f);
-        Color diffuse = lights[i].diffuse * material.diffuse * diffuseIntensity;
+        Color diffuse = lightsRendercalls[i]->diffuse * material.diffuse * diffuseIntensity;
 
         Vec3f viewVectorNorm = (cameraPosition - fragmentPosition).normalized();
         float specularIntensity = std::max(viewVectorNorm ^ (-lightVectorNorm).reflected(normal), 0.0f);
         specularIntensity = powf(specularIntensity, material.specularFactor);
-        Color specular = lights[i].specular * material.specular * specularIntensity;
+        Color specular = lightsRendercalls[i]->specular * material.specular * specularIntensity;
 
         resultColor += ambient;
         resultColor += diffuse;

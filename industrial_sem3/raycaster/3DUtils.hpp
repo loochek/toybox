@@ -73,6 +73,16 @@ const Material MAT_OBSIDIAN(Color(0.05375f, 0.05f, 0.06625f),
                             Color(0.332741f, 0.328634f, 0.346435f),
                             30.0f);
 
+const Material MAT_CHROME(Color(0.25f, 0.25f, 0.25f),
+                          Color(0.4f, 0.4f, 0.4f),
+                          Color(0.774597f, 0.774597f, 0.774597f),
+                          60.0f);
+
+const Material MAT_GOLD(Color(0.05f, 0.05f, 0.0f),
+                         Color(0.5f, 0.5f, 0.4f),
+                         Color(0.7f, 0.7f, 0.04f),
+                         7.8125);
+
 const Material MAT_LAMP(Color(1.0f, 1.0f, 1.0f),
                         Color(1.0f, 1.0f, 1.0f),
                         Color(1.0f, 1.0f, 1.0f),
@@ -85,7 +95,7 @@ const Material MAT_LAMP(Color(1.0f, 1.0f, 1.0f),
  * \param intersectionPointOut Where to write intersection point position if intersects
  * \return Intersection status
  */
-bool raySphereIntersect(Vec3f rayOrigin, Vec3f rayDirection, Sphere sphere, Vec3f *intersectionPointOut);
+bool raySphereIntersect(Vec3f rayOrigin, Vec3f rayDirection, const Sphere &sphere, Vec3f *intersectionPointOut);
 
 /**
  * Constrains color components to 1.0f and converts color to SFML color

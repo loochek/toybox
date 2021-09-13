@@ -4,25 +4,66 @@
 #include <SFML/Graphics.hpp>
 #include "3DUtils.hpp"
 
-const int SPHERES_COUNT = 4;
-const int LIGHTS_COUNT  = 2;
-
+/**
+ * Simple 3D visualizer
+ */
 class Raycaster
 {
 public:
-    Raycaster(int resolutionWidth = 640, int resolutionHeight = 360,
+    /**
+     * \param target Where to display raycaster canvas
+     * \param resolutionWidth Render resolution width
+     * \param resolutionHeight Render resolution height
+     * \param canvasPosition Raycaster canvas position relative to render targer
+     */
+    Raycaster(sf::RenderTarget &target, int resolutionWidth = 640, int resolutionHeight = 360,
               sf::Vector2f canvasPosition = sf::Vector2f(0.0f, 0.0f));
+    ~Raycaster();
 
+    /**
+     * Sets raycaster canvas size
+     * 
+     * \param size New canvas size
+     */
     void setCanvasSize(sf::Vector2f size);
 
+    /**
+     * Sets camera position
+     * 
+     * \param position New camera position
+     */
     void setCameraPosition(Vec3f position);
+
+    /**
+     * Moves camera
+     * 
+     * \param offset Position delta
+     */
     void moveCamera(Vec3f offset);
 
-    void update(float elapsedTime);
-    void draw(sf::RenderTarget &target);
+    /**
+     * Registers sphere to be rendered on the next redraw
+     * 
+     * \param sphere Sphere to render
+     */
+    void sphereRendercall(const Sphere *sphere);
+
+    /**
+     * Registers point light to be rendered on the next redraw
+     * 
+     * \param light Light to render
+     */
+    void pointLightRendercall(const PointLight *light);
+
+    /**
+     * Redraws canvas with registered primitives and displays it on the associated render target
+     */
+    void draw();
 
 private:
     Color calculateColor(Vec3f fragmentPosition, Vec3f normal, const Material &material);
+
+    sf::RenderTarget &renderTarget;
 
     sf::Image   canvas;
     sf::Texture canvasTexture;
@@ -40,10 +81,11 @@ private:
     float screenHeight;
     float screenDistance;
 
-    Sphere     spheres[SPHERES_COUNT];
-    PointLight lights[LIGHTS_COUNT];
+    const Sphere     **spheresRendercalls;
+    const PointLight **lightsRendercalls;
 
-    float lampAngle;
+    int lightsRendercallCount;
+    int spheresRendercallCount;
 };
 
 #endif
