@@ -4,17 +4,17 @@
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;
 
-const int CIRCLES_COUNT = 5;
+const int CIRCLES_COUNT = 25;
 
 
 App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), physicalWorld(Vec2f(1280, 720))
 {
     circles = new Circle[CIRCLES_COUNT];
-    circles[0] = Circle(Vec2f(100.0f, 100.0f), 50.0f, Vec2f(10.0f, 1.0f));
-    circles[1] = Circle(Vec2f(100.0f, 200.0f), 50.0f, Vec2f(7.0f, 6.0f));
-    circles[2] = Circle(Vec2f(100.0f, 300.0f), 50.0f, Vec2f(5.0f, 6.0f));
-    circles[3] = Circle(Vec2f(100.0f, 400.0f), 50.0f, Vec2f(2.0f, 12.0f));
-    circles[4] = Circle(Vec2f(100.0f, 500.0f), 50.0f, Vec2f(5.0f, 5.0f));
+    for (int i = 0; i < 5; i++)
+    {
+        for (int j = 0; j < 5; j++)
+            circles[i * 5 + j] = Circle(Vec2f(100.0f + 30.0f * i, 100.f + 30.0f * j), 10.0f, Vec2f(120.0f, 110.0f));
+    }
 
     for (int i = 0; i < CIRCLES_COUNT; i++)
         physicalWorld.addObject(&circles[i]);
@@ -30,8 +30,11 @@ void App::run()
     while (!graphics.shouldClose())
     {
         // Update
+
+        float elapsedTime = graphics.timerReset();
         
-        physicalWorld.update(0.01f);
+        for (int i = 0; i < 10; i++)
+            physicalWorld.update(elapsedTime / 10.0f);
 
         // Draw
 

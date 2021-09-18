@@ -1,7 +1,7 @@
 #include <cassert>
 #include "PhysicalWorld.hpp"
 
-const int MAX_OBJECT_COUNT = 100;
+const int MAX_OBJECT_COUNT = 2000;
 
 PhysicalWorld::PhysicalWorld(const Vec2f &worldSize): worldSize(worldSize)
 {
@@ -33,6 +33,8 @@ void PhysicalWorld::update(float elapsedTime)
         object.position += object.velocity * elapsedTime;
         checkBounds(object);
     }
+
+    handleCollisions();
 }
 
 void PhysicalWorld::checkBounds(PhysicalCircle &object)
@@ -64,4 +66,32 @@ void PhysicalWorld::checkBounds(PhysicalCircle &object)
         object.position.x -= 2 * (object.position.x + object.radius - worldSize.x);
         object.velocity.x = -object.velocity.x;
     }
+}
+
+void PhysicalWorld::handleCollisions()
+{
+    for (int i = 0; i < objectsCount; i++)
+    {
+        PhysicalCircle &obj1 = *objects[i];
+
+        for (int j = i + 1; j < objectsCount; j++)
+        {
+            PhysicalCircle &obj2 = *objects[j];
+
+            Vec2f intersectionPoint;
+            if (!obj1.intersect(obj2, intersectionPoint))
+                continue;
+
+            Vec2f normal  = (obj1.position - intersectionPoint).normalized();
+            Vec2f tangent = Vec2f(-normal.y, normal.x);
+
+            Vec2f obj1VelNormProj = normal * (obj1.velocity ^ normal);
+            Vec2f obj1VelTangProj = obj1.velocity - obj1VelNormProj;
+            Vec2f obj2VelNormProj = normal * (obj2.velocity ^ normal);
+            Vec2f obj2VelTangProj = obj2.velocity - obj2VelNormProj;
+
+            obj1.velocity = obj2VelNormProj + obj1VelTangProj;
+            obj2.velocity = obj1VelNormProj + obj2VelTangProj;
+        }
+    }     
 }

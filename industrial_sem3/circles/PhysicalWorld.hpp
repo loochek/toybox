@@ -3,6 +3,9 @@
 
 #include "PhysicalCircle.hpp"
 
+/**
+ * Abstract space with physics simulation
+ */
 class PhysicalWorld
 {
 public:
@@ -25,11 +28,15 @@ public:
 
 private:
     void checkBounds(PhysicalCircle &object);
+    void handleCollisions();
 
     Vec2f worldSize;
 
     PhysicalCircle **objects;
     int objectsCount;
+
+    Vec2f *newVelocities;
+    bool  *objectUsed;
 };
 
 #endif

@@ -51,3 +51,8 @@ bool Graphics::shouldClose()
 
     return false;
 }
+
+float Graphics::timerReset()
+{
+    return clock.restart().asSeconds();
+}

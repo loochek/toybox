@@ -48,12 +48,21 @@ public:
      */
     bool shouldClose();
 
+    /**
+     * Resets timer
+     * 
+     * \return Time in seconds from the last reset
+     */
+    float timerReset();
+
 private:
     sf::Vector2f toSFMLVector(const Vec2f &vector);
     sf::Color    toSFMLColor (const Color &color);
     
     sf::RenderWindow window;
     sf::CircleShape circleDrawer;
+
+    sf::Clock clock;
 };
 
 #endif

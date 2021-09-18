@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_HPP
 #define DRAWABLE_HPP
 
-#include "Graphics.h"
+#include "Graphics.hpp"
 
 /**
  * Abstract class for objects that can be drawn

@@ -12,6 +12,8 @@ public:
     PhysicalCircle(const Vec2f &position = Vec2f(), float radius = 1.0f, const Vec2f &velocity = Vec2f()) :
                    position(position), radius(radius), velocity(velocity) {};
 
+    bool intersect(const PhysicalCircle &other, Vec2f &intersectionPoint) const;
+
 public:
     Vec2f position;
     float radius;
