@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include "Vec2.hpp"
 #include "Vec3.hpp"
+#include "Drawable.hpp"
 
 typedef Vec3f Color;
 
@@ -23,6 +24,25 @@ public:
     ~Graphics();
 
     /**
+     * Draws a drawable object
+     * 
+     * \param drawable Drawable object
+     */
+    void draw(const Drawable &drawable);
+
+    /**
+     * Draws a quad by points
+     * 
+     * \param p1 Point 1
+     * \param p2 Point 2
+     * \param p3 Point 3
+     * \param p4 Point 4
+     * \param color Quad color
+     */
+    void drawQuad(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Vec2f &p4,
+                  const Color &color = Color(1.0f, 1.0f, 1.0f));
+
+    /**
      * Draws a circle
      * 
      * \param position Circle position
@@ -30,6 +50,28 @@ public:
      * \param color Circle color
      */
     void drawCircle(const Vec2f &position, float radius = 1.0f, const Color &color = Color(1.0f, 1.0f, 1.0f));
+
+    /**
+     * Draws a line segment specified by two points
+     * 
+     * \param p1 First point
+     * \param p2 Second point
+     * \param thickness Thickness
+     * \param color Color
+     */
+    void drawLine(const Vec2f &p1, const Vec2f &p2, float thickness = 1.0f,
+                  const Color &color = Color(1.0f, 1.0f, 1.0f));
+
+    /**
+     * Draws an arrow specified by two points
+     * 
+     * \param start Start point
+     * \param end End point
+     * \param thickness Thickness
+     * \param color Color
+     */
+    void drawArrow(const Vec2f &start, const Vec2f &end, float thickness = 1.0f,
+                   const Color &color = Color(1.0f, 1.0f, 1.0f));
 
     /**
      * Clears the screen
@@ -56,11 +98,12 @@ public:
     float timerReset();
 
 private:
-    sf::Vector2f toSFMLVector(const Vec2f &vector);
-    sf::Color    toSFMLColor (const Color &color);
+    static sf::Vector2f toSFMLVector(const Vec2f &vector);
+    static sf::Color    toSFMLColor (const Color &color);
     
     sf::RenderWindow window;
-    sf::CircleShape circleDrawer;
+    sf::CircleShape  circleDrawer;
+    sf::ConvexShape  polygonDrawer;
 
     sf::Clock clock;
 };

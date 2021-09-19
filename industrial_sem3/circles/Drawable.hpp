@@ -1,15 +1,17 @@
 #ifndef DRAWABLE_HPP
 #define DRAWABLE_HPP
 
-#include "Graphics.hpp"
+class Graphics;
 
 /**
  * Abstract class for objects that can be drawn
  */
 class Drawable
 {
-public:
-    virtual void draw(Graphics &graphics) = 0;
+    friend class Graphics;
+
+protected:
+    virtual void draw(Graphics &graphics) const = 0;
 };
 
 #endif

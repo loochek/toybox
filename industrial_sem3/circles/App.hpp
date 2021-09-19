@@ -4,6 +4,7 @@
 #include "SFMLGraphics.hpp"
 #include "PhysicalWorld.hpp"
 #include "Circle.hpp"
+#include "Square.hpp"
 
 /**
  * App framework
@@ -23,6 +24,7 @@ private:
     PhysicalWorld physicalWorld;
 
     Circle *circles;
+    Square *squares;
 };
 
 #endif
