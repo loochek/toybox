@@ -1,7 +1,7 @@
-#ifndef SFML_GRAPHICS_BACKEND_HPP
-#define SFML_GRAPHICS_BACKEND_HPP
+#ifndef SDL_GRAPHICS_HPP
+#define SDL_GRAPHICS_HPP
 
-#include <SFML/Graphics.hpp>
+#include <SDL2/SDL.h>
 #include "Vec2.hpp"
 #include "Vec3.hpp"
 #include "Drawable.hpp"
@@ -9,7 +9,7 @@
 typedef Vec3f Color;
 
 /**
- * SFML implementation of graphics abstraction
+ * SDL implementation of graphics abstraction
  */
 class Graphics
 {
@@ -18,8 +18,9 @@ public:
      * Creates an abstract drawing window
      * 
      * \param resolution Window resolution
+     * \param title Window title
      */
-    Graphics(const Vec2i &resolution);
+    Graphics(const Vec2i &resolution = Vec2i(1280, 720), const char *title = "SDL graphics backend");
 
     ~Graphics();
 
@@ -49,7 +50,7 @@ public:
      * \param radius Circle radius
      * \param color Circle color
      */
-    void drawCircle(const Vec2f &position, float radius = 1.0f, const Color &color = Color(1.0f, 1.0f, 1.0f));
+    void drawCircle(const Vec2f &position, float radius = 10.0f, const Color &color = Color(1.0f, 1.0f, 1.0f));
 
     /**
      * Draws a line segment specified by two points
@@ -98,14 +99,11 @@ public:
     float timerReset();
 
 private:
-    static sf::Vector2f toSFMLVector(const Vec2f &vector);
-    static sf::Color    toSFMLColor (const Color &color);
-    
-    sf::RenderWindow window;
-    sf::CircleShape  circleDrawer;
-    sf::ConvexShape  polygonDrawer;
+    SDL_Window*   window;
+    SDL_Renderer* renderer;
+    SDL_Texture*  texture;
 
-    sf::Clock clock;
+    int sdlTicks;
 };
 
 #endif

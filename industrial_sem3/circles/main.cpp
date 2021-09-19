@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <stdexcept>
 #include "App.hpp"
 
 int main()

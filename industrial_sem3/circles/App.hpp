@@ -1,7 +1,7 @@
 #ifndef APP_HPP
 #define APP_HPP
 
-#include "SFMLGraphics.hpp"
+#include "Graphics.hpp"
 #include "PhysicalWorld.hpp"
 #include "Circle.hpp"
 #include "Square.hpp"
