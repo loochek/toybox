@@ -34,6 +34,8 @@ private:
 
     PhysicalCircle **objects;
     int objectsCount;
+
+    Vec2f *newVelocities;
 };
 
 #endif

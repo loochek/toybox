@@ -19,7 +19,6 @@ App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), physicalWorld(Vec2f(W
             circles[i * 5 + j] = Circle(Vec2f(100.0f + 30.0f * i, 100.f + 30.0f * j),
                                         10.0f, Vec2f(0.0f, 0.0f), Color(1.0f, 1.0f, 0.0f));
         }
-            
     }
 
     for (int i = 0; i < 5; i++)
@@ -31,7 +30,7 @@ App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), physicalWorld(Vec2f(W
         }
     }
 
-    circles[25] = Circle(Vec2f(30.0f, 30.0f), 30.0f, Vec2f(700.0f, 30.0f));
+    circles[25] = Circle(Vec2f(400.0f, 100.0f), 60.0f, Vec2f(700.0f, 30.0f));
 
     for (int i = 0; i < CIRCLES_COUNT; i++)
         physicalWorld.addObject(&circles[i]);

@@ -7,11 +7,14 @@ PhysicalWorld::PhysicalWorld(const Vec2f &worldSize): worldSize(worldSize)
 {
     objects = new PhysicalCircle*[MAX_OBJECT_COUNT];
     objectsCount = 0;
+
+    newVelocities = new Vec2f[MAX_OBJECT_COUNT];
 }
 
 PhysicalWorld::~PhysicalWorld()
 {
     delete[] objects;
+    delete[] newVelocities;
 }
 
 void PhysicalWorld::addObject(PhysicalCircle *object)
@@ -71,6 +74,9 @@ void PhysicalWorld::checkBounds(PhysicalCircle &object)
 void PhysicalWorld::handleCollisions()
 {
     for (int i = 0; i < objectsCount; i++)
+        newVelocities[i] = objects[i]->velocity;
+
+    for (int i = 0; i < objectsCount; i++)
     {
         PhysicalCircle &obj1 = *objects[i];
 
@@ -90,8 +96,11 @@ void PhysicalWorld::handleCollisions()
             Vec2f obj2VelNormProj = normal * (obj2.velocity ^ normal);
             Vec2f obj2VelTangProj = obj2.velocity - obj2VelNormProj;
 
-            obj1.velocity = obj2VelNormProj + obj1VelTangProj;
-            obj2.velocity = obj1VelNormProj + obj2VelTangProj;
+            newVelocities[i] += (obj2VelNormProj + obj1VelTangProj) - obj1.velocity;
+            newVelocities[j] += (obj1VelNormProj + obj2VelTangProj) - obj2.velocity;
         }
-    }     
+    }
+
+    for (int i = 0; i < objectsCount; i++)
+        objects[i]->velocity = newVelocities[i];
 }
