@@ -33,7 +33,7 @@ void PhysicalWorld::update(float elapsedTime)
     {
         PhysicalCircle &object = *objects[i];
 
-        object.position += object.velocity * elapsedTime;
+        object.update(elapsedTime);
         checkBounds(object);
     }
 

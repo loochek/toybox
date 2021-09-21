@@ -21,6 +21,13 @@ public:
      */
     bool intersect(const PhysicalCircle &other, Vec2f &intersectionPoint) const;
 
+    /**
+     * Updates object position to the specified time delta
+     * 
+     * \param elapsedTime Time delta
+     */
+    virtual void update(float elapsedTime);
+
 public:
     Vec2f position;
     float radius;

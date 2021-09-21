@@ -11,3 +11,8 @@ bool PhysicalCircle::intersect(const PhysicalCircle &other, Vec2f &intersectionP
     intersectionPoint = position + lengthVector.normalized() * radius;
     return true;
 }
+
+void PhysicalCircle::update(float elapsedTime)
+{
+    position += velocity * elapsedTime;
+}
