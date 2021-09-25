@@ -27,11 +27,6 @@ Graphics::~Graphics()
     SDL_Quit();
 }
 
-void Graphics::draw(const Drawable &drawable)
-{
-    drawable.draw(*this);
-}
-
 void Graphics::drawQuad(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Vec2f &p4, const Color &color)
 {
     const Sint16 vx[] = { (Sint16)p1.x, (Sint16)p2.x, (Sint16)p3.x, (Sint16)p4.x };

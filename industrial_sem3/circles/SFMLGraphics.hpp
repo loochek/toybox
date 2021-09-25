@@ -4,7 +4,6 @@
 #include <SFML/Graphics.hpp>
 #include "Vec2.hpp"
 #include "Vec3.hpp"
-#include "Drawable.hpp"
 
 typedef Vec3f Color;
 
@@ -22,14 +21,7 @@ public:
     Graphics(const Vec2i &resolution);
 
     ~Graphics();
-
-    /**
-     * Draws a drawable object
-     * 
-     * \param drawable Drawable object
-     */
-    void draw(const Drawable &drawable);
-
+    
     /**
      * Draws a quad by points
      * 

@@ -6,11 +6,13 @@ const int WINDOW_HEIGHT = 720;
 
 const int CIRCLES_COUNT = 26;
 const int SQUARES_COUNT = 25;
+const int BOUNDS_COUNT  = 4;
 
 App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), physicalWorld(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT))
 {
     circles = new Circle[CIRCLES_COUNT];
     squares = new Square[SQUARES_COUNT];
+    bounds  = new PhysicalBound[BOUNDS_COUNT];
 
     for (int i = 0; i < 5; i++)
     {
@@ -32,17 +34,26 @@ App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), physicalWorld(Vec2f(W
 
     circles[25] = Circle(Vec2f(400.0f, 100.0f), 60.0f, 1.2f, Vec2f(700.0f, 30.0f));
 
+    bounds[0] = PhysicalBound(Vec2f(), PhysicalBoundType::Horizontal);
+    bounds[1] = PhysicalBound(Vec2f(), PhysicalBoundType::Vertical);
+    bounds[2] = PhysicalBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Horizontal);
+    bounds[3] = PhysicalBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Vertical);
+
     for (int i = 0; i < CIRCLES_COUNT; i++)
         physicalWorld.addObject(&circles[i]);
 
     for (int i = 0; i < SQUARES_COUNT; i++)
         physicalWorld.addObject(&squares[i]);
+
+    for (int i = 0; i < BOUNDS_COUNT; i++)
+        physicalWorld.addObject(&bounds[i]);
 }
 
 App::~App()
 {
     delete[] circles;
     delete[] squares;
+    delete[] bounds;
 }
 
 void App::run()

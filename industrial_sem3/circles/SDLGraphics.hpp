@@ -4,7 +4,6 @@
 #include <SDL2/SDL.h>
 #include "Vec2.hpp"
 #include "Vec3.hpp"
-#include "Drawable.hpp"
 
 typedef Vec3f Color;
 
@@ -23,13 +22,6 @@ public:
     Graphics(const Vec2i &resolution = Vec2i(1280, 720), const char *title = "SDL graphics backend");
 
     ~Graphics();
-
-    /**
-     * Draws a drawable object
-     * 
-     * \param drawable Drawable object
-     */
-    void draw(const Drawable &drawable);
 
     /**
      * Draws a quad by points

@@ -1,16 +1,18 @@
 #ifndef DRAWABLE_HPP
 #define DRAWABLE_HPP
 
+#include "Component.hpp"
+
 class Graphics;
 
 /**
- * Abstract class for objects that can be drawn
+ * Abstract component for objects that can be drawn
  */
-class Drawable
+class Drawable : public Component
 {
-    friend class Graphics;
-
 protected:
+    Drawable(Entity *entity) : Component(entity) {};
+    
     virtual void draw(Graphics &graphics) const = 0;
 };
 

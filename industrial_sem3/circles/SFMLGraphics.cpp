@@ -13,11 +13,6 @@ Graphics::~Graphics()
     window.close();
 }
 
-void Graphics::draw(const Drawable &drawable)
-{
-    drawable.draw(*this);
-}
-
 void Graphics::drawQuad(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Vec2f &p4, const Color &color)
 {
     polygonDrawer.setFillColor(toSFMLColor(color));

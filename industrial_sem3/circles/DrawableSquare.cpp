@@ -1,6 +1,6 @@
-#include "Square.hpp"
+#include "DrawableSquare.hpp"
 
-void Square::draw(Graphics &graphics) const
+void DrawableSquare::draw(Graphics &graphics) const
 {
     Vec2f p1 = position + Vec2f(-radius, -radius);
     Vec2f p2 = position + Vec2f( radius, -radius);

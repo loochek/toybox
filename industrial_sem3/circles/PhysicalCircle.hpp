@@ -4,21 +4,22 @@
 #include "PhysicalObject.hpp"
 
 /**
- * Physical model of a circle
+ * Component of a physical circle
  */
 class PhysicalCircle : public PhysicalObject
 {
 public:
-    PhysicalCircle(const Vec2f &position = Vec2f(), float radius = 1.0f, float mass = 1.0f,
+    PhysicalCircle(Entity *entity, const Vec2f &position = Vec2f(), float radius = 1.0f, float mass = 1.0f,
                    const Vec2f &velocity = Vec2f()) :
-                   PhysicalObject(PhysicalObjectType::Circle, position, mass, velocity), radius(radius) {};
+                   PhysicalObject(entity, PhysicalObjectType::Circle, position, mass, velocity),
+                   radius(radius) {};
 
 protected:
     /// Constructor used for inheritance
-    PhysicalCircle(PhysicalObjectType type = PhysicalObjectType::Invalid,
+    PhysicalCircle(Entity *entity, PhysicalObjectType type,
                    const Vec2f &position = Vec2f(), float radius = 1.0f, float mass = 1.0f,
                    const Vec2f &velocity = Vec2f()) :
-                   PhysicalObject(type, position, mass, velocity), radius(radius) {};
+                   PhysicalObject(entity, type, position, mass, velocity), radius(radius) {};
 
 public:
     float radius;
