@@ -1,7 +1,7 @@
 #ifndef PHYSICAL_WORLD_HPP
 #define PHYSICAL_WORLD_HPP
 
-#include "PhysicalCircle.hpp"
+#include "PhysicalObject.hpp"
 
 /**
  * Abstract space with physics simulation
@@ -17,7 +17,7 @@ public:
      * 
      * \param object Physical object
      */
-    void addObject(PhysicalCircle *object);
+    void addObject(PhysicalObject *object);
 
     /**
      * Updates physical world to the specified time delta
@@ -27,12 +27,11 @@ public:
     void update(float elapsedTime);
 
 private:
-    void checkBounds(PhysicalCircle &object);
-    void handleCollisions();
+    void checkBounds(PhysicalObject &object);
 
     Vec2f worldSize;
 
-    PhysicalCircle **objects;
+    PhysicalObject **objects;
     int objectsCount;
 
     Vec2f *newVelocities;

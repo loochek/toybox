@@ -3,7 +3,7 @@ CFLAGS = -O3
 LDFLAGS_SFML = -lsfml-graphics -lsfml-window -lsfml-system -lm
 LDFLAGS_SDL  = -lSDL2main -lSDL2 -lSDL2_gfx -lm
 
-COMMON_SOURCES = main.cpp App.cpp Circle.cpp Square.cpp PhysicalWorld.cpp PhysicalCircle.cpp
+COMMON_SOURCES = main.cpp App.cpp Circle.cpp Square.cpp PhysicalWorld.cpp PhysicalObject.cpp
 
 build_sfml:
 	$(CC) $(CFLAGS) -o circles $(COMMON_SOURCES) SFMLGraphics.cpp $(LDFLAGS_SFML)

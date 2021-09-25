@@ -1,11 +1,12 @@
 #include <cassert>
 #include "PhysicalWorld.hpp"
+#include "PhysicalCircle.hpp"
 
 const int MAX_OBJECT_COUNT = 2000;
 
 PhysicalWorld::PhysicalWorld(const Vec2f &worldSize): worldSize(worldSize)
 {
-    objects = new PhysicalCircle*[MAX_OBJECT_COUNT];
+    objects = new PhysicalObject*[MAX_OBJECT_COUNT];
     objectsCount = 0;
 
     newVelocities = new Vec2f[MAX_OBJECT_COUNT];
@@ -17,7 +18,7 @@ PhysicalWorld::~PhysicalWorld()
     delete[] newVelocities;
 }
 
-void PhysicalWorld::addObject(PhysicalCircle *object)
+void PhysicalWorld::addObject(PhysicalObject *object)
 {
     assert(object != nullptr);
 
@@ -31,76 +32,61 @@ void PhysicalWorld::update(float elapsedTime)
 {
     for (int i = 0; i < objectsCount; i++)
     {
-        PhysicalCircle &object = *objects[i];
+        PhysicalObject &object = *objects[i];
 
         object.update(elapsedTime);
         checkBounds(object);
     }
 
-    handleCollisions();
+    for (int i = 0; i < objectsCount; i++)
+    {
+        PhysicalObject &obj1 = *objects[i];
+
+        for (int j = i + 1; j < objectsCount; j++)
+        {
+            PhysicalObject &obj2 = *objects[j];
+
+            IntersectFunc intersectFunc = PhysicalObject::intersectTable[(int)obj1.type][(int)obj2.type];
+            CollideFunc   collideFunc   = PhysicalObject::collideTable  [(int)obj1.type][(int)obj2.type];
+
+            Vec2f intersectionPoint;
+            if (!intersectFunc(&obj1, &obj2, &intersectionPoint))
+                continue;
+
+            collideFunc(&obj1, &obj2);
+        }
+    }
 }
 
-void PhysicalWorld::checkBounds(PhysicalCircle &object)
+void PhysicalWorld::checkBounds(PhysicalObject &object)
 {
+    PhysicalCircle *circle = (PhysicalCircle*)&object;
+
     // Top bound
-    if (object.position.y - object.radius < 0)
+    if (object.position.y - circle->radius < 0)
     {
-        object.position.x += 2 * (object.radius - object.position.y);
+        object.position.x += 2 * (circle->radius - object.position.y);
         object.velocity.y = -object.velocity.y;
     }
 
     // Left bound
-    if (object.position.x - object.radius < 0)
+    if (object.position.x - circle->radius < 0)
     {
-        object.position.x += 2 * (object.radius - object.position.x);
+        object.position.x += 2 * (circle->radius - object.position.x);
         object.velocity.x = -object.velocity.x;
     }
 
     // Bottom bound
-    if (object.position.y + object.radius > worldSize.y)
+    if (object.position.y + circle->radius > worldSize.y)
     {
-        object.position.y -= 2 * (object.position.y + object.radius - worldSize.y);
+        object.position.y -= 2 * (object.position.y + circle->radius - worldSize.y);
         object.velocity.y = -object.velocity.y;
     }
 
     // Right bound
-    if (object.position.x + object.radius > worldSize.x)
+    if (object.position.x + circle->radius > worldSize.x)
     {
-        object.position.x -= 2 * (object.position.x + object.radius - worldSize.x);
+        object.position.x -= 2 * (object.position.x + circle->radius - worldSize.x);
         object.velocity.x = -object.velocity.x;
     }
-}
-
-void PhysicalWorld::handleCollisions()
-{
-    for (int i = 0; i < objectsCount; i++)
-        newVelocities[i] = objects[i]->velocity;
-
-    for (int i = 0; i < objectsCount; i++)
-    {
-        PhysicalCircle &obj1 = *objects[i];
-
-        for (int j = i + 1; j < objectsCount; j++)
-        {
-            PhysicalCircle &obj2 = *objects[j];
-
-            Vec2f intersectionPoint;
-            if (!obj1.intersect(obj2, intersectionPoint))
-                continue;
-
-            Vec2f normal  = (obj1.position - intersectionPoint).normalized();
-            Vec2f tangent = Vec2f(-normal.y, normal.x);
-
-            Vec2f obj1VelNormProj = normal * (obj1.velocity ^ normal);
-            Vec2f obj1VelTangProj = obj1.velocity - obj1VelNormProj;
-            Vec2f obj2VelNormProj = normal * (obj2.velocity ^ normal);
-            Vec2f obj2VelTangProj = obj2.velocity - obj2VelNormProj;
-
-            newVelocities[i] += (obj2VelNormProj + obj1VelTangProj) - obj1.velocity;
-            newVelocities[j] += (obj1VelNormProj + obj2VelTangProj) - obj2.velocity;
-        }
-    }
-
-    for (int i = 0; i < objectsCount; i++)
-        objects[i]->velocity = newVelocities[i];
 }

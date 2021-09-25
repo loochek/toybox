@@ -11,9 +11,9 @@
 class Circle : public PhysicalCircle, public Drawable
 {
 public:
-    Circle(const Vec2f &position = Vec2f(), float radius = 10.0f, const Vec2f &velocity = Vec2f(),
-           const Color &color = Color(1.0f, 1.0f, 1.0f)) :
-           PhysicalCircle(position, radius, velocity), color(color) {};
+    Circle(const Vec2f &position = Vec2f(), float radius = 10.0f, float mass = 1.0f,
+           const Vec2f &velocity = Vec2f(), const Color &color = Color(1.0f, 1.0f, 1.0f)) :
+           PhysicalCircle(position, radius, mass, velocity), color(color) {};
 
 protected:
     virtual void draw(Graphics &graphics) const;
