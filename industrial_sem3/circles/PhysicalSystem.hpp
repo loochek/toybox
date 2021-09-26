@@ -1,7 +1,7 @@
 #ifndef PHYSICAL_SYSTEM_HPP
 #define PHYSICAL_SYSTEM_HPP
 
-#include "EntityManager.hpp"
+#include "PhysicalObject.hpp"
 
 /**
  * Controls physical components of the entities, representing an abstract physical space
@@ -9,8 +9,15 @@
 class PhysicalSystem
 {
 public:
-    PhysicalSystem() = delete;
-    PhysicalSystem(EntityManager *entityMgr) : entityMgr(entityMgr) {};
+    PhysicalSystem();
+    ~PhysicalSystem();
+
+    /**
+     * Adds physical component to be controlled
+     * 
+     * \param component Component
+     */
+    void registerComponent(PhysicalObject *component);
 
     /**
      * Updates physical space to the specified time delta
@@ -20,7 +27,8 @@ public:
     void update(float elapsedTime);
 
 private:
-    EntityManager *entityMgr;
+    PhysicalObject **components;
+    int componentsCount;
 };
 
 #endif

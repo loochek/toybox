@@ -13,7 +13,9 @@ class Drawable : public Component
 protected:
     Drawable(Entity *entity) : Component(entity) {};
     
-    virtual void draw(Graphics &graphics) const = 0;
+    // to access draw method
+    friend class RenderSystem;
+    virtual void draw(Graphics &graphics) = 0;
 };
 
 #endif

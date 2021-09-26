@@ -1,7 +1,11 @@
 #include "DrawableSquare.hpp"
+#include "Entity.hpp"
 
-void DrawableSquare::draw(Graphics &graphics) const
+void DrawableSquare::draw(Graphics &graphics)
 {
+    if (entity->physicalComponentPresent)
+        position = entity->physicalComponent->position;
+
     Vec2f p1 = position + Vec2f(-radius, -radius);
     Vec2f p2 = position + Vec2f( radius, -radius);
     Vec2f p3 = position + Vec2f( radius,  radius);

@@ -1,9 +1,9 @@
 CC = clang++
-CFLAGS = -O3
+CFLAGS = -fsanitize=address
 LDFLAGS_SFML = -lsfml-graphics -lsfml-window -lsfml-system -lm
 LDFLAGS_SDL  = -lSDL2main -lSDL2 -lSDL2_gfx -lm
 
-COMMON_SOURCES = main.cpp App.cpp DrawableCircleComponent.cpp DrawableSquareComponent.cpp PhysicalWorld.cpp PhysicalObject.cpp
+COMMON_SOURCES = main.cpp App.cpp DrawableCircle.cpp DrawableSquare.cpp PhysicalObject.cpp Entity.cpp PhysicalSystem.cpp RenderSystem.cpp
 
 build_sfml:
 	$(CC) $(CFLAGS) -o circles $(COMMON_SOURCES) SFMLGraphics.cpp $(LDFLAGS_SFML)

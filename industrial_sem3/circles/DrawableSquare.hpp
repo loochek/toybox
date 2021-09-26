@@ -16,7 +16,7 @@ public:
                    color(color) {};
 
 protected:
-    virtual void draw(Graphics &graphics) const;
+    virtual void draw(Graphics &graphics);
 
 protected:
     Vec2f position;

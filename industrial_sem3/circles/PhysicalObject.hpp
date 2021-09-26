@@ -50,7 +50,7 @@ public:
 
 protected:
     // to access a physical object type
-    friend class PhysicalWorld;
+    friend class PhysicalSystem;
 
     PhysicalObjectType type;
 };

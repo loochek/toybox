@@ -15,21 +15,21 @@ public:
                
     /**
      * Assigns a drawable component to the entity. 
-     * Pass a null pointer to remove drawable component
+     * Entity will be responsible for its destruction
      * 
      * \param drawable Drawable component
      */
-    void assignDrawableComponent(Drawable *drawable);
+    void addDrawableComponent(Drawable *drawable);
 
     /**
      * Assigns a physical component to the entity
-     * Pass a null pointer to remove drawable component
+     * Entity will be responsible for its destruction
      * 
      * \param physicalObject Physical component
      */
-    void assignPhysicalComponent(PhysicalObject *physicalObject);
+    void addPhysicalComponent(PhysicalObject *physicalObject);
 
-private:
+public:
     bool drawableComponentPresent;
     Drawable *drawableComponent;
 
