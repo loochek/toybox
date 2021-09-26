@@ -3,6 +3,7 @@
 #include "DrawableCircle.hpp"
 #include "DrawableSquare.hpp"
 #include "PhysicalCircle.hpp"
+#include "PhysicalCircle2.hpp"
 
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;
@@ -91,7 +92,7 @@ Entity *App::createSquare(Vec2f position, float sideLength, Color color, Vec2f v
     ent->addDrawableComponent(drawable);
     renderSystem.registerComponent(drawable);
 
-    PhysicalObject *physical = new PhysicalCircle(ent, position, sideLength / 2, velocity);
+    PhysicalObject *physical = new PhysicalCircle2(ent, position, sideLength / 2, velocity);
     ent->addPhysicalComponent(physical);
     physicalSystem.registerComponent(physical);
 

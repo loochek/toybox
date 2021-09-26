@@ -23,10 +23,11 @@ static bool intersectFuncCircleCircle(const PhysicalObject *obj1, const Physical
 static bool intersectFuncCircleBound (const PhysicalObject *obj1, const PhysicalObject *obj2);
 static bool intersectFuncBoundCircle (const PhysicalObject *obj1, const PhysicalObject *obj2);
 
-static void dummyCollideFunc       (PhysicalObject *obj1, PhysicalObject *obj2);
-static void collideFuncCircleCircle(PhysicalObject *obj1, PhysicalObject *obj2);
-static void collideFuncCircleBound (PhysicalObject *obj1, PhysicalObject *obj2);
-static void collideFuncBoundCircle (PhysicalObject *obj1, PhysicalObject *obj2);
+static void dummyCollideFunc        (PhysicalObject *obj1, PhysicalObject *obj2);
+static void collideFuncCircleCircle (PhysicalObject *obj1, PhysicalObject *obj2);
+static void collideFuncCircleCircle2(PhysicalObject *obj1, PhysicalObject *obj2);
+static void collideFuncCircleBound  (PhysicalObject *obj1, PhysicalObject *obj2);
+static void collideFuncBoundCircle  (PhysicalObject *obj1, PhysicalObject *obj2);
 
 static bool genericIntersectFuncCircleBound(const PhysicalCircle *circle, const PhysicalBound *bound);
 static void genericCollideFuncCircleBound  (PhysicalCircle *circle, PhysicalBound *bound);
@@ -35,8 +36,8 @@ static void genericCollideFuncCircleBound  (PhysicalCircle *circle, PhysicalBoun
 const IntersectFunc PhysicalObject::intersectTable[PHYS_OBJ_TYPE_COUNT][PHYS_OBJ_TYPE_COUNT] =
 {
     // Invalid            Bound                     Circle1                    Circle2 
-    { dummyIntersectFunc, dummyIntersectFunc      , dummyIntersectFunc       , dummyIntersectFunc },
-    { dummyIntersectFunc, dummyIntersectFunc      , intersectFuncBoundCircle , intersectFuncBoundCircle },
+    { dummyIntersectFunc, dummyIntersectFunc      , dummyIntersectFunc       , dummyIntersectFunc        },
+    { dummyIntersectFunc, dummyIntersectFunc      , intersectFuncBoundCircle , intersectFuncBoundCircle  },
     { dummyIntersectFunc, intersectFuncCircleBound, intersectFuncCircleCircle, intersectFuncCircleCircle },
     { dummyIntersectFunc, intersectFuncCircleBound, intersectFuncCircleCircle, intersectFuncCircleCircle }
 };
@@ -44,10 +45,10 @@ const IntersectFunc PhysicalObject::intersectTable[PHYS_OBJ_TYPE_COUNT][PHYS_OBJ
 const CollideFunc PhysicalObject::collideTable[PHYS_OBJ_TYPE_COUNT][PHYS_OBJ_TYPE_COUNT] =
 {
     // Invalid            Bound                 Circle1                  Circle2 
-    { dummyCollideFunc, dummyCollideFunc      , dummyCollideFunc       , dummyCollideFunc },
-    { dummyCollideFunc, dummyCollideFunc      , collideFuncBoundCircle , collideFuncBoundCircle },
-    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle, collideFuncCircleCircle },
-    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle, collideFuncCircleCircle }
+    { dummyCollideFunc, dummyCollideFunc      , dummyCollideFunc        , dummyCollideFunc         },
+    { dummyCollideFunc, dummyCollideFunc      , collideFuncBoundCircle  , collideFuncBoundCircle   },
+    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle , collideFuncCircleCircle2 },
+    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle2, collideFuncCircleCircle  }
 };
 
 
@@ -119,9 +120,14 @@ static void collideFuncCircleCircle(PhysicalObject *obj1, PhysicalObject *obj2)
 
     obj1->velocity = (obj2VelNormProj + obj1VelTangProj);
     obj2->velocity = (obj1VelNormProj + obj2VelTangProj);
+}
 
-    //obj1->entity->sendEvent(Event::CollisionOccured, (void*)obj2->entity, nullptr);
-    //obj2->entity->sendEvent(Event::CollisionOccured, (void*)obj1->entity, nullptr);
+static void collideFuncCircleCircle2(PhysicalObject *obj1, PhysicalObject *obj2)
+{
+    collideFuncCircleCircle(obj1, obj2);
+
+    obj1->entity->sendEvent(Event::CollisionOccured, (void*)obj2->entity, nullptr);
+    obj2->entity->sendEvent(Event::CollisionOccured, (void*)obj1->entity, nullptr);
 }
 
 static void collideFuncCircleBound(PhysicalObject *obj1, PhysicalObject *obj2)

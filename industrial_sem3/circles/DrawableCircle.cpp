@@ -17,6 +17,9 @@ void DrawableCircle::eventHandler(Event eventType, void *param1, void* param2)
         break;
     }
 
+    case Event::CollisionOccured:
+        color = Color(1.0f, 0.0f, 0.0f);
+
     default:
         break;
     }
