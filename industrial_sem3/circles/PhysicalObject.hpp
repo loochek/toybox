@@ -39,6 +39,10 @@ protected:
                    const Vec2f &position = Vec2f(), float mass = 1.0f, const Vec2f &velocity = Vec2f()) :
                    Component(entity), type(type), position(position), mass(mass), velocity(velocity) {};
 
+    /// Component event handler
+    friend class Entity;
+    virtual void eventHandler(Event eventType, void *param1, void* param2);
+
 public:
     Vec2f position;
     Vec2f velocity;

@@ -24,3 +24,12 @@ void Entity::addPhysicalComponent(PhysicalObject *physicalObject)
     physicalComponent = physicalObject;
     physicalComponentPresent = true;
 }
+
+void Entity::sendEvent(Event eventType, void *param1, void* param2)
+{
+    if (drawableComponentPresent)
+        drawableComponent->eventHandler(eventType, param1, param2);
+
+    if (physicalComponentPresent)
+        physicalComponent->eventHandler(eventType, param1, param2);
+}

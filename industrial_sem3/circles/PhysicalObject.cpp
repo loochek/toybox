@@ -3,10 +3,16 @@
 #include "PhysicalCircle.hpp"
 #include "PhysicalCircle2.hpp"
 #include "PhysicalBound.hpp"
+#include "Entity.hpp"
 
 void PhysicalObject::update(float elapsedTime)
 {
     position += velocity * elapsedTime;
+}
+
+void PhysicalObject::eventHandler(Event eventType, void *param1, void* param2)
+{
+    // Not interested in any events
 }
 
 
@@ -113,6 +119,9 @@ static void collideFuncCircleCircle(PhysicalObject *obj1, PhysicalObject *obj2)
 
     obj1->velocity = (obj2VelNormProj + obj1VelTangProj);
     obj2->velocity = (obj1VelNormProj + obj2VelTangProj);
+
+    //obj1->entity->sendEvent(Event::CollisionOccured, (void*)obj2->entity, nullptr);
+    //obj2->entity->sendEvent(Event::CollisionOccured, (void*)obj1->entity, nullptr);
 }
 
 static void collideFuncCircleBound(PhysicalObject *obj1, PhysicalObject *obj2)

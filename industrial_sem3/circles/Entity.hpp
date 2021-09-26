@@ -29,6 +29,16 @@ public:
      */
     void addPhysicalComponent(PhysicalObject *physicalObject);
 
+    /**
+     * Sends an event which will be received by all components of the entity
+     * Use this mechanism for inter-component interaction
+     * 
+     * \param eventType Event type
+     * \param param1 Event parameter
+     * \param param2 Another parameter
+     */
+    void sendEvent(Event eventType, void *param1, void* param2);
+
 public:
     bool drawableComponentPresent;
     Drawable *drawableComponent;

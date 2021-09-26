@@ -17,7 +17,11 @@ public:
 protected:
     virtual void draw(Graphics &graphics);
 
-protected:
+    /// Component event handler
+    friend class Entity;
+    virtual void eventHandler(Event eventType, void *param1, void* param2);
+
+public:
     Vec2f position;
     float radius;
 

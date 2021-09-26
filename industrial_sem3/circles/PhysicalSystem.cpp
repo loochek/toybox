@@ -1,5 +1,6 @@
 #include <cassert>
 #include "PhysicalSystem.hpp"
+#include "Entity.hpp"
 
 const int MAX_OBJECTS_COUNT = 100;
 
@@ -31,6 +32,7 @@ void PhysicalSystem::update(float elapsedTime)
     {
         PhysicalObject &obj = *components[i];
         obj.update(elapsedTime);
+        obj.entity->sendEvent(Event::PhysicalPositionChanged, &obj.position, nullptr);
     }
 
     // Handle collisions
