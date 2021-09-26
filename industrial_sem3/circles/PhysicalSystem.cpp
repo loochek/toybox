@@ -2,55 +2,49 @@
 #include "PhysicalSystem.hpp"
 #include "Entity.hpp"
 
-const int MAX_OBJECTS_COUNT = 100;
-
 PhysicalSystem::PhysicalSystem()
 {
-    components = new PhysicalObject*[MAX_OBJECTS_COUNT];
-    componentsCount = 0;
 }
 
 PhysicalSystem::~PhysicalSystem()
 {
-    delete[] components;
 }
 
 void PhysicalSystem::registerComponent(PhysicalObject *component)
 {
     assert(component != nullptr);
 
-    if (componentsCount >= MAX_OBJECTS_COUNT)
-        return;
+    components.insert(component);
+}
 
-    components[componentsCount++] = component;
+void PhysicalSystem::unregisterComponent(PhysicalObject *component)
+{
+    assert(component != nullptr);
+
+    components.erase(component);
 }
 
 void PhysicalSystem::update(float elapsedTime)
 {
     // Update components
-    for (int i = 0; i < componentsCount; i++)
+    for (PhysicalObject *obj : components)
     {
-        PhysicalObject &obj = *components[i];
-        obj.update(elapsedTime);
-        obj.entity->sendEvent(Event::PhysicalPositionChanged, &obj.position, nullptr);
+        obj->update(elapsedTime);
+        obj->entity->sendEvent(Event::PhysicalPositionChanged, &obj->position, nullptr);
     }
 
     // Handle collisions
-    for (int i = 0; i < componentsCount; i++)
+    for (auto obj1 = components.begin(); obj1 != components.end(); obj1++)
     {
-        PhysicalObject &obj1 = *components[i];
-
-        for (int j = i + 1; j < componentsCount; j++)
+        for (auto obj2 = obj1; ++obj2 != components.end();)
         {
-            PhysicalObject &obj2 = *components[j];
+            IntersectFunc intersectFunc = PhysicalObject::intersectTable[(int)(*obj1)->type][(int)(*obj2)->type];
+            CollideFunc   collideFunc   = PhysicalObject::collideTable  [(int)(*obj1)->type][(int)(*obj2)->type];
 
-            IntersectFunc intersectFunc = PhysicalObject::intersectTable[(int)obj1.type][(int)obj2.type];
-            CollideFunc   collideFunc   = PhysicalObject::collideTable  [(int)obj1.type][(int)obj2.type];
-
-            if (!intersectFunc(&obj1, &obj2))
+            if (!intersectFunc(*obj1, *obj2))
                 continue;
 
-            collideFunc(&obj1, &obj2);
+            collideFunc(*obj1, *obj2);
         }
     }
 }

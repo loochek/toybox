@@ -1,6 +1,7 @@
 #ifndef RENDER_SYSTEM_HPP
 #define RENDER_SYSTEM_HPP
 
+#include <unordered_set>
 #include "Graphics.hpp"
 #include "Drawable.hpp"
 
@@ -24,6 +25,13 @@ public:
     void registerComponent(Drawable *component);
 
     /**
+     * Excludes drawable component from control
+     * 
+     * \param component Component
+     */
+    void unregisterComponent(Drawable *component);
+
+    /**
      * Draws components
      */
     void draw();
@@ -31,8 +39,7 @@ public:
 private:
     Graphics &graphics;
 
-    Drawable **components;
-    int componentsCount;
+    std::unordered_set<Drawable*> components;
 };
 
 #endif

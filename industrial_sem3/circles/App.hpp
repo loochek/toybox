@@ -1,6 +1,7 @@
 #ifndef APP_HPP
 #define APP_HPP
 
+#include <unordered_set>
 #include "Graphics.hpp"
 #include "PhysicalSystem.hpp"
 #include "RenderSystem.hpp"
@@ -29,13 +30,15 @@ private:
     Entity *createBound(Vec2f position = Vec2f(),
                         PhysicalBoundType boundType = PhysicalBoundType::Horizontal);
 
+    /// Deletes entities that were scheduled for deletion
+    void deleteEntities();
+
     Graphics graphics;
 
     PhysicalSystem physicalSystem;
     RenderSystem   renderSystem;
 
-    Entity **entities;
-    int entitiesCount;
+    std::unordered_set<Entity*> entities;
 };
 
 #endif

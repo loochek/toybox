@@ -8,11 +8,9 @@ class Entity
 {
 public:
     /// Creates a dummy entity
-    Entity() : drawableComponentPresent(false), drawableComponent(nullptr),
-               physicalComponentPresent(false), physicalComponent(nullptr) {};
-
+    Entity();
     ~Entity();
-               
+    
     /**
      * Assigns a drawable component to the entity. 
      * Entity will be responsible for its destruction
@@ -45,6 +43,8 @@ public:
 
     bool physicalComponentPresent;
     PhysicalObject *physicalComponent;
+
+    bool scheduledForDeletion;
 };
 
 #endif

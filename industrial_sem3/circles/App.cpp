@@ -8,19 +8,15 @@
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;
 
-const int MAX_ENTITIES_COUNT = 100;
-
 App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), renderSystem(graphics)
 {
-    entities = new Entity*[MAX_ENTITIES_COUNT];
-    entitiesCount = 0;
 
     for (int i = 0; i < 5; i++)
     {
         for (int j = 0; j < 5; j++)
         {
-            entities[entitiesCount++] = createCircle(Vec2f(100.0f + 30.0f * i, 100.f + 30.0f * j),
-                                                     10.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 0.0f));
+            entities.insert(createCircle(Vec2f(100.0f + 30.0f * i, 100.f + 30.0f * j),
+                                               10.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 0.0f)));
         }
     }
 
@@ -28,26 +24,26 @@ App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), renderSystem(graphics
     {
         for (int j = 0; j < 5; j++)
         {
-            entities[entitiesCount++] =  createSquare(Vec2f(500.0f + 30.0f * i, 500.f + 30.0f * j),
-                                                      20.0f, Color(1.0f, 0.0f, 1.0f), Vec2f(0.0f, 0.0f));
+            entities.insert(createSquare(Vec2f(500.0f + 30.0f * i, 500.f + 30.0f * j),
+                                         20.0f, Color(1.0f, 0.0f, 1.0f), Vec2f(0.0f, 0.0f)));
         }
     }
 
-    entities[entitiesCount++] = createCircle(Vec2f(400.0f, 100.0f), 60.0f, Color(1.0f, 1.0f, 1.0f),
-                                             Vec2f(700.0f, 30.0f));
+    entities.insert(createCircle(Vec2f(400.0f, 100.0f), 60.0f, Color(1.0f, 1.0f, 1.0f),
+                    Vec2f(700.0f, 30.0f)));
 
-    entities[entitiesCount++] = createBound(Vec2f(), PhysicalBoundType::Horizontal);
-    entities[entitiesCount++] = createBound(Vec2f(), PhysicalBoundType::Vertical);
-    entities[entitiesCount++] = createBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Horizontal);
-    entities[entitiesCount++] = createBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Vertical);
+    entities.insert(createBound(Vec2f(), PhysicalBoundType::Horizontal));
+    entities.insert(createBound(Vec2f(), PhysicalBoundType::Vertical));
+    entities.insert(createBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Horizontal));
+    entities.insert(createBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Vertical));
 }
 
 App::~App()
 {
-    for (int i = 0; i < entitiesCount; i++)
-        delete entities[i];
-
-    delete[] entities;
+    for (Entity *entity : entities)
+    {
+        delete entity;
+    }
 }
 
 void App::run()
@@ -60,6 +56,8 @@ void App::run()
         
         for (int i = 0; i < 10; i++)
             physicalSystem.update(elapsedTime / 10.0f);
+
+        deleteEntities();
 
         // Draw
 
@@ -108,4 +106,25 @@ Entity *App::createBound(Vec2f position, PhysicalBoundType boundType)
     physicalSystem.registerComponent(physical);
 
     return ent;
+}
+
+void App::deleteEntities()
+{
+    auto it = entities.begin();
+    while (it != entities.end())
+    {
+        if ((*it)->scheduledForDeletion)
+        {
+            if ((*it)->physicalComponentPresent)
+                physicalSystem.unregisterComponent((*it)->physicalComponent);
+
+            if ((*it)->drawableComponentPresent)
+                renderSystem.unregisterComponent((*it)->drawableComponent);
+
+            delete *it;
+            it = entities.erase(it);
+        }
+        else
+            it++;
+    }
 }

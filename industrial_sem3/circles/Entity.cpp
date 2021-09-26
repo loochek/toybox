@@ -1,6 +1,12 @@
  #include <cassert>
  #include "Entity.hpp"
 
+Entity::Entity() : drawableComponentPresent(false), drawableComponent(nullptr),
+                   physicalComponentPresent(false), physicalComponent(nullptr),
+                   scheduledForDeletion(false)
+{
+}
+
 Entity::~Entity()
 {
     if (drawableComponentPresent)

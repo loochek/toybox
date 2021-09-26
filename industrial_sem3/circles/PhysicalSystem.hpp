@@ -1,6 +1,7 @@
 #ifndef PHYSICAL_SYSTEM_HPP
 #define PHYSICAL_SYSTEM_HPP
 
+#include <unordered_set>
 #include "PhysicalObject.hpp"
 
 /**
@@ -20,6 +21,13 @@ public:
     void registerComponent(PhysicalObject *component);
 
     /**
+     * Excludes physical component from control
+     * 
+     * \param component Component
+     */
+    void unregisterComponent(PhysicalObject *component);
+
+    /**
      * Updates physical space to the specified time delta
      * 
      * \param elapsedTime Time delta
@@ -27,8 +35,7 @@ public:
     void update(float elapsedTime);
 
 private:
-    PhysicalObject **components;
-    int componentsCount;
+    std::unordered_set<PhysicalObject*> components;
 };
 
 #endif

@@ -5,30 +5,30 @@ const int MAX_OBJECTS_COUNT = 100;
 
 RenderSystem::RenderSystem(Graphics &graphics) : graphics(graphics)
 {
-    components = new Drawable*[MAX_OBJECTS_COUNT];
-    componentsCount = 0;
 }
 
 RenderSystem::~RenderSystem()
 {
-    delete[] components;
 }
 
 void RenderSystem::registerComponent(Drawable *component)
 {
     assert(component != nullptr);
 
-    if (componentsCount >= MAX_OBJECTS_COUNT)
-        return;
+    components.insert(component);
+}
 
-    components[componentsCount++] = component;
+void RenderSystem::unregisterComponent(Drawable *component)
+{
+    assert(component != nullptr);
+
+    components.erase(component);
 }
 
 void RenderSystem::draw()
 {
-    for (int i = 0; i < componentsCount; i++)
+    for (Drawable *obj : components)
     {
-        Drawable &drawable = *components[i];
-        drawable.draw(graphics);
+        obj->draw(graphics);
     }
 }
