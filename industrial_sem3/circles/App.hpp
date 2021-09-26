@@ -21,12 +21,10 @@ public:
 
 private:
     Entity *createCircle(Vec2f position = Vec2f(), float radius = 10.0f,
-                         Color color = Color(1.0f, 1.0f, 1.0f), float mass = 1.0f,
-                         Vec2f velocity = Vec2f());
+                         Color color = Color(1.0f, 1.0f, 1.0f), Vec2f velocity = Vec2f());
 
     Entity *createSquare(Vec2f position = Vec2f(), float sideLength = 20.0f,
-                         Color color = Color(1.0f, 1.0f, 1.0f), float mass = 1.0f,
-                         Vec2f velocity = Vec2f());
+                         Color color = Color(1.0f, 1.0f, 1.0f), Vec2f velocity = Vec2f());
 
     Entity *createBound(Vec2f position = Vec2f(),
                         PhysicalBoundType boundType = PhysicalBoundType::Horizontal);

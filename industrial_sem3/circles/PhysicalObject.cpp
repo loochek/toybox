@@ -151,7 +151,7 @@ static bool genericIntersectFuncCircleBound(const PhysicalCircle *circle, const 
     assert(circle != nullptr);
     assert(bound != nullptr);
 
-    if (bound->boundType == PhysicalBoundType::Horizontal)
+    if (bound->boundType == PhysicalBoundType::Vertical)
     {
         if (fabs(circle->position.x - bound->position.x) > circle->radius)
             return false;
@@ -172,7 +172,7 @@ static void genericCollideFuncCircleBound(PhysicalCircle *circle, PhysicalBound 
     assert(circle != nullptr);
     assert(bound != nullptr);
 
-    if (bound->boundType == PhysicalBoundType::Horizontal)
+    if (bound->boundType == PhysicalBoundType::Vertical)
     {
         if (circle->position.x - bound->position.x > 0)
         {

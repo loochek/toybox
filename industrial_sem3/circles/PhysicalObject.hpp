@@ -36,8 +36,8 @@ public:
 
 protected:
     PhysicalObject(Entity *entity, PhysicalObjectType type = PhysicalObjectType::Invalid,
-                   const Vec2f &position = Vec2f(), float mass = 1.0f, const Vec2f &velocity = Vec2f()) :
-                   Component(entity), type(type), position(position), mass(mass), velocity(velocity) {};
+                   const Vec2f &position = Vec2f(), const Vec2f &velocity = Vec2f()) :
+                   Component(entity), type(type), position(position), velocity(velocity) {};
 
     /// Component event handler
     friend class Entity;
@@ -46,8 +46,6 @@ protected:
 public:
     Vec2f position;
     Vec2f velocity;
-
-    float mass;
 
     static const IntersectFunc intersectTable[PHYS_OBJ_TYPE_COUNT][PHYS_OBJ_TYPE_COUNT];
     static const CollideFunc   collideTable  [PHYS_OBJ_TYPE_COUNT][PHYS_OBJ_TYPE_COUNT];

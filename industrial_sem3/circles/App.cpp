@@ -19,8 +19,7 @@ App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), renderSystem(graphics
         for (int j = 0; j < 5; j++)
         {
             entities[entitiesCount++] = createCircle(Vec2f(100.0f + 30.0f * i, 100.f + 30.0f * j),
-                                                     10.0f, Color(1.0f, 1.0f, 0.0f), 1.0f,
-                                                     Vec2f(0.0f, 0.0f));
+                                                     10.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 0.0f));
         }
     }
 
@@ -29,13 +28,12 @@ App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), renderSystem(graphics
         for (int j = 0; j < 5; j++)
         {
             entities[entitiesCount++] =  createSquare(Vec2f(500.0f + 30.0f * i, 500.f + 30.0f * j),
-                                                      20.0f, Color(1.0f, 0.0f, 1.0f),1.0f,
-                                                      Vec2f(0.0f, 0.0f));
+                                                      20.0f, Color(1.0f, 0.0f, 1.0f), Vec2f(0.0f, 0.0f));
         }
     }
 
     entities[entitiesCount++] = createCircle(Vec2f(400.0f, 100.0f), 60.0f, Color(1.0f, 1.0f, 1.0f),
-                                             1.2f, Vec2f(700.0f, 30.0f));
+                                             Vec2f(700.0f, 30.0f));
 
     entities[entitiesCount++] = createBound(Vec2f(), PhysicalBoundType::Horizontal);
     entities[entitiesCount++] = createBound(Vec2f(), PhysicalBoundType::Vertical);
@@ -70,7 +68,7 @@ void App::run()
     }
 }
 
-Entity *App::createCircle(Vec2f position, float radius, Color color, float mass, Vec2f velocity)
+Entity *App::createCircle(Vec2f position, float radius, Color color, Vec2f velocity)
 {
     Entity *ent = new Entity();
 
@@ -78,14 +76,14 @@ Entity *App::createCircle(Vec2f position, float radius, Color color, float mass,
     ent->addDrawableComponent(drawable);
     renderSystem.registerComponent(drawable);
 
-    PhysicalObject *physical = new PhysicalCircle(ent, position, radius, mass, velocity);
+    PhysicalObject *physical = new PhysicalCircle(ent, position, radius, velocity);
     ent->addPhysicalComponent(physical);
     physicalSystem.registerComponent(physical);
 
     return ent;
 }
 
-Entity *App::createSquare(Vec2f position, float sideLength, Color color, float mass, Vec2f velocity)
+Entity *App::createSquare(Vec2f position, float sideLength, Color color, Vec2f velocity)
 {
     Entity *ent = new Entity();
 
@@ -93,7 +91,7 @@ Entity *App::createSquare(Vec2f position, float sideLength, Color color, float m
     ent->addDrawableComponent(drawable);
     renderSystem.registerComponent(drawable);
 
-    PhysicalObject *physical = new PhysicalCircle(ent, position, sideLength / 2, mass, velocity);
+    PhysicalObject *physical = new PhysicalCircle(ent, position, sideLength / 2, velocity);
     ent->addPhysicalComponent(physical);
     physicalSystem.registerComponent(physical);
 
