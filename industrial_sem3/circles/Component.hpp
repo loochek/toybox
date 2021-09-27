@@ -3,8 +3,10 @@
 
 enum class Event
 {
-    PhysicalPositionChanged, // PhysicalPositionChanged(const Vec2f *newPosition)
-    CollisionOccured         // CollisionOccured(Entity *other)
+    PhysicalPositionChanged,      // PhysicalPositionChanged(const Vec2f *newPosition)
+    CollisionOccured,             // CollisionOccured(Entity *other)
+    CircleHeavyCollisionOccured,  // CircleHeavyCollisionOccured (Entity *other)
+    Circle2HeavyCollisionOccured, // Circle2HeavyCollisionOccured(Entity *other)
 };
 
 class Entity;
@@ -17,6 +19,8 @@ class Component
 protected:
     Component() = delete;
     Component(Entity *entity) : entity(entity) {};
+    
+    virtual ~Component() {};
 
     /// Component event handler
     friend class Entity;

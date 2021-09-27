@@ -1,9 +1,10 @@
  #include <cassert>
  #include "Entity.hpp"
 
-Entity::Entity() : drawableComponentPresent(false), drawableComponent(nullptr),
-                   physicalComponentPresent(false), physicalComponent(nullptr),
-                   scheduledForDeletion(false)
+Entity::Entity(App *engine) : engine(engine),
+                              drawableComponentPresent(false), drawableComponent(nullptr),
+                              physicalComponentPresent(false), physicalComponent(nullptr),
+                              scheduledForDeletion(false), active(true)
 {
 }
 
@@ -38,4 +39,20 @@ void Entity::sendEvent(Event eventType, void *param1, void* param2)
 
     if (physicalComponentPresent)
         physicalComponent->eventHandler(eventType, param1, param2);
+}
+
+void Entity::scheduleForDeletion()
+{
+    active = false;
+    scheduledForDeletion = true;
+}
+
+void Entity::enable()
+{
+    active = true;
+}
+
+void Entity::disable()
+{
+    active = false;
 }

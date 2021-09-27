@@ -4,6 +4,9 @@
 #include "PhysicalCircle2.hpp"
 #include "PhysicalBound.hpp"
 #include "Entity.hpp"
+#include "App.hpp"
+
+const float CHEMICAL_TRIGGER_SPEED = 200.0f;
 
 void PhysicalObject::update(float elapsedTime)
 {
@@ -23,14 +26,15 @@ static bool intersectFuncCircleCircle(const PhysicalObject *obj1, const Physical
 static bool intersectFuncCircleBound (const PhysicalObject *obj1, const PhysicalObject *obj2);
 static bool intersectFuncBoundCircle (const PhysicalObject *obj1, const PhysicalObject *obj2);
 
-static void dummyCollideFunc        (PhysicalObject *obj1, PhysicalObject *obj2);
-static void collideFuncCircleCircle (PhysicalObject *obj1, PhysicalObject *obj2);
-static void collideFuncCircleCircle2(PhysicalObject *obj1, PhysicalObject *obj2);
-static void collideFuncCircleBound  (PhysicalObject *obj1, PhysicalObject *obj2);
-static void collideFuncBoundCircle  (PhysicalObject *obj1, PhysicalObject *obj2);
+static void dummyCollideFunc         (PhysicalObject *obj1, PhysicalObject *obj2);
+static void collideFuncCircleCircle  (PhysicalObject *obj1, PhysicalObject *obj2);
+static void collideFuncCircle2Circle2(PhysicalObject *obj1, PhysicalObject *obj2);
+static void collideFuncCircleBound   (PhysicalObject *obj1, PhysicalObject *obj2);
+static void collideFuncBoundCircle   (PhysicalObject *obj1, PhysicalObject *obj2);
 
 static bool genericIntersectFuncCircleBound(const PhysicalCircle *circle, const PhysicalBound *bound);
 static void genericCollideFuncCircleBound  (PhysicalCircle *circle, PhysicalBound *bound);
+static void genericCollideFuncCircleCircle (PhysicalCircle *obj1, PhysicalCircle *obj2);
 
 
 const IntersectFunc PhysicalObject::intersectTable[PHYS_OBJ_TYPE_COUNT][PHYS_OBJ_TYPE_COUNT] =
@@ -45,10 +49,10 @@ const IntersectFunc PhysicalObject::intersectTable[PHYS_OBJ_TYPE_COUNT][PHYS_OBJ
 const CollideFunc PhysicalObject::collideTable[PHYS_OBJ_TYPE_COUNT][PHYS_OBJ_TYPE_COUNT] =
 {
     // Invalid            Bound                 Circle1                  Circle2 
-    { dummyCollideFunc, dummyCollideFunc      , dummyCollideFunc        , dummyCollideFunc         },
-    { dummyCollideFunc, dummyCollideFunc      , collideFuncBoundCircle  , collideFuncBoundCircle   },
-    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle , collideFuncCircleCircle2 },
-    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle2, collideFuncCircleCircle  }
+    { dummyCollideFunc, dummyCollideFunc      , dummyCollideFunc        , dummyCollideFunc          },
+    { dummyCollideFunc, dummyCollideFunc      , collideFuncBoundCircle  , collideFuncBoundCircle    },
+    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle , collideFuncCircleCircle   },
+    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle , collideFuncCircle2Circle2 }
 };
 
 
@@ -107,27 +111,59 @@ static void collideFuncCircleCircle(PhysicalObject *obj1, PhysicalObject *obj2)
     assert(obj1 != nullptr);
     assert(obj2 != nullptr);
 
-    const PhysicalCircle *circle1 = (const PhysicalCircle*)obj1;
-    const PhysicalCircle *circle2 = (const PhysicalCircle*)obj2;
+    PhysicalCircle *circle1 = (PhysicalCircle*)obj1;
+    PhysicalCircle *circle2 = (PhysicalCircle*)obj2;
 
-    Vec2f normal  = (obj1->position - obj2->position).normalized();
-    Vec2f tangent = Vec2f(-normal.y, normal.x);
+    if (circle1->velocity.length() + circle2->velocity.length() > CHEMICAL_TRIGGER_SPEED)
+    {
+        circle1->entity->scheduleForDeletion();
+        circle2->entity->scheduleForDeletion();
 
-    Vec2f obj1VelNormProj = normal * ((obj1->velocity) ^ normal);
-    Vec2f obj1VelTangProj = obj1->velocity - obj1VelNormProj;
-    Vec2f obj2VelNormProj = normal * ((obj2->velocity) ^ normal);
-    Vec2f obj2VelTangProj = obj2->velocity - obj2VelNormProj;
+        App *engine = circle1->entity->engine;
 
-    obj1->velocity = (obj2VelNormProj + obj1VelTangProj);
-    obj2->velocity = (obj1VelNormProj + obj2VelTangProj);
+        Entity *newSquare = engine->createSquare((circle1->position + circle2->position) / 2,
+                                                 (circle1->radius + circle2->radius) * 1.7f,
+                                                 Color(0.0f, 1.0f, 0.0f), circle1->velocity + circle2->velocity);
+        newSquare->disable();
+        engine->addEntity(newSquare);
+    }
+
+    genericCollideFuncCircleCircle(circle1, circle2);
 }
 
-static void collideFuncCircleCircle2(PhysicalObject *obj1, PhysicalObject *obj2)
+static void collideFuncCircle2Circle2(PhysicalObject *obj1, PhysicalObject *obj2)
 {
-    collideFuncCircleCircle(obj1, obj2);
+    PhysicalCircle *circle1 = (PhysicalCircle*)obj1;
+    PhysicalCircle *circle2 = (PhysicalCircle*)obj2;
 
-    obj1->entity->sendEvent(Event::CollisionOccured, (void*)obj2->entity, nullptr);
-    obj2->entity->sendEvent(Event::CollisionOccured, (void*)obj1->entity, nullptr);
+    if (circle1->velocity.length() + circle2->velocity.length() > CHEMICAL_TRIGGER_SPEED)
+    {
+        circle1->entity->scheduleForDeletion();
+        circle2->entity->scheduleForDeletion();
+
+        App *engine = circle1->entity->engine;
+
+        int circlesCount = (circle1->radius + circle2->radius) / 10.0f;
+
+        float radiusSum = (circle1->radius + circle2->radius);
+        float velocityLength = (circle1->velocity + circle2->velocity).length();
+        Vec2f centerPos = (circle1->position + circle2->position) / 2.0f;
+
+        for (int i = 0; i < circlesCount; i++)
+        {
+            Vec2f angleVector = Vec2f(0.0f, 1.0f).rotated(2 * M_PI / circlesCount * i + 0.1);
+
+            Entity *newCircle = engine->createCircle(centerPos + angleVector * radiusSum,
+                                                     10.0f,
+                                                     Color(0.0f, 1.0f, 1.0f),
+                                                     angleVector * velocityLength / 2.0f);
+
+            newCircle->disable();
+            engine->addEntity(newCircle);
+        }
+    }
+
+    genericCollideFuncCircleCircle(circle1, circle2);
 }
 
 static void collideFuncCircleBound(PhysicalObject *obj1, PhysicalObject *obj2)
@@ -150,6 +186,23 @@ static void collideFuncBoundCircle(PhysicalObject *obj1, PhysicalObject *obj2)
     PhysicalCircle *circle = (PhysicalCircle*)obj2;
 
     genericCollideFuncCircleBound(circle, bound);
+}
+
+static void genericCollideFuncCircleCircle(PhysicalCircle *obj1, PhysicalCircle *obj2)
+{
+    assert(obj1 != nullptr);
+    assert(obj2 != nullptr);
+
+    Vec2f normal  = (obj1->position - obj2->position).normalized();
+    Vec2f tangent = Vec2f(-normal.y, normal.x);
+
+    Vec2f obj1VelNormProj = normal * ((obj1->velocity) ^ normal);
+    Vec2f obj1VelTangProj = obj1->velocity - obj1VelNormProj;
+    Vec2f obj2VelNormProj = normal * ((obj2->velocity) ^ normal);
+    Vec2f obj2VelTangProj = obj2->velocity - obj2VelNormProj;
+
+    obj1->velocity = (obj2VelNormProj + obj1VelTangProj);
+    obj2->velocity = (obj1VelNormProj + obj2VelTangProj);
 }
 
 static bool genericIntersectFuncCircleBound(const PhysicalCircle *circle, const PhysicalBound *bound)

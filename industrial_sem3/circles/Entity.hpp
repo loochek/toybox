@@ -4,11 +4,13 @@
 #include "Drawable.hpp"
 #include "PhysicalObject.hpp"
 
+class App;
+
 class Entity
 {
 public:
     /// Creates a dummy entity
-    Entity();
+    Entity(App *app);
     ~Entity();
     
     /**
@@ -37,6 +39,21 @@ public:
      */
     void sendEvent(Event eventType, void *param1, void* param2);
 
+    /**
+     * Schedules entity deletion at the end of the logic update loop
+     */
+    void scheduleForDeletion();
+
+    /**
+     * Makes entity visible to systems
+     */
+    void enable();
+
+    /**
+     * Makes entity invisible to systems
+     */
+    void disable();
+
 public:
     bool drawableComponentPresent;
     Drawable *drawableComponent;
@@ -45,6 +62,9 @@ public:
     PhysicalObject *physicalComponent;
 
     bool scheduledForDeletion;
+    bool active;
+
+    App * const engine;
 };
 
 #endif

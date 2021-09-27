@@ -29,6 +29,9 @@ void PhysicalSystem::update(float elapsedTime)
     // Update components
     for (PhysicalObject *obj : components)
     {
+        if (!obj->entity->active)
+            continue;
+
         obj->update(elapsedTime);
         obj->entity->sendEvent(Event::PhysicalPositionChanged, &obj->position, nullptr);
     }
@@ -36,8 +39,14 @@ void PhysicalSystem::update(float elapsedTime)
     // Handle collisions
     for (auto obj1 = components.begin(); obj1 != components.end(); obj1++)
     {
+        if (!(*obj1)->entity->active)
+                continue;
+
         for (auto obj2 = obj1; ++obj2 != components.end();)
         {
+            if (!(*obj2)->entity->active)
+                continue;
+
             IntersectFunc intersectFunc = PhysicalObject::intersectTable[(int)(*obj1)->type][(int)(*obj2)->type];
             CollideFunc   collideFunc   = PhysicalObject::collideTable  [(int)(*obj1)->type][(int)(*obj2)->type];
 

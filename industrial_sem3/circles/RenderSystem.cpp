@@ -1,5 +1,6 @@
 #include <cassert>
 #include "RenderSystem.hpp"
+#include "Entity.hpp"
 
 const int MAX_OBJECTS_COUNT = 100;
 
@@ -29,6 +30,9 @@ void RenderSystem::draw()
 {
     for (Drawable *obj : components)
     {
+        if (!obj->entity->active)
+            continue;
+            
         obj->draw(graphics);
     }
 }

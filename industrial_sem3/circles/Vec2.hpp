@@ -76,6 +76,13 @@ public:
         return *this - normal * (2 * (*this ^ normal));
     }
 
+    Vec2 rotated(float angle) const
+    {
+        float s = sin(angle), c = cos(angle);
+
+        return Vec2(x * c - y * s, x * s + y * c);
+    }
+
     Vec2 &operator+=(const Vec2 &other)
     {
         x += other.x;

@@ -20,7 +20,8 @@ public:
     /// Runs app until exit
     void run();
 
-private:
+    void addEntity(Entity *entity);
+
     Entity *createCircle(Vec2f position = Vec2f(), float radius = 10.0f,
                          Color color = Color(1.0f, 1.0f, 1.0f), Vec2f velocity = Vec2f());
 
@@ -30,6 +31,7 @@ private:
     Entity *createBound(Vec2f position = Vec2f(),
                         PhysicalBoundType boundType = PhysicalBoundType::Horizontal);
 
+private:
     /// Deletes entities that were scheduled for deletion
     void deleteEntities();
 
