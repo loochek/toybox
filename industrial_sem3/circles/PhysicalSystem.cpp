@@ -40,10 +40,14 @@ void PhysicalSystem::update(float elapsedTime)
     for (auto obj1 = components.begin(); obj1 != components.end(); obj1++)
     {
         if (!(*obj1)->entity->active)
-                continue;
+            continue;
 
         for (auto obj2 = obj1; ++obj2 != components.end();)
         {
+            // Object can be disabled between iterations
+            if (!(*obj1)->entity->active)
+                break;
+
             if (!(*obj2)->entity->active)
                 continue;
 

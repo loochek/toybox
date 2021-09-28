@@ -3,10 +3,7 @@
 
 enum class Event
 {
-    PhysicalPositionChanged,      // PhysicalPositionChanged(const Vec2f *newPosition)
-    CollisionOccured,             // CollisionOccured(Entity *other)
-    CircleHeavyCollisionOccured,  // CircleHeavyCollisionOccured (Entity *other)
-    Circle2HeavyCollisionOccured, // Circle2HeavyCollisionOccured(Entity *other)
+    PhysicalPositionChanged // PhysicalPositionChanged(const Vec2f *newPosition)
 };
 
 class Entity;

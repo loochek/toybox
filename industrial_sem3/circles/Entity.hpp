@@ -61,10 +61,13 @@ public:
     bool physicalComponentPresent;
     PhysicalObject *physicalComponent;
 
-    bool scheduledForDeletion;
+    App * const engine;
+
     bool active;
 
-    App * const engine;
+private:
+    friend class App;
+    bool scheduledForDeletion;
 };
 
 #endif

@@ -11,27 +11,15 @@ const int WINDOW_HEIGHT = 720;
 App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), renderSystem(graphics)
 {
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 42; i++)
     {
-        for (int j = 0; j < 5; j++)
+        for (int j = 0; j < 26; j++)
         {
-            createCircle(Vec2f(100.0f + 70.0f * i, 100.f + 70.0f * j),
-                               10.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 0.0f));
+            createCircle(Vec2f(30.0f + 30.0f * i, 30.0f + 30.0f * j),
+                               5.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 100.0f).rotated(0.01 * rand()));
         }
     }
-
-    for (int i = 0; i < 5; i++)
-    {
-        for (int j = 0; j < 5; j++)
-        {
-            createSquare(Vec2f(500.0f + 70.0f * i, 300.f + 70.0f * j),
-                               20.0f, Color(1.0f, 0.0f, 1.0f), Vec2f(0.0f, 0.0f));
-        }
-    }
-
-    createCircle(Vec2f(800.0f, 100.0f), 10.0f, Color(1.0f, 1.0f, 1.0f),
-                       Vec2f(700.0f, 30.0f));
-
+    
     createBound(Vec2f(), PhysicalBoundType::Horizontal);
     createBound(Vec2f(), PhysicalBoundType::Vertical);
     createBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Horizontal);
@@ -53,11 +41,8 @@ void App::run()
         // Update
 
         float elapsedTime = graphics.timerReset();
-        
-        for (int i = 0; i < 10; i++)
-            physicalSystem.update(elapsedTime / 10.0f);
-
-        // Delete entities 
+        physicalSystem.update(elapsedTime);
+ 
         deleteEntities();
         for (Entity *ent : entities)
             ent->enable();
