@@ -8,14 +8,20 @@
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;
 
+const int INIT_CIRCLES_WIDTH_COUNT  = 42;
+const int INIT_CIRCLES_HEIGHT_COUNT = 26;
+
+const float INIT_OFFSET = 30.0f;
+const float INIT_CIRCLES_STRIDE = 30.0f;
+
 App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), renderSystem(graphics)
 {
-
-    for (int i = 0; i < 42; i++)
+    for (int i = 0; i < INIT_CIRCLES_WIDTH_COUNT; i++)
     {
-        for (int j = 0; j < 26; j++)
+        for (int j = 0; j < INIT_CIRCLES_HEIGHT_COUNT; j++)
         {
-            createCircle(Vec2f(30.0f + 30.0f * i, 30.0f + 30.0f * j),
+            createCircle(Vec2f(INIT_OFFSET + INIT_CIRCLES_STRIDE * i,
+                               INIT_OFFSET + INIT_CIRCLES_STRIDE * j),
                                5.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 100.0f).rotated(0.01 * rand()));
         }
     }
