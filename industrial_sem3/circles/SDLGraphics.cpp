@@ -107,3 +107,22 @@ float Graphics::timerReset()
 
     return elapsedTicks / 1000.0f;;
 }
+
+bool Graphics::isLeftMouseButtonPressed()
+{
+    int buttonState = SDL_GetMouseState(nullptr, nullptr);
+    return SDL_BUTTON(SDL_BUTTON_LEFT);
+}
+
+bool Graphics::isRightMouseButtonPressed()
+{
+    int buttonState = SDL_GetMouseState(nullptr, nullptr);
+    return SDL_BUTTON(SDL_BUTTON_RIGHT);
+}
+
+Vec2f Graphics::getWindowMousePosition()
+{
+    int x = 0, y = 0;
+    SDL_GetMouseState(&x, &y);
+    return Vec2f(x, y);
+}

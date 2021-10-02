@@ -97,6 +97,11 @@ sf::Color Graphics::toSFMLColor(const Color &color)
     return sf::Color(color.x * 255, color.y * 255, color.z * 255);
 }
 
+Vec2f Graphics::fromSFMLVector(const sf::Vector2f &vector)
+{
+    return Vec2f(vector.x, vector.y);
+}
+
 bool Graphics::shouldClose()
 {
     sf::Event event;
@@ -112,4 +117,19 @@ bool Graphics::shouldClose()
 float Graphics::timerReset()
 {
     return clock.restart().asSeconds();
+}
+
+bool Graphics::isLeftMouseButtonPressed()
+{
+    return sf::Mouse::isButtonPressed(sf::Mouse::Left);
+}
+
+bool Graphics::isRightMouseButtonPressed()
+{
+    return sf::Mouse::isButtonPressed(sf::Mouse::Right);
+}
+
+Vec2f Graphics::getWindowMousePosition()
+{
+    return fromSFMLVector(window.mapPixelToCoords(sf::Mouse::getPosition(window)));
 }

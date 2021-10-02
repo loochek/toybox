@@ -90,6 +90,21 @@ public:
      */
     float timerReset();
 
+    /**
+     * \return exactly what you think
+     */
+    bool isLeftMouseButtonPressed();
+
+    /**
+     * \return exactly what you think
+     */
+    bool isRightMouseButtonPressed();
+
+    /**
+     * \return Mouse position relative to the window
+     */
+    Vec2f getWindowMousePosition();
+
 private:
     SDL_Window*   window;
     SDL_Renderer* renderer;

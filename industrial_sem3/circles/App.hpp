@@ -3,15 +3,17 @@
 
 #include <unordered_set>
 #include "Graphics.hpp"
+#include "GUIManager.hpp"
 #include "PhysicalSystem.hpp"
 #include "RenderSystem.hpp"
 #include "Entity.hpp"
 #include "PhysicalBound.hpp"
+#include "Button.hpp"
 
 /**
  * App framework
  */
-class App
+class App : public ButtonDelegate
 {
 public:
     App();
@@ -31,11 +33,18 @@ public:
     Entity *createBound(Vec2f position = Vec2f(),
                         PhysicalBoundType boundType = PhysicalBoundType::Horizontal);
 
+    void onClick(Button *button);
+
 private:
     /// Deletes entities that were scheduled for deletion
     void deleteEntities();
 
+    void initScene();
+
+private:
     Graphics graphics;
+
+    GUIManager guiManager;
 
     PhysicalSystem physicalSystem;
     RenderSystem   renderSystem;

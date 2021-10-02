@@ -8,28 +8,12 @@
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;
 
-const int INIT_CIRCLES_WIDTH_COUNT  = 42;
-const int INIT_CIRCLES_HEIGHT_COUNT = 26;
-
-const float INIT_OFFSET = 30.0f;
-const float INIT_CIRCLES_STRIDE = 30.0f;
-
-App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), renderSystem(graphics)
+App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), renderSystem(graphics), guiManager(graphics)
 {
-    for (int i = 0; i < INIT_CIRCLES_WIDTH_COUNT; i++)
-    {
-        for (int j = 0; j < INIT_CIRCLES_HEIGHT_COUNT; j++)
-        {
-            createCircle(Vec2f(INIT_OFFSET + INIT_CIRCLES_STRIDE * i,
-                               INIT_OFFSET + INIT_CIRCLES_STRIDE * j),
-                               5.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 100.0f).rotated(0.01 * rand()));
-        }
-    }
-    
-    createBound(Vec2f(), PhysicalBoundType::Horizontal);
-    createBound(Vec2f(), PhysicalBoundType::Vertical);
-    createBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Horizontal);
-    createBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Vertical);
+    Button *button = new Button(Rect(Vec2f(100.0f, 100.0f), Vec2f(100.0f, 100.0f)));
+    initScene();
+    guiManager.addWidget(button);
+    button->setDelegate(this);
 }
 
 App::~App()
@@ -45,7 +29,7 @@ void App::run()
     while (!graphics.shouldClose())
     {
         // Update
-
+        
         float elapsedTime = graphics.timerReset();
         physicalSystem.update(elapsedTime);
  
@@ -53,10 +37,13 @@ void App::run()
         for (Entity *ent : entities)
             ent->enable();
 
+        guiManager.update(graphics.getWindowMousePosition(), graphics.isLeftMouseButtonPressed());
+
         // Draw
 
         graphics.clear();
         renderSystem.draw();
+        guiManager.draw();
         graphics.display();
     }
 }
@@ -110,6 +97,12 @@ Entity *App::createBound(Vec2f position, PhysicalBoundType boundType)
     return ent;
 }
 
+void App::onClick(Button *button)
+{
+    createCircle(Vec2f(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2),
+                 5.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 100.0f).rotated(0.01 * rand()));
+}
+
 void App::deleteEntities()
 {
     auto it = entities.begin();
@@ -129,4 +122,28 @@ void App::deleteEntities()
         else
             it++;
     }
+}
+
+void App::initScene()
+{
+    // const int INIT_CIRCLES_WIDTH_COUNT  = 42;
+    // const int INIT_CIRCLES_HEIGHT_COUNT = 26;
+
+    // const float INIT_OFFSET = 30.0f;
+    // const float INIT_CIRCLES_STRIDE = 30.0f;
+
+    // for (int i = 0; i < INIT_CIRCLES_WIDTH_COUNT; i++)
+    // {
+    //     for (int j = 0; j < INIT_CIRCLES_HEIGHT_COUNT; j++)
+    //     {
+    //         createCircle(Vec2f(INIT_OFFSET + INIT_CIRCLES_STRIDE * i,
+    //                            INIT_OFFSET + INIT_CIRCLES_STRIDE * j),
+    //                            5.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 100.0f).rotated(0.01 * rand()));
+    //     }
+    // }
+    
+    createBound(Vec2f(), PhysicalBoundType::Horizontal);
+    createBound(Vec2f(), PhysicalBoundType::Vertical);
+    createBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Horizontal);
+    createBound(Vec2f(WINDOW_WIDTH, WINDOW_HEIGHT), PhysicalBoundType::Vertical);
 }

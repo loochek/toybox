@@ -89,9 +89,26 @@ public:
      */
     float timerReset();
 
+    /**
+     * \return exactly what you think
+     */
+    bool isLeftMouseButtonPressed();
+
+    /**
+     * \return exactly what you think
+     */
+    bool isRightMouseButtonPressed();
+
+    /**
+     * \return Mouse position relative to the window
+     */
+    Vec2f getWindowMousePosition();
+
 private:
     static sf::Vector2f toSFMLVector(const Vec2f &vector);
     static sf::Color    toSFMLColor (const Color &color);
+
+    static Vec2f fromSFMLVector(const sf::Vector2f &vector);
     
     sf::RenderWindow window;
     sf::CircleShape  circleDrawer;
