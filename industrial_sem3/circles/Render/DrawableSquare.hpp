@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_SQUARE_HPP
 #define DRAWABLE_SQUARE_HPP
 
-#include "Graphics.hpp"
+#include "../Graphics.hpp"
 #include "Drawable.hpp"
 
 /**

@@ -2,8 +2,8 @@
 #define SDL_GRAPHICS_HPP
 
 #include <SDL2/SDL.h>
-#include "Vec2.hpp"
-#include "Vec3.hpp"
+#include "../Math/Vec2.hpp"
+#include "../Math/Vec3.hpp"
 
 typedef Vec3f Color;
 

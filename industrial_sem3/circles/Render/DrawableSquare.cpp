@@ -1,5 +1,5 @@
 #include "DrawableSquare.hpp"
-#include "Entity.hpp"
+#include "../Entity.hpp"
 
 void DrawableSquare::draw(Graphics &graphics)
 {

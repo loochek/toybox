@@ -2,7 +2,7 @@
 #define RECTANGULAR_WIDGET_HPP
 
 #include "GUIWidget.hpp"
-#include "Rect.hpp"
+#include "../Math/Rect.hpp"
 
 class RectangularWidget : public GUIWidget
 {

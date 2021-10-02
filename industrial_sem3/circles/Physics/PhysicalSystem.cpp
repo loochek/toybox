@@ -1,6 +1,6 @@
 #include <cassert>
 #include "PhysicalSystem.hpp"
-#include "Entity.hpp"
+#include "../Entity.hpp"
 
 PhysicalSystem::PhysicalSystem()
 {

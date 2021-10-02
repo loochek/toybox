@@ -1,5 +1,5 @@
 #ifdef CIRCLES_USE_SDL
-#include "SDLGraphics.hpp"
+#include "SDL/SDLGraphics.hpp"
 #else
-#include "SFMLGraphics.hpp"
+#include "SFML/SFMLGraphics.hpp"
 #endif

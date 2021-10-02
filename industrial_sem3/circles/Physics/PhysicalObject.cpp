@@ -3,8 +3,8 @@
 #include "PhysicalCircle.hpp"
 #include "PhysicalCircle2.hpp"
 #include "PhysicalBound.hpp"
-#include "Entity.hpp"
-#include "App.hpp"
+#include "../Entity.hpp"
+#include "../App.hpp"
 
 const float CHEMICAL_TRIGGER_SPEED = 200.0f;
 

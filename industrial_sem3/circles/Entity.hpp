@@ -1,8 +1,8 @@
 #ifndef ENTITY_HPP
 #define ENTITY_HPP
 
-#include "Drawable.hpp"
-#include "PhysicalObject.hpp"
+#include "Render/Drawable.hpp"
+#include "Physics/PhysicalObject.hpp"
 
 class App;
 

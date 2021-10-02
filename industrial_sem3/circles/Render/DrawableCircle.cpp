@@ -1,5 +1,5 @@
 #include "DrawableCircle.hpp"
-#include "Entity.hpp"
+#include "../Entity.hpp"
 
 void DrawableCircle::draw(Graphics &graphics)
 {

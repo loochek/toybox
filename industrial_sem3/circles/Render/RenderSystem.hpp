@@ -2,7 +2,7 @@
 #define RENDER_SYSTEM_HPP
 
 #include <unordered_set>
-#include "Graphics.hpp"
+#include "../Graphics.hpp"
 #include "Drawable.hpp"
 
 /**

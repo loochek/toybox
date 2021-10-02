@@ -1,8 +1,8 @@
 #ifndef GUI_WIDGET_HPP
 #define GUI_WIDGET_HPP
 
-#include "Vec2.hpp"
-#include "Rect.hpp"
+#include "../Math/Vec2.hpp"
+#include "../Math/Rect.hpp"
 
 class Graphics;
 

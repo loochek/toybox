@@ -1,9 +1,9 @@
 #include <stdexcept>
 #include "App.hpp"
-#include "DrawableCircle.hpp"
-#include "DrawableSquare.hpp"
-#include "PhysicalCircle.hpp"
-#include "PhysicalCircle2.hpp"
+#include "Render/DrawableCircle.hpp"
+#include "Render/DrawableSquare.hpp"
+#include "Physics/PhysicalCircle.hpp"
+#include "Physics/PhysicalCircle2.hpp"
 
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;

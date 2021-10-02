@@ -1,5 +1,5 @@
 #include "Button.hpp"
-#include "Graphics.hpp"
+#include "../Graphics.hpp"
 
 Button::Button(const Rect &rect,
                const Color &idleColor, const Color &selectedColor, const Color &pressedColor) : 

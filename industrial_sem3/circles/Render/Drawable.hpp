@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_HPP
 #define DRAWABLE_HPP
 
-#include "Component.hpp"
+#include "../Component.hpp"
 
 class Graphics;
 

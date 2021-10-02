@@ -1,6 +1,6 @@
 #include <cassert>
 #include "RenderSystem.hpp"
-#include "Entity.hpp"
+#include "../Entity.hpp"
 
 const int MAX_OBJECTS_COUNT = 100;
 

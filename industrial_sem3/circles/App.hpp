@@ -3,12 +3,12 @@
 
 #include <unordered_set>
 #include "Graphics.hpp"
-#include "GUIManager.hpp"
-#include "PhysicalSystem.hpp"
-#include "RenderSystem.hpp"
 #include "Entity.hpp"
-#include "PhysicalBound.hpp"
-#include "Button.hpp"
+#include "GUI/GUIManager.hpp"
+#include "GUI/Button.hpp"
+#include "Physics/PhysicalSystem.hpp"
+#include "Physics/PhysicalBound.hpp"
+#include "Render/RenderSystem.hpp"
 
 /**
  * App framework

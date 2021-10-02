@@ -2,8 +2,8 @@
 #define SFML_GRAPHICS_BACKEND_HPP
 
 #include <SFML/Graphics.hpp>
-#include "Vec2.hpp"
-#include "Vec3.hpp"
+#include "../Math/Vec2.hpp"
+#include "../Math/Vec3.hpp"
 
 typedef Vec3f Color;
 

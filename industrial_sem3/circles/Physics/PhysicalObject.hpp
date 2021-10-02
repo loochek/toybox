@@ -1,8 +1,8 @@
 #ifndef PHYSICAL_OBJECT_HPP
 #define PHYSICAL_OBJECT_HPP
 
-#include "Component.hpp"
-#include "Vec2.hpp"
+#include "../Component.hpp"
+#include "../Math/Vec2.hpp"
 
 const int PHYS_OBJ_TYPE_COUNT = 4;
 

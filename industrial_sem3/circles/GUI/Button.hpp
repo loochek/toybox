@@ -1,7 +1,7 @@
 #ifndef BUTTON_HPP
 #define BUTTON_HPP
 
-#include "Graphics.hpp"
+#include "../Graphics.hpp"
 #include "RectangularWidget.hpp"
 
 class ButtonDelegate;
