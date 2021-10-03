@@ -1,1 +1,3 @@
- rm -rf build/*
+#!/bin/sh
+
+rm -rf build/*
