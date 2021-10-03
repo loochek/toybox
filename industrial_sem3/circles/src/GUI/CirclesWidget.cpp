@@ -27,10 +27,16 @@ void CirclesWidget::draw(Graphics &graphics)
 void CirclesWidget::onClick(Button *button)
 {
     if (button == addCircleButton)
-        createCircle(rect.size / 2, 5.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 100.0f).rotated(0.01 * rand()));
+    {
+        createCircle(rect.size / 2, CIRCLE_SIZE, CIRCLE_COLOR,
+                     Vec2f(0.0f, INITIAL_SPEED).rotated(0.01 * rand()));
+    }
 
     if (button == addSquareButton)
-        createSquare(rect.size / 2, 10.0f, Color(1.0f, 1.0f, 0.0f), Vec2f(0.0f, 100.0f).rotated(0.01 * rand()));
+    {
+        createSquare(rect.size / 2, SQUARE_SIZE, SQUARE_COLOR,
+                     Vec2f(0.0f, INITIAL_SPEED).rotated(0.01 * rand()));
+    }       
 }
 
 void CirclesWidget::initScene()

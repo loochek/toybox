@@ -34,6 +34,11 @@ public:
      */
     virtual void update(float elapsedTime);
 
+    /**
+     * \return Physical object type
+     */
+    PhysicalObjectType getType() { return type; };
+
 protected:
     PhysicalObject(Entity *entity, PhysicalObjectType type = PhysicalObjectType::Invalid,
                    const Vec2f &position = Vec2f(), const Vec2f &velocity = Vec2f()) :

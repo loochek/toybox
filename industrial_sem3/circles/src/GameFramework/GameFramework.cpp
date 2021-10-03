@@ -4,7 +4,8 @@
 #include "../Render/DrawableCircle.hpp"
 #include "../Render/DrawableSquare.hpp"
 
-GameFramework::GameFramework(Graphics &graphics, const Rect &viewport) : renderSystem(graphics, viewport)
+GameFramework::GameFramework(Graphics &graphics, const Rect &viewport) : renderSystem(graphics, viewport),
+                             circlesCount(0), squaresCount(0)
 {
 }
 
@@ -48,6 +49,7 @@ Entity *GameFramework::createCircle(Vec2f position, float radius, Color color, V
     physicalSystem.registerComponent(physical);
 
     addEntity(ent);
+    circlesCount++;
     return ent;
 }
 
@@ -64,6 +66,7 @@ Entity *GameFramework::createSquare(Vec2f position, float sideLength, Color colo
     physicalSystem.registerComponent(physical);
 
     addEntity(ent);
+    squaresCount++;
     return ent;
 }
 
@@ -91,6 +94,12 @@ void GameFramework::deleteEntities()
 
             if ((*it)->drawableComponent != nullptr)
                 renderSystem.unregisterComponent((*it)->drawableComponent);
+
+            if ((*it)->physicalComponent->getType() == PhysicalObjectType::Circle)
+                circlesCount--;
+
+            if ((*it)->physicalComponent->getType() == PhysicalObjectType::Circle2)
+                squaresCount--;
 
             delete *it;
             it = entities.erase(it);

@@ -4,6 +4,9 @@
 #include "Graphics.hpp"
 #include "GUI/GUIManager.hpp"
 
+class CirclesWidget;
+class Chart;
+
 /**
  * App framework
  */
@@ -19,6 +22,9 @@ public:
 private:
     Graphics graphics;
     GUIManager guiManager;
+
+    CirclesWidget *circlesWidget;
+    Chart *chart;
 };
 
 #endif

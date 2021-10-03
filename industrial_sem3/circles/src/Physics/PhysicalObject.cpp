@@ -123,7 +123,7 @@ static void collideFuncCircleCircle(PhysicalObject *obj1, PhysicalObject *obj2)
 
         Entity *newSquare = engine->createSquare((circle1->position + circle2->position) / 2.0f,
                                                  (circle1->radius + circle2->radius) * 2.0f,
-                                                 Color(0.0f, 1.0f, 0.0f), circle1->velocity + circle2->velocity);
+                                                 SQUARE_COLOR, circle1->velocity + circle2->velocity);
         newSquare->disable();
         engine->addEntity(newSquare);
     }
@@ -143,17 +143,17 @@ static void collideFuncCircle2Circle2(PhysicalObject *obj1, PhysicalObject *obj2
 
         GameFramework *engine = circle1->getEntity()->engineInstance();
 
-        int circlesCount = (circle1->radius + circle2->radius) / 5.0f;
+        int circlesCount = (circle1->radius + circle2->radius) / CIRCLE_SIZE;
         Vec2f centerPos = (circle1->position + circle2->position) / 2.0f;
 
         for (int i = 0; i < circlesCount; i++)
         {
             Vec2f angleVector = Vec2f(0.0f, 1.0f).rotated(2 * M_PI / circlesCount * i + 0.1);
 
-            Entity *newCircle = engine->createCircle(centerPos + angleVector * 5.0f * circlesCount,
-                                                     5.0f,
-                                                     Color(0.0f, 1.0f, 1.0f),
-                                                     angleVector * 100.0f);
+            Entity *newCircle = engine->createCircle(centerPos + angleVector * CIRCLE_SIZE * circlesCount,
+                                                     CIRCLE_SIZE,
+                                                     CIRCLE_COLOR,
+                                                     angleVector * INITIAL_SPEED);
 
             newCircle->disable();
             engine->addEntity(newCircle);

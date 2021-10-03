@@ -9,6 +9,14 @@
 #include "../Physics/PhysicalBound.hpp"
 #include "../Render/RenderSystem.hpp"
 
+const float CIRCLE_SIZE = 5.0f;
+const float SQUARE_SIZE = 10.0f;
+
+const Color CIRCLE_COLOR = Color(0.0f, 1.0f, 1.0f);
+const Color SQUARE_COLOR = Color(0.0f, 1.0f, 0.0f);
+
+const float INITIAL_SPEED = 100.0f;
+
 class GameFramework
 {
 public:
@@ -22,14 +30,17 @@ public:
 
     void addEntity(Entity *entity);
 
-    Entity *createCircle(Vec2f position = Vec2f(), float radius = 10.0f,
-                         Color color = Color(1.0f, 1.0f, 1.0f), Vec2f velocity = Vec2f());
+    Entity *createCircle(Vec2f position = Vec2f(), float radius = CIRCLE_SIZE,
+                         Color color = CIRCLE_COLOR, Vec2f velocity = Vec2f());
 
-    Entity *createSquare(Vec2f position = Vec2f(), float sideLength = 20.0f,
-                         Color color = Color(1.0f, 1.0f, 1.0f), Vec2f velocity = Vec2f());
+    Entity *createSquare(Vec2f position = Vec2f(), float sideLength = SQUARE_SIZE,
+                         Color color = SQUARE_COLOR, Vec2f velocity = Vec2f());
 
     Entity *createBound(Vec2f position = Vec2f(),
                         PhysicalBoundType boundType = PhysicalBoundType::Horizontal);
+
+    int getCirclesCount() { return circlesCount; };
+    int getSquaresCount() { return squaresCount; };
 
 private:
     /// Deletes entities that were scheduled for deletion
@@ -40,6 +51,9 @@ private:
     RenderSystem   renderSystem;
 
     std::unordered_set<Entity*> entities;
+
+    int circlesCount;
+    int squaresCount;
 };
 
 #endif
