@@ -27,7 +27,7 @@ public:
      * 
      * \param delegate Delegate
      */
-    void setDelegate(ButtonDelegate *delegate);
+    void setDelegate(ButtonDelegate *delegate) { this->delegate = delegate; };
 
     /**
      * Sets a label for the button
@@ -35,7 +35,7 @@ public:
      * 
      * \param label Label text
      */
-    void setLabel(const char *label);
+    void setLabel(const char *label) { this->label = label; };
 
     /**
      * Sets idle color

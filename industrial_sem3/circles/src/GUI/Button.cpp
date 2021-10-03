@@ -39,13 +39,3 @@ void Button::draw(Graphics &graphics)
     if (label != nullptr)
         graphics.drawText(rect.position + rect.size / 2, label, TextOrigin::Centered);
 }
-
-void Button::setDelegate(ButtonDelegate *delegate)
-{
-    this->delegate = delegate;
-}
-
-void Button::setLabel(const char *label)
-{
-    this->label = label;
-}
