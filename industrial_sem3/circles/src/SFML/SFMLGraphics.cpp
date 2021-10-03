@@ -34,6 +34,16 @@ void Graphics::drawQuad(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const
     window.draw(polygonDrawer);
 }
 
+void Graphics::drawRect(const Rect &rect, const Color &color)
+{
+    Vec2f p1 = rect.position;
+    Vec2f p2 = rect.position + Vec2f(rect.size.x, 0);
+    Vec2f p3 = rect.position + rect.size;
+    Vec2f p4 = rect.position + Vec2f(0, rect.size.y);
+
+    drawQuad(p1, p2, p3, p4, color);
+}
+
 void Graphics::drawCircle(const Vec2f &position, float radius, const Color &color)
 {
     circleDrawer.setPosition(toSFMLVector(position));
@@ -85,7 +95,8 @@ void Graphics::drawArrow(const Vec2f &start, const Vec2f &end, float thickness, 
     window.draw(polygonDrawer);
 }
 
-void Graphics::drawText(const Vec2f &position, const char *text, const Color &color, int size)
+void Graphics::drawText(const Vec2f &position, const char *text, TextOrigin textOrigin, 
+                        const Color &color, int size)
 {
     assert(text != nullptr);
 
@@ -94,6 +105,15 @@ void Graphics::drawText(const Vec2f &position, const char *text, const Color &co
     textDrawer.setFillColor(toSFMLColor(color));
     textDrawer.setCharacterSize(size);
     textDrawer.setStyle(sf::Text::Bold);
+
+    if (textOrigin == TextOrigin::Centered)
+    {
+        sf::FloatRect textRect = textDrawer.getLocalBounds();
+        textDrawer.setOrigin(textRect.left + textRect.width  / 2.0f,
+                             textRect.top  + textRect.height / 2.0f);
+    }
+    else
+        textDrawer.setOrigin(sf::Vector2f(0.0f, 0.0f));
 
     window.draw(textDrawer);
 }

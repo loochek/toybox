@@ -13,6 +13,12 @@ class Entity;
  */
 class Component
 {
+public:
+    /**
+     * \return Entity which holds the component
+     */
+    Entity *getEntity() { return entity; };
+
 protected:
     Component() = delete;
     Component(Entity *entity) : entity(entity) {};
@@ -23,7 +29,7 @@ protected:
     friend class Entity;
     virtual void eventHandler(Event eventType, void *param1, void* param2) = 0;
 
-public:
+protected:
     Entity *entity;
 };
 

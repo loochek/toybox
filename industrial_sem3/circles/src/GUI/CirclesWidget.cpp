@@ -1,8 +1,11 @@
+#include "../Graphics.hpp"
 #include "CirclesWidget.hpp"
 #include "../Render/DrawableCircle.hpp"
 #include "../Render/DrawableSquare.hpp"
 #include "../Physics/PhysicalCircle.hpp"
 #include "../Physics/PhysicalCircle2.hpp"
+
+const Color BACKGROUND_COLOR = Color(0.2f, 0.2f, 0.2f);
 
 CirclesWidget::CirclesWidget(const Rect &rect, Graphics &graphics) :
                              RectangularWidget(rect), GameFramework(graphics, rect)
@@ -17,6 +20,7 @@ void CirclesWidget::update(float elapsedTime)
 
 void CirclesWidget::draw(Graphics &graphics)
 {
+    graphics.drawRect(rect, BACKGROUND_COLOR);
     gameDraw();
 }
 

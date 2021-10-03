@@ -2,13 +2,13 @@
 
 void DrawableCircle::draw(Graphics &graphics, const Rect &viewport)
 {
-    Vec2f p1 = position + Vec2f(0.0f, -radius);
-    Vec2f p2 = position + Vec2f(0.0f,  radius);
-    Vec2f p3 = position + Vec2f( radius, 0.0f);
-    Vec2f p4 = position + Vec2f(-radius, 0.0f);
+    Vec2f p1 = viewport.position + position + Vec2f(0.0f, -radius);
+    Vec2f p2 = viewport.position + position + Vec2f(0.0f,  radius);
+    Vec2f p3 = viewport.position + position + Vec2f( radius, 0.0f);
+    Vec2f p4 = viewport.position + position + Vec2f(-radius, 0.0f);
     
     if (viewport.contains(p1) && viewport.contains(p2) && viewport.contains(p3) && viewport.contains(p4))
-        graphics.drawCircle(position, radius, color);
+        graphics.drawCircle(viewport.position + position, radius, color);
 }
 
 void DrawableCircle::eventHandler(Event eventType, void *param1, void* param2)

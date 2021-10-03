@@ -17,7 +17,12 @@ protected:
      */
     bool testShape(const Vec2f &point) override;
 
-public:
+    /**
+     * \return Widget rect
+     */
+    Rect getRect() { return rect; };
+
+protected:
     /// Widget rect
     Rect rect;
 };

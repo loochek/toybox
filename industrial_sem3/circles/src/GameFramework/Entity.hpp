@@ -10,7 +10,7 @@ class Entity
 {
 public:
     /// Creates a dummy entity
-    Entity(GameFramework *app);
+    Entity(GameFramework *engine);
     ~Entity();
     
     /**
@@ -42,30 +42,46 @@ public:
     /**
      * Schedules entity deletion at the end of the logic update loop
      */
-    void scheduleForDeletion();
+    void scheduleForDeletion() { active = false; scheduledForDeletion = true; };
+
+    /**
+     * \return Activity status
+     */
+    bool isActive() { return active; };
 
     /**
      * Makes entity visible to systems
      */
-    void enable();
+    void enable() { active = true; };
 
     /**
      * Makes entity invisible to systems
      */
-    void disable();
+    void disable() { active = false; };
 
-public:
-    bool drawableComponentPresent;
-    Drawable *drawableComponent;
+    /**
+     * \return Drawable component of the entity or null pointer
+     */
+    Drawable *getDrawableComponent() { return drawableComponent; };
 
-    bool physicalComponentPresent;
+    /**
+     * \return Drawable component of the entity or null pointer
+     */
+    PhysicalObject *getPhysicalComponent() { return physicalComponent; };
+
+    /**
+     * \return Engine instancce
+     */
+    GameFramework *engineInstance() { return engine; };
+
+private:
+    Drawable       *drawableComponent;
     PhysicalObject *physicalComponent;
 
     GameFramework * const engine;
 
     bool active;
-
-private:
+    
     friend class GameFramework;
     bool scheduledForDeletion;
 };

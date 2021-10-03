@@ -37,12 +37,32 @@ public:
      */
     void setLabel(const char *label);
 
-public:
+    /**
+     * Sets idle color
+     * 
+     * \param color Color
+     */
+    void setIdleColor(const Color &color) { idleColor = color; };
+
+    /**
+     * Sets idle color
+     * 
+     * \param color Color
+     */
+    void setSelectedColor(const Color &color) { selectedColor = color; };
+
+    /**
+     * Sets idle color
+     * 
+     * \param color Color
+     */
+    void setPressedColor(const Color &color) { pressedColor = color; };
+
+private:
     Color idleColor;
     Color selectedColor;
     Color pressedColor;
 
-private:
     ButtonDelegate *delegate;
 
     const char *label;

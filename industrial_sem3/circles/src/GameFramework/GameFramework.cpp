@@ -86,10 +86,10 @@ void GameFramework::deleteEntities()
     {
         if ((*it)->scheduledForDeletion)
         {
-            if ((*it)->physicalComponentPresent)
+            if ((*it)->physicalComponent != nullptr)
                 physicalSystem.unregisterComponent((*it)->physicalComponent);
 
-            if ((*it)->drawableComponentPresent)
+            if ((*it)->drawableComponent != nullptr)
                 renderSystem.unregisterComponent((*it)->drawableComponent);
 
             delete *it;

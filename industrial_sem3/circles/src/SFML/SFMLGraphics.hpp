@@ -4,8 +4,15 @@
 #include <SFML/Graphics.hpp>
 #include "../Math/Vec2.hpp"
 #include "../Math/Vec3.hpp"
+#include "../Math/Rect.hpp"
 
 typedef Vec3f Color;
+
+enum class TextOrigin
+{
+    Default,
+    Centered
+};
 
 /**
  * SFML implementation of graphics abstraction
@@ -33,6 +40,14 @@ public:
      */
     void drawQuad(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Vec2f &p4,
                   const Color &color = Color(1.0f, 1.0f, 1.0f));
+
+    /**
+     * Draws a rect
+     * 
+     * \param rect Rect
+     * \param color Rect color
+     */
+    void drawRect(const Rect &rect, const Color &color = Color(1.0f, 1.0f, 1.0f));
 
     /**
      * Draws a circle
@@ -73,7 +88,7 @@ public:
      * \param thickness Thickness
      * \param color Color
      */
-    void drawText(const Vec2f &position, const char *text,
+    void drawText(const Vec2f &position, const char *text, TextOrigin textOrigin = TextOrigin::Default,
                   const Color &color = Color(), int size = 16);
 
     /**

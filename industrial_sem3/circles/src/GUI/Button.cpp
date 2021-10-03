@@ -35,14 +35,9 @@ void Button::draw(Graphics &graphics)
         break;
     }
     
-    Vec2f p1 = rect.position;
-    Vec2f p2 = rect.position + Vec2f(rect.size.x, 0);
-    Vec2f p3 = rect.position + rect.size;
-    Vec2f p4 = rect.position + Vec2f(0, rect.size.y);
-    
-    graphics.drawQuad(p1, p2, p3, p4, color);
+    graphics.drawRect(rect, color);
     if (label != nullptr)
-        graphics.drawText(rect.position, label);
+        graphics.drawText(rect.position + rect.size / 2, label, TextOrigin::Centered);
 }
 
 void Button::setDelegate(ButtonDelegate *delegate)

@@ -30,7 +30,7 @@ void RenderSystem::draw()
 {
     for (Drawable *obj : components)
     {
-        if (!obj->entity->active)
+        if (!obj->getEntity()->isActive())
             continue;
             
         obj->draw(graphics, viewport);

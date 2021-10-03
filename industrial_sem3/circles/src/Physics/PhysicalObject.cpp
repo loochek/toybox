@@ -116,10 +116,10 @@ static void collideFuncCircleCircle(PhysicalObject *obj1, PhysicalObject *obj2)
 
     if (circle1->velocity.length() + circle2->velocity.length() > CHEMICAL_TRIGGER_SPEED)
     {
-        circle1->entity->scheduleForDeletion();
-        circle2->entity->scheduleForDeletion();
+        circle1->getEntity()->scheduleForDeletion();
+        circle2->getEntity()->scheduleForDeletion();
 
-        GameFramework *engine = circle1->entity->engine;
+        GameFramework *engine = circle1->getEntity()->engineInstance();
 
         Entity *newSquare = engine->createSquare((circle1->position + circle2->position) / 2.0f,
                                                  (circle1->radius + circle2->radius) * 2.0f,
@@ -138,10 +138,10 @@ static void collideFuncCircle2Circle2(PhysicalObject *obj1, PhysicalObject *obj2
 
     if (circle1->velocity.length() + circle2->velocity.length() > CHEMICAL_TRIGGER_SPEED)
     {
-        circle1->entity->scheduleForDeletion();
-        circle2->entity->scheduleForDeletion();
+        circle1->getEntity()->scheduleForDeletion();
+        circle2->getEntity()->scheduleForDeletion();
 
-        GameFramework *engine = circle1->entity->engine;
+        GameFramework *engine = circle1->getEntity()->engineInstance();
 
         int circlesCount = (circle1->radius + circle2->radius) / 5.0f;
         Vec2f centerPos = (circle1->position + circle2->position) / 2.0f;

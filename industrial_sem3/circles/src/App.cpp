@@ -7,16 +7,17 @@ const int WINDOW_HEIGHT = 720;
 
 App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), guiManager(graphics)
 {
-    Button *button1 = new Button(Rect(Vec2f(1100.0f, 100.0f), Vec2f(100.0f, 100.0f)));
-    Button *button2 = new Button(Rect(Vec2f(1100.0f, 300.0f), Vec2f(100.0f, 100.0f)));
+    Button *button1 = new Button(Rect(Vec2f(1100.0f, 50.0f), Vec2f(100.0f, 50.0f)));
+    Button *button2 = new Button(Rect(Vec2f(1100.0f, 120.0f), Vec2f(100.0f, 50.0f)));
 
-    CirclesWidget *circles = new CirclesWidget(Rect(Vec2f(0.0f, 0.0f), Vec2f(1000, WINDOW_HEIGHT)),
+    CirclesWidget *circles = new CirclesWidget(Rect(Vec2f(50.0f, 50.0f), Vec2f(1000, 500)),
                                                graphics);
 
     button1->setDelegate(circles);
     button2->setDelegate(circles);
 
-    button1->setLabel("test label");
+    button1->setLabel("Add circle");
+    button2->setLabel("Add square");
 
     circles->addCircleButton = button1;
     circles->addSquareButton = button2;
