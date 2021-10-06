@@ -39,20 +39,22 @@ static void genericCollideFuncCircleCircle (PhysicalCircle *obj1, PhysicalCircle
 
 const IntersectFunc PhysicalObject::intersectTable[PHYS_OBJ_TYPE_COUNT][PHYS_OBJ_TYPE_COUNT] =
 {
-    // Invalid            Bound                     Circle1                    Circle2 
-    { dummyIntersectFunc, dummyIntersectFunc      , dummyIntersectFunc       , dummyIntersectFunc        },
-    { dummyIntersectFunc, dummyIntersectFunc      , intersectFuncBoundCircle , intersectFuncBoundCircle  },
-    { dummyIntersectFunc, intersectFuncCircleBound, intersectFuncCircleCircle, intersectFuncCircleCircle },
-    { dummyIntersectFunc, intersectFuncCircleBound, intersectFuncCircleCircle, intersectFuncCircleCircle }
+    // Invalid            Bound                     Circle1                    Circle2                    InertCircle
+    { dummyIntersectFunc, dummyIntersectFunc      , dummyIntersectFunc       , dummyIntersectFunc       , dummyIntersectFunc        },
+    { dummyIntersectFunc, dummyIntersectFunc      , intersectFuncBoundCircle , intersectFuncBoundCircle , intersectFuncBoundCircle  },
+    { dummyIntersectFunc, intersectFuncCircleBound, intersectFuncCircleCircle, intersectFuncCircleCircle, intersectFuncCircleCircle },
+    { dummyIntersectFunc, intersectFuncCircleBound, intersectFuncCircleCircle, intersectFuncCircleCircle, intersectFuncCircleCircle },
+    { dummyIntersectFunc, intersectFuncCircleBound, intersectFuncCircleCircle, intersectFuncCircleCircle, intersectFuncCircleCircle }
 };
 
 const CollideFunc PhysicalObject::collideTable[PHYS_OBJ_TYPE_COUNT][PHYS_OBJ_TYPE_COUNT] =
 {
-    // Invalid            Bound                 Circle1                  Circle2 
-    { dummyCollideFunc, dummyCollideFunc      , dummyCollideFunc        , dummyCollideFunc          },
-    { dummyCollideFunc, dummyCollideFunc      , collideFuncBoundCircle  , collideFuncBoundCircle    },
-    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle , collideFuncCircleCircle   },
-    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle , collideFuncCircle2Circle2 }
+    // Invalid            Bound                 Circle1                  Circle2                      InertCircle
+    { dummyCollideFunc, dummyCollideFunc      , dummyCollideFunc        , dummyCollideFunc          , dummyCollideFunc       },
+    { dummyCollideFunc, dummyCollideFunc      , collideFuncBoundCircle  , collideFuncBoundCircle    , collideFuncBoundCircle },
+    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle , collideFuncCircleCircle   , dummyCollideFunc       },
+    { dummyCollideFunc, collideFuncCircleBound, collideFuncCircleCircle , collideFuncCircle2Circle2 , dummyCollideFunc       },
+    { dummyCollideFunc, collideFuncCircleBound, dummyCollideFunc        , dummyCollideFunc          , dummyCollideFunc       }
 };
 
 

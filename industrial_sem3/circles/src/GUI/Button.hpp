@@ -15,22 +15,29 @@ public:
     Button() = delete;
     Button(const Rect  &rect,
            const Color &idleColor     = Color(0.0f, 1.0f, 1.0f),
-           const Color &selectedColor = Color(0.94f, 0.77f, 0.41f),
+           const Color &hoveredColor  = Color(0.94f, 0.77f, 0.41f),
            const Color &pressedColor  = Color(1.0f, 0.68f, 0.0f));
 
-    void update(float elapsedTime) override;
-    void draw(Graphics &graphics) override;
+    virtual ~Button();
+
+    virtual void draw(Graphics &graphics) override;
+
+    virtual void onMouseHoverBegin() override;
+    virtual void onMouseClicked() override;
+    virtual void onMouseReleased() override;
+    virtual void onMouseHoverEnd() override;
 
     /**
-     * Sets a delegate for the button
-     * Resets the delegate if null pointer is passed
+     * Sets a delegate for the button. 
+     * Resets the delegate if null pointer is passed. 
+     * Button will be responsible for its deletion. 
      * 
      * \param delegate Delegate
      */
     void setDelegate(ButtonDelegate *delegate) { this->delegate = delegate; };
 
     /**
-     * Sets a label for the button
+     * Sets a label for the button. 
      * No label will drawn if null pointer is passed
      * 
      * \param label Label text
@@ -45,22 +52,24 @@ public:
     void setIdleColor(const Color &color) { idleColor = color; };
 
     /**
-     * Sets idle color
+     * Sets hovered color
      * 
      * \param color Color
      */
-    void setSelectedColor(const Color &color) { selectedColor = color; };
+    void setHoveredColor(const Color &color) { hoveredColor = color; };
 
     /**
-     * Sets idle color
+     * Sets pressed color
      * 
      * \param color Color
      */
     void setPressedColor(const Color &color) { pressedColor = color; };
 
 private:
+    Color currColor;
+
     Color idleColor;
-    Color selectedColor;
+    Color hoveredColor;
     Color pressedColor;
 
     ButtonDelegate *delegate;
@@ -68,10 +77,11 @@ private:
     const char *label;
 };
 
-
 class ButtonDelegate
 {
 public:
+    virtual ~ButtonDelegate() {};
+
     virtual void onClick(Button *button) = 0;
 };
 

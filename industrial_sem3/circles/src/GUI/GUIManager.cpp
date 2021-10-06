@@ -1,6 +1,7 @@
 #include "GUIManager.hpp"
 
-GUIManager::GUIManager(Graphics &graphics) : graphics(graphics)
+GUIManager::GUIManager(Graphics &graphics) : graphics(graphics), 
+                                             widgetUnderMouse(nullptr), mouseWasPressed(false)
 {
 }
 
@@ -9,36 +10,57 @@ void GUIManager::addWidget(GUIWidget *widget)
     widgets.push_back(widget);
 }
 
-void GUIManager::update(float elapsedTime, const Vec2f &mousePosition, bool mousePressed)
+void GUIManager::handleMouse(const Vec2f &mousePosition, bool mousePressed)
 {
-    for (GUIWidget *widget : widgets)
+    if (widgetUnderMouse != nullptr)
     {
-        bool selected = widget->testShape(mousePosition);
+        bool hovered = widgetUnderMouse->testShape(mousePosition);
 
-        if (selected && mousePressed)
+        if (hovered)
         {
-            if (widget->state == WidgetState::Selected)
-                widget->state = WidgetState::Clicked;
-            else
-                widget->state = WidgetState::Pressed;
-        }
-        else if (selected)
-        {
-            if (widget->state == WidgetState::Pressed)
-                widget->state = WidgetState::Released;
-            else
-                widget->state = WidgetState::Selected;
+            if (!mouseWasPressed && !mousePressed)
+                widgetUnderMouse->onMouseHover();
+            else if (!mouseWasPressed && mousePressed)
+                widgetUnderMouse->onMouseClicked();
+            else if (mouseWasPressed && !mousePressed)
+                widgetUnderMouse->onMouseReleased();
+            else if (mouseWasPressed && mousePressed)
+                widgetUnderMouse->onMousePressed();
+
+            mouseWasPressed = mousePressed;
+            return;
         }
         else
         {
-            if (widget->state == WidgetState::Pressed)
-                widget->state = WidgetState::Released;
-            else
-                widget->state = WidgetState::Idle;
-        }
+            if (mouseWasPressed)
+                widgetUnderMouse->onMouseReleased();
 
-        widget->update(elapsedTime);
+            widgetUnderMouse->onMouseHoverEnd();
+            widgetUnderMouse = nullptr;
+        }
     }
+
+    for (GUIWidget *widget : widgets)
+    {
+        bool hovered = widget->testShape(mousePosition);
+        if (!hovered)
+            continue;
+
+        widget->onMouseHoverBegin();
+        if (mousePressed)
+            widget->onMouseClicked();
+
+        widgetUnderMouse = widget;
+        break;
+    }
+
+    mouseWasPressed = mousePressed;
+}
+
+void GUIManager::update(float elapsedTime)
+{
+    for (GUIWidget *widget : widgets)
+        widget->update(elapsedTime);
 }
 
 void GUIManager::draw()

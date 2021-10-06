@@ -28,6 +28,17 @@ public:
     Graphics(const Vec2i &resolution);
 
     ~Graphics();
+
+    /**
+     * Draws a triangle by points
+     * 
+     * \param p1 Point 1
+     * \param p2 Point 2
+     * \param p3 Point 3
+     * \param color Triangle color
+     */
+    void drawTriangle(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3,
+                      const Color &color = Color(1.0f, 1.0f, 1.0f));
     
     /**
      * Draws a quad by points

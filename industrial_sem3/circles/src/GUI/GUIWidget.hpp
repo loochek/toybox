@@ -6,30 +6,21 @@
 
 class Graphics;
 
-enum class WidgetState
-{
-    Idle,
-    Selected,
-    Clicked,
-    Pressed,
-    Released
-};
-
 /**
  * Base class for GUI widgets
  */
 class GUIWidget
 {
 protected:
-    GUIWidget();
-    virtual ~GUIWidget();
+    GUIWidget() {};
+    virtual ~GUIWidget() {};
     
     /**
      * Updates the widget (maybe according to the updated state)
-     * 
+     * virtual void onMouseHovered() = 0;
      * \param elapsedTime Time delta
      */
-    virtual void update(float elapsedTime);
+    virtual void update(float elapsedTime) {};
 
     /**
      * Draws the widget
@@ -45,11 +36,16 @@ protected:
      */
     virtual bool testShape(const Vec2f &point) = 0;
 
-protected:
-    // to access protected methods and widget state
-    friend class GUIManager;
+    virtual void onMouseHoverBegin() {};
+    virtual void onMouseHover() {};
+    virtual void onMouseHoverEnd() {};
 
-    WidgetState state;
+    virtual void onMouseClicked() {};
+    virtual void onMousePressed() {};
+    virtual void onMouseReleased() {};
+
+    // to access protected methods
+    friend class GUIManager;
 };
 
 #endif

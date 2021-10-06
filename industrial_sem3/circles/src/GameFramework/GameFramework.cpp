@@ -1,8 +1,10 @@
 #include "GameFramework.hpp"
 #include "../Physics/PhysicalCircle.hpp"
 #include "../Physics/PhysicalCircle2.hpp"
+#include "../Physics/InertPhysicalCircle.hpp"
 #include "../Render/DrawableCircle.hpp"
 #include "../Render/DrawableSquare.hpp"
+#include "../Render/DrawableTriangle.hpp"
 
 GameFramework::GameFramework(Graphics &graphics, const Rect &viewport) : renderSystem(graphics, viewport),
                              circlesCount(0), squaresCount(0)
@@ -67,6 +69,22 @@ Entity *GameFramework::createSquare(Vec2f position, float sideLength, Color colo
 
     addEntity(ent);
     squaresCount++;
+    return ent;
+}
+
+Entity *GameFramework::createTriangle(Vec2f position, float sideLength, Color color, Vec2f velocity)
+{
+    Entity *ent = new Entity(this);
+
+    Drawable *drawable = new DrawableTriangle(ent, position, sideLength, color);
+    ent->addDrawableComponent(drawable);
+    renderSystem.registerComponent(drawable);
+
+    PhysicalObject *physical = new InertPhysicalCircle(ent, position, sideLength / sqrt(3), velocity);
+    ent->addPhysicalComponent(physical);
+    physicalSystem.registerComponent(physical);
+
+    addEntity(ent);
     return ent;
 }
 

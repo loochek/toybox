@@ -21,6 +21,18 @@ Graphics::~Graphics()
     window.close();
 }
 
+void Graphics::drawTriangle(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Color &color)
+{
+    polygonDrawer.setFillColor(toSFMLColor(color));
+
+    polygonDrawer.setPointCount(3);
+    polygonDrawer.setPoint(0, toSFMLVector(p1));
+    polygonDrawer.setPoint(1, toSFMLVector(p2));
+    polygonDrawer.setPoint(2, toSFMLVector(p3));
+
+    window.draw(polygonDrawer);
+}
+
 void Graphics::drawQuad(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Vec2f &p4, const Color &color)
 {
     polygonDrawer.setFillColor(toSFMLColor(color));

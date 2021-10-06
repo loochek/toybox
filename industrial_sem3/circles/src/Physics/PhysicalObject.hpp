@@ -4,7 +4,7 @@
 #include "../GameFramework/Component.hpp"
 #include "../Math/Vec2.hpp"
 
-const int PHYS_OBJ_TYPE_COUNT = 4;
+const int PHYS_OBJ_TYPE_COUNT = 5;
 
 enum class PhysicalObjectType
 {
@@ -12,6 +12,7 @@ enum class PhysicalObjectType
     Bound,
     Circle,
     Circle2,
+    InertCircle
 };
 
 class PhysicalObject;

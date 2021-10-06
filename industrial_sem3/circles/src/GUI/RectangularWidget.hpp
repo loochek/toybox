@@ -6,6 +6,12 @@
 
 class RectangularWidget : public GUIWidget
 {
+public:
+    /**
+     * \return Widget rect
+     */
+    Rect getRect() { return rect; };
+
 protected:
     RectangularWidget() = delete;
     RectangularWidget(const Rect &rect);
@@ -16,11 +22,6 @@ protected:
      * \param point Point
      */
     bool testShape(const Vec2f &point) override;
-
-    /**
-     * \return Widget rect
-     */
-    Rect getRect() { return rect; };
 
 protected:
     /// Widget rect

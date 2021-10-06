@@ -26,10 +26,16 @@ public:
      * Updates widgets
      * 
      * \param elapsedTime Time delta
+     */
+    void update(float elapsedTime);
+
+    /**
+     * Updates mouse position and sends mouse events to the widgets
+     * 
      * \param mousePosition Mouse position
      * \param mousePressed Mouse button state
      */
-    void update(float elapsedTime, const Vec2f &mousePosition, bool mousePressed);
+    void handleMouse(const Vec2f &mousePosition, bool mousePressed);
 
     /**
      * Draws widgets
@@ -40,6 +46,9 @@ private:
     Graphics &graphics;
 
     std::vector<GUIWidget*> widgets;
+
+    GUIWidget *widgetUnderMouse;
+    bool mouseWasPressed;
 };
 
 #endif
