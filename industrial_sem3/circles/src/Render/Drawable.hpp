@@ -7,6 +7,12 @@
 class Graphics;
 
 /**
+ * How far the drawable object can go outside the viewport. 
+ * Implementations of drawable components should obey this value to avoid bound flickering
+ */
+const float VIEWPORT_THRESHOLD = 2.0f;
+
+/**
  * Abstract component for objects that can be drawn
  */
 class Drawable : public Component

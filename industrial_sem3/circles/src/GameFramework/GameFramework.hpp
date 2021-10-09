@@ -13,8 +13,9 @@ const float CIRCLE_SIZE   = 5.0f;
 const float SQUARE_SIZE   = 10.0f;
 const float TRIANGLE_SIZE = 10.0f;
 
-const Color CIRCLE_COLOR = Color(0.0f, 1.0f, 1.0f);
-const Color SQUARE_COLOR = Color(0.0f, 1.0f, 0.0f);
+const Color CIRCLE_COLOR   = Color(0.0f, 1.0f, 1.0f);
+const Color SQUARE_COLOR   = Color(0.0f, 1.0f, 0.0f);
+const Color TRIANGLE_COLOR = Color(1.0f, 1.0f, 0.0f);
 
 const float INITIAL_SPEED = 100.0f;
 
@@ -31,16 +32,16 @@ public:
 
     void addEntity(Entity *entity);
 
-    Entity *createCircle(Vec2f position = Vec2f(), float radius = CIRCLE_SIZE,
-                         Color color = CIRCLE_COLOR, Vec2f velocity = Vec2f());
+    Entity *createCircle(const Vec2f &position = Vec2f(), float radius = CIRCLE_SIZE,
+                         const Color &color = CIRCLE_COLOR, const Vec2f &velocity = Vec2f());
 
-    Entity *createSquare(Vec2f position = Vec2f(), float sideLength = SQUARE_SIZE,
-                         Color color = SQUARE_COLOR, Vec2f velocity = Vec2f());
+    Entity *createSquare(const Vec2f &position = Vec2f(), float sideLength = SQUARE_SIZE,
+                         const Color &color = SQUARE_COLOR, const Vec2f &velocity = Vec2f());
 
-    Entity *createTriangle(Vec2f position = Vec2f(), float sideLength = TRIANGLE_SIZE,
-                           Color color = SQUARE_COLOR, Vec2f velocity = Vec2f());
+    Entity *createTriangle(const Vec2f &position = Vec2f(), float sideLength = TRIANGLE_SIZE,
+                           const Color &color = TRIANGLE_COLOR, const Vec2f &velocity = Vec2f());
 
-    Entity *createBound(Vec2f position = Vec2f(),
+    Entity *createBound(const Vec2f &position = Vec2f(),
                         PhysicalBoundType boundType = PhysicalBoundType::Horizontal);
 
     int getCirclesCount() { return circlesCount; };

@@ -35,13 +35,15 @@ App::App() : graphics(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), guiManager(graphics)
 
     chart = new Chart(Rect(CHART_POSITION, CHART_SIZE));
 
-    ButtonDelegate *addCircleButtonDelegate   = new AddCircleButtonDelegate  (circlesWidget);
-    ButtonDelegate *addSquareButtonDelegate   = new AddSquareButtonDelegate  (circlesWidget);
-    ButtonDelegate *addTriangleButtonDelegate = new AddTriangleButtonDelegate(circlesWidget);
+    addCircleButton->setDelegate(new AddObjectDelegate(circlesWidget, &CirclesWidget::createCircle,
+                                                       CIRCLE_SIZE, CIRCLE_COLOR));
 
-    addCircleButton->setDelegate(addCircleButtonDelegate);
-    addSquareButton->setDelegate(addSquareButtonDelegate);
-    addTriangleButton->setDelegate(addTriangleButtonDelegate);
+    addSquareButton->setDelegate(new AddObjectDelegate(circlesWidget, &CirclesWidget::createSquare,
+                                                       SQUARE_SIZE, SQUARE_COLOR));
+
+    addTriangleButton->setDelegate(new AddObjectDelegate(circlesWidget, &CirclesWidget::createTriangle,
+                                                         TRIANGLE_SIZE, TRIANGLE_COLOR));
+
     addCircleButton->setLabel("Add circle");
     addSquareButton->setLabel("Add square");
     addTriangleButton->setLabel("Add triangle");

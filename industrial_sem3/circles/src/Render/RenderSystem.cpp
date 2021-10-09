@@ -2,8 +2,6 @@
 #include "RenderSystem.hpp"
 #include "../GameFramework/Entity.hpp"
 
-const int MAX_OBJECTS_COUNT = 100;
-
 RenderSystem::RenderSystem(Graphics &graphics, const Rect &viewport) : graphics(graphics), viewport(viewport)
 {
 }

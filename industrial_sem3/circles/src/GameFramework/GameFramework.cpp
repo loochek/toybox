@@ -38,7 +38,8 @@ void GameFramework::addEntity(Entity *entity)
     entities.insert(entity);
 }
 
-Entity *GameFramework::createCircle(Vec2f position, float radius, Color color, Vec2f velocity)
+Entity *GameFramework::createCircle(const Vec2f &position, float radius,
+                                    const Color &color, const Vec2f &velocity)
 {
     Entity *ent = new Entity(this);
 
@@ -55,7 +56,8 @@ Entity *GameFramework::createCircle(Vec2f position, float radius, Color color, V
     return ent;
 }
 
-Entity *GameFramework::createSquare(Vec2f position, float sideLength, Color color, Vec2f velocity)
+Entity *GameFramework::createSquare(const Vec2f &position, float sideLength,
+                                    const Color &color, const Vec2f &velocity)
 {
     Entity *ent = new Entity(this);
 
@@ -72,7 +74,8 @@ Entity *GameFramework::createSquare(Vec2f position, float sideLength, Color colo
     return ent;
 }
 
-Entity *GameFramework::createTriangle(Vec2f position, float sideLength, Color color, Vec2f velocity)
+Entity *GameFramework::createTriangle(const Vec2f &position, float sideLength,
+                                      const Color &color, const Vec2f &velocity)
 {
     Entity *ent = new Entity(this);
 
@@ -88,7 +91,7 @@ Entity *GameFramework::createTriangle(Vec2f position, float sideLength, Color co
     return ent;
 }
 
-Entity *GameFramework::createBound(Vec2f position, PhysicalBoundType boundType)
+Entity *GameFramework::createBound(const Vec2f &position, PhysicalBoundType boundType)
 {
     Entity *ent = new Entity(this);
 

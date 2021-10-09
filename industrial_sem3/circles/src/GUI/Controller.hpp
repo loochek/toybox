@@ -4,64 +4,34 @@
 #include "Button.hpp"
 #include "CirclesWidget.hpp"
 
-class AddCircleButtonDelegate : public ButtonDelegate
+typedef Entity *(CirclesWidget::*AddObjectFunc)(const Vec2f &position, float size,
+                                                const Color &color, const Vec2f &velocity);
+
+class AddObjectDelegate : public ButtonDelegate
 {
 public:
-    AddCircleButtonDelegate() = delete;
+    AddObjectDelegate() = delete;
 
     /**
-     * \param circlesWidget Circles widget to add circle to
+     * \param circlesWidget Circles widget instance to add object to
+     * \param addObjectFunc Delegate function
      */
-    AddCircleButtonDelegate(CirclesWidget *circlesWidget) : circlesWidget(circlesWidget) {};
+    AddObjectDelegate(CirclesWidget *circlesWidget, AddObjectFunc addObjectFunc, float size, const Color &color) :
+                      circlesWidget(circlesWidget), func(addObjectFunc), size(size), color(color) {};
 
     virtual void onClick(Button *button) override
     {
-        circlesWidget->createCircle(circlesWidget->getRect().size / 2, CIRCLE_SIZE, CIRCLE_COLOR,
-                                    Vec2f(0.0f, INITIAL_SPEED).rotated(0.01 * rand()));
+        (circlesWidget->*func)(circlesWidget->getRect().size / 2, size, color,
+                               Vec2f(0.0f, INITIAL_SPEED).rotated(0.01 * rand()));
     }
 
 private:
     CirclesWidget *circlesWidget;
-};
 
-class AddSquareButtonDelegate : public ButtonDelegate
-{
-public:
-    AddSquareButtonDelegate() = delete;
+    AddObjectFunc func;
 
-    /**
-     * \param circlesWidget Circles widget to add square to
-     */
-    AddSquareButtonDelegate(CirclesWidget *circlesWidget) : circlesWidget(circlesWidget) {};
-
-    virtual void onClick(Button *button) override
-    {
-        circlesWidget->createSquare(circlesWidget->getRect().size / 2, SQUARE_SIZE, SQUARE_COLOR,
-                                    Vec2f(0.0f, INITIAL_SPEED).rotated(0.01 * rand()));
-    }
-
-private:
-    CirclesWidget *circlesWidget;
-};
-
-class AddTriangleButtonDelegate : public ButtonDelegate
-{
-public:
-    AddTriangleButtonDelegate() = delete;
-
-    /**
-     * \param circlesWidget Circles widget to add square to
-     */
-    AddTriangleButtonDelegate(CirclesWidget *circlesWidget) : circlesWidget(circlesWidget) {};
-
-    virtual void onClick(Button *button) override
-    {
-        circlesWidget->createTriangle(circlesWidget->getRect().size / 2, TRIANGLE_SIZE, SQUARE_COLOR,
-                                      Vec2f(0.0f, INITIAL_SPEED).rotated(0.01 * rand()));
-    }
-
-private:
-    CirclesWidget *circlesWidget;
+    float size;
+    Color color;
 };
 
 #endif
