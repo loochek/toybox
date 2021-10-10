@@ -4,8 +4,15 @@
 #include <SDL2/SDL.h>
 #include "../Math/Vec2.hpp"
 #include "../Math/Vec3.hpp"
+#include "../Math/Rect.hpp"
 
 typedef Vec3f Color;
+
+enum class TextOrigin
+{
+    Default,
+    Centered
+};
 
 /**
  * SDL implementation of graphics abstraction
@@ -24,6 +31,17 @@ public:
     ~Graphics();
 
     /**
+     * Draws a triangle by points
+     * 
+     * \param p1 Point 1
+     * \param p2 Point 2
+     * \param p3 Point 3
+     * \param color Triangle color
+     */
+    void drawTriangle(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3,
+                      const Color &color = Color(1.0f, 1.0f, 1.0f));
+    
+    /**
      * Draws a quad by points
      * 
      * \param p1 Point 1
@@ -36,13 +54,21 @@ public:
                   const Color &color = Color(1.0f, 1.0f, 1.0f));
 
     /**
+     * Draws a rect
+     * 
+     * \param rect Rect
+     * \param color Rect color
+     */
+    void drawRect(const Rect &rect, const Color &color = Color(1.0f, 1.0f, 1.0f));
+
+    /**
      * Draws a circle
      * 
      * \param position Circle position
      * \param radius Circle radius
      * \param color Circle color
      */
-    void drawCircle(const Vec2f &position, float radius = 10.0f, const Color &color = Color(1.0f, 1.0f, 1.0f));
+    void drawCircle(const Vec2f &position, float radius = 1.0f, const Color &color = Color(1.0f, 1.0f, 1.0f));
 
     /**
      * Draws a line segment specified by two points
@@ -65,6 +91,17 @@ public:
      */
     void drawArrow(const Vec2f &start, const Vec2f &end, float thickness = 1.0f,
                    const Color &color = Color(1.0f, 1.0f, 1.0f));
+
+    /**
+     * Draws a text
+     * 
+     * \param start Start point
+     * \param end End point
+     * \param thickness Thickness
+     * \param color Color
+     */
+    void drawText(const Vec2f &position, const char *text, TextOrigin textOrigin = TextOrigin::Default,
+                  const Color &color = Color(), int size = 16);
 
     /**
      * Clears the screen
