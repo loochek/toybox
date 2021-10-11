@@ -72,8 +72,7 @@ void App::run()
 
         chart->setValue(CIRCLES_GRAPH_ID, circlesWidget->getCirclesCount());
         chart->setValue(SQUARES_GRAPH_ID, circlesWidget->getSquaresCount());
-
-        guiManager.handleMouse(graphics.getWindowMousePosition(), graphics.isLeftMouseButtonPressed());
+        
         guiManager.update(elapsedTime);
 
         // Draw

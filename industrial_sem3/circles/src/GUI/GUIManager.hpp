@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "GUIWidget.hpp"
+#include "MouseManager.hpp"
 
 class Graphics;
 
@@ -23,19 +24,11 @@ public:
     void addWidget(GUIWidget *widget);
 
     /**
-     * Updates widgets
+     * Handles events and updates widgets
      * 
      * \param elapsedTime Time delta
      */
     void update(float elapsedTime);
-
-    /**
-     * Updates mouse position and sends mouse events to the widgets
-     * 
-     * \param mousePosition Mouse position
-     * \param mousePressed Mouse button state
-     */
-    void handleMouse(const Vec2f &mousePosition, bool mousePressed);
 
     /**
      * Draws widgets
@@ -47,8 +40,9 @@ private:
 
     std::vector<GUIWidget*> widgets;
 
-    GUIWidget *widgetUnderMouse;
-    bool mouseWasPressed;
+    // to access private fields
+    friend class MouseManager;
+    MouseManager mouseManager;
 };
 
 #endif

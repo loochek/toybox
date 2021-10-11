@@ -18,7 +18,7 @@ Graphics::Graphics(const Vec2i &resolution, const char *title)
     if (window == nullptr)
         throw std::runtime_error("Unable to init SDL");
 
-    renderer = SDL_CreateRenderer(window, -1, 0);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
     if (window == nullptr)
         throw std::runtime_error("SDL: unable to create renderer");
 
@@ -131,6 +131,11 @@ void Graphics::drawText(const Vec2f &position, const char *text, TextOrigin text
     int textWidth = 0, textHeight = 0;
     SDL_QueryTexture(textTexture, NULL, NULL, &textWidth, &textHeight);
 
+    SDL_Rect srcRect = {0};
+    srcRect.x = 0;
+    srcRect.y = 0;
+    srcRect.w = textWidth;
+    srcRect.h = textHeight;
 
     SDL_Rect dstRect = {0};
     dstRect.x = position.x;
@@ -138,7 +143,7 @@ void Graphics::drawText(const Vec2f &position, const char *text, TextOrigin text
     dstRect.w = textWidth;
     dstRect.h = textHeight;
 
-    SDL_RenderCopy(renderer, texture, NULL, &dstRect);
+    SDL_RenderCopy(renderer, texture, &srcRect, &dstRect);
 
     SDL_DestroyTexture(textTexture);
     SDL_FreeSurface(textSurface);
@@ -180,13 +185,13 @@ float Graphics::timerReset()
 bool Graphics::isLeftMouseButtonPressed()
 {
     int buttonState = SDL_GetMouseState(nullptr, nullptr);
-    return SDL_BUTTON(SDL_BUTTON_LEFT);
+    return buttonState && SDL_BUTTON_LMASK;
 }
 
 bool Graphics::isRightMouseButtonPressed()
 {
     int buttonState = SDL_GetMouseState(nullptr, nullptr);
-    return SDL_BUTTON(SDL_BUTTON_RIGHT);
+    return buttonState && SDL_BUTTON_RMASK;
 }
 
 Vec2f Graphics::getWindowMousePosition()

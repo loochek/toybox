@@ -46,6 +46,8 @@ protected:
 
     // to access protected methods
     friend class GUIManager;
+    // to send events to widgets
+    friend class MouseManager;
 };
 
 #endif
