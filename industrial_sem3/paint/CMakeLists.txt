@@ -9,7 +9,7 @@ set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fs
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
 aux_source_directory(src PAINT_SOURCES)
-#aux_source_directory(src/GUI PAINT_SOURCES)
+aux_source_directory(src/GUI PAINT_SOURCES)
 aux_source_directory(src/Math PAINT_SOURCES)
 aux_source_directory(src/LGL PAINT_SOURCES)
 

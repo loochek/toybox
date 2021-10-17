@@ -2,25 +2,15 @@
 #define GUI_MANAGER_HPP
 
 #include <vector>
-#include "GUIWidget.hpp"
+#include "../LGL/LGL.hpp"
 
-class Graphics;
+class MainWidget;
 
 class GUIManager
 {
 public:
-    /**
-     * \param graphics Graphics context for widget drawing and mouse handling
-     */
-    GUIManager(Graphics &graphics);
+    GUIManager(LGL::RenderWindow &window, MainWidget *root);
     ~GUIManager();
-
-    /**
-     * Adds GUI widget to be controlled
-     * 
-     * \param widget GUI widget
-     */
-    void addWidget(GUIWidget *widget);
 
     /**
      * Updates widgets
@@ -31,11 +21,8 @@ public:
 
     /**
      * Updates mouse position and sends mouse events to the widgets
-     * 
-     * \param mousePosition Mouse position
-     * \param mousePressed Mouse button state
      */
-    void handleMouse(const Vec2f &mousePosition, bool mousePressed);
+    void handleMouse();
 
     /**
      * Draws widgets
@@ -43,12 +30,9 @@ public:
     void draw();
 
 private:
-    Graphics &graphics;
+    LGL::RenderWindow &mWindow;
 
-    std::vector<GUIWidget*> widgets;
-
-    GUIWidget *widgetUnderMouse;
-    bool mouseWasPressed;
+    MainWidget *mRoot;
 };
 
 #endif

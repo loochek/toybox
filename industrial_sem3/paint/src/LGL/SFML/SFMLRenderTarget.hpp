@@ -25,7 +25,7 @@ namespace LGL
          * \param color Triangle color
          */
         void drawTriangle(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3,
-                        const Color &color = Color(1.0f, 1.0f, 1.0f));
+                        const Color &color = Color::White);
         
         /**
          * Draws a quad by points
@@ -37,7 +37,7 @@ namespace LGL
          * \param color Quad color
          */
         void drawQuad(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Vec2f &p4,
-                    const Color &color = Color(1.0f, 1.0f, 1.0f));
+                    const Color &color = Color::White);
 
         /**
          * Draws a rect
@@ -45,7 +45,7 @@ namespace LGL
          * \param rect Rect
          * \param color Rect color
          */
-        void drawRect(const FloatRect &rect, const Color &color = Color(1.0f, 1.0f, 1.0f));
+        void drawRect(const FloatRect &rect, const Color &color = Color::White);
 
         /**
          * Draws a circle
@@ -54,8 +54,7 @@ namespace LGL
          * \param radius Circle radius
          * \param color Circle color
          */
-        void drawCircle(const Vec2f &position, float radius = 1.0f,
-                        const Color &color = Color(1.0f, 1.0f, 1.0f));
+        void drawCircle(const Vec2f &position, float radius = 1.0f, const Color &color = Color::White);
 
         /**
          * Draws a line segment specified by two points
@@ -66,7 +65,7 @@ namespace LGL
          * \param color Color
          */
         void drawLine(const Vec2f &p1, const Vec2f &p2, float thickness = 1.0f,
-                    const Color &color = Color(1.0f, 1.0f, 1.0f));
+                    const Color &color = Color::White);
 
         /**
          * Draws an arrow specified by two points
@@ -77,7 +76,7 @@ namespace LGL
          * \param color Color
          */
         void drawArrow(const Vec2f &start, const Vec2f &end, float thickness = 1.0f,
-                    const Color &color = Color(1.0f, 1.0f, 1.0f));
+                    const Color &color = Color::White);
 
         /**
          * Draws the render texture with specified viewport position. 
@@ -87,7 +86,8 @@ namespace LGL
          * \param position Position of left top corner of the part
          * \param viewportPosition Position of the viewport to be drawn
          */
-        void drawRenderTexture(RenderTexture &texture, const Vec2f &position, const Vec2f &viewportPosition);
+        void drawRenderTexture(RenderTexture &texture, const Vec2f &position,
+                               const Vec2f &viewportPosition = Vec2f());
 
         // /**
         //  * Draws a text
@@ -105,15 +105,15 @@ namespace LGL
          * 
          * \param clearColor Clear color
          */
-        void clear(const Color &clearColor = Color());
+        void clear(const Color &clearColor = Color::Transparent);
 
     protected:
         RenderTarget(sf::RenderTarget *renderTarget);
 
     private:
-        static sf::CircleShape sCircleDrawer;
-        static sf::ConvexShape sPolygonDrawer;
-        static sf::Sprite      sRenderTextureDrawer;
+        sf::CircleShape mCircleDrawer;
+        sf::ConvexShape mPolygonDrawer;
+        sf::Sprite      mRenderTextureDrawer;
 
         sf::RenderTarget *mRenderTarget;
     };

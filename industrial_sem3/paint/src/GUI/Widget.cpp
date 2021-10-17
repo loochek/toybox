@@ -1,39 +1,37 @@
 #include <stdexcept>
 #include "Widget.hpp"
 
-Widget::Widget(const IntRect &widgetRect, Widget *parent) : mRect(widgetRect) {};
+Widget::Widget(const IntRect &widgetRect, Widget *parent) : mRect(widgetRect), mTexture(widgetRect.size) {};
 
-void Widget::update(float elapsedTime)
-{
-    updateChildren(elapsedTime);
-}
-
-void Widget::updateChildren(float elapsedTime)
+Widget::~Widget()
 {
     for (Widget *child : mChildren)
-        child->update(elapsedTime);
+        delete child;
 }
 
-void Widget::draw(Graphics &graphics)
+void Widget::onUpdate(const Vec2i &parentAbsPos, float elapsedTime)
 {
-    drawChildren(graphics);
-}
-
-void Widget::drawChildren(Graphics &graphics)
-{
+    Vec2i currAbsPos = parentAbsPos + mRect.position;
     for (Widget *child : mChildren)
-        child->draw(graphics);
+        child->onUpdate(currAbsPos, elapsedTime);
 }
 
-void Widget::addChild(Widget *child)
+void Widget::onRedraw()
+{
+    mTexture.clear();
+    redrawThis();
+    for (Widget *child : mChildren)
+    {
+        child->onRedraw();
+        mTexture.drawRenderTexture(child->mTexture, child->mRect.position);
+    }
+}
+
+bool Widget::addChild(Widget *child)
 {
     if (!IntRect(Vec2i(), mRect.size).contains(child->mRect))
-        throw std::runtime_error("Child rect is outside parent rect");
+        return false;
 
     mChildren.push_back(child);
+    return true;
 }
-
-// bool Widget::testShapePoint(const Vec2f &point)
-// {
-//     return rect.contains(point);
-// }

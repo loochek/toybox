@@ -2,7 +2,7 @@
 #define APP_HPP
 
 #include "LGL/LGL.hpp"
-//#include "GUI/GUIManager.hpp"
+#include "GUI/GUIManager.hpp"
 
 /**
  * App framework
@@ -17,9 +17,13 @@ public:
     void run();
 
 private:
-    LGL::RenderWindow window;
-    LGL::RenderTexture rt;
-    //GUIManager guiManager;
+    LGL::RenderWindow mWindow;
+    GUIManager        *mGuiManager;
+
+    // LGL::RenderTexture texture1;
+    // LGL::RenderTexture texture2;
+    // LGL::RenderTexture texture3;
+    // LGL::RenderTexture texture4;
 };
 
 #endif

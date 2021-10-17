@@ -5,11 +5,10 @@
 #include "../../Math/Vec2.hpp"
 #include "../../Math/Vec3.hpp"
 #include "../../Math/Rect.hpp"
+#include "../Color.hpp"
 
 namespace LGL
 {
-    typedef Vec3f Color;
-
     enum class TextOrigin
     {
         Default,
@@ -23,7 +22,7 @@ namespace LGL
 
     inline sf::Color toSFMLColor(const Color &color)
     {
-        return sf::Color(color.x * 255, color.y * 255, color.z * 255);
+        return sf::Color(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
     }
 
     inline Vec2f fromSFMLVector(const sf::Vector2f &vector)

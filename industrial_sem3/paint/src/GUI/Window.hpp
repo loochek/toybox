@@ -1,13 +1,18 @@
 #ifndef WINDOW_HPP
 #define WINDOW_HPP
 
-#include "GUIWidget.hpp"
+#include "Widget.hpp"
 
-class Window : public GUIWidget
+class WindowBody;
+class WindowHeader;
+
+class Window : public Widget
 {
 public:
     Window() = delete;
-    Window(const Rect &windowRect);
+    Window(const IntRect &windowRect, Widget *parent = nullptr);
+
+    virtual void redrawThis() override;
 };
 
 #endif

@@ -4,61 +4,22 @@
 #include <vector>
 #include "../Math/Vec2.hpp"
 #include "../Math/Rect.hpp"
-
-class Graphics;
+#include "../LGL/LGL.hpp"
 
 /**
  * Base class for GUI widgets
  */
 class Widget
 {
-protected:
-    Widget(const IntRect &widgetRect, Widget *parent = nullptr);
-    virtual ~Widget() {};
-    
-    /**
-     * Updates the widget
-     * 
-     * \param elapsedTime Time delta
-     */
-    virtual void update(float elapsedTime);
-
-    /**
-     * Updates child widgets
-     * 
-     * \param elapsedTime Time delta
-     */
-    virtual void updateChildren(float elapsedTime);
-
-    /**
-     * Draws the widget
-     * 
-     * \param graphics Graphics context
-     */
-    virtual void draw(Graphics &graphics);
-
-    /**
-     * Draws child widgets
-     * 
-     * \param elapsedTime Time delta
-     */
-    virtual void drawChildren(Graphics &graphics);
-
+public:
     /**
      * Adds children widget. 
      * Child rect must be inside parent rect. 
      * 
      * \param child Child widget
+     * \return True if added, false if widget's rect doesn't fit into the parent
      */
-    void addChild(Widget *child);
-
-    // /**
-    //  * Checks point to be inside widget shape. 
-    //  * This is the additional check
-    //  * 
-    //  * \param point Point to test
-    //  */
-    // virtual bool testShapePoint(const Vec2f &point) { return true };
+    bool addChild(Widget *child);
 
     /**
      * \return Widget rect
@@ -66,11 +27,38 @@ protected:
     IntRect getRect() { return mRect; };
 
 protected:
+    Widget() = delete;
+    
+    /**
+     * \param widgetRect Widget's size and position relative to parent widget
+     * \param parent Widget parent
+     */
+    Widget(const IntRect &widgetRect, Widget *parent = nullptr);
+    virtual ~Widget();
+
+    // Events handlers
+
+    virtual void onUpdate(const Vec2i &parentAbsPos, float elapsedTime);
+    virtual void onRedraw();
+
+    /**
+     * Redraws this widget. 
+     * Called by redraw event handler before children are redrawn
+     */
+    virtual void redrawThis() {};
+
+protected:
     Widget *mParent;
     std::vector<Widget*> mChildren;
 
     /// Widget's size and position relative to parent widget
     IntRect mRect;
+
+    /// Widget's texture
+    LGL::RenderTexture mTexture;
+
+    // To access protected methods
+    friend class GUIManager;
 };
 
 #endif

@@ -3,10 +3,15 @@
 
 #include "Widget.hpp"
 
+class Window;
+
 class WindowHeader : public Widget
 {
 public:
-    WindowHeader(const IntRect &widgetRect);
+    WindowHeader() = delete;
+    WindowHeader(Window *parent);
+
+    virtual void redrawThis() override;
 };
 
 #endif
