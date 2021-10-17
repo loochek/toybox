@@ -89,16 +89,17 @@ namespace LGL
         void drawRenderTexture(RenderTexture &texture, const Vec2f &position,
                                const Vec2f &viewportPosition = Vec2f());
 
-        // /**
-        //  * Draws a text
-        //  * 
-        //  * \param start Start point
-        //  * \param end End point
-        //  * \param thickness Thickness
-        //  * \param color Color
-        //  */
-        // void drawText(const Vec2f &position, const char *text, TextOrigin textOrigin = TextOrigin::Default,
-        //               const Color &color = Color(), int size = 16);
+        /**
+         * Draws a text
+         * 
+         * \param position Text position
+         * \param text Text to draw
+         * \param textOrigin How to interpret position
+         * \param color Text color
+         * \param size Font size
+         */
+        void drawText(const Vec2f &position, const char *text, TextOrigin textOrigin = TextOrigin::Default,
+                      const Color &color = Color(), int size = 16);
 
         /**
          * Clears the render target
@@ -107,15 +108,31 @@ namespace LGL
          */
         void clear(const Color &clearColor = Color::Transparent);
 
+        /**
+         * Loads font to be used for text rendering
+         */
+        static void loadFont();
+
+        /**
+         * Determines size of rect with given text
+         * 
+         * \param text Text
+         * \param size Text size
+         * \return Determined rect
+         */
+        static Vec2f calculateTextBounds(const char *text, int size = 16);
+
     protected:
         RenderTarget(sf::RenderTarget *renderTarget);
 
     private:
         sf::CircleShape mCircleDrawer;
         sf::ConvexShape mPolygonDrawer;
-        sf::Sprite      mRenderTextureDrawer;
+        sf::Text        mTextDrawer;
 
         sf::RenderTarget *mRenderTarget;
+
+        static sf::Font sFont;
     };
 };
 

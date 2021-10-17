@@ -1,13 +1,19 @@
+#include <cassert>
 #include "SFMLRenderTarget.hpp"
 #include "SFMLRenderTexture.hpp"
 
 static const float ARROW_WIDTH  = 7.0f;
 static const float ARROW_HEIGHT = 10.0f;
 
+const char *FONT_FILE_NAME = "Roboto-Light.ttf";
+
 namespace LGL
 {
+    sf::Font RenderTarget::sFont;
+
     RenderTarget::RenderTarget(sf::RenderTarget *renderTarget) : mRenderTarget(renderTarget)
     {
+        mTextDrawer.setFont(sFont);
     }
 
     void RenderTarget::drawTriangle(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Color &color)
@@ -96,49 +102,69 @@ namespace LGL
         mRenderTarget->draw(mPolygonDrawer);
     }
 
-    // void RenderTarget::drawText(const Vec2f &position, const char *text, TextOrigin textOrigin, 
-    //                         const Color &color, int size)
-    // {
-    //     assert(text != nullptr);
+    void RenderTarget::drawText(const Vec2f &position, const char *text, TextOrigin textOrigin, 
+                                const Color &color, int size)
+    {
+        assert(text != nullptr);
 
-    //     textDrawer.setPosition(toSFMLVector(position));
-    //     textDrawer.setString(text);
-    //     textDrawer.setFillColor(toSFMLColor(color));
-    //     textDrawer.setCharacterSize(size);
-    //     textDrawer.setStyle(sf::Text::Bold);
+        mTextDrawer.setPosition(toSFMLVector(position));
+        mTextDrawer.setString(text);
+        mTextDrawer.setFillColor(toSFMLColor(color));
+        mTextDrawer.setCharacterSize(size);
+        mTextDrawer.setStyle(sf::Text::Bold);
 
-    //     if (textOrigin == TextOrigin::Centered)
-    //     {
-    //         sf::FloatRect textRect = textDrawer.getLocalBounds();
-    //         textDrawer.setOrigin(textRect.left + textRect.width  / 2.0f,
-    //                              textRect.top  + textRect.height / 2.0f);
-    //     }
-    //     else
-    //         textDrawer.setOrigin(sf::Vector2f(0.0f, 0.0f));
+        if (textOrigin == TextOrigin::Centered)
+        {
+            sf::FloatRect textRect = mTextDrawer.getLocalBounds();
+            mTextDrawer.setOrigin(textRect.left + textRect.width  / 2.0f,
+                                  textRect.top  + textRect.height / 2.0f);
+        }
+        else
+            mTextDrawer.setOrigin(sf::Vector2f(0.0f, 0.0f));
 
-    //     mRenderTarget->draw(textDrawer);
-    // }
+        mRenderTarget->draw(mTextDrawer);
+    }
 
     void RenderTarget::drawRenderTexture(RenderTexture &texture, const Vec2f &position,
                                         const Vec2f &viewportPosition)
     {
-        //Vec2f viewportCenter = viewportPosition + fromSFMLVector(texture.mTexture.getSize()) / 2;
+        sf::Sprite renderTextureDrawer;
 
-        //sf::View view(toSFMLVector(viewportCenter), sf::Vector2f(texture.mTexture.getSize()));
+        Vec2f viewportCenter = viewportPosition + fromSFMLVector(texture.mTexture.getSize()) / 2;
 
-        //texture.mTexture.setView(view);
+        sf::View view(toSFMLVector(viewportCenter), sf::Vector2f(texture.mTexture.getSize()));
+
+        texture.mTexture.setView(view);
         texture.mTexture.display();
 
-        mRenderTextureDrawer.setTexture(texture.mTexture.getTexture());
-        auto x = texture.mTexture.getTexture().getSize();
-        printf("texture size: %dx%d\n", x.x, x.y);
-        mRenderTextureDrawer.setPosition(toSFMLVector(position));
+        renderTextureDrawer.setTexture(texture.mTexture.getTexture());
+        renderTextureDrawer.setPosition(toSFMLVector(position));
 
-        mRenderTarget->draw(mRenderTextureDrawer);
+        mRenderTarget->draw(renderTextureDrawer);
     }
 
     void RenderTarget::clear(const Color &clearColor)
     {
         mRenderTarget->clear(toSFMLColor(clearColor));
+    }
+
+    void RenderTarget::loadFont()
+    {
+        if (!sFont.loadFromFile(FONT_FILE_NAME))
+            throw std::runtime_error("Unable to load font");
+    }
+
+    Vec2f RenderTarget::calculateTextBounds(const char *text, int size)
+    {
+        // TODO: избавиться от костылей
+        
+        sf::Text textDrawer;
+
+        textDrawer.setFont(sFont);
+        textDrawer.setCharacterSize(size);
+        textDrawer.setString(text);
+
+        sf::FloatRect textRect = textDrawer.getLocalBounds();
+        return Vec2f(textRect.width, textRect.height + textRect.top);
     }
 };

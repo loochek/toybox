@@ -20,7 +20,7 @@ public:
     void update(float elapsedTime);
 
     /**
-     * Updates mouse position and sends mouse events to the widgets
+     * Gets mouse status and sends mouse events to the widgets
      */
     void handleMouse();
 
@@ -31,8 +31,10 @@ public:
 
 private:
     LGL::RenderWindow &mWindow;
-
     MainWidget *mRoot;
+
+    Vec2i mOldMousePosition;
+    bool  mMouseWasPressed;
 };
 
 #endif

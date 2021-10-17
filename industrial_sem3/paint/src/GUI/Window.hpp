@@ -11,8 +11,6 @@ class Window : public Widget
 public:
     Window() = delete;
     Window(const IntRect &windowRect, Widget *parent = nullptr);
-
-    virtual void redrawThis() override;
 };
 
 #endif

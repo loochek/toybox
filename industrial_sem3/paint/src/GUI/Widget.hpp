@@ -14,17 +14,22 @@ class Widget
 public:
     /**
      * Adds children widget. 
-     * Child rect must be inside parent rect. 
      * 
      * \param child Child widget
-     * \return True if added, false if widget's rect doesn't fit into the parent
      */
-    bool addChild(Widget *child);
+    void addChild(Widget *child);
 
     /**
      * \return Widget rect
      */
     IntRect getRect() { return mRect; };
+
+    /**
+     * Sets new position for the widget relative to parent
+     * 
+     * \param newPosition New position
+     */
+    void setPosition(const Vec2f &newPosition) { mRect.position = newPosition; };
 
 protected:
     Widget() = delete;
@@ -38,8 +43,26 @@ protected:
 
     // Events handlers
 
+    /// Widget should update it's state
     virtual void onUpdate(const Vec2i &parentAbsPos, float elapsedTime);
+
+    /// Widget should update it's render texture with actual state
     virtual void onRedraw();
+
+    /// Called when mouse drags inside widget rect
+    virtual void onMouseDrag(const Vec2i &mousePosition);
+
+    /// Called when mouse enters widget rect
+    virtual void onMouseHoverBegin(const Vec2i &mousePosition);
+
+    /// Called when mouse is clicked inside widget rect
+    virtual void onMouseClicked();
+
+    /// Called when mouse is released inside widget rect
+    virtual void onMouseReleased();
+
+    /// Called when mouse goes out from widget rect
+    virtual void onMouseHoverEnd();
 
     /**
      * Redraws this widget. 
@@ -59,6 +82,13 @@ protected:
 
     // To access protected methods
     friend class GUIManager;
+
+private:
+    // Data for handling mouse events
+
+    // Can be child or nullptr
+    Widget *mWidgetUnderMouse;
+    bool    mMousePressed;
 };
 
 #endif

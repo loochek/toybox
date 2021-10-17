@@ -16,6 +16,13 @@ namespace LGL
          */
         RenderTexture(const Vec2i &resolution);
 
+        /**
+         * Resizes the render texture
+         * 
+         * \param newResolution New resolution
+         */
+        void resize(const Vec2i &newResolution);
+
     private:
         // to be able to draw mTexture
         friend class RenderTarget;

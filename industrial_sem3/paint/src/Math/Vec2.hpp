@@ -18,6 +18,16 @@ public:
     template <typename U>
     Vec2(const Vec2<U> &other) : x(other.x), y(other.y) {};
 
+    bool operator==(const Vec2 &other) const
+    {
+        return x == other.x && y == other.y;
+    }
+
+    bool operator!=(const Vec2 &other) const
+    {
+        return x != other.x || y != other.y;
+    }
+
     Vec2 operator+(const Vec2 &other) const
     {
         return Vec2(x + other.x, y + other.y);

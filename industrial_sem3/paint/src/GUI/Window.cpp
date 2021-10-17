@@ -13,8 +13,3 @@ Window::Window(const IntRect &windowRect, Widget *parent) : Widget(windowRect, p
     addChild(header);
     addChild(body);
 }
-
-void Window::redrawThis()
-{
-    mTexture.drawRect(FloatRect(Vec2i(), mRect.size), LGL::Color::Magenta);
-}

@@ -6,4 +6,9 @@ namespace LGL
     {
         mTexture.create(resolution.x, resolution.y);
     }
+
+    void RenderTexture::resize(const Vec2i &newResolution)
+    {
+        mTexture.create(newResolution.x, newResolution.y);
+    }
 };

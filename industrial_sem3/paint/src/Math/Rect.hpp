@@ -33,7 +33,7 @@ public:
     bool contains(const Rect<T> &other) const
     {
         return contains(other.position) &&
-               contains(position + other.size);
+               contains(other.position + other.size);
     }
 
 public:
