@@ -5,8 +5,7 @@
 const int WindowHeader::HEADER_HEIGHT = 20;
 
 WindowHeader::WindowHeader(Window *parent) :
-    Widget(IntRect(Vec2i(), Vec2i(parent->getRect().size.x, HEADER_HEIGHT)), parent),
-    mOldMousePosition(Vec2i()), mMousePressed(false)
+    Widget(IntRect(Vec2i(), Vec2i(parent->getRect().size.x, HEADER_HEIGHT)), parent)
 {
     mTitle = new Label(this);
     addChild(mTitle);
@@ -28,22 +27,4 @@ void WindowHeader::setTitle(const char *title)
 void WindowHeader::redrawThis()
 {
     mTexture.drawRect(FloatRect(Vec2f(), mRect.size), LGL::Color::Cyan);
-}
-
-void WindowHeader::mouseDragThis(const Vec2i &mousePosition)
-{
-    if (mMousePressed)
-        mParent->move(mousePosition - mOldMousePosition);
-
-    mOldMousePosition = mousePosition;
-}
-
-void WindowHeader::mouseClickedThis()
-{
-    mMousePressed = true;
-}
-
-void WindowHeader::mouseReleasedThis()
-{
-    mMousePressed = false;
 }

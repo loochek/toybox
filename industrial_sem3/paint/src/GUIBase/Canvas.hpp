@@ -15,7 +15,7 @@ public:
 protected:
     virtual void redrawThis() override;
 
-    virtual void onMouseDrag(const Vec2i &mousePosition) override;
+    virtual void onMouseMove(const Vec2i &mousePosition) override;
     virtual void onMouseHoverBegin(const Vec2i &mousePosition) override {};
     virtual void onMouseClicked() override;
     virtual void onMouseReleased() override;

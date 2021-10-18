@@ -31,11 +31,11 @@ void Widget::onRedraw()
     }
 }
 
-void Widget::onMouseDrag(const Vec2i &mousePosition)
+void Widget::onMouseMove(const Vec2i &mousePosition)
 {
     if (mWidgetUnderMouse != nullptr && mWidgetUnderMouse->getRect().contains(mousePosition))
     {
-        mWidgetUnderMouse->onMouseDrag(mousePosition - mWidgetUnderMouse->getRect().position);
+        mWidgetUnderMouse->onMouseMove(mousePosition - mWidgetUnderMouse->getRect().position);
         return;
     }
     else if (mWidgetUnderMouse != nullptr)
@@ -61,7 +61,6 @@ void Widget::onMouseDrag(const Vec2i &mousePosition)
         }
     }
 
-    mouseDragThis(mousePosition);
     mWidgetUnderMouse = nullptr;
 }
 
@@ -78,7 +77,6 @@ void Widget::onMouseHoverBegin(const Vec2i &mousePosition)
         }
     }
 
-    mouseHoverBeginThis(mousePosition);
     mWidgetUnderMouse = nullptr;
 }
 
@@ -86,8 +84,6 @@ void Widget::onMouseClicked()
 {
     if (mWidgetUnderMouse != nullptr)
         mWidgetUnderMouse->onMouseClicked();
-    else
-        mouseClickedThis();
     
     mMousePressed = true;
 }
@@ -96,8 +92,6 @@ void Widget::onMouseReleased()
 {
     if (mWidgetUnderMouse != nullptr)
         mWidgetUnderMouse->onMouseReleased();
-    else
-        mouseReleasedThis();
     
     mMousePressed = false;
 }
@@ -110,13 +104,6 @@ void Widget::onMouseHoverEnd()
             mWidgetUnderMouse->onMouseReleased();
 
         mWidgetUnderMouse->onMouseHoverEnd();
-    }
-    else
-    {
-        if (mMousePressed == true)
-            mouseReleasedThis();
-
-        mouseHoverEndThis();
     }
 
     mWidgetUnderMouse = nullptr;

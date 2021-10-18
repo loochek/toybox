@@ -61,8 +61,8 @@ protected:
     /// Widget should update it's render texture with actual state
     virtual void onRedraw();
 
-    /// Called when mouse drags inside widget rect
-    virtual void onMouseDrag(const Vec2i &mousePosition);
+    /// Called when mouse moves inside widget rect
+    virtual void onMouseMove(const Vec2i &mousePosition);
 
     /// Called when mouse enters widget rect
     virtual void onMouseHoverBegin(const Vec2i &mousePosition);
@@ -82,11 +82,6 @@ protected:
 
     virtual void redrawThis() {};
     virtual void updateThis(const Vec2i &parentAbsPos, float elapsedTime) {};
-    virtual void mouseDragThis(const Vec2i &mousePosition) {};
-    virtual void mouseHoverBeginThis(const Vec2i &mousePosition) {};
-    virtual void mouseClickedThis() {};
-    virtual void mouseReleasedThis() {};
-    virtual void mouseHoverEndThis() {};
 
 protected:
     Widget *mParent;
@@ -104,7 +99,7 @@ protected:
 private:
     // Data for handling mouse events
 
-    // Can be child or nullptr
+    // Can be child or this or nullptr
     Widget *mWidgetUnderMouse;
     bool    mMousePressed;
 };

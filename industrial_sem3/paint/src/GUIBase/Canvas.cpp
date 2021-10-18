@@ -12,7 +12,7 @@ void Canvas::redrawThis()
     mTexture.drawRenderTexture(mCanvas, Vec2f());
 }
 
-void Canvas::onMouseDrag(const Vec2i &mousePosition)
+void Canvas::onMouseMove(const Vec2i &mousePosition)
 {
     if (mPenDown)
         mCanvas.drawCircle(mousePosition, mPenSize, mDrawingColor);

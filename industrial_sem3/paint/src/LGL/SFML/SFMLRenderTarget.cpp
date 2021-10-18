@@ -1,11 +1,12 @@
 #include <cassert>
+#include <cstring>
 #include "SFMLRenderTarget.hpp"
 #include "SFMLRenderTexture.hpp"
 
 static const float ARROW_WIDTH  = 7.0f;
 static const float ARROW_HEIGHT = 10.0f;
 
-const char *FONT_FILE_NAME = "Roboto-Light.ttf";
+const char *FONT_FILE_NAME = "CourierNew.ttf";
 
 namespace LGL
 {
@@ -157,14 +158,10 @@ namespace LGL
     Vec2f RenderTarget::calculateTextBounds(const char *text, int size)
     {
         // TODO: избавиться от костылей
-        
-        sf::Text textDrawer;
 
-        textDrawer.setFont(sFont);
-        textDrawer.setCharacterSize(size);
-        textDrawer.setString(text);
+        const sf::Glyph &glyph = sFont.getGlyph('A', size, false);
+        int textLen = strlen(text);
 
-        sf::FloatRect textRect = textDrawer.getLocalBounds();
-        return Vec2f(textRect.width, textRect.height + textRect.top);
+        return Vec2f(glyph.advance * textLen, -glyph.bounds.top + glyph.bounds.height);
     }
 };

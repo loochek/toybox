@@ -65,7 +65,7 @@ protected:
     
     // Button overrides mouse event handlers to prevent children from receiving them
 
-    virtual void onMouseDrag(const Vec2i &mousePosition) override {};
+    virtual void onMouseMove(const Vec2i &mousePosition) override {};
     virtual void onMouseHoverBegin(const Vec2i &mousePosition) override;
     virtual void onMouseClicked() override;
     virtual void onMouseReleased() override;

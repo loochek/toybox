@@ -24,7 +24,7 @@ void GUIManager::handleMouse()
     bool  mousePressed  = mWindow.isLeftMouseButtonPressed();
 
     if (mOldMousePosition != mousePosition)
-        mRoot->onMouseDrag(mousePosition);
+        mRoot->onMouseMove(mousePosition);
 
     if (mousePressed && !mMouseWasPressed)
         mRoot->onMouseClicked();
