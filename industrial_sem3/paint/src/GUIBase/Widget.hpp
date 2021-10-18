@@ -99,7 +99,7 @@ protected:
 private:
     // Data for handling mouse events
 
-    // Can be child or this or nullptr
+    // Can be child or nullptr
     Widget *mWidgetUnderMouse;
     bool    mMousePressed;
 };
