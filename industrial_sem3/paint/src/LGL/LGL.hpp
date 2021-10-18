@@ -2,7 +2,7 @@
 #define LGL_HPP
 
 #ifdef LGL_USE_SDL
-#error Unfortunately, SDL backend hasn't been implemented yet
+#error Unfortunately, SDL backend has not been implemented yet
 #else
 #include "SFML/SFMLRenderWindow.hpp"
 #include "SFML/SFMLRenderTexture.hpp"

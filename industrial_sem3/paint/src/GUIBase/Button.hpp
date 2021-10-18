@@ -2,6 +2,7 @@
 #define BUTTON_HPP
 
 #include "../LGL/LGL.hpp"
+#include "../Utils/Delegate.hpp"
 #include "Widget.hpp"
 #include "Label.hpp"
 
@@ -21,14 +22,6 @@ public:
 
     virtual ~Button();
 
-    virtual void redrawThis() override;
-
-    virtual void onMouseDrag(const Vec2i &mousePosition) override {};
-    virtual void onMouseHoverBegin(const Vec2i &mousePosition) override;
-    virtual void onMouseClicked() override;
-    virtual void onMouseReleased() override;
-    virtual void onMouseHoverEnd() override;
-
     /**
      * Sets a delegate for the button. 
      * Resets the delegate if null pointer is passed. 
@@ -36,7 +29,7 @@ public:
      * 
      * \param delegate Delegate
      */
-    void setDelegate(ButtonDelegate *delegate) { this->mDelegate = delegate; };
+    void setDelegate(Delegate *delegate) { this->mDelegate = delegate; };
 
     /**
      * Sets a label for the button. 
@@ -67,6 +60,17 @@ public:
      */
     void setPressedColor(const LGL::Color &color) { mPressedColor = color; };
 
+protected:
+    virtual void redrawThis() override;
+    
+    // Button overrides mouse event handlers to prevent children from receiving them
+
+    virtual void onMouseDrag(const Vec2i &mousePosition) override {};
+    virtual void onMouseHoverBegin(const Vec2i &mousePosition) override;
+    virtual void onMouseClicked() override;
+    virtual void onMouseReleased() override;
+    virtual void onMouseHoverEnd() override;
+
 private:
     LGL::Color mCurrColor;
 
@@ -74,17 +78,9 @@ private:
     LGL::Color mHoveredColor;
     LGL::Color mPressedColor;
 
-    ButtonDelegate *mDelegate;
+    Delegate *mDelegate;
 
     Label *mLabel;
-};
-
-class ButtonDelegate
-{
-public:
-    virtual ~ButtonDelegate() {};
-
-    virtual void onClick(Button *button) = 0;
 };
 
 #endif

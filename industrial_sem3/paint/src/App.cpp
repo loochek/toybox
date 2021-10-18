@@ -1,6 +1,7 @@
 #include "App.hpp"
-#include "GUI/MainWidget.hpp"
-#include "GUI/Window.hpp"
+#include "GUIBase/MainWidget.hpp"
+#include "GUIElements/PaintWindow.hpp"
+#include "GUIElements/ColorPickerWindow.hpp"
 
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;
@@ -10,8 +11,12 @@ App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)) //, texture1(Vec2i(400,
     LGL::RenderTarget::loadFont();
     
     MainWidget *root = new MainWidget(IntRect(Vec2i(), Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), nullptr);
-    root->addChild(new Window(IntRect(Vec2i(200, 200), Vec2i(700, 400)), root));
+    PaintWindow *paintWindow = new PaintWindow(IntRect(Vec2i(200, 200), Vec2i(700, 400)), root);
+
+    root->addChild(new ColorPickerWindow(Vec2i(1000, 500), paintWindow->getCanvas(), root));
+    root->addChild(paintWindow);
     mGuiManager = new GUIManager(mWindow, root);
+
 
     // // Nested render textures test
     

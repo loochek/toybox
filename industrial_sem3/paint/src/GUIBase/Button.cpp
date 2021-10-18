@@ -1,12 +1,10 @@
 #include "Button.hpp"
 
-Button::Button(const IntRect &rect, Widget *parent,
+Button::Button(const IntRect &widgetRect, Widget *parent,
                const LGL::Color &idleColor, const LGL::Color &hoveredColor, const LGL::Color &pressedColor) : 
-               Widget(rect, parent), mDelegate(nullptr), mLabel(nullptr), mCurrColor(idleColor),
+               Widget(widgetRect, parent), mDelegate(nullptr), mLabel(nullptr), mCurrColor(idleColor),
                mIdleColor(idleColor), mHoveredColor(hoveredColor), mPressedColor(pressedColor)
 {
-    mLabel = new Label(this);
-    addChild(mLabel);
 }
 
 Button::~Button()
@@ -22,6 +20,12 @@ void Button::redrawThis()
 
 void Button::setLabel(const char *label)
 {
+    if (mLabel == nullptr)
+    {
+        mLabel = new Label(this);
+        addChild(mLabel);
+    }
+    
     mLabel->setText(label);
 
     Vec2f newLabelPos = mRect.size / 2 - mLabel->getRect().size / 2;
@@ -37,7 +41,7 @@ void Button::onMouseClicked()
 {
     mCurrColor = mPressedColor;
     if (mDelegate != nullptr)
-        mDelegate->onClick(this);
+        mDelegate->operator()();
 }
 
 void Button::onMouseReleased()

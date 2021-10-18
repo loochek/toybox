@@ -2,9 +2,11 @@
 #define WIDGET_HPP
 
 #include <vector>
-#include "../Math/Vec2.hpp"
-#include "../Math/Rect.hpp"
+#include "../Utils/Vec2.hpp"
+#include "../Utils/Rect.hpp"
 #include "../LGL/LGL.hpp"
+
+// TODO: implement event status system
 
 /**
  * Base class for GUI widgets
@@ -29,7 +31,14 @@ public:
      * 
      * \param newPosition New position
      */
-    void setPosition(const Vec2f &newPosition) { mRect.position = newPosition; };
+    void setPosition(const Vec2i &newPosition) { mRect.position = newPosition; };
+
+    /**
+     * Moves widget
+     * 
+     * \param offset Position delta
+     */
+    void move(const Vec2i &offset) { mRect.position += offset; };
 
 protected:
     Widget() = delete;
@@ -41,7 +50,10 @@ protected:
     Widget(const IntRect &widgetRect, Widget *parent = nullptr);
     virtual ~Widget();
 
-    // Events handlers
+    /**
+     * Event handlers
+     * Call "*This" functions and/or dispatches events to children
+     */
 
     /// Widget should update it's state
     virtual void onUpdate(const Vec2i &parentAbsPos, float elapsedTime);
@@ -65,10 +77,16 @@ protected:
     virtual void onMouseHoverEnd();
 
     /**
-     * Redraws this widget. 
-     * Called by redraw event handler before children are redrawn
+     * Functions which called by event handlers with/instead of dispatching event to children
      */
+
     virtual void redrawThis() {};
+    virtual void updateThis(const Vec2i &parentAbsPos, float elapsedTime) {};
+    virtual void mouseDragThis(const Vec2i &mousePosition) {};
+    virtual void mouseHoverBeginThis(const Vec2i &mousePosition) {};
+    virtual void mouseClickedThis() {};
+    virtual void mouseReleasedThis() {};
+    virtual void mouseHoverEndThis() {};
 
 protected:
     Widget *mParent;

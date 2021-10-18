@@ -22,6 +22,8 @@ namespace LGL
         static const Color Yellow;
         static const Color Magenta;
         static const Color Cyan;
+        static const Color Pink;
+        static const Color Brown;
         static const Color Transparent;
     };
 };

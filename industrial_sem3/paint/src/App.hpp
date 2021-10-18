@@ -2,7 +2,7 @@
 #define APP_HPP
 
 #include "LGL/LGL.hpp"
-#include "GUI/GUIManager.hpp"
+#include "GUIBase/GUIManager.hpp"
 
 /**
  * App framework

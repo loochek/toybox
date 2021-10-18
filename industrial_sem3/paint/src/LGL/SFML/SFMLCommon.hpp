@@ -2,9 +2,9 @@
 #define LGL_SFML_COMMON_HPP
 
 #include <SFML/Graphics.hpp>
-#include "../../Math/Vec2.hpp"
-#include "../../Math/Vec3.hpp"
-#include "../../Math/Rect.hpp"
+#include "../../Utils/Vec2.hpp"
+#include "../../Utils/Vec3.hpp"
+#include "../../Utils/Rect.hpp"
 #include "../Color.hpp"
 
 namespace LGL
