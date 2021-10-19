@@ -9,7 +9,7 @@ public:
     Label() = delete;
     Label(Widget *parent = nullptr);
 
-    virtual void redrawThis() override;
+    virtual void onRedrawThis() override;
 
     /**
      * Sets text to a label. 

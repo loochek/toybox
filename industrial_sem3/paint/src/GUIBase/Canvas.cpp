@@ -7,23 +7,23 @@ Canvas::Canvas(const IntRect &widgetRect, Widget *parent) :
     mCanvas.clear(LGL::Color::White);
 }
 
-void Canvas::redrawThis()
+void Canvas::onRedrawThis()
 {
     mTexture.drawRenderTexture(mCanvas, Vec2f());
 }
 
-void Canvas::onMouseMove(const Vec2i &mousePosition)
+void Canvas::onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     if (mPenDown)
-        mCanvas.drawCircle(mousePosition, mPenSize, mDrawingColor);
+        mCanvas.drawCircle(localMousePos, mPenSize, mDrawingColor);
 }
 
-void Canvas::onMouseClicked()
+void Canvas::onMouseClickedThis()
 {
     mPenDown = true;
 }
 
-void Canvas::onMouseReleased()
+void Canvas::onMouseReleasedThis()
 {
     mPenDown = false;
 }

@@ -14,7 +14,7 @@ Widget::~Widget()
 
 void Widget::onUpdate(const Vec2i &parentAbsPos, float elapsedTime)
 {
-    updateThis(parentAbsPos, elapsedTime);
+    onUpdateThis(parentAbsPos, elapsedTime);
     Vec2i currAbsPos = parentAbsPos + mRect.position;
     for (Widget *child : mChildren)
         child->onUpdate(currAbsPos, elapsedTime);
@@ -23,7 +23,7 @@ void Widget::onUpdate(const Vec2i &parentAbsPos, float elapsedTime)
 void Widget::onRedraw()
 {
     mTexture.clear();
-    redrawThis();
+    onRedrawThis();
     for (Widget *child : mChildren)
     {
         child->onRedraw();
@@ -31,16 +31,16 @@ void Widget::onRedraw()
     }
 }
 
-void Widget::onMouseMove(const Vec2i &mousePosition)
+void Widget::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
-    if (mWidgetUnderMouse != nullptr && mWidgetUnderMouse->getRect().contains(mousePosition))
+    if (isChild(mWidgetUnderMouse) && mWidgetUnderMouse->getRect().contains(localMousePos))
     {
-        mWidgetUnderMouse->onMouseMove(mousePosition - mWidgetUnderMouse->getRect().position);
+        mWidgetUnderMouse->onMouseMove(localMousePos - mWidgetUnderMouse->getRect().position, globalMousePos);
         return;
     }
-    else if (mWidgetUnderMouse != nullptr)
+    else if (isChild(mWidgetUnderMouse))
     {
-        // mouse is gone outside child 
+        // mouse is gone outside child
 
         if (mMousePressed)
             mWidgetUnderMouse->onMouseReleased();
@@ -50,9 +50,17 @@ void Widget::onMouseMove(const Vec2i &mousePosition)
 
     for (Widget *child : mChildren)
     {
-        if (child->getRect().contains(mousePosition))
+        if (child->getRect().contains(localMousePos))
         {
-            child->onMouseHoverBegin(mousePosition - child->getRect().position);
+            if (mWidgetUnderMouse == this)
+            {
+                if (mMousePressed)
+                    onMouseReleasedThis();
+
+                onMouseHoverEndThis();
+            }
+
+            child->onMouseHoverBegin(localMousePos - child->getRect().position, globalMousePos);
             if (mMousePressed)
                 child->onMouseClicked();
 
@@ -61,49 +69,70 @@ void Widget::onMouseMove(const Vec2i &mousePosition)
         }
     }
 
-    mWidgetUnderMouse = nullptr;
+    if (mWidgetUnderMouse != this)
+    {
+        onMouseHoverBeginThis(localMousePos, globalMousePos);
+        if (mMousePressed)
+            onMouseClickedThis();
+
+        mWidgetUnderMouse = this;
+    }
+    else
+        onMouseMoveThis(localMousePos, globalMousePos);
 }
 
-void Widget::onMouseHoverBegin(const Vec2i &mousePosition)
-{    
+void Widget::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
+{
     for (Widget *child : mChildren)
     {
-        if (child->getRect().contains(mousePosition))
+        if (child->getRect().contains(localMousePos))
         {
-            child->onMouseHoverBegin(mousePosition - child->getRect().position);
+            child->onMouseHoverBegin(localMousePos - child->getRect().position, globalMousePos);
 
             mWidgetUnderMouse = child;
             return;
         }
     }
 
-    mWidgetUnderMouse = nullptr;
+    onMouseHoverBeginThis(localMousePos, globalMousePos);
+    mWidgetUnderMouse = this;
 }
 
 void Widget::onMouseClicked()
 {
-    if (mWidgetUnderMouse != nullptr)
+    if (isChild(mWidgetUnderMouse))
         mWidgetUnderMouse->onMouseClicked();
+    else if (mWidgetUnderMouse != nullptr)
+        onMouseClickedThis();
     
     mMousePressed = true;
 }
 
 void Widget::onMouseReleased()
 {
-    if (mWidgetUnderMouse != nullptr)
+    if (isChild(mWidgetUnderMouse))
         mWidgetUnderMouse->onMouseReleased();
+    else if (mWidgetUnderMouse != nullptr)
+        onMouseReleasedThis();
     
     mMousePressed = false;
 }
 
 void Widget::onMouseHoverEnd()
 {
-    if (mWidgetUnderMouse != nullptr)
+    if (isChild(mWidgetUnderMouse))
     {
         if (mMousePressed == true)
             mWidgetUnderMouse->onMouseReleased();
 
         mWidgetUnderMouse->onMouseHoverEnd();
+    }
+    else if (mWidgetUnderMouse != nullptr)
+    {
+        if (mMousePressed == true)
+            onMouseReleasedThis();
+
+        onMouseHoverEndThis();
     }
 
     mWidgetUnderMouse = nullptr;

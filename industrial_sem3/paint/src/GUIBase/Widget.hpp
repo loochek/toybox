@@ -6,7 +6,12 @@
 #include "../Utils/Rect.hpp"
 #include "../LGL/LGL.hpp"
 
-// TODO: implement event status system
+// TODO: use it
+enum class EventResult
+{
+    Handled,
+    Refused
+};
 
 /**
  * Base class for GUI widgets
@@ -62,10 +67,10 @@ protected:
     virtual void onRedraw();
 
     /// Called when mouse moves inside widget rect
-    virtual void onMouseMove(const Vec2i &mousePosition);
+    virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos);
 
     /// Called when mouse enters widget rect
-    virtual void onMouseHoverBegin(const Vec2i &mousePosition);
+    virtual void onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos);
 
     /// Called when mouse is clicked inside widget rect
     virtual void onMouseClicked();
@@ -80,8 +85,17 @@ protected:
      * Functions which called by event handlers with/instead of dispatching event to children
      */
 
-    virtual void redrawThis() {};
-    virtual void updateThis(const Vec2i &parentAbsPos, float elapsedTime) {};
+    virtual void onRedrawThis() {};
+    virtual void onUpdateThis(const Vec2i &parentAbsPos, float elapsedTime) {};
+    virtual void onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
+    virtual void onMouseHoverBeginThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
+    virtual void onMouseClickedThis() {};
+    virtual void onMouseReleasedThis() {};
+    virtual void onMouseHoverEndThis() {};
+
+private:
+    /// Helper function
+    bool isChild(Widget *widget) { return widget != nullptr && widget != this; };
 
 protected:
     Widget *mParent;
@@ -99,7 +113,7 @@ protected:
 private:
     // Data for handling mouse events
 
-    // Can be child or nullptr
+    // Can be child or this or nullptr
     Widget *mWidgetUnderMouse;
     bool    mMousePressed;
 };

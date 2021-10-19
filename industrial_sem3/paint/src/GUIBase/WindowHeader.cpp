@@ -5,7 +5,8 @@
 const int WindowHeader::HEADER_HEIGHT = 20;
 
 WindowHeader::WindowHeader(Window *parent) :
-    Widget(IntRect(Vec2i(), Vec2i(parent->getRect().size.x, HEADER_HEIGHT)), parent)
+    Widget(IntRect(Vec2i(), Vec2i(parent->getRect().size.x, HEADER_HEIGHT)), parent),
+    mOldMousePosition(Vec2i()), mMousePressed(false)
 {
     mTitle = new Label(this);
     addChild(mTitle);
@@ -24,7 +25,31 @@ void WindowHeader::setTitle(const char *title)
     mTitle->setText(title);
 }
 
-void WindowHeader::redrawThis()
+void WindowHeader::onRedrawThis()
 {
     mTexture.drawRect(FloatRect(Vec2f(), mRect.size), LGL::Color::Cyan);
+}
+
+void WindowHeader::onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMousePos)
+{
+    printf("WindowHeader::onMouseMoveThis\n");
+
+    // Using global mouse position because of self-moving
+
+    if (mMousePressed)
+        mParent->move(globalMousePos - mOldMousePosition);
+    
+    mOldMousePosition = globalMousePos;
+}
+
+void WindowHeader::onMouseClickedThis()
+{
+    printf("WindowHeader::onMouseClickedThis\n");
+    mMousePressed = true;
+}
+
+void WindowHeader::onMouseReleasedThis()
+{
+    printf("WindowHeader::onMouseReleasedThis\n");
+    mMousePressed = false;
 }

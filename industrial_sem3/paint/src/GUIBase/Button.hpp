@@ -61,15 +61,11 @@ public:
     void setPressedColor(const LGL::Color &color) { mPressedColor = color; };
 
 protected:
-    virtual void redrawThis() override;
-    
-    // Button overrides mouse event handlers to prevent children from receiving them
-
-    virtual void onMouseMove(const Vec2i &mousePosition) override {};
-    virtual void onMouseHoverBegin(const Vec2i &mousePosition) override;
-    virtual void onMouseClicked() override;
-    virtual void onMouseReleased() override;
-    virtual void onMouseHoverEnd() override;
+    virtual void onRedrawThis() override;
+    virtual void onMouseHoverBeginThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
+    virtual void onMouseClickedThis() override;
+    virtual void onMouseReleasedThis() override;
+    virtual void onMouseHoverEndThis() override;
 
 private:
     LGL::Color mCurrColor;

@@ -16,7 +16,7 @@ void Label::setText(const char *text)
     mText = text;
 }
 
-void Label::redrawThis()
+void Label::onRedrawThis()
 {
     if (mText == nullptr)
         return;

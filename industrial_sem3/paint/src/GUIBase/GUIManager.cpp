@@ -5,7 +5,7 @@ GUIManager::GUIManager(LGL::RenderWindow &window, MainWidget *root) : mWindow(wi
                                                                       mMouseWasPressed(false)
 {
     // To initialize mouse state machine
-    root->onMouseHoverBegin(Vec2i());
+    root->onMouseHoverBegin(Vec2i(), Vec2i());
 }
 
 GUIManager::~GUIManager()
@@ -24,7 +24,7 @@ void GUIManager::handleMouse()
     bool  mousePressed  = mWindow.isLeftMouseButtonPressed();
 
     if (mOldMousePosition != mousePosition)
-        mRoot->onMouseMove(mousePosition);
+        mRoot->onMouseMove(mousePosition, mousePosition);
 
     if (mousePressed && !mMouseWasPressed)
         mRoot->onMouseClicked();

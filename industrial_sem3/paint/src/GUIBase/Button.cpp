@@ -13,7 +13,7 @@ Button::~Button()
         delete mDelegate;
 }
 
-void Button::redrawThis()
+void Button::onRedrawThis()
 {
     mTexture.drawRect(FloatRect(Vec2i(), mRect.size), mCurrColor);
 }
@@ -32,24 +32,28 @@ void Button::setLabel(const char *label)
     mLabel->setPosition(newLabelPos);
 }
 
-void Button::onMouseHoverBegin(const Vec2i &mousePosition)
+void Button::onMouseHoverBeginThis(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
+    printf("Button::onMouseHoverBeginThis\n");
     mCurrColor = mHoveredColor;
 }
 
-void Button::onMouseClicked()
+void Button::onMouseClickedThis()
 {
+    printf("Button::onMouseClickedThis\n");
     mCurrColor = mPressedColor;
     if (mDelegate != nullptr)
         mDelegate->operator()();
 }
 
-void Button::onMouseReleased()
+void Button::onMouseReleasedThis()
 {
+    printf("Button::onMouseReleasedThis\n");
     mCurrColor = mHoveredColor;
 }
 
-void Button::onMouseHoverEnd()
+void Button::onMouseHoverEndThis()
 {
+    printf("Button::onMouseHoverEndThis\n");
     mCurrColor = mIdleColor;
 }
