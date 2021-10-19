@@ -34,13 +34,11 @@ void Button::setLabel(const char *label)
 
 void Button::onMouseHoverBeginThis(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
-    printf("Button::onMouseHoverBeginThis\n");
     mCurrColor = mHoveredColor;
 }
 
 void Button::onMouseClickedThis()
 {
-    printf("Button::onMouseClickedThis\n");
     mCurrColor = mPressedColor;
     if (mDelegate != nullptr)
         mDelegate->operator()();
@@ -48,12 +46,10 @@ void Button::onMouseClickedThis()
 
 void Button::onMouseReleasedThis()
 {
-    printf("Button::onMouseReleasedThis\n");
     mCurrColor = mHoveredColor;
 }
 
 void Button::onMouseHoverEndThis()
 {
-    printf("Button::onMouseHoverEndThis\n");
     mCurrColor = mIdleColor;
 }

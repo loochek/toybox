@@ -32,8 +32,6 @@ void WindowHeader::onRedrawThis()
 
 void WindowHeader::onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
-    printf("WindowHeader::onMouseMoveThis\n");
-
     // Using global mouse position because of self-moving
 
     if (mMousePressed)
@@ -44,12 +42,10 @@ void WindowHeader::onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &glob
 
 void WindowHeader::onMouseClickedThis()
 {
-    printf("WindowHeader::onMouseClickedThis\n");
     mMousePressed = true;
 }
 
 void WindowHeader::onMouseReleasedThis()
 {
-    printf("WindowHeader::onMouseReleasedThis\n");
     mMousePressed = false;
 }
