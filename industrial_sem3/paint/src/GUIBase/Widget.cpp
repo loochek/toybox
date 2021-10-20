@@ -48,8 +48,10 @@ void Widget::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos
         mWidgetUnderMouse->onMouseHoverEnd();
     }
 
-    for (Widget *child : mChildren)
+    for (auto childIter = mChildren.rbegin(); childIter != mChildren.rend(); childIter++)
     {
+        Widget *child = *childIter;
+
         if (child->getRect().contains(localMousePos))
         {
             if (mWidgetUnderMouse == this)
@@ -83,8 +85,10 @@ void Widget::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos
 
 void Widget::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
-    for (Widget *child : mChildren)
+    for (auto childIter = mChildren.rbegin(); childIter != mChildren.rend(); childIter++)
     {
+        Widget *child = *childIter;
+        
         if (child->getRect().contains(localMousePos))
         {
             child->onMouseHoverBegin(localMousePos - child->getRect().position, globalMousePos);

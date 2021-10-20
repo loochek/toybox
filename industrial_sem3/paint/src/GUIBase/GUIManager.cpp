@@ -1,8 +1,8 @@
 #include "GUIManager.hpp"
-#include "MainWidget.hpp"
+#include "Widget.hpp"
 
-GUIManager::GUIManager(LGL::RenderWindow &window, MainWidget *root) : mWindow(window), mRoot(root),
-                                                                      mMouseWasPressed(false)
+GUIManager::GUIManager(LGL::RenderWindow &window, Widget *root) : mWindow(window), mRoot(root),
+                                                                  mMouseWasPressed(false)
 {
     // To initialize mouse state machine
     root->onMouseHoverBegin(Vec2i(), Vec2i());

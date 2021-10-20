@@ -4,9 +4,11 @@
 
 const int WindowHeader::HEADER_HEIGHT = 20;
 
+const Vec2i MOUSE_POS_INVARIANT(-1, -1);
+
 WindowHeader::WindowHeader(Window *parent) :
     Widget(IntRect(Vec2i(), Vec2i(parent->getRect().size.x, HEADER_HEIGHT)), parent),
-    mOldMousePosition(Vec2i()), mMousePressed(false)
+    mOldMousePosition(Vec2i(-1, -1)), mMousePressed(false)
 {
     mTitle = new Label(this);
     addChild(mTitle);
@@ -34,7 +36,7 @@ void WindowHeader::onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &glob
 {
     // Using global mouse position because of self-moving
 
-    if (mMousePressed)
+    if (mMousePressed && mOldMousePosition != MOUSE_POS_INVARIANT)
         mParent->move(globalMousePos - mOldMousePosition);
     
     mOldMousePosition = globalMousePos;
@@ -48,4 +50,5 @@ void WindowHeader::onMouseClickedThis()
 void WindowHeader::onMouseReleasedThis()
 {
     mMousePressed = false;
+    mOldMousePosition = MOUSE_POS_INVARIANT;
 }

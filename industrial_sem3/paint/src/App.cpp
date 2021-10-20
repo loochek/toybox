@@ -1,7 +1,8 @@
 #include "App.hpp"
-#include "GUIBase/MainWidget.hpp"
+#include "GUIBase/WindowManager.hpp"
 #include "GUIElements/PaintWindow.hpp"
 #include "GUIElements/ColorPickerWindow.hpp"
+#include "GUIElements/SizePickerWindow.hpp"
 
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;
@@ -10,10 +11,11 @@ App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)) //, texture1(Vec2i(400,
 {
     LGL::RenderTarget::loadFont();
     
-    MainWidget *root = new MainWidget(IntRect(Vec2i(), Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), nullptr);
+    WindowManager *root = new WindowManager(IntRect(Vec2i(), Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), nullptr);
     PaintWindow *paintWindow = new PaintWindow(IntRect(Vec2i(200, 200), Vec2i(700, 400)), root);
 
     root->addChild(new ColorPickerWindow(Vec2i(1000, 500), paintWindow->getCanvas(), root));
+    root->addChild(new SizePickerWindow (Vec2i(1000, 100), paintWindow->getCanvas(), root));
     root->addChild(paintWindow);
     mGuiManager = new GUIManager(mWindow, root);
 

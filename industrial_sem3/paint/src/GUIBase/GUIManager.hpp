@@ -4,12 +4,12 @@
 #include <vector>
 #include "../LGL/LGL.hpp"
 
-class MainWidget;
+class Widget;
 
 class GUIManager
 {
 public:
-    GUIManager(LGL::RenderWindow &window, MainWidget *root);
+    GUIManager(LGL::RenderWindow &window, Widget *root);
     ~GUIManager();
 
     /**
@@ -31,7 +31,7 @@ public:
 
 private:
     LGL::RenderWindow &mWindow;
-    MainWidget *mRoot;
+    Widget *mRoot;
 
     Vec2i mOldMousePosition;
     bool  mMouseWasPressed;

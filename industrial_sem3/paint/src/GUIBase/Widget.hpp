@@ -1,7 +1,7 @@
 #ifndef WIDGET_HPP
 #define WIDGET_HPP
 
-#include <vector>
+#include <list>
 #include "../Utils/Vec2.hpp"
 #include "../Utils/Rect.hpp"
 #include "../LGL/LGL.hpp"
@@ -99,7 +99,7 @@ private:
 
 protected:
     Widget *mParent;
-    std::vector<Widget*> mChildren;
+    std::list<Widget*> mChildren;
 
     /// Widget's size and position relative to parent widget
     IntRect mRect;
@@ -110,12 +110,13 @@ protected:
     // To access protected methods
     friend class GUIManager;
 
-private:
     // Data for handling mouse events
 
     // Can be child or this or nullptr
     Widget *mWidgetUnderMouse;
     bool    mMousePressed;
+
+    friend class WindowManager;
 };
 
 #endif
