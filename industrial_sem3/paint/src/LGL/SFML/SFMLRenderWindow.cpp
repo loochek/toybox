@@ -5,7 +5,7 @@ namespace LGL
     RenderWindow::RenderWindow(const Vec2i &resolution) : RenderTarget(&mWindow)
     {
         mWindow.create(sf::VideoMode(resolution.x, resolution.y), "LGL (SFML backend)");
-        //mWindow.setFramerateLimit(60);
+        mWindow.setFramerateLimit(60);
     }
 
     RenderWindow::~RenderWindow()

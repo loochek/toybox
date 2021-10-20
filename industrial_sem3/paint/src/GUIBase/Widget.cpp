@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <cassert>
 #include "Widget.hpp"
 
 Widget::Widget(const IntRect &widgetRect, Widget *parent) : mRect(widgetRect), mParent(parent),
@@ -141,6 +142,19 @@ void Widget::onMouseHoverEnd()
 
     mWidgetUnderMouse = nullptr;
     mMousePressed = false;
+}
+
+void Widget::onDestroy()
+{
+    for (Widget *child : mChildren)
+        child->onDestroy();
+
+    onDestroyThis();
+}
+
+void Widget::onChildDestroy(Widget *child)
+{
+    mChildren.remove(child);
 }
 
 void Widget::addChild(Widget *child)

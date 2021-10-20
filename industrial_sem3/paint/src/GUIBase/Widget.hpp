@@ -32,6 +32,11 @@ public:
     IntRect getRect() { return mRect; };
 
     /**
+     * \return Widget's parent
+     */
+    Widget *getParent() { return mParent; };
+
+    /**
      * Sets new position for the widget relative to parent
      * 
      * \param newPosition New position
@@ -81,6 +86,12 @@ protected:
     /// Called when mouse goes out from widget rect
     virtual void onMouseHoverEnd();
 
+    /// Widget must destroy yourself and it's children
+    virtual void onDestroy();
+
+    /// Called when children was destroyed
+    virtual void onChildDestroy(Widget *child);
+
     /**
      * Functions which called by event handlers with/instead of dispatching event to children
      */
@@ -92,6 +103,7 @@ protected:
     virtual void onMouseClickedThis() {};
     virtual void onMouseReleasedThis() {};
     virtual void onMouseHoverEndThis() {};
+    virtual void onDestroyThis() {};
 
 private:
     /// Helper function
@@ -117,6 +129,7 @@ protected:
     bool    mMousePressed;
 
     friend class WindowManager;
+    friend class WindowCloseDelegate;
 };
 
 #endif

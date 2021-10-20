@@ -1,6 +1,7 @@
 #include "WindowHeader.hpp"
 #include "Window.hpp"
 #include "Button.hpp"
+#include "../GUILogic/WindowCloseDelegate.hpp"
 
 const int WindowHeader::HEADER_HEIGHT = 20;
 
@@ -19,6 +20,7 @@ WindowHeader::WindowHeader(Window *parent) :
                                 LGL::Color::Red);
 
     button->setLabel("X");
+    button->setDelegate(new WindowCloseDelegate(parent));
     addChild(button);
 }
 
