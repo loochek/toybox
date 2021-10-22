@@ -12,6 +12,10 @@ class Rect
 public:
     Rect(const T &position = T(), const T &size = T()) : position(position), size(size) {};
 
+    /// Convert constructor
+    template <typename U>
+    Rect(const Rect<U> &other) : position(other.position), size(other.size) {};
+
     /**
      * Checks the point to be inside the rect
      * 
