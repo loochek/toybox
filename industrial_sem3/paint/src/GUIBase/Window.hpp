@@ -31,6 +31,16 @@ public:
 
 protected:
     Label *mTitle;
+
+    static bool sTexturesLoaded;
+    static const LGL::Texture *sCorner1Texture;
+    static const LGL::Texture *sCorner2Texture;
+    static const LGL::Texture *sCorner3Texture;
+    static const LGL::Texture *sCorner4Texture;
+    static const LGL::Texture *sEdgeTopTexture;
+    static const LGL::Texture *sEdgeLeftTexture;
+    static const LGL::Texture *sEdgeRightTexture;
+    static const LGL::Texture *sEdgeBottomTexture;
 };
 
 #endif

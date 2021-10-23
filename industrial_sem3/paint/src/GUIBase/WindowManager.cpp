@@ -1,8 +1,18 @@
 #include <algorithm>
+#include "../TextureManager.hpp"
 #include "WindowManager.hpp"
+
+const LGL::Texture *WindowManager::sWallpaperTexture = nullptr;
 
 WindowManager::WindowManager(const IntRect &widgetRect, Widget *parent) : Widget(widgetRect, parent)
 {
+    if (sWallpaperTexture == nullptr)
+        sWallpaperTexture = TextureManager::getInstance()->getTexture("wallpaper");
+}
+
+void WindowManager::onRedrawThis()
+{
+    mTexture.drawTexture(*sWallpaperTexture, Vec2i());
 }
 
 void WindowManager::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)

@@ -6,6 +6,7 @@
 #else
 #include "SFML/SFMLRenderWindow.hpp"
 #include "SFML/SFMLRenderTexture.hpp"
+#include "SFML/SFMLTexture.hpp"
 #endif
 
 #endif

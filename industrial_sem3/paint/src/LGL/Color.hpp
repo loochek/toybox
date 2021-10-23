@@ -24,6 +24,7 @@ namespace LGL
         static const Color Cyan;
         static const Color Pink;
         static const Color Brown;
+        static const Color Gray;
         static const Color Transparent;
     };
 };

@@ -20,6 +20,11 @@ namespace LGL
         return sf::Vector2f(vector.x, vector.y);
     }
 
+    inline sf::Vector2i toSFMLVector(const Vec2i &vector)
+    {
+        return sf::Vector2i(vector.x, vector.y);
+    }
+
     inline sf::Color toSFMLColor(const Color &color)
     {
         return sf::Color(color.r * 255, color.g * 255, color.b * 255, color.a * 255);

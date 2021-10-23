@@ -13,11 +13,15 @@ public:
     WindowManager(const IntRect &widgetRect, Widget *parent = nullptr);
 
 protected:
+    virtual void onRedrawThis() override;
+
     virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
     virtual void onMouseClicked() override;
 
 private:
     void popUp(std::list<Widget*>::iterator widgetIter);
+
+    static const LGL::Texture *sWallpaperTexture; 
 };
 
 #endif

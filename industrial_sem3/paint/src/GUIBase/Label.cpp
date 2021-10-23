@@ -24,6 +24,5 @@ void Label::onRedrawThis()
     if (mText == nullptr)
         return;
 
-    mTexture.drawRect(IntRect(Vec2i(), mRect.size), LGL::Color::Yellow);
     mTexture.drawText(Vec2i(), mText);
 }

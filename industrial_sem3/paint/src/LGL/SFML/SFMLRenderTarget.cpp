@@ -126,6 +126,22 @@ namespace LGL
         mRenderTarget->draw(mTextDrawer);
     }
 
+    void RenderTarget::drawTexture(const Texture &texture, const Vec2f &position, const IntRect &textureRect)
+    {
+        sf::Sprite textureDrawer;
+
+        textureDrawer.setTexture(texture.mTexture);
+        textureDrawer.setPosition(toSFMLVector(position));
+
+        if (textureRect.size.x >= 0 && textureRect.size.y >= 0)
+        {
+            textureDrawer.setTextureRect(sf::IntRect(toSFMLVector(textureRect.position),
+                                                     toSFMLVector(textureRect.size)));
+        }
+        
+        mRenderTarget->draw(textureDrawer);
+    }
+
     void RenderTarget::drawRenderTexture(RenderTexture &texture, const Vec2f &position,
                                         const Vec2f &viewportPosition)
     {

@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 #include "SFMLCommon.hpp"
+#include "SFMLTexture.hpp"
 
 namespace LGL
 {
@@ -83,11 +84,22 @@ namespace LGL
          * Viewport size is always same with render texture resolution to avoid blurriness
          * 
          * \param texture Texture to draw
-         * \param position Position of left top corner of the part
-         * \param viewportPosition Position of the viewport to be drawn
+         * \param position Where to draw the render texture
+         * \param viewportPosition Position of the viewport to draw
          */
         void drawRenderTexture(RenderTexture &texture, const Vec2f &position,
                                const Vec2f &viewportPosition = Vec2f());
+
+        /**
+         * Draws the specified part of the texture 
+         * 
+         * \param texture Texture to draw
+         * \param position Where to draw the texture
+         * \param textureRect Part of the texture to draw. 
+         * If rect with negative size is passed, whole texture will be drawn
+         */
+        void drawTexture(const Texture &texture, const Vec2f &position,
+                         const IntRect &textureRect = IntRect(Vec2i(), Vec2i(-1, -1)));
 
         /**
          * Draws a text
