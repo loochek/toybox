@@ -2,15 +2,9 @@
 
 Button::Button(const IntRect &widgetRect, Widget *parent,
                const LGL::Color &idleColor, const LGL::Color &hoveredColor, const LGL::Color &pressedColor) : 
-               Widget(widgetRect, parent), mDelegate(nullptr), mLabel(nullptr), mCurrColor(idleColor),
-               mIdleColor(idleColor), mHoveredColor(hoveredColor), mPressedColor(pressedColor)
+    BaseButton(widgetRect, parent), mLabel(nullptr), 
+    mCurrColor(idleColor), mIdleColor(idleColor), mHoveredColor(hoveredColor), mPressedColor(pressedColor)
 {
-}
-
-Button::~Button()
-{
-    if (mDelegate != nullptr)
-        delete mDelegate;
 }
 
 void Button::onRedrawThis()

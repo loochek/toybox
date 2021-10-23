@@ -41,6 +41,8 @@ protected:
     static const LGL::Texture *sEdgeLeftTexture;
     static const LGL::Texture *sEdgeRightTexture;
     static const LGL::Texture *sEdgeBottomTexture;
+
+    static const LGL::Texture *sCloseButtonIdleTexture;
 };
 
 #endif

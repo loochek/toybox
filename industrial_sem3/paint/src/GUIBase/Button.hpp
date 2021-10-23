@@ -2,16 +2,13 @@
 #define BUTTON_HPP
 
 #include "../LGL/LGL.hpp"
-#include "../Utils/Delegate.hpp"
-#include "Widget.hpp"
+#include "BaseButton.hpp"
 #include "Label.hpp"
 
-class ButtonDelegate;
-
 /**
- * Clickable button
+ * Simple button
  */
-class Button : public Widget
+class Button : public BaseButton
 {
 public:
     Button() = delete;
@@ -20,16 +17,7 @@ public:
            const LGL::Color &hoveredColor = LGL::Color(0.94f, 0.77f, 0.41f),
            const LGL::Color &pressedColor = LGL::Color(1.0f, 0.68f, 0.0f));
 
-    virtual ~Button();
-
-    /**
-     * Sets a delegate for the button. 
-     * Resets the delegate if null pointer is passed. 
-     * Button will be responsible for its deletion. 
-     * 
-     * \param delegate Delegate
-     */
-    void setDelegate(Delegate *delegate) { this->mDelegate = delegate; };
+    virtual ~Button() {};
 
     /**
      * Sets a label for the button. 
@@ -67,14 +55,12 @@ protected:
     virtual void onMouseReleased() override;
     virtual void onMouseHoverEnd() override;
 
-private:
+protected:
     LGL::Color mCurrColor;
 
     LGL::Color mIdleColor;
     LGL::Color mHoveredColor;
     LGL::Color mPressedColor;
-
-    Delegate *mDelegate;
 
     Label *mLabel;
 };

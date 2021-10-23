@@ -1,7 +1,7 @@
 #include "../TextureManager.hpp"
 #include "Window.hpp"
 #include "Label.hpp"
-#include "Button.hpp"
+#include "TextureButton.hpp"
 #include "DragArea.hpp"
 #include "../GUILogic/WindowCloseDelegate.hpp"
 
@@ -19,9 +19,11 @@ const LGL::Texture *Window::sEdgeLeftTexture   = nullptr;
 const LGL::Texture *Window::sEdgeRightTexture  = nullptr;
 const LGL::Texture *Window::sEdgeBottomTexture = nullptr;
 
-const int CLOSE_BUTTON_WIDTH  = 20;
+const LGL::Texture *Window::sCloseButtonIdleTexture = nullptr;
+
+const int CLOSE_BUTTON_WIDTH  = 49;
 const int CLOSE_BUTTON_HEIGHT = 20;
-const int CLOSE_BUTTON_OFFSET = 10;
+const int CLOSE_BUTTON_OFFSET = 8;
 
 const int LABEL_HEIGHT_OFFSET = 3;
 
@@ -45,20 +47,24 @@ Window::Window(const IntRect &contentRect, Widget *parent) :
         sEdgeRightTexture  = mgr->getTexture("edge_right");
         sEdgeBottomTexture = mgr->getTexture("edge_bottom");
 
+        sCloseButtonIdleTexture = mgr->getTexture("close_button_idle");
+
         sTexturesLoaded = true;
     }
     
     DragArea *dragArea = new DragArea(IntRect(Vec2i(), Vec2i(mRect.size.x, HEADER_HEIGHT)), this, this);
     addChild(dragArea);
 
-    Button *button = new Button(IntRect(Vec2i(mRect.size.x - CLOSE_BUTTON_OFFSET - CLOSE_BUTTON_WIDTH, 0),
-                                        Vec2i(CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT)),
-                                this,
-                                LGL::Color::Red);
+    TextureButton *closeButton = new TextureButton(
+        IntRect(Vec2i(mRect.size.x - CLOSE_BUTTON_OFFSET - CLOSE_BUTTON_WIDTH, 0),
+                Vec2i(CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT)),
+        sCloseButtonIdleTexture,
+        sCloseButtonIdleTexture,
+        sCloseButtonIdleTexture,
+        this);
 
-    button->setLabel("X");
-    button->setDelegate(new WindowCloseDelegate(this));
-    addChild(button);
+    closeButton->setDelegate(new WindowCloseDelegate(this));
+    addChild(closeButton);
 }
 
 void Window::setTitle(const char *title)

@@ -4,3 +4,4 @@ rm -rf build/*
 cmake -DCMAKE_BUILD_TYPE=Release -S . -B build/
 
 cp *.ttf build/
+cp -r resources/ build/
