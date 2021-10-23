@@ -15,11 +15,11 @@ public:
     ColorPickerWindow() = delete;
 
     /**
-     * \param windowPos Window position
+     * \param pickerPos Color picker position
      * \param canvas Canvas to be under control
      * \param parent Parent widget
      */
-    ColorPickerWindow(const Vec2f &windowPos, Canvas *canvas, Widget *parent = nullptr);
+    ColorPickerWindow(const Vec2f &pickerPos, Canvas *canvas, Widget *parent = nullptr);
 
     /**
      * \return Color picker widget

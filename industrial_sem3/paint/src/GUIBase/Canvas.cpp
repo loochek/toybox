@@ -15,7 +15,12 @@ void Canvas::onRedrawThis()
         mTexture.drawCircle(mPenPosition, mPenSize, mDrawingColor);
 }
 
-void Canvas::onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMousePos)
+void Canvas::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
+{
+    mPenPosition = localMousePos;
+}
+
+void Canvas::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     if (mPenDown)
         mCanvas.drawCircle(localMousePos, mPenSize, mDrawingColor);
@@ -24,17 +29,17 @@ void Canvas::onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMous
     mPenPosition = localMousePos;
 }
 
-void Canvas::onMouseClickedThis()
+void Canvas::onMouseClicked()
 {
     mPenDown = true;
 }
 
-void Canvas::onMouseReleasedThis()
+void Canvas::onMouseReleased()
 {
     mPenDown = false;
 }
 
-void Canvas::onMouseHoverEndThis()
+void Canvas::onMouseHoverEnd()
 {
     mDrawPen = false;
 }

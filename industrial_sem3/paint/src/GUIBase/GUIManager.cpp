@@ -10,12 +10,13 @@ GUIManager::GUIManager(LGL::RenderWindow &window, Widget *root) : mWindow(window
 
 GUIManager::~GUIManager()
 {
+    mRoot->onDestroy();
     delete mRoot;
 }
 
 void GUIManager::update(float elapsedTime)
 {
-    mRoot->onUpdate(Vec2i(), elapsedTime);
+    mRoot->onUpdate(elapsedTime);
 }
 
 void GUIManager::handleMouse()

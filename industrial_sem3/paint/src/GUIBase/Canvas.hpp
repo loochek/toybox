@@ -15,10 +15,11 @@ public:
 protected:
     virtual void onRedrawThis() override;
 
-    virtual void onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
-    virtual void onMouseClickedThis() override;
-    virtual void onMouseReleasedThis() override;
-    virtual void onMouseHoverEndThis() override;
+    virtual void onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
+    virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
+    virtual void onMouseClicked() override;
+    virtual void onMouseReleased() override;
+    virtual void onMouseHoverEnd() override;
 
 protected:
     LGL::RenderTexture mCanvas;

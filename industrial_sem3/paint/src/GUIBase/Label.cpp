@@ -1,7 +1,10 @@
 #include <cassert>
 #include "Label.hpp"
 
-Label::Label(Widget *parent) : Widget(IntRect(), parent)
+const int LABEL_INIT_SIZE = 10;
+
+Label::Label(Widget *parent) :
+    Widget(IntRect(Vec2i(), Vec2i(LABEL_INIT_SIZE, LABEL_INIT_SIZE)), parent), mText(nullptr)
 {
 }
 
@@ -21,5 +24,6 @@ void Label::onRedrawThis()
     if (mText == nullptr)
         return;
 
-    mTexture.drawText(Vec2f(), mText);
+    mTexture.drawRect(mRect, LGL::Color::Yellow);
+    mTexture.drawText(mRect.position, mText);
 }

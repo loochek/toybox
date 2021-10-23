@@ -6,13 +6,6 @@
 #include "../Utils/Rect.hpp"
 #include "../LGL/LGL.hpp"
 
-// TODO: use it
-enum class EventResult
-{
-    Handled,
-    Refused
-};
-
 /**
  * Base class for GUI widgets
  */
@@ -20,7 +13,8 @@ class Widget
 {
 public:
     /**
-     * Adds children widget. 
+     * Pushes children widget back to the children list. 
+     * Note that widgets in the list overlap: the widget at the end of the list is in the foreground
      * 
      * \param child Child widget
      */
@@ -66,16 +60,16 @@ protected:
      */
 
     /// Widget should update it's state
-    virtual void onUpdate(const Vec2i &parentAbsPos, float elapsedTime);
+    virtual void onUpdate(float elapsedTime);
 
     /// Widget should update it's render texture with actual state
     virtual void onRedraw();
 
-    /// Called when mouse moves inside widget rect
-    virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos);
-
     /// Called when mouse enters widget rect
     virtual void onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos);
+
+    /// Called when mouse moves inside widget rect
+    virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos);
 
     /// Called when mouse is clicked inside widget rect
     virtual void onMouseClicked();
@@ -97,17 +91,8 @@ protected:
      */
 
     virtual void onRedrawThis() {};
-    virtual void onUpdateThis(const Vec2i &parentAbsPos, float elapsedTime) {};
-    virtual void onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
-    virtual void onMouseHoverBeginThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
-    virtual void onMouseClickedThis() {};
-    virtual void onMouseReleasedThis() {};
-    virtual void onMouseHoverEndThis() {};
+    virtual void onUpdateThis(float elapsedTime) {};
     virtual void onDestroyThis() {};
-
-private:
-    /// Helper function
-    bool isChild(Widget *widget) { return widget != nullptr && widget != this; };
 
 protected:
     Widget *mParent;
@@ -124,8 +109,8 @@ protected:
 
     // Data for handling mouse events
 
-    // Can be child or this or nullptr
-    Widget *mWidgetUnderMouse;
+    // Can be child or nullptr
+    Widget *mChildUnderMouse;
     bool    mMousePressed;
 
     friend class WindowManager;

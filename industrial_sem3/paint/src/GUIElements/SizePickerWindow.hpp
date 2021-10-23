@@ -12,11 +12,11 @@ public:
     SizePickerWindow() = delete;
 
     /**
-     * \param windowPos Window position
+     * \param pickerPos Size picker position
      * \param canvas Canvas to be under control
      * \param parent Parent widget
      */
-    SizePickerWindow(const Vec2f &windowPos, Canvas *canvas, Widget *parent = nullptr);
+    SizePickerWindow(const Vec2f &pickerPos, Canvas *canvas, Widget *parent = nullptr);
 
     /**
      * \return Color picker widget

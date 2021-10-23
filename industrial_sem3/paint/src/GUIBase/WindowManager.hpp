@@ -14,10 +14,7 @@ public:
 
 protected:
     virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
-    virtual void onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
     virtual void onMouseClicked() override;
-    virtual void onMouseReleased() override;
-    virtual void onMouseHoverEnd() override;
 
 private:
     void popUp(std::list<Widget*>::iterator widgetIter);

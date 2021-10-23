@@ -5,94 +5,59 @@ WindowManager::WindowManager(const IntRect &widgetRect, Widget *parent) : Widget
 {
 }
 
-void WindowManager::onMouseMove(const Vec2i &mousePosition, const Vec2i &globalMousePos)
+void WindowManager::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
-    if (mWidgetUnderMouse != nullptr && mWidgetUnderMouse->getRect().contains(mousePosition))
-    {
-        mWidgetUnderMouse->onMouseMove(mousePosition - mWidgetUnderMouse->getRect().position, globalMousePos);
-        return;
-    }
-    else if (mWidgetUnderMouse != nullptr)
-    {
-        // mouse is gone outside child 
-
-        if (mMousePressed)
-            mWidgetUnderMouse->onMouseReleased();
-
-        mWidgetUnderMouse->onMouseHoverEnd();
-    }
-
     for (auto childIter = mChildren.rbegin(); childIter != mChildren.rend(); childIter++)
     {
         Widget *child = *childIter;
-
-        if (child->getRect().contains(mousePosition))
+        
+        if (child->getRect().contains(localMousePos))
         {
-            child->onMouseHoverBegin(mousePosition - child->getRect().position, globalMousePos);
+            if (child == mChildUnderMouse)
+            {
+                child->onMouseMove(localMousePos - child->getRect().position, globalMousePos);
+                return;
+            }
+                
+            if (mChildUnderMouse != nullptr)
+            {
+                if (mMousePressed)
+                    mChildUnderMouse->onMouseReleased();
+                mChildUnderMouse->onMouseHoverEnd();
+            }
+
+            child->onMouseHoverBegin(localMousePos - child->getRect().position, globalMousePos);
             if (mMousePressed)
             {
                 popUp(--childIter.base());
                 child->onMouseClicked();
             }
 
-            mWidgetUnderMouse = child;
+            mChildUnderMouse = child;
             return;
         }
     }
 
-    mWidgetUnderMouse = nullptr;
-}
-
-void WindowManager::onMouseHoverBegin(const Vec2i &mousePosition, const Vec2i &globalMousePos)
-{    
-    for (auto childIter = mChildren.rbegin(); childIter != mChildren.rend(); childIter++)
+    if (mChildUnderMouse != nullptr && !mChildUnderMouse->getRect().contains(localMousePos))
     {
-        Widget *child = *childIter;
-
-        if (child->getRect().contains(mousePosition))
-        {
-            child->onMouseHoverBegin(mousePosition - child->getRect().position, globalMousePos);
-
-            mWidgetUnderMouse = child;
-            return;
-        }
+        if (mMousePressed)
+            mChildUnderMouse->onMouseReleased();
+        mChildUnderMouse->onMouseHoverEnd();
     }
-
-    mWidgetUnderMouse = nullptr;
+    
+    mChildUnderMouse = nullptr;
 }
 
 void WindowManager::onMouseClicked()
 {
-    if (mWidgetUnderMouse != nullptr)
+    if (mChildUnderMouse != nullptr)
     {
-        auto childIter = std::find(mChildren.begin(), mChildren.end(), mWidgetUnderMouse);
+        auto childIter = std::find(mChildren.begin(), mChildren.end(), mChildUnderMouse);
         popUp(childIter);
-        mWidgetUnderMouse->onMouseClicked();
+        mChildUnderMouse->onMouseClicked();
     }
     
     mMousePressed = true;
-}
-
-void WindowManager::onMouseReleased()
-{
-    if (mWidgetUnderMouse != nullptr)
-        mWidgetUnderMouse->onMouseReleased();
-    
-    mMousePressed = false;
-}
-
-void WindowManager::onMouseHoverEnd()
-{
-    if (mWidgetUnderMouse != nullptr)
-    {
-        if (mMousePressed == true)
-            mWidgetUnderMouse->onMouseReleased();
-
-        mWidgetUnderMouse->onMouseHoverEnd();
-    }
-
-    mWidgetUnderMouse = nullptr;
-    mMousePressed = false;
 }
 
 void WindowManager::popUp(std::list<Widget*>::iterator widgetIter)

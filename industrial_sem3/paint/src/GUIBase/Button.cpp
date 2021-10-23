@@ -32,24 +32,24 @@ void Button::setLabel(const char *label)
     mLabel->setPosition(newLabelPos);
 }
 
-void Button::onMouseHoverBeginThis(const Vec2i &localMousePos, const Vec2i &globalMousePos)
+void Button::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mCurrColor = mHoveredColor;
 }
 
-void Button::onMouseClickedThis()
+void Button::onMouseClicked()
 {
     mCurrColor = mPressedColor;
     if (mDelegate != nullptr)
         mDelegate->operator()();
 }
 
-void Button::onMouseReleasedThis()
+void Button::onMouseReleased()
 {
     mCurrColor = mHoveredColor;
 }
 
-void Button::onMouseHoverEndThis()
+void Button::onMouseHoverEnd()
 {
     mCurrColor = mIdleColor;
 }

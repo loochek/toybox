@@ -9,7 +9,7 @@ class PaintWindow : public Window
 {
 public:
     PaintWindow() = delete;
-    PaintWindow(const IntRect &windowRect, Widget *parent = nullptr);
+    PaintWindow(const IntRect &canvasRect, Widget *parent = nullptr);
 
     /**
      * \return Canvas widget

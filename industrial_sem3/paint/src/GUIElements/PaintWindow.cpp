@@ -1,16 +1,11 @@
 #include "PaintWindow.hpp"
-#include "../GUIBase/WindowHeader.hpp"
 #include "../GUIBase/Canvas.hpp"
 
-PaintWindow::PaintWindow(const IntRect &windowRect, Widget *parent) : Window(windowRect, parent)
+PaintWindow::PaintWindow(const IntRect &canvasRect, Widget *parent) : Window(canvasRect, parent)
 {
-    mHeader = new WindowHeader(this);
-    mHeader->setTitle("Paint");
-    addChild(mHeader);
+    setTitle("Paint");
 
-    int headerHeight = mHeader->getRect().size.y;
-
-    mCanvas = new Canvas(IntRect(Vec2i(0, headerHeight), windowRect.size - Vec2i(0, headerHeight)),
+    mCanvas = new Canvas(IntRect(Vec2i(Window::SIDE_BORDER_SIZE, Window::HEADER_HEIGHT), canvasRect.size),
                          this);
     addChild(mCanvas);
 }
