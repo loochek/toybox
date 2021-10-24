@@ -2,7 +2,6 @@
 *.out
 *.exe
 *.vscode/
-*.png
 *.dot
 *.wav
 *.aux

@@ -1,21 +1,27 @@
 #include "ColorPicker.hpp"
 #include "../GUIBase/Button.hpp"
-#include "../GUILogic/CanvasColorChangeDelegate.hpp"
+#include "../GUILogic/ColorPickerDelegate.hpp"
 
 using LGL::Color;
 
 const Vec2i ColorPicker::PICKER_SIZE(100, 40);
 
+const Color *ColorPicker::PICKER_COLORS = nullptr;
+
 const int PICKER_ROWS_COUNT     = 2;
 const int PICKER_COLLUMNS_COUNT = 5;
 
-ColorPicker::ColorPicker(const Vec2i &position, Canvas *canvas, Widget *parent) :
-    Widget(IntRect(position, PICKER_SIZE), parent), mCanvas(canvas)
+ColorPicker::ColorPicker(const Vec2i &position, Widget *parent) :
+    Widget(IntRect(position, PICKER_SIZE), parent)
 {
-    static const Color PICKER_COLORS[PICKER_ROWS_COUNT][PICKER_COLLUMNS_COUNT] = { 
+    mDelegate = new ColorPickerDelegate();
+
+    static const Color pickerColors[PICKER_ROWS_COUNT][PICKER_COLLUMNS_COUNT] = { 
         { Color::White, Color::Black  , Color::Red   , Color::Green, Color::Blue  },
         { Color::Cyan , Color::Magenta, Color::Yellow, Color::Pink , Color::Brown }
     };
+
+    PICKER_COLORS = &pickerColors[0][0];
 
     // Create array of color buttons
 
@@ -28,10 +34,26 @@ ColorPicker::ColorPicker(const Vec2i &position, Canvas *canvas, Widget *parent) 
         {
             Button *button = new Button(IntRect(Vec2i(buttonWidth * j, buttonHeight * i),
                                                 Vec2i(buttonWidth, buttonHeight)),
-                                        this, PICKER_COLORS[i][j]);
+                                        this, pickerColors[i][j]);
 
-            button->setDelegate(new CanvasColorChangeDelegate(mCanvas, PICKER_COLORS[i][j]));
+            button->setDelegate(mDelegate);
+            button->setUserData(PICKER_COLLUMNS_COUNT * i + j);
             addChild(button);
         }
     }
+}
+
+ColorPicker::~ColorPicker()
+{
+    delete mDelegate;
+}
+
+void ColorPicker::subscribeCanvas(Canvas *canvas)
+{
+    mDelegate->addCanvas(canvas);
+}
+
+void ColorPicker::unsubscribeCanvas(Canvas *canvas)
+{
+    mDelegate->removeCanvas(canvas);
 }

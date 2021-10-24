@@ -4,6 +4,7 @@
 #include "../GUIBase/Widget.hpp"
 
 class Canvas;
+class SizePickerDelegate;
 
 /**
  * Canvas size picker widget
@@ -12,18 +13,30 @@ class SizePicker : public Widget
 {
 public:
     SizePicker() = delete;
+    SizePicker(const Vec2i &position, Widget *parent = nullptr);
+
+    virtual ~SizePicker();
 
     /**
-     * \param position Widget position
-     * \param canvas Canvas to be under control
-     * \param parent Parent widget
+     * Subscribes canvas for changing its color
+     * 
+     * \param canvas Canvas
      */
-    SizePicker(const Vec2i &position, Canvas *canvas, Widget *parent = nullptr);
+    void subscribeCanvas(Canvas *canvas);
 
+    /**
+     * Unsubscribes canvas from changing its color
+     * 
+     * \param canvas Canvas
+     */
+    void unsubscribeCanvas(Canvas *canvas);
+
+public:
     static const Vec2i PICKER_SIZE;
+    static const int *PICKER_SIZES;
 
 protected:
-    Canvas *mCanvas;
+    SizePickerDelegate *mDelegate;
 };
 
 #endif

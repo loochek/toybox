@@ -3,7 +3,7 @@
 
 #include "../GUIBase/Widget.hpp"
 
-class Canvas;
+class ColorPickerDelegate;
 
 /**
  * Canvas color picker widget
@@ -12,18 +12,30 @@ class ColorPicker : public Widget
 {
 public:
     ColorPicker() = delete;
+    ColorPicker(const Vec2i &position, Widget *parent = nullptr);
+
+    virtual ~ColorPicker();
 
     /**
-     * \param position Widget position
-     * \param canvas Canvas to be under control
-     * \param parent Parent widget
+     * Subscribes canvas for changing its color
+     * 
+     * \param canvas Canvas
      */
-    ColorPicker(const Vec2i &position, Canvas *canvas, Widget *parent = nullptr);
+    void subscribeCanvas(Canvas *canvas);
 
+    /**
+     * Unsubscribes canvas from changing its color
+     * 
+     * \param canvas Canvas
+     */
+    void unsubscribeCanvas(Canvas *canvas);
+
+public:
     static const Vec2i PICKER_SIZE;
+    static const LGL::Color *PICKER_COLORS;
 
 protected:
-    Canvas *mCanvas;
+    ColorPickerDelegate *mDelegate;
 };
 
 #endif

@@ -12,7 +12,7 @@ MenuBar::MenuBar(Widget *parent) :
 {
 }
 
-void MenuBar::addButton(const char *text, Delegate *delegate)
+void MenuBar::addButton(const char *text, ButtonDelegate *delegate)
 {
     Vec2i textBounds = LGL::RenderTarget::calculateTextBounds(text);
 

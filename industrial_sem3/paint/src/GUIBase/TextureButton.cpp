@@ -24,7 +24,7 @@ void TextureButton::onMouseClicked()
 {
     mCurrTexture = mPressedTexture;
     if (mDelegate != nullptr)
-        mDelegate->operator()();
+        mDelegate->onClick(mUserData);
 }
 
 void TextureButton::onMouseReleased()

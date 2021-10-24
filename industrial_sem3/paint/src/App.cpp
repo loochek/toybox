@@ -22,8 +22,9 @@ App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT))
     bar->addButton("Pallete", nullptr);
     bar->addButton("Size picker", nullptr);
     root->addChild(bar);
-    root->addChild(new ColorPickerWindow(Vec2i(1000, 500), paintWindow->getCanvas(), root));
-    root->addChild(new SizePickerWindow (Vec2i(1000, 100), paintWindow->getCanvas(), root));
+    
+    root->addChild(new ColorPickerWindow(Vec2i(1000, 500), root));
+    root->addChild(new SizePickerWindow (Vec2i(1000, 100), root));
     root->addChild(paintWindow);
     mGuiManager = new GUIManager(mWindow, root);
 }

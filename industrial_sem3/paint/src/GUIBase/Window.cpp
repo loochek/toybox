@@ -9,18 +9,6 @@ const int Window::HEADER_HEIGHT      = 30;
 const int Window::SIDE_BORDER_SIZE   = 8;
 const int Window::BOTTOM_BORDER_SIZE = 8;
 
-bool Window::sTexturesLoaded = false;
-const LGL::Texture *Window::sCorner1Texture    = nullptr;
-const LGL::Texture *Window::sCorner2Texture    = nullptr;
-const LGL::Texture *Window::sCorner3Texture    = nullptr;
-const LGL::Texture *Window::sCorner4Texture    = nullptr;
-const LGL::Texture *Window::sEdgeTopTexture    = nullptr;
-const LGL::Texture *Window::sEdgeLeftTexture   = nullptr;
-const LGL::Texture *Window::sEdgeRightTexture  = nullptr;
-const LGL::Texture *Window::sEdgeBottomTexture = nullptr;
-
-const LGL::Texture *Window::sCloseButtonIdleTexture = nullptr;
-
 const int CLOSE_BUTTON_WIDTH  = 49;
 const int CLOSE_BUTTON_HEIGHT = 20;
 const int CLOSE_BUTTON_OFFSET = 8;
@@ -32,25 +20,18 @@ Window::Window(const IntRect &contentRect, Widget *parent) :
     Widget(IntRect(contentRect.position - Vec2i(SIDE_BORDER_SIZE, HEADER_HEIGHT),
                    contentRect.size + Vec2i(SIDE_BORDER_SIZE * 2, HEADER_HEIGHT + BOTTOM_BORDER_SIZE)),
            parent),
-    mTitle(nullptr)
+    mTitle(nullptr),
+    mCorner1Texture(nullptr),
+    mCorner2Texture(nullptr),
+    mCorner3Texture(nullptr),
+    mCorner4Texture(nullptr),
+    mEdgeTopTexture(nullptr),
+    mEdgeLeftTexture(nullptr),
+    mEdgeRightTexture(nullptr),
+    mEdgeBottomTexture(nullptr),
+    mCloseButtonIdleTexture(nullptr)
 {
-    if (!sTexturesLoaded)
-    {
-        TextureManager *mgr = TextureManager::getInstance();
-
-        sCorner1Texture    = mgr->getTexture("corner1");
-        sCorner2Texture    = mgr->getTexture("corner2");
-        sCorner3Texture    = mgr->getTexture("corner3");
-        sCorner4Texture    = mgr->getTexture("corner4");
-        sEdgeTopTexture    = mgr->getTexture("edge_top");
-        sEdgeLeftTexture   = mgr->getTexture("edge_left");
-        sEdgeRightTexture  = mgr->getTexture("edge_right");
-        sEdgeBottomTexture = mgr->getTexture("edge_bottom");
-
-        sCloseButtonIdleTexture = mgr->getTexture("close_button_idle");
-
-        sTexturesLoaded = true;
-    }
+    getTextures();
     
     DragArea *dragArea = new DragArea(IntRect(Vec2i(), Vec2i(mRect.size.x, HEADER_HEIGHT)), this, this);
     addChild(dragArea);
@@ -58,13 +39,19 @@ Window::Window(const IntRect &contentRect, Widget *parent) :
     TextureButton *closeButton = new TextureButton(
         IntRect(Vec2i(mRect.size.x - CLOSE_BUTTON_OFFSET - CLOSE_BUTTON_WIDTH, 0),
                 Vec2i(CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT)),
-        sCloseButtonIdleTexture,
-        sCloseButtonIdleTexture,
-        sCloseButtonIdleTexture,
+        mCloseButtonIdleTexture,
+        mCloseButtonIdleTexture,
+        mCloseButtonIdleTexture,
         this);
 
-    closeButton->setDelegate(new WindowCloseDelegate(this));
+    mCloseButtonDelegate = new WindowCloseDelegate(this);
+    closeButton->setDelegate(mCloseButtonDelegate);
     addChild(closeButton);
+}
+
+Window::~Window()
+{
+    delete mCloseButtonDelegate;
 }
 
 void Window::setTitle(const char *title)
@@ -83,28 +70,53 @@ void Window::onRedrawThis()
 {
     // Corners
 
-    mTexture.drawTexture(*sCorner1Texture, Vec2i());
-    mTexture.drawTexture(*sCorner2Texture, Vec2i(mRect.size.x - SIDE_BORDER_SIZE, 0));
-    mTexture.drawTexture(*sCorner3Texture, Vec2i(0, mRect.size.y - BOTTOM_BORDER_SIZE));
-    mTexture.drawTexture(*sCorner4Texture, Vec2i(mRect.size.x - SIDE_BORDER_SIZE,
+    mTexture.drawTexture(*mCorner1Texture, Vec2i());
+    mTexture.drawTexture(*mCorner2Texture, Vec2i(mRect.size.x - SIDE_BORDER_SIZE, 0));
+    mTexture.drawTexture(*mCorner3Texture, Vec2i(0, mRect.size.y - BOTTOM_BORDER_SIZE));
+    mTexture.drawTexture(*mCorner4Texture, Vec2i(mRect.size.x - SIDE_BORDER_SIZE,
                                                  mRect.size.y - BOTTOM_BORDER_SIZE));
 
     int horizEdgeWidth = mRect.size.x - SIDE_BORDER_SIZE * 2;
     int vertEdgeHeight = mRect.size.y - HEADER_HEIGHT - BOTTOM_BORDER_SIZE;
 
     // Top edge
-    for (int x = 0; x < horizEdgeWidth; x++)
-        mTexture.drawTexture(*sEdgeTopTexture, Vec2i(SIDE_BORDER_SIZE + x, 0));
+    mTexture.drawTexture(*mEdgeTopTexture, Vec2i(SIDE_BORDER_SIZE, 0), IntRect(Vec2i(), Vec2i(horizEdgeWidth, HEADER_HEIGHT)));
 
     // Bottom edge
-    for (int x = 0; x < horizEdgeWidth; x++)
-        mTexture.drawTexture(*sEdgeBottomTexture, Vec2i(SIDE_BORDER_SIZE + x, mRect.size.y - BOTTOM_BORDER_SIZE));
+    mTexture.drawTexture(*mEdgeBottomTexture, Vec2i(SIDE_BORDER_SIZE, mRect.size.y - BOTTOM_BORDER_SIZE), IntRect(Vec2i(), Vec2i(horizEdgeWidth, BOTTOM_BORDER_SIZE)));
 
     // Left edge
-    for (int y = 0; y < vertEdgeHeight; y++)
-        mTexture.drawTexture(*sEdgeLeftTexture, Vec2i(0, HEADER_HEIGHT + y));
+    mTexture.drawTexture(*mEdgeLeftTexture, Vec2i(0, HEADER_HEIGHT), IntRect(Vec2i(), Vec2i(SIDE_BORDER_SIZE, vertEdgeHeight)));
 
     // Left edge
-    for (int y = 0; y < vertEdgeHeight; y++)
-        mTexture.drawTexture(*sEdgeRightTexture, Vec2i(mRect.size.x - SIDE_BORDER_SIZE, HEADER_HEIGHT + y));
+    mTexture.drawTexture(*mEdgeRightTexture, Vec2i(mRect.size.x - SIDE_BORDER_SIZE, HEADER_HEIGHT), IntRect(Vec2i(), Vec2i(SIDE_BORDER_SIZE, vertEdgeHeight)));
+}
+
+void Window::getTextures()
+{
+    TextureManager *mgr = TextureManager::getInstance();
+
+    mCorner1Texture    = mgr->getTexture("corner1");
+    mCorner2Texture    = mgr->getTexture("corner2");
+    mCorner3Texture    = mgr->getTexture("corner3");
+    mCorner4Texture    = mgr->getTexture("corner4");
+    mEdgeTopTexture    = mgr->getTexture("edge_top");
+    mEdgeLeftTexture   = mgr->getTexture("edge_left");
+    mEdgeRightTexture  = mgr->getTexture("edge_right");
+    mEdgeBottomTexture = mgr->getTexture("edge_bottom");
+
+    mCloseButtonIdleTexture = mgr->getTexture("close_button_idle");
+
+    if (mCorner1Texture == nullptr || 
+        mCorner2Texture == nullptr || 
+        mCorner3Texture == nullptr || 
+        mCorner4Texture == nullptr || 
+        mEdgeTopTexture == nullptr || 
+        mEdgeLeftTexture == nullptr ||
+        mEdgeRightTexture == nullptr ||
+        mEdgeBottomTexture == nullptr ||
+        mCloseButtonIdleTexture == nullptr)
+    {
+        throw std::runtime_error("Window textures are not loaded");
+    }
 }

@@ -50,19 +50,22 @@ public:
 
 protected:
     virtual void onRedrawThis() override;
+    virtual void onUpdateThis(float elapsedTime);
     virtual void onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
     virtual void onMouseClicked() override;
     virtual void onMouseReleased() override;
     virtual void onMouseHoverEnd() override;
 
 protected:
-    LGL::Color mCurrColor;
-
     LGL::Color mIdleColor;
     LGL::Color mHoveredColor;
     LGL::Color mPressedColor;
 
     Label *mLabel;
+
+    bool  mButtonHovered;
+    bool  mButtonPressed;
+    float mCurrAnimTime;
 };
 
 #endif

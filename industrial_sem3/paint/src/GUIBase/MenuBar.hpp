@@ -3,7 +3,7 @@
 
 #include "Widget.hpp"
 
-class Delegate;
+class ButtonDelegate;
 
 /**
  * Menu bar of text buttons
@@ -20,7 +20,7 @@ public:
      * \param text Button text
      * \param delegate Button delegate. Can be a null pointer. Menu bar will be responsible for its deletion
      */
-    void addButton(const char *text, Delegate *delegate);
+    void addButton(const char *text, ButtonDelegate *delegate);
 
 protected:
     virtual void onRedrawThis() override;

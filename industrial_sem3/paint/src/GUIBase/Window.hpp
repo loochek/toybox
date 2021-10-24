@@ -4,6 +4,7 @@
 #include "Widget.hpp"
 
 class Label;
+class ButtonDelegate;
 
 /**
  * Base class for windows
@@ -13,6 +14,8 @@ class Window : public Widget
 protected:
     Window() = delete;
     Window(const IntRect &contentRect, Widget *parent = nullptr);
+    
+    virtual ~Window();
 
 protected:
     /**
@@ -24,6 +27,9 @@ protected:
 
     virtual void onRedrawThis() override;
 
+private:
+    void getTextures();
+
 public:
     static const int HEADER_HEIGHT;
     static const int SIDE_BORDER_SIZE;
@@ -31,18 +37,18 @@ public:
 
 protected:
     Label *mTitle;
+    ButtonDelegate *mCloseButtonDelegate;
 
-    static bool sTexturesLoaded;
-    static const LGL::Texture *sCorner1Texture;
-    static const LGL::Texture *sCorner2Texture;
-    static const LGL::Texture *sCorner3Texture;
-    static const LGL::Texture *sCorner4Texture;
-    static const LGL::Texture *sEdgeTopTexture;
-    static const LGL::Texture *sEdgeLeftTexture;
-    static const LGL::Texture *sEdgeRightTexture;
-    static const LGL::Texture *sEdgeBottomTexture;
+    const LGL::Texture *mCorner1Texture;
+    const LGL::Texture *mCorner2Texture;
+    const LGL::Texture *mCorner3Texture;
+    const LGL::Texture *mCorner4Texture;
+    const LGL::Texture *mEdgeTopTexture;
+    const LGL::Texture *mEdgeLeftTexture;
+    const LGL::Texture *mEdgeRightTexture;
+    const LGL::Texture *mEdgeBottomTexture;
 
-    static const LGL::Texture *sCloseButtonIdleTexture;
+    const LGL::Texture *mCloseButtonIdleTexture;
 };
 
 #endif

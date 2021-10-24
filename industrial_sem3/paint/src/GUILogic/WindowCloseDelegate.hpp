@@ -2,17 +2,17 @@
 #ifndef WINDOW_CLOSE_DELEGATE_HPP
 #define WINDOW_CLOSE_DELEGATE_HPP
 
-#include "../Utils/Delegate.hpp"
+#include "ButtonDelegate.hpp"
 #include "../GUIBase/Canvas.hpp"
 #include "../GUIBase/Window.hpp"
 
-class WindowCloseDelegate : public Delegate
+class WindowCloseDelegate : public ButtonDelegate
 {
 public:
     WindowCloseDelegate() = delete;
     WindowCloseDelegate(Window *window) : mWindow(window) {};
 
-    virtual void operator()() override
+    virtual void onClick(int userData) override
     {
         mWindow->onDestroy();
         
