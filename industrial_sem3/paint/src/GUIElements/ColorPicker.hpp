@@ -4,6 +4,7 @@
 #include "../GUIBase/Widget.hpp"
 
 class ColorPickerDelegate;
+class Canvas;
 
 /**
  * Canvas color picker widget

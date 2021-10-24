@@ -4,6 +4,7 @@
 #include "Widget.hpp"
 
 class Label;
+class BaseButton;
 class ButtonDelegate;
 
 /**
@@ -15,7 +16,7 @@ protected:
     Window() = delete;
     Window(const IntRect &contentRect, Widget *parent = nullptr);
     
-    virtual ~Window();
+    virtual ~Window() {};
 
 protected:
     /**
@@ -37,7 +38,7 @@ public:
 
 protected:
     Label *mTitle;
-    ButtonDelegate *mCloseButtonDelegate;
+    BaseButton *mCloseButton;
 
     const LGL::Texture *mCorner1Texture;
     const LGL::Texture *mCorner2Texture;

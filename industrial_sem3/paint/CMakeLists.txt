@@ -11,6 +11,7 @@ set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-point
 aux_source_directory(src PAINT_SOURCES)
 aux_source_directory(src/GUIBase PAINT_SOURCES)
 aux_source_directory(src/GUIElements PAINT_SOURCES)
+aux_source_directory(src/GUILogic PAINT_SOURCES)
 aux_source_directory(src/Math PAINT_SOURCES)
 aux_source_directory(src/LGL PAINT_SOURCES)
 

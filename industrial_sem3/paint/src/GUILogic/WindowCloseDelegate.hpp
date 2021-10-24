@@ -3,7 +3,6 @@
 #define WINDOW_CLOSE_DELEGATE_HPP
 
 #include "ButtonDelegate.hpp"
-#include "../GUIBase/Canvas.hpp"
 #include "../GUIBase/Window.hpp"
 
 class WindowCloseDelegate : public ButtonDelegate
@@ -14,10 +13,7 @@ public:
 
     virtual void onClick(int userData) override
     {
-        mWindow->onDestroy();
-        
-        if (mWindow->getParent() != nullptr)
-            mWindow->getParent()->onChildDestroy(mWindow);
+        mWindow->scheduleForDeletion();
     }
 
 protected:

@@ -23,8 +23,11 @@ void Canvas::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMo
 void Canvas::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     if (mPenDown)
+    {
+        mCanvas.drawLine(mPenPosition, localMousePos, mPenSize, mDrawingColor);
         mCanvas.drawCircle(localMousePos, mPenSize, mDrawingColor);
-
+    }
+    
     mDrawPen = true;
     mPenPosition = localMousePos;
 }

@@ -17,6 +17,8 @@ GUIManager::~GUIManager()
 void GUIManager::update(float elapsedTime)
 {
     mRoot->onUpdate(elapsedTime);
+    // delete widgets marked as "scheduled for deletion"
+    deleteScheduled(mRoot);
 }
 
 void GUIManager::handleMouse()
@@ -41,4 +43,28 @@ void GUIManager::draw()
 {
     mRoot->onRedraw();
     mWindow.drawRenderTexture(mRoot->mTexture, Vec2i());
+}
+
+bool GUIManager::deleteScheduled(Widget *widget)
+{
+    if (widget->mScheduledForDeletion)
+    {
+        widget->onDestroy();
+        delete widget;
+
+        return true;
+    }
+
+    for (auto iter = widget->mChildren.begin(); iter != widget->mChildren.end(); )
+    {
+        if (deleteScheduled(*iter))
+        {
+            widget->onChildDestroy(*iter);
+            widget->mChildren.erase(iter++);
+        }
+        else
+            iter++;
+    }
+
+    return false;
 }

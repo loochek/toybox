@@ -20,49 +20,29 @@ Window::Window(const IntRect &contentRect, Widget *parent) :
     Widget(IntRect(contentRect.position - Vec2i(SIDE_BORDER_SIZE, HEADER_HEIGHT),
                    contentRect.size + Vec2i(SIDE_BORDER_SIZE * 2, HEADER_HEIGHT + BOTTOM_BORDER_SIZE)),
            parent),
-    mTitle(nullptr),
-    mCorner1Texture(nullptr),
-    mCorner2Texture(nullptr),
-    mCorner3Texture(nullptr),
-    mCorner4Texture(nullptr),
-    mEdgeTopTexture(nullptr),
-    mEdgeLeftTexture(nullptr),
-    mEdgeRightTexture(nullptr),
-    mEdgeBottomTexture(nullptr),
-    mCloseButtonIdleTexture(nullptr)
+    mTitle(nullptr)
 {
     getTextures();
+
+    mTitle = new Label(this);
+    mTitle->setPosition(Vec2i(SIDE_BORDER_SIZE, LABEL_HEIGHT_OFFSET));
+    addChild(mTitle);
     
     DragArea *dragArea = new DragArea(IntRect(Vec2i(), Vec2i(mRect.size.x, HEADER_HEIGHT)), this, this);
     addChild(dragArea);
 
-    TextureButton *closeButton = new TextureButton(
+    mCloseButton = new TextureButton(
         IntRect(Vec2i(mRect.size.x - CLOSE_BUTTON_OFFSET - CLOSE_BUTTON_WIDTH, 0),
                 Vec2i(CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT)),
         mCloseButtonIdleTexture,
         mCloseButtonIdleTexture,
         mCloseButtonIdleTexture,
         this);
-
-    mCloseButtonDelegate = new WindowCloseDelegate(this);
-    closeButton->setDelegate(mCloseButtonDelegate);
-    addChild(closeButton);
-}
-
-Window::~Window()
-{
-    delete mCloseButtonDelegate;
+    addChild(mCloseButton);
 }
 
 void Window::setTitle(const char *title)
 {
-    if (mTitle == nullptr)
-    {
-        mTitle = new Label(this);
-        mTitle->setPosition(Vec2i(SIDE_BORDER_SIZE, LABEL_HEIGHT_OFFSET));
-        addChild(mTitle);
-    }
-
     mTitle->setText(title);
 }
 
@@ -80,16 +60,24 @@ void Window::onRedrawThis()
     int vertEdgeHeight = mRect.size.y - HEADER_HEIGHT - BOTTOM_BORDER_SIZE;
 
     // Top edge
-    mTexture.drawTexture(*mEdgeTopTexture, Vec2i(SIDE_BORDER_SIZE, 0), IntRect(Vec2i(), Vec2i(horizEdgeWidth, HEADER_HEIGHT)));
+    mTexture.drawTexture(*mEdgeTopTexture,
+                         Vec2i(SIDE_BORDER_SIZE, 0),
+                         IntRect(Vec2i(), Vec2i(horizEdgeWidth, HEADER_HEIGHT)));
 
     // Bottom edge
-    mTexture.drawTexture(*mEdgeBottomTexture, Vec2i(SIDE_BORDER_SIZE, mRect.size.y - BOTTOM_BORDER_SIZE), IntRect(Vec2i(), Vec2i(horizEdgeWidth, BOTTOM_BORDER_SIZE)));
+    mTexture.drawTexture(*mEdgeBottomTexture,
+                         Vec2i(SIDE_BORDER_SIZE, mRect.size.y - BOTTOM_BORDER_SIZE),
+                         IntRect(Vec2i(), Vec2i(horizEdgeWidth, BOTTOM_BORDER_SIZE)));
 
     // Left edge
-    mTexture.drawTexture(*mEdgeLeftTexture, Vec2i(0, HEADER_HEIGHT), IntRect(Vec2i(), Vec2i(SIDE_BORDER_SIZE, vertEdgeHeight)));
+    mTexture.drawTexture(*mEdgeLeftTexture,
+                         Vec2i(0, HEADER_HEIGHT),
+                         IntRect(Vec2i(), Vec2i(SIDE_BORDER_SIZE, vertEdgeHeight)));
 
     // Left edge
-    mTexture.drawTexture(*mEdgeRightTexture, Vec2i(mRect.size.x - SIDE_BORDER_SIZE, HEADER_HEIGHT), IntRect(Vec2i(), Vec2i(SIDE_BORDER_SIZE, vertEdgeHeight)));
+    mTexture.drawTexture(*mEdgeRightTexture,
+                         Vec2i(mRect.size.x - SIDE_BORDER_SIZE, HEADER_HEIGHT),
+                         IntRect(Vec2i(), Vec2i(SIDE_BORDER_SIZE, vertEdgeHeight)));
 }
 
 void Window::getTextures()

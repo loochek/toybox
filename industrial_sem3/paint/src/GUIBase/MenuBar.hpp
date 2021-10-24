@@ -18,9 +18,10 @@ public:
      * Adds a new text button
      * 
      * \param text Button text
-     * \param delegate Button delegate. Can be a null pointer. Menu bar will be responsible for its deletion
+     * \param delegate Button delegate. Can be a null pointer.
+     * \param userData User data for a button
      */
-    void addButton(const char *text, ButtonDelegate *delegate);
+    void addButton(const char *text, ButtonDelegate *delegate, int userData = -1);
 
 protected:
     virtual void onRedrawThis() override;

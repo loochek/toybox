@@ -5,12 +5,16 @@
 
 class SizePicker;
 class Canvas;
+class SizePickerCloseDelegate;
+class PaintController;
 
 class SizePickerWindow : public Window
 {
 public:
     SizePickerWindow() = delete;
-    SizePickerWindow(const Vec2f &pickerPos, Widget *parent = nullptr);
+    SizePickerWindow(const Vec2f &pickerPos, PaintController *controller, Widget *parent = nullptr);
+
+    virtual ~SizePickerWindow();
 
     /**
      * \return Color picker widget
@@ -19,6 +23,7 @@ public:
 
 private:
     SizePicker *mSizePicker;
+    SizePickerCloseDelegate *mCloseButtonDelegate;
 };
 
 #endif

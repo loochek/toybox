@@ -1,10 +1,12 @@
-#ifndef COLOR_PICKER_WINDOW
-#define COLOR_PICKER_WINDOW
+#ifndef COLOR_PICKER_WINDOW_HPP
+#define COLOR_PICKER_WINDOW_HPP
 
 #include "../GUIBase/Window.hpp"
 
 class ColorPicker;
 class Canvas;
+class ColorPickerCloseDelegate;
+class PaintController;
 
 /**
  * Canvas color picker window
@@ -13,8 +15,9 @@ class ColorPickerWindow : public Window
 {
 public:
     ColorPickerWindow() = delete;
+    ColorPickerWindow(const Vec2f &pickerPos, PaintController *controller, Widget *parent = nullptr);
 
-    ColorPickerWindow(const Vec2f &pickerPos, Widget *parent = nullptr);
+    virtual ~ColorPickerWindow();
 
     /**
      * \return Color picker widget
@@ -23,6 +26,7 @@ public:
 
 private:
     ColorPicker *mColorPicker;
+    ColorPickerCloseDelegate *mCloseButtonDelegate;
 };
 
 #endif

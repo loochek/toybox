@@ -12,7 +12,7 @@ MenuBar::MenuBar(Widget *parent) :
 {
 }
 
-void MenuBar::addButton(const char *text, ButtonDelegate *delegate)
+void MenuBar::addButton(const char *text, ButtonDelegate *delegate, int userData)
 {
     Vec2i textBounds = LGL::RenderTarget::calculateTextBounds(text);
 
@@ -21,6 +21,7 @@ void MenuBar::addButton(const char *text, ButtonDelegate *delegate)
                                 this, LGL::Color::Transparent);
     button->setLabel(text);
     button->setDelegate(delegate);
+    button->setUserData(userData);
     addChild(button);
 
     mFilledWidth += buttonWidth;

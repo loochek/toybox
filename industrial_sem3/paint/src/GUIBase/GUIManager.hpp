@@ -30,6 +30,9 @@ public:
     void draw();
 
 private:
+    bool deleteScheduled(Widget *widget);
+
+private:
     LGL::RenderWindow &mWindow;
     Widget *mRoot;
 

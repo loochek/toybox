@@ -44,6 +44,12 @@ public:
      */
     void move(const Vec2i &offset) { mRect.position += offset; };
 
+    /**
+     * Schedules widget for deletion. 
+     * When GUI manager decides to delete widget, onDestroy will be called
+     */
+    void scheduleForDeletion() { mScheduledForDeletion = true; };
+
 protected:
     Widget() = delete;
     
@@ -56,7 +62,6 @@ protected:
 
     /**
      * Event handlers
-     * Call "*This" functions and/or dispatches events to children
      */
 
     /// Widget should update it's state
@@ -104,17 +109,17 @@ protected:
     /// Widget's texture
     LGL::RenderTexture mTexture;
 
-    // To access protected methods
-    friend class GUIManager;
-
+    bool mScheduledForDeletion;
+    
     // Data for handling mouse events
 
     // Can be child or nullptr
     Widget *mChildUnderMouse;
     bool    mMousePressed;
 
+    // To access protected fields and methods
     friend class WindowManager;
-    friend class WindowCloseDelegate;
+    friend class GUIManager;
 };
 
 #endif

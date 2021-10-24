@@ -21,6 +21,10 @@ public:
     void openColorPicker();
     void openSizePicker();
 
+    void onCanvasClose(PaintWindow *canvas);
+    void onColorPickerClose();
+    void onSizePickerClose();
+
 private:
     WindowManager     *mRoot;
     ColorPickerWindow *mColorPicker;

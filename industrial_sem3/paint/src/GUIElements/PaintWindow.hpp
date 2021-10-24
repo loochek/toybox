@@ -4,12 +4,16 @@
 #include "../GUIBase/Window.hpp"
 
 class Canvas;
+class PaintWindowCloseDelegate;
+class PaintController;
 
 class PaintWindow : public Window
 {
 public:
     PaintWindow() = delete;
-    PaintWindow(const IntRect &canvasRect, Widget *parent = nullptr);
+    PaintWindow(const IntRect &canvasRect, PaintController *controller, Widget *parent = nullptr);
+    
+    virtual ~PaintWindow();
 
     /**
      * \return Canvas widget
@@ -18,6 +22,7 @@ public:
 
 protected:
     Canvas *mCanvas;
+    PaintWindowCloseDelegate *mCloseButtonDelegate;
 };
 
 #endif

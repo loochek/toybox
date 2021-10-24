@@ -3,6 +3,9 @@
 
 #include "LGL/LGL.hpp"
 #include "GUIBase/GUIManager.hpp"
+#include "GUILogic/PaintController.hpp"
+
+class PaintControllerMenuDelegate;
 
 /**
  * App framework
@@ -18,12 +21,10 @@ public:
 
 private:
     LGL::RenderWindow mWindow;
-    GUIManager        *mGuiManager;
+    GUIManager       *mGuiManager;
 
-    // LGL::RenderTexture texture1;
-    // LGL::RenderTexture texture2;
-    // LGL::RenderTexture texture3;
-    // LGL::RenderTexture texture4;
+    PaintController  *mPaintController;
+    PaintControllerMenuDelegate *mDelegate;
 };
 
 #endif

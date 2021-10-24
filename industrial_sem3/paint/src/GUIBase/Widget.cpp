@@ -3,7 +3,7 @@
 #include "Widget.hpp"
 
 Widget::Widget(const IntRect &widgetRect, Widget *parent) : mRect(widgetRect), mParent(parent),
-    mTexture(widgetRect.size), mChildUnderMouse(nullptr), mMousePressed(false)
+    mTexture(widgetRect.size), mChildUnderMouse(nullptr), mMousePressed(false), mScheduledForDeletion(false)
 {
 };
 
@@ -129,7 +129,8 @@ void Widget::onDestroy()
 
 void Widget::onChildDestroy(Widget *child)
 {
-    mChildren.remove(child);
+    if (child == mChildUnderMouse)
+        mChildUnderMouse = nullptr;
 }
 
 void Widget::addChild(Widget *child)

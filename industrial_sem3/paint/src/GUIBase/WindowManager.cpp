@@ -2,17 +2,16 @@
 #include "../TextureManager.hpp"
 #include "WindowManager.hpp"
 
-const LGL::Texture *WindowManager::sWallpaperTexture = nullptr;
-
 WindowManager::WindowManager(const IntRect &widgetRect, Widget *parent) : Widget(widgetRect, parent)
 {
-    if (sWallpaperTexture == nullptr)
-        sWallpaperTexture = TextureManager::getInstance()->getTexture("wallpaper");
+    mWallpaperTexture = TextureManager::getInstance()->getTexture("wallpaper");
+    if (mWallpaperTexture == nullptr)
+        throw std::runtime_error("Wallpaper texture is not loaded");
 }
 
 void WindowManager::onRedrawThis()
 {
-    mTexture.drawTexture(*sWallpaperTexture, Vec2i());
+    mTexture.drawTexture(*mWallpaperTexture, Vec2i());
 }
 
 void WindowManager::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)

@@ -21,7 +21,7 @@ protected:
 private:
     void popUp(std::list<Widget*>::iterator widgetIter);
 
-    static const LGL::Texture *sWallpaperTexture; 
+    const LGL::Texture *mWallpaperTexture; 
 };
 
 #endif
