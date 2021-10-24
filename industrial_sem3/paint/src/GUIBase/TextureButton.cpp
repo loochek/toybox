@@ -14,8 +14,10 @@ void TextureButton::onRedrawThis()
 {
     if (mButtonPressed)
         mTexture.drawTexture(*mPressedTexture, Vec2i());
-    else if (mButtonHovered)
-        mTexture.drawTexture(*mHoveredTexture, Vec2i());
     else
+    {
         mTexture.drawTexture(*mIdleTexture, Vec2i());
+        mTexture.drawTexture(*mHoveredTexture, Vec2i(), IntRect(Vec2i(), Vec2i(-1, -1)),
+                             mCurrAnimTime / ANIM_TIME);
+    }    
 }

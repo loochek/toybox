@@ -3,6 +3,8 @@
 #include "SFMLRenderTarget.hpp"
 #include "SFMLRenderTexture.hpp"
 
+static const float FONT_SPACING_COEFF = 1.2;
+
 static const float ARROW_WIDTH  = 7.0f;
 static const float ARROW_HEIGHT = 10.0f;
 
@@ -181,6 +183,7 @@ namespace LGL
         const sf::Glyph &glyph = sFont.getGlyph('A', size, false);
         int textLen = strlen(text);
 
-        return Vec2f(glyph.advance * textLen, -glyph.bounds.top + glyph.bounds.height);
+        return Vec2f(glyph.bounds.width * textLen * FONT_SPACING_COEFF,
+                     -glyph.bounds.top + glyph.bounds.height);
     }
 };

@@ -18,7 +18,7 @@ void MenuBar::addButton(const char *text, ButtonDelegate *delegate, int userData
 
     int buttonWidth = textBounds.x + BUTTON_SPACING * 2;
     Button *button = new Button(IntRect(Vec2i(mFilledWidth, 0), Vec2i(buttonWidth, MENU_BAR_HEIGHT)),
-                                this, LGL::Color::Transparent);
+                                this, LGL::Color::White);
     button->setLabel(text);
     button->setDelegate(delegate);
     button->setUserData(userData);
