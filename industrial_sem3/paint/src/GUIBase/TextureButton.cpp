@@ -5,34 +5,17 @@ TextureButton::TextureButton(const IntRect &widgetRect,
                              const LGL::Texture *hoveredTexture,
                              const LGL::Texture *pressedTexture,
                              Widget *parent) : 
-    BaseButton(widgetRect, parent), mCurrTexture(idleTexture),
+    AnimatedButton(widgetRect, parent),
     mIdleTexture(idleTexture), mHoveredTexture(hoveredTexture), mPressedTexture(pressedTexture)
 {
 }
 
 void TextureButton::onRedrawThis()
 {
-    mTexture.drawTexture(*mCurrTexture, Vec2i());
-}
-
-void TextureButton::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
-{
-    mCurrTexture = mHoveredTexture;
-}
-
-void TextureButton::onMouseClicked()
-{
-    mCurrTexture = mPressedTexture;
-    if (mDelegate != nullptr)
-        mDelegate->onClick(mUserData);
-}
-
-void TextureButton::onMouseReleased()
-{
-    mCurrTexture = mHoveredTexture;
-}
-
-void TextureButton::onMouseHoverEnd()
-{
-    mCurrTexture = mIdleTexture;
+    if (mButtonPressed)
+        mTexture.drawTexture(*mPressedTexture, Vec2i());
+    else if (mButtonHovered)
+        mTexture.drawTexture(*mHoveredTexture, Vec2i());
+    else
+        mTexture.drawTexture(*mIdleTexture, Vec2i());
 }

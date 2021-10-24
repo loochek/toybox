@@ -126,7 +126,8 @@ namespace LGL
         mRenderTarget->draw(mTextDrawer);
     }
 
-    void RenderTarget::drawTexture(const Texture &texture, const Vec2f &position, const IntRect &textureRect)
+    void RenderTarget::drawTexture(const Texture &texture, const Vec2f &position,
+                                   const IntRect &textureRect, float opacity)
     {
         sf::Sprite textureDrawer;
 
@@ -138,7 +139,9 @@ namespace LGL
             textureDrawer.setTextureRect(sf::IntRect(toSFMLVector(textureRect.position),
                                                      toSFMLVector(textureRect.size)));
         }
-        
+
+        textureDrawer.setColor(sf::Color(255, 255, 255, 255 * opacity));
+
         mRenderTarget->draw(textureDrawer);
     }
 

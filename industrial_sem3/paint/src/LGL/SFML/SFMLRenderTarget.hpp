@@ -97,9 +97,10 @@ namespace LGL
          * \param position Where to draw the texture
          * \param textureRect Part of the texture to draw. 
          * If rect with negative size is passed, whole texture will be drawn
+         * \param opacity Texture opacity
          */
         void drawTexture(const Texture &texture, const Vec2f &position,
-                         const IntRect &textureRect = IntRect(Vec2i(), Vec2i(-1, -1)));
+                         const IntRect &textureRect = IntRect(Vec2i(), Vec2i(-1, -1)), float opacity = 1.0f);
 
         /**
          * Draws a text

@@ -2,12 +2,12 @@
 #define TEXTURE_BUTTON_HPP
 
 #include "../LGL/LGL.hpp"
-#include "BaseButton.hpp"
+#include "AnimatedButton.hpp"
 
 /**
  * Button with custom textures
  */
-class TextureButton : public BaseButton
+class TextureButton : public AnimatedButton
 {
 public:
     TextureButton() = delete;
@@ -42,10 +42,6 @@ public:
 
 protected:
     virtual void onRedrawThis() override;
-    virtual void onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
-    virtual void onMouseClicked() override;
-    virtual void onMouseReleased() override;
-    virtual void onMouseHoverEnd() override;
 
 protected:
     const LGL::Texture *mCurrTexture;

@@ -35,8 +35,8 @@ Window::Window(const IntRect &contentRect, Widget *parent) :
         IntRect(Vec2i(mRect.size.x - CLOSE_BUTTON_OFFSET - CLOSE_BUTTON_WIDTH, 0),
                 Vec2i(CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT)),
         mCloseButtonIdleTexture,
-        mCloseButtonIdleTexture,
-        mCloseButtonIdleTexture,
+        mCloseButtonHoveredTexture,
+        mCloseButtonHoveredTexture,
         this);
     addChild(mCloseButton);
 }
@@ -93,7 +93,8 @@ void Window::getTextures()
     mEdgeRightTexture  = mgr->getTexture("edge_right");
     mEdgeBottomTexture = mgr->getTexture("edge_bottom");
 
-    mCloseButtonIdleTexture = mgr->getTexture("close_button_idle");
+    mCloseButtonIdleTexture    = mgr->getTexture("close_button_idle");
+    mCloseButtonHoveredTexture = mgr->getTexture("close_button_hovered");
 
     if (mCorner1Texture == nullptr || 
         mCorner2Texture == nullptr || 
@@ -103,7 +104,8 @@ void Window::getTextures()
         mEdgeLeftTexture == nullptr ||
         mEdgeRightTexture == nullptr ||
         mEdgeBottomTexture == nullptr ||
-        mCloseButtonIdleTexture == nullptr)
+        mCloseButtonIdleTexture == nullptr ||
+        mCloseButtonHoveredTexture == nullptr)
     {
         throw std::runtime_error("Window textures are not loaded");
     }

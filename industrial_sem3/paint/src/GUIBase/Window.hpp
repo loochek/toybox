@@ -50,6 +50,7 @@ protected:
     const LGL::Texture *mEdgeBottomTexture;
 
     const LGL::Texture *mCloseButtonIdleTexture;
+    const LGL::Texture *mCloseButtonHoveredTexture;
 };
 
 #endif
