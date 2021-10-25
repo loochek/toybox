@@ -44,8 +44,6 @@ protected:
     virtual void onRedrawThis() override;
 
 protected:
-    const LGL::Texture *mCurrTexture;
-
     const LGL::Texture *mIdleTexture;
     const LGL::Texture *mHoveredTexture;
     const LGL::Texture *mPressedTexture;
