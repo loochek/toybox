@@ -1,10 +1,11 @@
 #ifndef SIZE_PICKER_HPP
 #define SIZE_PICKER_HPP
 
+#include <unordered_set>
 #include "../GUIBase/Widget.hpp"
 
 class Canvas;
-class SizePickerDelegate;
+class SizePickerSliderDelegate;
 
 /**
  * Canvas size picker widget
@@ -31,12 +32,19 @@ public:
      */
     void unsubscribeCanvas(Canvas *canvas);
 
+protected:
+    void onSizeChanged(int newSize);
+
 public:
     static const Vec2i PICKER_SIZE;
-    static const int *PICKER_SIZES;
 
 protected:
-    SizePickerDelegate *mDelegate;
+    std::unordered_set<Canvas*> mCanvases;
+
+    SizePickerSliderDelegate *mSliderDelegate;
+
+    // to access onSizeChanged
+    friend class SizePickerSliderDelegate;
 };
 
 #endif

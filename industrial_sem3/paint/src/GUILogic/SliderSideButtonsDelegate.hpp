@@ -21,11 +21,11 @@ public:
         switch ((SliderButton)userData)
         {
         case SliderButton::Decrease:
-            mSlider->mValue = std::max(mSlider->mValue - 1, 0);
+            mSlider->setValue(mSlider->getValue() - 1);
             break;
 
         case SliderButton::Increase:
-            mSlider->mValue = std::min(mSlider->mValue + 1, mSlider->mMaxValue);
+            mSlider->setValue(mSlider->getValue() + 1);
             break;
         }
     }

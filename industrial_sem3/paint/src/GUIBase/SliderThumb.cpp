@@ -1,7 +1,9 @@
 #include "SliderThumb.hpp"
+#include "Slider.hpp"
 
-SliderThumb::SliderThumb(const IntRect &widgetRect, Widget *parent) :
-    Widget(widgetRect, parent), mMousePressed(false)
+SliderThumb::SliderThumb(const IntRect &widgetRect, int leftLimit, int rightLimit, Slider *parent) :
+    Widget(widgetRect, parent), mLeftLimit(leftLimit), mRightLimit(rightLimit - widgetRect.size.x),
+    mMousePressed(false)
 {
 }
 
@@ -17,8 +19,17 @@ void SliderThumb::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &glo
 
 void SliderThumb::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
-    if (mMousePressed)
+    if (mMousePressed && mRect.position.x >= mLeftLimit && mRect.position.x <= mRightLimit)
+    {
         move(Vec2i(globalMousePos.x - mOldMousePosition.x, 0));
+        ((Slider*)mParent)->thumbMoved(mRect.position.x);
+    }
+
+    if (mRect.position.x < mLeftLimit)
+        mRect.position.x = mLeftLimit;
+
+    if (mRect.position.x > mRightLimit)
+        mRect.position.x = mRightLimit;
 
     mOldMousePosition = globalMousePos;
 }

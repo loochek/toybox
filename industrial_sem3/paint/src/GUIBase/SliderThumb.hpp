@@ -3,11 +3,18 @@
 
 #include "Widget.hpp"
 
+class Slider;
+
 class SliderThumb : public Widget
 {
 protected:
     SliderThumb() = delete;
-    SliderThumb(const IntRect &widgetRect, Widget *parent = nullptr);
+
+    /**
+     * \param leftLimit Thumb won't move left from this coordinate
+     * \param rightLimit Thumb won't move right from this coordinate
+     */
+    SliderThumb(const IntRect &widgetRect, int leftLimit, int rightLimit, Slider *parent = nullptr);
 
     virtual void onRedrawThis() override;
     
@@ -19,6 +26,9 @@ protected:
 protected:
     Vec2i mOldMousePosition;
     bool  mMousePressed;
+
+    int mLeftLimit;
+    int mRightLimit;
 
     friend class Slider;
 };
