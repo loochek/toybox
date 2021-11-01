@@ -3,12 +3,11 @@
 #include "GUIBase/WindowManager.hpp"
 #include "GUIBase/MenuBar.hpp"
 #include "GUILogic/PaintControllerMenuDelegate.hpp"
-#include "GUIBase/Slider.hpp"
 
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;
 
-App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT))
+App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "Pain")
 {
     LGL::RenderTarget::loadFont();
     TextureManager::getInstance()->load();
@@ -26,9 +25,6 @@ App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT))
     bar->addButton("Pallete", mDelegate, (int)MenuAction::OpenColorPicker);
     bar->addButton("Size picker", mDelegate, (int)MenuAction::OpenSizePicker);
     root->addChild(bar);
-
-    Slider *slider = new Slider(IntRect(Vec2i(200, 200), Vec2i(100, 20)));
-    root->addChild(slider);
 
     mGuiManager = new GUIManager(mWindow, root);
 }

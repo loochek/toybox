@@ -2,9 +2,9 @@
 
 namespace LGL
 {
-    RenderWindow::RenderWindow(const Vec2i &resolution) : RenderTarget(&mWindow)
+    RenderWindow::RenderWindow(const Vec2i &resolution, const char *title) : RenderTarget(&mWindow)
     {
-        mWindow.create(sf::VideoMode(resolution.x, resolution.y), "LGL (SFML backend)");
+        mWindow.create(sf::VideoMode(resolution.x, resolution.y), title);
         //mWindow.setFramerateLimit(60);
     }
 

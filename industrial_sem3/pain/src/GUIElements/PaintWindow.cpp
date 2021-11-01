@@ -6,7 +6,7 @@
 PaintWindow::PaintWindow(const IntRect &canvasRect, PaintController *controller, Widget *parent) :
     Window(canvasRect, parent)
 {
-    setTitle("Paint");
+    setTitle("Pain");
 
     mCanvas = new Canvas(IntRect(Vec2i(Window::SIDE_BORDER_SIZE, Window::HEADER_HEIGHT), canvasRect.size),
                          this);

@@ -15,7 +15,7 @@ namespace LGL
         /**
          * \param resolution Window resolution
          */
-        RenderWindow(const Vec2i &resolution);
+        RenderWindow(const Vec2i &resolution, const char *title = "LGL (SFML backend)");
         ~RenderWindow();
 
         /**
