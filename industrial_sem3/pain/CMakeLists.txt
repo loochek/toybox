@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(paint)
+project(pain)
 
 # Add SDL2 CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2)
@@ -8,19 +8,19 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2)
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
-aux_source_directory(src PAINT_SOURCES)
-aux_source_directory(src/GUIBase PAINT_SOURCES)
-aux_source_directory(src/GUIElements PAINT_SOURCES)
-aux_source_directory(src/GUILogic PAINT_SOURCES)
-aux_source_directory(src/Math PAINT_SOURCES)
-aux_source_directory(src/LGL PAINT_SOURCES)
+aux_source_directory(src PAIN_SOURCES)
+aux_source_directory(src/GUIBase PAIN_SOURCES)
+aux_source_directory(src/GUIElements PAIN_SOURCES)
+aux_source_directory(src/GUILogic PAIN_SOURCES)
+aux_source_directory(src/Math PAIN_SOURCES)
+aux_source_directory(src/LGL PAIN_SOURCES)
 
 find_package(SFML COMPONENTS graphics window)
 if (SFML_FOUND)
-    set(PAINT_SFML_SOURCES ${PAINT_SOURCES})
-    aux_source_directory(src/LGL/SFML PAINT_SFML_SOURCES)
-    add_executable(paint_sfml ${PAINT_SFML_SOURCES})
-    target_link_libraries(paint_sfml sfml-graphics sfml-window)
+    set(PAIN_SFML_SOURCES ${PAIN_SOURCES})
+    aux_source_directory(src/LGL/SFML PAIN_SFML_SOURCES)
+    add_executable(pain_sfml ${PAIN_SFML_SOURCES})
+    target_link_libraries(pain_sfml sfml-graphics sfml-window)
 endif()
 
 # find_package(SDL2 REQUIRED)
