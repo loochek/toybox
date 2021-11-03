@@ -2,6 +2,7 @@
 #define COLOR_PICKER_HPP
 
 #include "../GUIBase/Widget.hpp"
+#include "../GUILogic/ColorPickerController.hpp"
 
 class ColorPickerDelegate;
 class Canvas;
@@ -33,10 +34,10 @@ public:
 
 public:
     static const Vec2i PICKER_SIZE;
-    static const LGL::Color *PICKER_COLORS;
 
 protected:
-    ColorPickerDelegate *mDelegate;
+    ColorPickerController *mController;
+    //ColorPickerDelegate *mDelegate;
 };
 
 #endif

@@ -1,59 +1,40 @@
 #include "ColorPicker.hpp"
 #include "../GUIBase/Button.hpp"
+#include "../GUIElements/KeyColorPicker.hpp"
+#include "../GUIElements/MainColorPicker.hpp"
 #include "../GUILogic/ColorPickerDelegate.hpp"
+#include "../GUILogic/ColorPickerController.hpp"
 
 using LGL::Color;
 
-const int PICKER_ROWS_COUNT     = 2;
-const int PICKER_COLLUMNS_COUNT = 5;
-
-const Vec2i ColorPicker::PICKER_SIZE(100, 40);
-
-const Color *ColorPicker::PICKER_COLORS = nullptr;
+const Vec2i ColorPicker::PICKER_SIZE(260, 220);
 
 ColorPicker::ColorPicker(const Vec2i &position, Widget *parent) :
     Widget(IntRect(position, PICKER_SIZE), parent)
 {
-    static const Color pickerColors[PICKER_ROWS_COUNT][PICKER_COLLUMNS_COUNT] = { 
-        { Color::White, Color::Black  , Color::Red   , Color::Green, Color::Blue  },
-        { Color::Cyan , Color::Magenta, Color::Yellow, Color::Pink , Color::Brown }
-    };
+    //mDelegate = new ColorPickerDelegate();
 
-    PICKER_COLORS = &pickerColors[0][0];
+    KeyColorPicker *keyColorPicker = new KeyColorPicker(IntRect(Vec2i(220, 10), Vec2i(30, 200)), this);
+    MainColorPicker *mainColorPicker = new MainColorPicker(IntRect(Vec2i(10, 10), Vec2i(200, 200)), this);
+    mController = new ColorPickerController(mainColorPicker, keyColorPicker);
 
-    mDelegate = new ColorPickerDelegate();
+    keyColorPicker->setDelegate(mController);
 
-    // Create array of color buttons
-
-    int buttonWidth  = PICKER_SIZE.x / PICKER_COLLUMNS_COUNT;
-    int buttonHeight = PICKER_SIZE.y / PICKER_ROWS_COUNT;
-
-    for (int i = 0; i < PICKER_ROWS_COUNT; i++)
-    {
-        for (int j = 0; j < PICKER_COLLUMNS_COUNT; j++)
-        {
-            Button *button = new Button(IntRect(Vec2i(buttonWidth * j, buttonHeight * i),
-                                                Vec2i(buttonWidth, buttonHeight)),
-                                        this, pickerColors[i][j]);
-
-            button->setDelegate(mDelegate);
-            button->setUserData(PICKER_COLLUMNS_COUNT * i + j);
-            addChild(button);
-        }
-    }
+    addChild(keyColorPicker);
+    addChild(mainColorPicker);
 }
 
 ColorPicker::~ColorPicker()
 {
-    delete mDelegate;
+    delete mController;
 }
 
 void ColorPicker::subscribeCanvas(Canvas *canvas)
 {
-    mDelegate->addCanvas(canvas);
+    //mDelegate->addCanvas(canvas);
 }
 
 void ColorPicker::unsubscribeCanvas(Canvas *canvas)
 {
-    mDelegate->removeCanvas(canvas);
+    //mDelegate->removeCanvas(canvas);
 }

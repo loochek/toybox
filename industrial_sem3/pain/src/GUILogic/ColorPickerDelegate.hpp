@@ -12,8 +12,8 @@ class ColorPickerDelegate : public ButtonDelegate
 public:
     virtual void onClick(int userData) override
     {
-        for (Canvas *canvas : mCanvases)
-            canvas->setDrawingColor(ColorPicker::PICKER_COLORS[userData]);
+        // for (Canvas *canvas : mCanvases)
+        //     canvas->setDrawingColor(ColorPicker::PICKER_COLORS[userData]);
     }
 
     void addCanvas   (Canvas *canvas) { mCanvases.insert(canvas); };
