@@ -1,7 +1,7 @@
 #include "SizePickerWindow.hpp"
 #include "SizePicker.hpp"
 #include "../GUIBase/BaseButton.hpp"
-#include "../GUILogic/SizePickerCloseDelegate.hpp"
+#include "../GUILogic/SizePickerWindow/SizePickerCloseDelegate.hpp"
 
 SizePickerWindow::SizePickerWindow(const Vec2f &pickerPos, PaintController *controller, Widget *parent) :
     Window(IntRect(pickerPos, SizePicker::PICKER_SIZE), parent)

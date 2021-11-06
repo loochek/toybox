@@ -1,13 +1,13 @@
 #ifndef PAINT_CONTROLLER_MENU_DELEGATE_HPP
 #define PAINT_CONTROLLER_MENU_DELEGATE_HPP
 
-#include "ButtonDelegate.hpp"
+#include "BaseButton/ButtonDelegate.hpp"
 #include "PaintController.hpp"
 
 enum class MenuAction
 {
     NewCanvas,
-    OpenColorPicker,
+    OpenPallete,
     OpenSizePicker
 };
 
@@ -25,8 +25,8 @@ public:
             mController->createCanvas();
             break;
 
-        case MenuAction::OpenColorPicker:
-            mController->openColorPicker();
+        case MenuAction::OpenPallete:
+            mController->openPallete();
             break;
 
         case MenuAction::OpenSizePicker:

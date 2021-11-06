@@ -3,7 +3,7 @@
 #include "Label.hpp"
 #include "TextureButton.hpp"
 #include "DragArea.hpp"
-#include "../GUILogic/WindowCloseDelegate.hpp"
+#include "../GUILogic/Window/WindowCloseDelegate.hpp"
 
 const int Window::HEADER_HEIGHT      = 30;
 const int Window::SIDE_BORDER_SIZE   = 8;
@@ -14,6 +14,8 @@ const int CLOSE_BUTTON_HEIGHT = 20;
 const int CLOSE_BUTTON_OFFSET = 8;
 
 const int LABEL_HEIGHT_OFFSET = 3;
+
+const LGL::Color WINDOW_BACKGROUND_COLOR = LGL::Color(0.27f, 0.27f, 0.27f);
 
 
 Window::Window(const IntRect &contentRect, Widget *parent) :
@@ -78,6 +80,12 @@ void Window::onRedrawThis()
     mTexture.drawTexture(*mEdgeRightTexture,
                          Vec2i(mRect.size.x - SIDE_BORDER_SIZE, HEADER_HEIGHT),
                          IntRect(Vec2i(), Vec2i(SIDE_BORDER_SIZE, vertEdgeHeight)));
+
+    // Window background
+    mTexture.drawRect(IntRect(Vec2i(SIDE_BORDER_SIZE, HEADER_HEIGHT),
+                              Vec2i(mRect.size.x - 2 * SIDE_BORDER_SIZE,
+                                    mRect.size.y - HEADER_HEIGHT - BOTTOM_BORDER_SIZE)),
+                      WINDOW_BACKGROUND_COLOR);
 }
 
 void Window::getTextures()

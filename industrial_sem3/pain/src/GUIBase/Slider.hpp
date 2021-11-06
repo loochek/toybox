@@ -44,9 +44,6 @@ public:
      */
     void setDelegate(SliderDelegate *delegate) { this->mDelegate = delegate; };
 
-protected:
-    virtual void onUpdateThis(float elapsedTime);
-
 private:
     void thumbMoved(int newThumbXPos);
 

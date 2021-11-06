@@ -24,6 +24,11 @@ namespace LGL
         mImage.setPixel(x, y, toSFMLColor(color));
     }
 
+    Vec2i Texture::getSize() const
+    {
+        return fromSFMLVector(mTexture.getSize());
+    }
+
     void Texture::update()
     {
         mTexture.update(mImage);

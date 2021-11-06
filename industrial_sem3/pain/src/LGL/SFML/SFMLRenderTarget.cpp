@@ -3,12 +3,12 @@
 #include "SFMLRenderTarget.hpp"
 #include "SFMLRenderTexture.hpp"
 
-static const float FONT_SPACING_COEFF = 1.1;
+static const float FONT_SPACING_COEFF = 0.8;
 
 static const float ARROW_WIDTH  = 7.0f;
 static const float ARROW_HEIGHT = 10.0f;
 
-const char *FONT_FILE_NAME = "RobotoMono-Light.ttf";
+const char *FONT_FILE_NAME = "Segoe UI.ttf";
 
 namespace LGL
 {
@@ -114,7 +114,6 @@ namespace LGL
         mTextDrawer.setString(text);
         mTextDrawer.setFillColor(toSFMLColor(color));
         mTextDrawer.setCharacterSize(size);
-        mTextDrawer.setStyle(sf::Text::Bold);
 
         if (textOrigin == TextOrigin::Centered)
         {

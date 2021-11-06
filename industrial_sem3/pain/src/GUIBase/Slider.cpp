@@ -1,8 +1,8 @@
 #include "Slider.hpp"
 #include "Button.hpp"
 #include "SliderThumb.hpp"
-#include "../GUILogic/SliderDelegate.hpp"
-#include "../GUILogic/SliderSideButtonsDelegate.hpp"
+#include "../GUILogic/Slider/SliderDelegate.hpp"
+#include "../GUILogic/Slider/SliderSideButtonsDelegate.hpp"
 
 const int SIDE_BUTTONS_LENGTH = 20;
 const int THUMB_WIDTH = 10;
@@ -44,7 +44,7 @@ void Slider::thumbMoved(int newThumbXPos)
 {
     mValue = (newThumbXPos - mThumb->mLeftLimit) * mMaxValue / (mThumb->mRightLimit - mThumb->mLeftLimit);
     if (mDelegate != nullptr)
-        mDelegate->onValueChanged(mValue);
+        mDelegate->onValueChange(mValue, mUserData);
 }
 
 void Slider::setValue(int value)
@@ -56,9 +56,5 @@ void Slider::setValue(int value)
     mThumb->setPosition(Vec2i(newThumbXPos, 0));
     
     if (mDelegate != nullptr)
-        mDelegate->onValueChanged(mValue);
-}
-
-void Slider::onUpdateThis(float elapsedTime)
-{
+        mDelegate->onValueChange(mValue, mUserData);
 }

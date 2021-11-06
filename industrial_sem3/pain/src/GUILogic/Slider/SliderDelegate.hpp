@@ -6,7 +6,7 @@ class SliderDelegate
 public:
     virtual ~SliderDelegate() {};
 
-    virtual void onValueChanged(int newValue) = 0;
+    virtual void onValueChange(int newValue, int userData) = 0;
 };
 
 #endif

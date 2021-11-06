@@ -1,7 +1,7 @@
 #include "PaintWindow.hpp"
 #include "../GUIBase/Canvas.hpp"
 #include "../GUIBase/BaseButton.hpp"
-#include "../GUILogic/PaintWindowCloseDelegate.hpp"
+#include "../GUILogic/PaintWindow/PaintWindowCloseDelegate.hpp"
 
 PaintWindow::PaintWindow(const IntRect &canvasRect, PaintController *controller, Widget *parent) :
     Window(canvasRect, parent)

@@ -22,7 +22,7 @@ App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "Pain")
 
     MenuBar *bar = new MenuBar(root);
     bar->addButton("New canvas", mDelegate, (int)MenuAction::NewCanvas);
-    bar->addButton("Pallete", mDelegate, (int)MenuAction::OpenColorPicker);
+    bar->addButton("Pallete", mDelegate, (int)MenuAction::OpenPallete);
     bar->addButton("Size picker", mDelegate, (int)MenuAction::OpenSizePicker);
     root->addChild(bar);
 

@@ -4,7 +4,7 @@
 #include "../GUIBase/Widget.hpp"
 #include "../LGL/LGL.hpp"
 
-class KeyColorChangedDelegate;
+class ColorChangeDelegate;
 
 class KeyColorPicker : public Widget
 {
@@ -12,11 +12,23 @@ public:
     KeyColorPicker() = delete;
     KeyColorPicker(const IntRect &widgetRect, Widget *parent = nullptr);
 
-    void setDelegate(KeyColorChangedDelegate *delegate) { mDelegate = delegate; }
+    /**
+     * Sets delegate for the color picker
+     * It is triggered when selected color changed
+     * 
+     * \param delegate Delegate or null pointer
+     */
+    void setDelegate(ColorChangeDelegate *delegate) { mDelegate = delegate; }
+
+    /**
+     * \return Current selected color
+     */
+    LGL::Color getColor() { return calcColor(mSelectorOffs); };
 
 protected:
     virtual void onRedrawThis() override;
 
+    virtual void onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
     virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
     virtual void onMouseClicked() override;
     virtual void onMouseReleased() override;
@@ -26,7 +38,7 @@ private:
     LGL::Color calcColor(int position);
 
 protected:
-    KeyColorChangedDelegate *mDelegate;
+    ColorChangeDelegate *mDelegate;
 
     LGL::Texture mGradientTexture;
 

@@ -3,7 +3,8 @@
 #include "Widget.hpp"
 
 Widget::Widget(const IntRect &widgetRect, Widget *parent) : mRect(widgetRect), mParent(parent),
-    mTexture(widgetRect.size), mChildUnderMouse(nullptr), mMousePressed(false), mScheduledForDeletion(false)
+    mUserData(-1), mTexture(widgetRect.size), mScheduledForDeletion(false),
+    mChildUnderMouse(nullptr), mMousePressed(false)
 {
 };
 

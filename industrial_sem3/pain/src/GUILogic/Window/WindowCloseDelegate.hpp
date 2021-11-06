@@ -1,9 +1,8 @@
- 
 #ifndef WINDOW_CLOSE_DELEGATE_HPP
 #define WINDOW_CLOSE_DELEGATE_HPP
 
-#include "ButtonDelegate.hpp"
-#include "../GUIBase/Window.hpp"
+#include "../BaseButton/ButtonDelegate.hpp"
+#include "../../GUIBase/Window.hpp"
 
 class WindowCloseDelegate : public ButtonDelegate
 {

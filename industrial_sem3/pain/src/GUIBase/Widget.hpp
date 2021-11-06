@@ -31,6 +31,15 @@ public:
     Widget *getParent() { return mParent; };
 
     /**
+     * Sets user data for the widget. 
+     * This value can be used to distinguish widgets in some cases. 
+     * For example, to handle multiple widgets with single delegate
+     * 
+     * \param userData User data
+     */
+    void setUserData(int userData) { mUserData = userData; };
+
+    /**
      * Sets new position for the widget relative to parent
      * 
      * \param newPosition New position
@@ -102,6 +111,8 @@ protected:
 protected:
     Widget *mParent;
     std::list<Widget*> mChildren;
+
+    int mUserData;
 
     /// Widget's size and position relative to parent widget
     IntRect mRect;

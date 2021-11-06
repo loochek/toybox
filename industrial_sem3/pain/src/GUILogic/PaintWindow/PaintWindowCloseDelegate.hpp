@@ -1,9 +1,9 @@
 #ifndef PAINT_WINDOW_CLOSE_DELEGATE_HPP
 #define PAINT_WINDOW_CLOSE_DELEGATE_HPP
 
-#include "ButtonDelegate.hpp"
-#include "PaintController.hpp"
-#include "../GUIElements/PaintWindow.hpp"
+#include "../BaseButton/ButtonDelegate.hpp"
+#include "../PaintController.hpp"
+#include "../../GUIElements/PaintWindow.hpp"
 
 class PaintWindowCloseDelegate : public ButtonDelegate
 {

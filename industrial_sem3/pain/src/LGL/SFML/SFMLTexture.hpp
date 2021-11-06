@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 #include "../Color.hpp"
+#include "../../Utils/Vec2.hpp"
 
 namespace LGL
 {
@@ -34,11 +35,16 @@ namespace LGL
          * \param color Pixel color
          */
         void setPixel(int x, int y, const Color &color);
-
+        
         /**
          * Updates texture with internal image
          */
         void update();
+
+        /**
+         * \return Texture size
+         */
+        Vec2i getSize() const;
 
     private:
         // to be able to draw mTexture

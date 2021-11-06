@@ -1,8 +1,9 @@
 #include "PaintController.hpp"
 #include "../GUIBase/WindowManager.hpp"
+#include "../GUIBase/Canvas.hpp"
 #include "../GUIElements/PaintWindow.hpp"
-#include "../GUIElements/ColorPickerWindow.hpp"
-#include "../GUIElements/ColorPicker.hpp"
+#include "../GUIElements/PalleteWindow.hpp"
+#include "../GUIElements/Pallete.hpp"
 #include "../GUIElements/SizePickerWindow.hpp"
 #include "../GUIElements/SizePicker.hpp"
 
@@ -11,33 +12,29 @@ const Vec2i   COLOR_PICKER_INIT_POS = Vec2i(1000, 500);
 const Vec2i   SIZE_PICKER_INIT_POS  = Vec2i(1000, 100);
 
 PaintController::PaintController(WindowManager *root) : 
-    mRoot(root), mColorPicker(nullptr), mSizePicker(nullptr)
+    mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mCurrPenSize(1.0f)
 {
 }
 
 void PaintController::createCanvas()
 {
-    PaintWindow *canvas = new PaintWindow(CANVAS_INIT_RECT, this, mRoot);
-    if (mColorPicker != nullptr)
-        mColorPicker->getColorPicker()->subscribeCanvas(canvas->getCanvas());
+    PaintWindow *paintWindow = new PaintWindow(CANVAS_INIT_RECT, this, mRoot);
+    paintWindow->getCanvas()->setDrawingColor(mCurrColor);
+    paintWindow->getCanvas()->setPenSize(mCurrPenSize);
 
-    if (mSizePicker != nullptr)
-        mSizePicker->getSizePicker()->subscribeCanvas(canvas->getCanvas());
-
-    mCanvases.insert(canvas);
-    mRoot->addChild(canvas);
+    mPaintWindows.insert(paintWindow);
+    mRoot->addChild(paintWindow);
 }
 
-void PaintController::openColorPicker()
+void PaintController::openPallete()
 {
-    if (mColorPicker != nullptr)
+    if (mPallete != nullptr)
         return;
 
-    mColorPicker = new ColorPickerWindow(COLOR_PICKER_INIT_POS, this, mRoot);
-    for (PaintWindow *canvas : mCanvases)
-        mColorPicker->getColorPicker()->subscribeCanvas(canvas->getCanvas());
+    mPallete = new PalleteWindow(COLOR_PICKER_INIT_POS, this, mRoot);
+    mPallete->getPallete()->setDelegate(this);
 
-    mRoot->addChild(mColorPicker);
+    mRoot->addChild(mPallete);
 }
 
 void PaintController::openSizePicker()
@@ -46,29 +43,38 @@ void PaintController::openSizePicker()
         return;
 
     mSizePicker = new SizePickerWindow(SIZE_PICKER_INIT_POS, this, mRoot);
-    for (PaintWindow *canvas : mCanvases)
-        mSizePicker->getSizePicker()->subscribeCanvas(canvas->getCanvas());
+    mSizePicker->getSizePicker()->setDelegate(this);
 
     mRoot->addChild(mSizePicker);
 }
 
-void PaintController::onCanvasClose(PaintWindow *canvas)
+void PaintController::onCanvasClose(PaintWindow *paintWindow)
 {
-    if (mColorPicker != nullptr)
-        mColorPicker->getColorPicker()->unsubscribeCanvas(canvas->getCanvas());
-
-    if (mSizePicker != nullptr)
-        mSizePicker->getSizePicker()->unsubscribeCanvas(canvas->getCanvas());
-
-    mCanvases.erase(canvas);
+    mPaintWindows.erase(paintWindow);
 }
 
-void PaintController::onColorPickerClose()
+void PaintController::onPalleteClose()
 {
-    mColorPicker = nullptr;
+    mPallete = nullptr;
 }
 
 void PaintController::onSizePickerClose()
 {
     mSizePicker = nullptr;
+}
+
+void PaintController::onSizeChange(float newPenSize, int userData)
+{
+    mCurrPenSize = newPenSize;
+
+    for (PaintWindow *paintWindow : mPaintWindows)
+        paintWindow->getCanvas()->setPenSize(newPenSize);
+}
+
+void PaintController::onColorChange(const LGL::Color &color, int userData)
+{
+    mCurrColor = color;
+    
+    for (PaintWindow *paintWindow : mPaintWindows)
+        paintWindow->getCanvas()->setDrawingColor(mCurrColor);
 }

@@ -1,8 +1,7 @@
 #include "KeyColorPicker.hpp"
-#include "../GUILogic/KeyColorChangedDelegate.hpp"
+#include "../GUILogic/ColorChangeDelegate.hpp"
 
 const int SELECTOR_SIZE = 4;
-
 const int BASE_COLORS_COUNT = 7;
 
 const LGL::Color baseColors[BASE_COLORS_COUNT] =
@@ -31,6 +30,11 @@ void KeyColorPicker::onRedrawThis()
                               Vec2i(mRect.size.x, SELECTOR_SIZE)));
 }
 
+void KeyColorPicker::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
+{
+    mMouseOffs = localMousePos.y;
+}
+
 void KeyColorPicker::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mMouseOffs = localMousePos.y;
@@ -39,7 +43,7 @@ void KeyColorPicker::onMouseMove(const Vec2i &localMousePos, const Vec2i &global
         mSelectorOffs = mMouseOffs;
         
         if (mDelegate != nullptr)
-            mDelegate->onKeyColorChanged(calcColor(mSelectorOffs));
+            mDelegate->onColorChange(calcColor(mSelectorOffs), mUserData);
     }
 }
 
@@ -49,7 +53,7 @@ void KeyColorPicker::onMouseClicked()
     mSelectorOffs = mMouseOffs;
 
     if (mDelegate != nullptr)
-        mDelegate->onKeyColorChanged(calcColor(mSelectorOffs));
+        mDelegate->onColorChange(calcColor(mSelectorOffs), mUserData);
 }
 
 void KeyColorPicker::onMouseReleased()
@@ -70,9 +74,12 @@ void KeyColorPicker::redrawGradient()
     mGradientTexture.update();
 }
 
-LGL::Color KeyColorPicker::calcColor(int position)
+LGL::Color KeyColorPicker::calcColor(int offset)
 {
-    float sectorFloat = (float)position * (BASE_COLORS_COUNT - 1) / mRect.size.y;
+    if (offset >= mRect.size.y)
+        offset = mRect.size.y - 1;
+    
+    float sectorFloat = (float)offset * (BASE_COLORS_COUNT - 1) / mRect.size.y;
     int sector = sectorFloat;
 
     float mixCoef = 1.0f - (sectorFloat  - sector);

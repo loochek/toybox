@@ -5,11 +5,9 @@
 #include "../GUIBase/Widget.hpp"
 
 class Canvas;
+class SizeChangedDelegate;
 class SizePickerSliderDelegate;
 
-/**
- * Canvas size picker widget
- */
 class SizePicker : public Widget
 {
 public:
@@ -19,31 +17,20 @@ public:
     virtual ~SizePicker();
 
     /**
-     * Subscribes canvas for changing its color
+     * Sets delegate for the size picker
+     * It is triggered when selected size changed
      * 
-     * \param canvas Canvas
+     * \param delegate Delegate or null pointer
      */
-    void subscribeCanvas(Canvas *canvas);
-
-    /**
-     * Unsubscribes canvas from changing its color
-     * 
-     * \param canvas Canvas
-     */
-    void unsubscribeCanvas(Canvas *canvas);
-
-protected:
-    void onSizeChanged(int newSize);
+    void setDelegate(SizeChangedDelegate *delegate) { mDelegate = delegate; }
 
 public:
     static const Vec2i PICKER_SIZE;
 
 protected:
-    std::unordered_set<Canvas*> mCanvases;
-
+    SizeChangedDelegate      *mDelegate;
     SizePickerSliderDelegate *mSliderDelegate;
 
-    // to access onSizeChanged
     friend class SizePickerSliderDelegate;
 };
 

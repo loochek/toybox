@@ -1,8 +1,8 @@
 #ifndef SLIDER_SIDE_BUTTONS_DELEGATE
 #define SLIDER_SIDE_BUTTONS_DELEGATE
 
-#include "ButtonDelegate.hpp"
-#include "../GUIBase/Slider.hpp"
+#include "../BaseButton/ButtonDelegate.hpp"
+#include "../../GUIBase/Slider.hpp"
 
 enum class SliderButton
 {

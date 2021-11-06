@@ -1,6 +1,6 @@
 #include "BaseButton.hpp"
 
 BaseButton::BaseButton(const IntRect &widgetRect, Widget *parent) :
-    Widget(widgetRect, parent), mDelegate(nullptr), mUserData(-1)
+    Widget(widgetRect, parent), mDelegate(nullptr)
 {
 }
