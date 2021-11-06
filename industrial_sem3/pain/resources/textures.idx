@@ -10,3 +10,7 @@ wallpaper             wallpaper.png
 close_button_idle     close_button_idle.png
 close_button_hovered  close_button_hovered.png
 color_picker_selector color_picker_selector.png
+slider_button_bottom  slider_button_bottom.png
+slider_button_top     slider_button_top.png
+slider_button_left    slider_button_left.png
+slider_button_right   slider_button_right.png

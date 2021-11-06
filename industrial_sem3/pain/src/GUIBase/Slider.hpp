@@ -1,6 +1,7 @@
 #ifndef SLIDER_HPP
 #define SLIDER_HPP
 
+#include "../LGL/LGL.hpp"
 #include "Widget.hpp"
 
 class SliderDelegate;
@@ -11,7 +12,7 @@ class Slider : public Widget
 {
 public:
     Slider() = delete;
-    Slider(const IntRect &widgetRect, Widget *parent = nullptr);
+    Slider(const Vec2i &sliderPos, int sliderSize, Widget *parent = nullptr);
 
     virtual ~Slider();
 
@@ -46,6 +47,7 @@ public:
 
 private:
     void thumbMoved(int newThumbXPos);
+    void getTextures();
 
 protected:
     SliderDelegate *mDelegate;
@@ -55,6 +57,9 @@ protected:
 
     SliderSideButtonsDelegate *mSideButtonsDelegate;
     SliderThumb *mThumb;
+
+    const LGL::Texture *mSliderLeftButtonTexture;
+    const LGL::Texture *mSliderRightButtonTexture;
 
     friend class SliderThumb;
 };
