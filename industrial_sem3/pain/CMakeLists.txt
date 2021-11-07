@@ -9,6 +9,7 @@ set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fs
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
 aux_source_directory(src PAIN_SOURCES)
+aux_source_directory(src/Utils PAIN_SOURCES)
 aux_source_directory(src/GUIBase PAIN_SOURCES)
 aux_source_directory(src/GUIElements PAIN_SOURCES)
 aux_source_directory(src/GUILogic PAIN_SOURCES)

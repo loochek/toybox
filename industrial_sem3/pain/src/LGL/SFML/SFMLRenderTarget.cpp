@@ -3,7 +3,7 @@
 #include "SFMLRenderTarget.hpp"
 #include "SFMLRenderTexture.hpp"
 
-static const float FONT_SPACING_COEFF = 0.8;
+static const float FONT_SPACING_COEFF = 0.77f;
 
 static const float ARROW_WIDTH  = 7.0f;
 static const float ARROW_HEIGHT = 10.0f;

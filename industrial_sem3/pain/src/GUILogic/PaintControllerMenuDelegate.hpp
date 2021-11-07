@@ -8,7 +8,8 @@ enum class MenuAction
 {
     NewCanvas,
     OpenPallete,
-    OpenSizePicker
+    OpenSizePicker,
+    OpenSplineWindow
 };
 
 class PaintControllerMenuDelegate : public ButtonDelegate
@@ -31,6 +32,10 @@ public:
 
         case MenuAction::OpenSizePicker:
             mController->openSizePicker();
+            break;
+
+        case MenuAction::OpenSplineWindow:
+            mController->openSplineWindow();
             break;
         }
     }

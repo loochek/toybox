@@ -22,6 +22,7 @@ public:
     void createCanvas();
     void openPallete();
     void openSizePicker();
+    void openSplineWindow();
 
     void onCanvasClose(PaintWindow *paintWindow);
     void onPalleteClose();

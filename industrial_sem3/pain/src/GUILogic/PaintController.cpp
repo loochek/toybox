@@ -6,10 +6,12 @@
 #include "../GUIElements/Pallete.hpp"
 #include "../GUIElements/SizePickerWindow.hpp"
 #include "../GUIElements/SizePicker.hpp"
+#include "../GUIElements/SplineWindow.hpp"
 
-const IntRect CANVAS_INIT_RECT      = IntRect(Vec2i(200, 200), Vec2i(700, 400));
-const Vec2i   COLOR_PICKER_INIT_POS = Vec2i(1000, 300);
-const Vec2i   SIZE_PICKER_INIT_POS  = Vec2i(1000, 100);
+const IntRect CANVAS_INIT_RECT        = IntRect(Vec2i(200, 200), Vec2i(700, 400));
+const IntRect SPLINE_WINDOW_INIT_RECT = IntRect(Vec2i(100, 100), Vec2i(500, 500));
+const Vec2i   COLOR_PICKER_INIT_POS   = Vec2i(1000, 300);
+const Vec2i   SIZE_PICKER_INIT_POS    = Vec2i(1000, 100);
 
 PaintController::PaintController(WindowManager *root) : 
     mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mCurrPenSize(1.0f)
@@ -46,6 +48,11 @@ void PaintController::openSizePicker()
     mSizePicker->getSizePicker()->setDelegate(this);
 
     mRoot->addChild(mSizePicker);
+}
+
+void PaintController::openSplineWindow()
+{
+    mRoot->addChild(new SplineWindow(SPLINE_WINDOW_INIT_RECT, mRoot));
 }
 
 void PaintController::onCanvasClose(PaintWindow *paintWindow)
