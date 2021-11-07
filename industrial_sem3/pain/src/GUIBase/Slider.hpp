@@ -30,7 +30,7 @@ public:
      * 
      * \param value New max value
      */
-    void setMaxValue(int value) { mMaxValue = value; };
+    void setMaxValue(int value);
 
     /**
      * \return Slider value from range [0;MaxValue]
@@ -45,9 +45,13 @@ public:
      */
     void setDelegate(SliderDelegate *delegate) { this->mDelegate = delegate; };
 
+protected:
+    virtual void onRedrawThis() override;
+
 private:
     void thumbMoved(int newThumbXPos);
     void getTextures();
+    int calcThumbSize(int sliderSize, int maxValue);
 
 protected:
     SliderDelegate *mDelegate;
@@ -60,6 +64,7 @@ protected:
 
     const LGL::Texture *mSliderLeftButtonTexture;
     const LGL::Texture *mSliderRightButtonTexture;
+    const LGL::Texture *mSliderBodyTexture;
 
     friend class SliderThumb;
 };

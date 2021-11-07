@@ -8,7 +8,7 @@
 #include "../GUIElements/SizePicker.hpp"
 
 const IntRect CANVAS_INIT_RECT      = IntRect(Vec2i(200, 200), Vec2i(700, 400));
-const Vec2i   COLOR_PICKER_INIT_POS = Vec2i(1000, 500);
+const Vec2i   COLOR_PICKER_INIT_POS = Vec2i(1000, 300);
 const Vec2i   SIZE_PICKER_INIT_POS  = Vec2i(1000, 100);
 
 PaintController::PaintController(WindowManager *root) : 

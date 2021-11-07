@@ -5,7 +5,7 @@ Button::Button(const IntRect &widgetRect, Widget *parent,
     AnimatedButton(widgetRect, parent), mLabel(nullptr),
     mIdleColor(idleColor), mHoveredColor(hoveredColor), mPressedColor(pressedColor)
 {
-    mLabel = new Label(this);
+    mLabel = new Label(Vec2i(), this);
     addChild(mLabel);
 }
 

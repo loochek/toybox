@@ -4,7 +4,7 @@
 #include <unordered_set>
 #include "../GUIBase/Widget.hpp"
 
-class Canvas;
+class Label;
 class SizeChangedDelegate;
 class SizePickerSliderDelegate;
 
@@ -24,12 +24,19 @@ public:
      */
     void setDelegate(SizeChangedDelegate *delegate) { mDelegate = delegate; }
 
+protected:
+    virtual void onRedrawThis() override;
+
 public:
     static const Vec2i PICKER_SIZE;
 
 protected:
     SizeChangedDelegate      *mDelegate;
     SizePickerSliderDelegate *mSliderDelegate;
+
+    Label *mLabel;
+
+    int mPreviewBrushSize;
 
     friend class SizePickerSliderDelegate;
 };

@@ -3,15 +3,18 @@
 
 #include "Widget.hpp"
 
+const char MAX_LABEL_SIZE = 50;
+
 class Label : public Widget
 {
 public:
     Label() = delete;
-    Label(Widget *parent = nullptr);
+    Label(const Vec2i &position, Widget *parent = nullptr);
 
     /**
      * Sets text to a label. 
      * Note that widget rect size will be changed
+     * Pass null pointer to clear the label
      * 
      * \param text Label text
      */
@@ -21,7 +24,8 @@ protected:
     virtual void onRedrawThis() override;
 
 private:
-    const char *mText;
+    char mText[MAX_LABEL_SIZE + 1];
+    bool mTextPresent;
 };
 
 #endif

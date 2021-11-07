@@ -13,8 +13,14 @@ public:
 
     virtual void onValueChange(int newValue, int userData) override
     {
+        mPicker->mPreviewBrushSize = newValue + 1;
+
+        char label[MAX_LABEL_SIZE + 1] = {0};
+        snprintf(label, MAX_LABEL_SIZE, "Brush size: %d px", mPicker->mPreviewBrushSize);
+        mPicker->mLabel->setText(label);
+
         if (mPicker->mDelegate != nullptr)
-            mPicker->mDelegate->onSizeChange(newValue, mPicker->mUserData);
+            mPicker->mDelegate->onSizeChange(mPicker->mPreviewBrushSize, mPicker->mUserData);
     }
 
 protected:

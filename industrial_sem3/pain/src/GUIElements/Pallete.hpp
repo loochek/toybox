@@ -8,6 +8,7 @@ class PalleteController;
 class MainColorPicker;
 class KeyColorPicker;
 class Slider;
+class Label;
 
 class Pallete : public Widget
 {
@@ -43,6 +44,7 @@ protected:
     MainColorPicker *mMainColorPicker;
     KeyColorPicker  *mKeyColorPicker;
     Slider          *mOpacitySlider;
+    Label           *mOpacityLabel;
 
     friend class PalleteController;
 };

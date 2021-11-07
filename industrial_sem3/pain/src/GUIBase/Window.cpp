@@ -15,7 +15,7 @@ const int CLOSE_BUTTON_OFFSET = 8;
 
 const int LABEL_HEIGHT_OFFSET = 3;
 
-const LGL::Color WINDOW_BACKGROUND_COLOR = LGL::Color(0.27f, 0.27f, 0.27f);
+const LGL::Color WINDOW_BACKGROUND_COLOR = LGL::Color(0.94f, 0.94f, 0.94f);
 
 
 Window::Window(const IntRect &contentRect, Widget *parent) :
@@ -26,8 +26,7 @@ Window::Window(const IntRect &contentRect, Widget *parent) :
 {
     getTextures();
 
-    mTitle = new Label(this);
-    mTitle->setPosition(Vec2i(SIDE_BORDER_SIZE, LABEL_HEIGHT_OFFSET));
+    mTitle = new Label(Vec2i(SIDE_BORDER_SIZE, LABEL_HEIGHT_OFFSET), this);
     addChild(mTitle);
     
     DragArea *dragArea = new DragArea(IntRect(Vec2i(), Vec2i(mRect.size.x, HEADER_HEIGHT)), this, this);
@@ -92,17 +91,17 @@ void Window::getTextures()
 {
     TextureManager *mgr = TextureManager::getInstance();
 
-    mCorner1Texture    = mgr->getTexture("corner1");
-    mCorner2Texture    = mgr->getTexture("corner2");
-    mCorner3Texture    = mgr->getTexture("corner3");
-    mCorner4Texture    = mgr->getTexture("corner4");
-    mEdgeTopTexture    = mgr->getTexture("edge_top");
-    mEdgeLeftTexture   = mgr->getTexture("edge_left");
-    mEdgeRightTexture  = mgr->getTexture("edge_right");
-    mEdgeBottomTexture = mgr->getTexture("edge_bottom");
+    mCorner1Texture    = mgr->getTexture("window_corner1");
+    mCorner2Texture    = mgr->getTexture("window_corner2");
+    mCorner3Texture    = mgr->getTexture("window_corner3");
+    mCorner4Texture    = mgr->getTexture("window_corner4");
+    mEdgeTopTexture    = mgr->getTexture("window_edge_top");
+    mEdgeLeftTexture   = mgr->getTexture("window_edge_left");
+    mEdgeRightTexture  = mgr->getTexture("window_edge_right");
+    mEdgeBottomTexture = mgr->getTexture("window_edge_bottom");
 
-    mCloseButtonIdleTexture    = mgr->getTexture("close_button_idle");
-    mCloseButtonHoveredTexture = mgr->getTexture("close_button_hovered");
+    mCloseButtonIdleTexture    = mgr->getTexture("window_close_button_idle");
+    mCloseButtonHoveredTexture = mgr->getTexture("window_close_button_hovered");
 
     if (mCorner1Texture == nullptr || 
         mCorner2Texture == nullptr || 

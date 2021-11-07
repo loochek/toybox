@@ -5,11 +5,11 @@
 #include "../GUILogic/Slider/SliderDelegate.hpp"
 #include "../GUILogic/Slider/SliderSideButtonsDelegate.hpp"
 
-const int SLIDER_HEIGHT = 16;
+const int SLIDER_HEIGHT       = 16;
 const int SIDE_BUTTONS_LENGTH = 16;
-const int THUMB_WIDTH = 10;
-
-const int DEFAULT_MAX_VALUE = 20;
+const int MIN_THUMB_WIDTH     = 18;
+const int PIXELS_PER_VALUE    = 4;
+const int DEFAULT_MAX_VALUE   = 20;
 
 Slider::Slider(const Vec2i &sliderPos, int sliderSize, Widget *parent) :
     Widget(IntRect(sliderPos, Vec2i(sliderSize, SLIDER_HEIGHT)), parent),
@@ -38,7 +38,7 @@ Slider::Slider(const Vec2i &sliderPos, int sliderSize, Widget *parent) :
     rightButton->setUserData((int)SliderButton::Increase);
     addChild(rightButton);
 
-    mThumb = new SliderThumb(IntRect(Vec2i(SIDE_BUTTONS_LENGTH, 0), Vec2i(THUMB_WIDTH, SLIDER_HEIGHT)),
+    mThumb = new SliderThumb(Vec2i(SIDE_BUTTONS_LENGTH, 0), calcThumbSize(sliderSize, DEFAULT_MAX_VALUE),
                              SIDE_BUTTONS_LENGTH,
                              sliderSize - SIDE_BUTTONS_LENGTH,
                              this);
@@ -48,13 +48,6 @@ Slider::Slider(const Vec2i &sliderPos, int sliderSize, Widget *parent) :
 Slider::~Slider()
 {
     delete mSideButtonsDelegate;
-}
-
-void Slider::thumbMoved(int newThumbXPos)
-{
-    mValue = (newThumbXPos - mThumb->mLeftLimit) * mMaxValue / (mThumb->mRightLimit - mThumb->mLeftLimit);
-    if (mDelegate != nullptr)
-        mDelegate->onValueChange(mValue, mUserData);
 }
 
 void Slider::setValue(int value)
@@ -69,14 +62,46 @@ void Slider::setValue(int value)
         mDelegate->onValueChange(mValue, mUserData);
 }
 
+void Slider::setMaxValue(int value)
+{
+    mMaxValue = value;
+
+    mThumb->resize(calcThumbSize(mRect.size.x, mMaxValue));
+
+    int newThumbXPos = mThumb->mLeftLimit + mValue * (mThumb->mRightLimit - mThumb->mLeftLimit) / mMaxValue;
+    mThumb->setPosition(Vec2i(newThumbXPos, 0));
+};
+
+void Slider::onRedrawThis()
+{
+    mTexture.drawTexture(*mSliderBodyTexture, Vec2i(), IntRect(Vec2i(), mRect.size));
+}
+
+void Slider::thumbMoved(int newThumbXPos)
+{
+    mValue = (newThumbXPos - mThumb->mLeftLimit) * mMaxValue / (mThumb->mRightLimit - mThumb->mLeftLimit);
+    if (mDelegate != nullptr)
+        mDelegate->onValueChange(mValue, mUserData);
+}
+
 void Slider::getTextures()
 {
     mSliderLeftButtonTexture  = TextureManager::getInstance()->getTexture("slider_button_left");
     mSliderRightButtonTexture = TextureManager::getInstance()->getTexture("slider_button_right");
+    mSliderBodyTexture        = TextureManager::getInstance()->getTexture("slider_body");
 
-    if (mSliderLeftButtonTexture  == nullptr ||
-        mSliderRightButtonTexture == nullptr)
+    if (mSliderLeftButtonTexture == nullptr ||
+        mSliderRightButtonTexture == nullptr ||
+        mSliderBodyTexture == nullptr)
     {
         throw std::runtime_error("Slider textures are not loaded");
     }
+}
+
+int Slider::calcThumbSize(int sliderSize, int maxValue)
+{
+    sliderSize -= 2 * SIDE_BUTTONS_LENGTH;
+
+    int workingSize = maxValue * PIXELS_PER_VALUE;
+    return std::max(sliderSize - workingSize, MIN_THUMB_WIDTH);
 }

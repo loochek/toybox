@@ -14,7 +14,9 @@ protected:
      * \param leftLimit Thumb won't move left from this coordinate
      * \param rightLimit Thumb won't move right from this coordinate
      */
-    SliderThumb(const IntRect &widgetRect, int leftLimit, int rightLimit, Slider *parent = nullptr);
+    SliderThumb(const Vec2i &thumbPos, int thumbSize, int leftLimit, int rightLimit, Slider *parent = nullptr);
+
+    void resize(int newThumbSize);
 
     virtual void onRedrawThis() override;
     
@@ -22,6 +24,9 @@ protected:
     virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
     virtual void onMouseClicked() override;
     virtual void onMouseReleased() override;
+
+private:
+    void getTextures();
 
 protected:
     Vec2i mOldMousePosition;
@@ -31,6 +36,11 @@ protected:
     int mRightLimit;
 
     friend class Slider;
+
+    const LGL::Texture *mThumbLeftTexture;
+    const LGL::Texture *mThumbRightTexture;
+    const LGL::Texture *mThumbBodyTexture;
+    const LGL::Texture *mThumbCenterTexture;
 };
 
 #endif

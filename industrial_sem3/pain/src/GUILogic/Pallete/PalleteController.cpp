@@ -1,4 +1,5 @@
 #include "PalleteController.hpp"
+#include "../../GUIBase/Label.hpp"
 #include "../../GUIElements/KeyColorPicker.hpp"
 #include "../../GUIElements/MainColorPicker.hpp"
 #include "../../GUIElements/Pallete.hpp"
@@ -28,6 +29,10 @@ void PalleteController::onColorChange(const LGL::Color &color, int userData)
 void PalleteController::onValueChange(int newOpacity, int userData)
 {
     mCurrColor = mCurrColor.applyAlpha(newOpacity / (float)EXTERNAL_RGB_BASE);
+    if (mPallete->mDelegate != nullptr)
+        mPallete->mDelegate->onColorChange(mCurrColor, mPallete->mUserData);
 
-    mPallete->mDelegate->onColorChange(mCurrColor, mPallete->mUserData);
+    char label[MAX_LABEL_SIZE + 1] = {0};
+    snprintf(label, MAX_LABEL_SIZE, "Opacity: %d%%", newOpacity * 100 / EXTERNAL_RGB_BASE);
+    mPallete->mOpacityLabel->setText(label);
 }
