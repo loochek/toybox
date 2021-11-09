@@ -20,9 +20,9 @@ Slider::Slider(const Vec2i &sliderPos, int sliderSize, Widget *parent) :
     mSideButtonsDelegate = new SliderSideButtonsDelegate(this);
 
     TextureButton *leftButton = new TextureButton(IntRect(Vec2i(), Vec2i(SIDE_BUTTONS_LENGTH, SLIDER_HEIGHT)),
-                                                  mSliderLeftButtonTexture,
-                                                  mSliderLeftButtonTexture,
-                                                  mSliderLeftButtonTexture,
+                                                  mSliderLeftButtonIdleTexture,
+                                                  mSliderLeftButtonHoveredTexture,
+                                                  mSliderLeftButtonPressedTexture,
                                                   this);
     leftButton->setDelegate(mSideButtonsDelegate);
     leftButton->setUserData((int)SliderButton::Decrease);
@@ -30,9 +30,9 @@ Slider::Slider(const Vec2i &sliderPos, int sliderSize, Widget *parent) :
 
     TextureButton *rightButton = new TextureButton(IntRect(Vec2i(sliderSize - SIDE_BUTTONS_LENGTH, 0),
                                                            Vec2i(SIDE_BUTTONS_LENGTH, SLIDER_HEIGHT)),
-                                                   mSliderRightButtonTexture,
-                                                   mSliderRightButtonTexture,
-                                                   mSliderRightButtonTexture,
+                                                   mSliderRightButtonIdleTexture,
+                                                   mSliderRightButtonHoveredTexture,
+                                                   mSliderRightButtonPressedTexture,
                                                    this);
     rightButton->setDelegate(mSideButtonsDelegate);
     rightButton->setUserData((int)SliderButton::Increase);
@@ -86,12 +86,20 @@ void Slider::thumbMoved(int newThumbXPos)
 
 void Slider::getTextures()
 {
-    mSliderLeftButtonTexture  = TextureManager::getInstance()->getTexture("slider_button_left");
-    mSliderRightButtonTexture = TextureManager::getInstance()->getTexture("slider_button_right");
-    mSliderBodyTexture        = TextureManager::getInstance()->getTexture("slider_body");
+    mSliderLeftButtonIdleTexture     = TextureManager::getInstance()->getTexture("slider_button_left_idle");
+    mSliderLeftButtonHoveredTexture  = TextureManager::getInstance()->getTexture("slider_button_left_hovered");
+    mSliderLeftButtonPressedTexture  = TextureManager::getInstance()->getTexture("slider_button_left_pressed");
+    mSliderRightButtonIdleTexture    = TextureManager::getInstance()->getTexture("slider_button_right_idle");
+    mSliderRightButtonHoveredTexture = TextureManager::getInstance()->getTexture("slider_button_right_hovered");
+    mSliderRightButtonPressedTexture = TextureManager::getInstance()->getTexture("slider_button_right_pressed");
+    mSliderBodyTexture               = TextureManager::getInstance()->getTexture("slider_body");
 
-    if (mSliderLeftButtonTexture == nullptr ||
-        mSliderRightButtonTexture == nullptr ||
+    if (mSliderLeftButtonIdleTexture == nullptr ||
+        mSliderLeftButtonHoveredTexture == nullptr ||
+        mSliderLeftButtonPressedTexture == nullptr ||
+        mSliderRightButtonIdleTexture == nullptr ||
+        mSliderRightButtonHoveredTexture == nullptr ||
+        mSliderRightButtonPressedTexture == nullptr ||
         mSliderBodyTexture == nullptr)
     {
         throw std::runtime_error("Slider textures are not loaded");

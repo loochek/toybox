@@ -62,8 +62,12 @@ protected:
     SliderSideButtonsDelegate *mSideButtonsDelegate;
     SliderThumb *mThumb;
 
-    const LGL::Texture *mSliderLeftButtonTexture;
-    const LGL::Texture *mSliderRightButtonTexture;
+    const LGL::Texture *mSliderLeftButtonIdleTexture;
+    const LGL::Texture *mSliderLeftButtonHoveredTexture;
+    const LGL::Texture *mSliderLeftButtonPressedTexture;
+    const LGL::Texture *mSliderRightButtonIdleTexture;
+    const LGL::Texture *mSliderRightButtonHoveredTexture;
+    const LGL::Texture *mSliderRightButtonPressedTexture;
     const LGL::Texture *mSliderBodyTexture;
 
     friend class SliderThumb;
