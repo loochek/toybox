@@ -108,10 +108,10 @@ protected:
      * 
      * Called when keyboard key is pressed/released over this widget (when it's in focus).
      * 
-     * If the event was ignored by the child in focus, then the event is transmitted
-     * to other children in a random order. If all children have ignored the event,
+     * If the event was ignored by the child in focus/there is no child in focus,
      * then onKeyPressedThis/onKeyReleasedThis is called. If the parent widget also ignored the event,
-     * event is considered to be ignored by the whole widget
+     * event is considered to be ignored by the whole widget.
+     * Focus is assigned to the child by click
      */
 
     // Called when keyboard key is pressed
@@ -135,7 +135,7 @@ protected:
     virtual void onUpdateThis(float elapsedTime) {};
     virtual void onDestroyThis() {};
 
-    virtual EventResult onKeyPressedThis (LGL::KeyboardKey key, LGL::InputModifier modifier)
+    virtual EventResult onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier modifier)
     {
         return EventResult::Ignored;
     }
@@ -164,6 +164,10 @@ protected:
     // Can be child or nullptr
     Widget *mChildUnderMouse;
     bool    mMousePressed;
+
+    // Data for handling keyboard events
+
+    Widget *mChildInFocus;
 
     // To access protected fields and methods
     friend class WindowManager;

@@ -44,3 +44,19 @@ void AnimatedButton::onMouseHoverEnd()
 {
     mButtonHovered = false;
 }
+
+EventResult AnimatedButton::onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier modifier)
+{
+    if (key == LGL::KeyboardKey::Enter)
+        onMouseClicked();
+
+    return EventResult::Handled;
+}
+
+EventResult AnimatedButton::onKeyReleasedThis(LGL::KeyboardKey key, LGL::InputModifier modifier)
+{
+    if (key == LGL::KeyboardKey::Enter)
+        onMouseReleased();
+
+    return EventResult::Handled;
+}

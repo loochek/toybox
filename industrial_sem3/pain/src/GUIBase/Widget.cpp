@@ -4,7 +4,7 @@
 
 Widget::Widget(const IntRect &widgetRect, Widget *parent) : mRect(widgetRect), mParent(parent),
     mUserData(-1), mTexture(widgetRect.size), mScheduledForDeletion(false),
-    mChildUnderMouse(nullptr), mMousePressed(false)
+    mChildUnderMouse(nullptr), mChildInFocus(nullptr), mMousePressed(false)
 {
 };
 
@@ -73,7 +73,10 @@ void Widget::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos
 
             child->onMouseHoverBegin(localMousePos - child->getRect().position, globalMousePos);
             if (mMousePressed)
+            {
                 child->onMouseClicked();
+                mChildInFocus = child;
+            }
 
             mChildUnderMouse = child;
             return;
@@ -93,7 +96,10 @@ void Widget::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos
 void Widget::onMouseClicked()
 {
     if (mChildUnderMouse != nullptr)
+    {
         mChildUnderMouse->onMouseClicked();
+        mChildInFocus = mChildUnderMouse;
+    }
     
     mMousePressed = true;
 }
@@ -126,6 +132,38 @@ void Widget::onMouseHoverEnd()
     mMousePressed = false;
 }
 
+EventResult Widget::onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier modifier)
+{
+    if (mChildInFocus != nullptr)
+    {
+        EventResult result = mChildInFocus->onKeyPressed(key, modifier);
+        if (result == EventResult::Handled)
+            return result;
+    }
+
+    EventResult result = onKeyPressedThis(key, modifier);
+    if (result == EventResult::Handled)
+        return result;
+
+    return EventResult::Ignored;
+}
+
+EventResult Widget::onKeyReleased(LGL::KeyboardKey key, LGL::InputModifier modifier)
+{
+    if (mChildInFocus != nullptr)
+    {
+        EventResult result = mChildInFocus->onKeyReleased(key, modifier);
+        if (result == EventResult::Handled)
+            return result;
+    }
+
+    EventResult result = onKeyReleasedThis(key, modifier);
+    if (result == EventResult::Handled)
+        return result;
+
+    return EventResult::Ignored;
+}
+
 void Widget::onDestroy()
 {
     for (Widget *child : mChildren)
@@ -138,6 +176,9 @@ void Widget::onChildDestroy(Widget *child)
 {
     if (child == mChildUnderMouse)
         mChildUnderMouse = nullptr;
+
+    if (child == mChildInFocus)
+        mChildInFocus = nullptr;
 }
 
 void Widget::addChild(Widget *child)

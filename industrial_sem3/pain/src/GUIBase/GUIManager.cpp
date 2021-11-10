@@ -34,13 +34,19 @@ void GUIManager::handleEvent(LGL::Event &event)
     case LGL::Event::MouseButtonPressed:
         if (event.mouseButton.button == LGL::MouseButton::Left)
             mRoot->onMouseClicked();
-        
         break;
 
     case LGL::Event::MouseButtonReleased:
         if (event.mouseButton.button == LGL::MouseButton::Left)
             mRoot->onMouseReleased();
-        
+        break;
+
+    case LGL::Event::KeyPressed:
+        mRoot->onKeyPressed(event.key.code, event.key.modifier);
+        break;
+
+    case LGL::Event::KeyReleased:
+        mRoot->onKeyReleased(event.key.code, event.key.modifier);
         break;
 
     default:

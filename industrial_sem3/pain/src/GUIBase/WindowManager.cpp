@@ -40,6 +40,7 @@ void WindowManager::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalM
             {
                 popUp(--childIter.base());
                 child->onMouseClicked();
+                mChildInFocus = child;
             }
 
             mChildUnderMouse = child;
@@ -64,6 +65,7 @@ void WindowManager::onMouseClicked()
         auto childIter = std::find(mChildren.begin(), mChildren.end(), mChildUnderMouse);
         popUp(childIter);
         mChildUnderMouse->onMouseClicked();
+        mChildInFocus = mChildUnderMouse;
     }
     
     mMousePressed = true;
