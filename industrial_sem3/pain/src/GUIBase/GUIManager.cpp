@@ -1,8 +1,7 @@
 #include "GUIManager.hpp"
 #include "Widget.hpp"
 
-GUIManager::GUIManager(LGL::RenderWindow &window, Widget *root) : mWindow(window), mRoot(root),
-                                                                  mMouseWasPressed(false)
+GUIManager::GUIManager(LGL::RenderWindow &window, Widget *root) : mWindow(window), mRoot(root)
 {
     // To initialize mouse state machine
     root->onMouseHoverBegin(Vec2i(), Vec2i());
@@ -21,22 +20,32 @@ void GUIManager::update(float elapsedTime)
     deleteScheduled(mRoot);
 }
 
-void GUIManager::handleMouse()
+void GUIManager::handleEvent(LGL::Event &event)
 {
-    Vec2i mousePosition = mWindow.getWindowMousePosition();
-    bool  mousePressed  = mWindow.isLeftMouseButtonPressed();
+    Vec2i mousePos(event.mouseMove.x, event.mouseMove.y);
+    
+    switch (event.type)
+    {
+    case LGL::Event::MouseMoved:
+        
+        mRoot->onMouseMove(mousePos, mousePos);
+        break;
 
-    if (mOldMousePosition != mousePosition)
-        mRoot->onMouseMove(mousePosition, mousePosition);
+    case LGL::Event::MouseButtonPressed:
+        if (event.mouseButton.button == LGL::MouseButton::Left)
+            mRoot->onMouseClicked();
+        
+        break;
 
-    if (mousePressed && !mMouseWasPressed)
-        mRoot->onMouseClicked();
+    case LGL::Event::MouseButtonReleased:
+        if (event.mouseButton.button == LGL::MouseButton::Left)
+            mRoot->onMouseReleased();
+        
+        break;
 
-    if (!mousePressed && mMouseWasPressed)
-        mRoot->onMouseReleased();
-
-    mOldMousePosition = mousePosition;
-    mMouseWasPressed  = mousePressed;
+    default:
+        break;
+    }
 }
 
 void GUIManager::draw()

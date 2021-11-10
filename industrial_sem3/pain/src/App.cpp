@@ -39,14 +39,40 @@ App::~App()
 
 void App::run()
 {
-    while (!mWindow.shouldClose())
+    bool shouldClose = false;
+
+    while (!shouldClose)
     {
+        // Poll events
+
+        LGL::Event event;
+        while (mWindow.pollEvent(event))
+        {
+            switch (event.type)
+            {
+            case LGL::Event::Closed:
+                shouldClose = true;
+                break;
+
+            case LGL::Event::KeyPressed:
+            case LGL::Event::KeyReleased:
+            case LGL::Event::MouseMoved:
+            case LGL::Event::MouseButtonPressed:
+            case LGL::Event::MouseButtonReleased:
+            case LGL::Event::MouseWheelScrolled:
+                mGuiManager->handleEvent(event);
+                break;
+
+            default:
+                break;
+            }
+        }
+        
         // Update
         
         float elapsedTime = mWindow.timerReset();
         //printf("FPS: %f\n", 1 / elapsedTime);
 
-        mGuiManager->handleMouse();
         mGuiManager->update(elapsedTime);
 
         // Draw
