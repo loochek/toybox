@@ -6,6 +6,12 @@
 #include "../Utils/Rect.hpp"
 #include "../LGL/LGL.hpp"
 
+enum class EventResult
+{
+    Handled,
+    Ignored
+};
+
 /**
  * Base class for GUI widgets
  */
@@ -91,14 +97,35 @@ protected:
     /// Called when mouse is released inside widget rect
     virtual void onMouseReleased();
 
+    /// Called when mouse scrolls inside widget rect
+    virtual void onMouseScroll(int scrollDelta);
+
     /// Called when mouse goes out from widget rect
     virtual void onMouseHoverEnd();
+
+    /**
+     * Keyboard events
+     * 
+     * Called when keyboard key is pressed/released over this widget (when it's in focus).
+     * 
+     * If the event was ignored by the child in focus, then the event is transmitted
+     * to other children in a random order. If all children have ignored the event,
+     * then onKeyPressedThis/onKeyReleasedThis is called. If the parent widget also ignored the event,
+     * event is considered to be ignored by the whole widget
+     */
+
+    // Called when keyboard key is pressed
+    virtual EventResult onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier modifier);
+
+    // Called when keyboard key is released
+    virtual EventResult onKeyReleased(LGL::KeyboardKey key, LGL::InputModifier modifier);
 
     /// Widget must destroy yourself and it's children
     virtual void onDestroy();
 
     /// Called when children was destroyed
     virtual void onChildDestroy(Widget *child);
+
 
     /**
      * Functions which called by event handlers with/instead of dispatching event to children
@@ -107,6 +134,16 @@ protected:
     virtual void onRedrawThis() {};
     virtual void onUpdateThis(float elapsedTime) {};
     virtual void onDestroyThis() {};
+
+    virtual EventResult onKeyPressedThis (LGL::KeyboardKey key, LGL::InputModifier modifier)
+    {
+        return EventResult::Ignored;
+    }
+
+    virtual EventResult onKeyReleasedThis(LGL::KeyboardKey key, LGL::InputModifier modifier)
+    {
+        return EventResult::Ignored;
+    }
 
 protected:
     Widget *mParent;

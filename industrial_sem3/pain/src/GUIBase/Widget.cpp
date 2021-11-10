@@ -106,6 +106,12 @@ void Widget::onMouseReleased()
     mMousePressed = false;
 }
 
+void Widget::onMouseScroll(int scrollDelta)
+{
+    if (mChildUnderMouse != nullptr)
+        mChildUnderMouse->onMouseScroll(scrollDelta);
+}
+
 void Widget::onMouseHoverEnd()
 {
     if (mChildUnderMouse != nullptr)

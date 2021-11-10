@@ -123,6 +123,13 @@ namespace LGL
         Count,        //!< Keep last -- the total number of keyboard keys
     };
 
+    enum class InputModifier
+    {
+        Control = 1,
+        Alt     = 2,
+        Shift   = 4
+    };
+
     enum class MouseButton
     {
         Left,
@@ -133,10 +140,8 @@ namespace LGL
     {
         struct KeyEvent
         {
-            KeyboardKey code;
-            bool        alt;
-            bool        control;
-            bool        shift;
+            KeyboardKey   code;
+            InputModifier modifier;
         };
 
         struct MouseMoveEvent
@@ -183,6 +188,36 @@ namespace LGL
             MouseWheelScrollEvent mouseWheelScroll;
         };
     };
+
+    inline InputModifier createModifier(bool control, bool alt, bool shift)
+    {
+        int modifier = 0;
+        if (control)
+            modifier |= (int)InputModifier::Control;
+
+        if (alt)
+            modifier |= (int)InputModifier::Alt;
+
+        if (shift)
+            modifier |= (int)InputModifier::Shift;
+
+        return (InputModifier)modifier;
+    }
+
+    inline bool isControlPressed(const InputModifier &modifier)
+    {
+        return (int)modifier & (int)InputModifier::Control;
+    }
+
+    inline bool isAltPressed(const InputModifier &modifier)
+    {
+        return (int)modifier & (int)InputModifier::Alt;
+    }
+
+    inline bool isShiftPressed(const InputModifier &modifier)
+    {
+        return (int)modifier & (int)InputModifier::Shift;
+    }
 
     inline sf::Vector2f toSFMLVector(const Vec2f &vector)
     {

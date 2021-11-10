@@ -34,10 +34,8 @@ namespace LGL
 
         case sf::Event::KeyPressed:
         case sf::Event::KeyReleased:
-            event.key.code    = (KeyboardKey)sfmlEvent.key.code;
-            event.key.alt     = sfmlEvent.key.alt;
-            event.key.control = sfmlEvent.key.control;
-            event.key.shift   = sfmlEvent.key.shift;
+            event.key.code     = (KeyboardKey)sfmlEvent.key.code;
+            event.key.modifier = createModifier(sfmlEvent.key.control, sfmlEvent.key.alt, sfmlEvent.key.shift);
 
             if (sfmlEvent.type == sf::Event::KeyPressed)
                 event.type = Event::KeyPressed;
