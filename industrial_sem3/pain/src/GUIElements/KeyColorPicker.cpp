@@ -18,7 +18,7 @@ const LGL::Color baseColors[BASE_COLORS_COUNT] =
 KeyColorPicker::KeyColorPicker(const IntRect &widgetRect, Widget *parent) :
     Widget(widgetRect, parent), mDelegate(nullptr), mSelectorOffs(0), mMousePressed(false)
 {
-    mGradientTexture.create(widgetRect.size.x, widgetRect.size.y, LGL::Color::Transparent);
+    mGradientImage.create(widgetRect.size.x, widgetRect.size.y, LGL::Color::Transparent);
     redrawGradient();
 }
 
@@ -67,11 +67,11 @@ void KeyColorPicker::redrawGradient()
     {
         for (int x = 0; x < mRect.size.x; x++)
         {
-            mGradientTexture.setPixel(x, y, calcColor(y));
+            mGradientImage.setPixel(x, y, calcColor(y));
         }
     }
 
-    mGradientTexture.update();
+    mGradientTexture.loadFromImage(mGradientImage);
 }
 
 LGL::Color KeyColorPicker::calcColor(int offset)

@@ -1,6 +1,7 @@
 #include "PaintController.hpp"
 #include "../GUIBase/WindowManager.hpp"
 #include "../GUIBase/Canvas.hpp"
+#include "../GUIBase/Label.hpp"
 #include "../GUIElements/PaintWindow.hpp"
 #include "../GUIElements/PalleteWindow.hpp"
 #include "../GUIElements/Pallete.hpp"
@@ -14,13 +15,21 @@ const Vec2i   COLOR_PICKER_INIT_POS   = Vec2i(1000, 300);
 const Vec2i   SIZE_PICKER_INIT_POS    = Vec2i(1000, 100);
 
 PaintController::PaintController(WindowManager *root) : 
-    mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mCurrPenSize(1.0f)
+    mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mCurrPenSize(1.0f), mCanvasesCounter(1)
 {
 }
 
 void PaintController::createCanvas()
 {
     PaintWindow *paintWindow = new PaintWindow(CANVAS_INIT_RECT, this, mRoot);
+
+    paintWindow->setUserData(mCanvasesCounter);
+
+    char title[MAX_LABEL_SIZE + 1] = {0};
+    snprintf(title, MAX_LABEL_SIZE, "Pain - %d", mCanvasesCounter);
+    paintWindow->setTitle(title);
+    mCanvasesCounter++;
+
     paintWindow->getCanvas()->setDrawingColor(mCurrColor);
     paintWindow->getCanvas()->setPenSize(mCurrPenSize);
 
@@ -58,6 +67,16 @@ void PaintController::openSplineWindow()
 void PaintController::onCanvasClose(PaintWindow *paintWindow)
 {
     mPaintWindows.erase(paintWindow);
+}
+
+void PaintController::onCanvasSave(PaintWindow *paintWindow)
+{
+    int canvasNum = paintWindow->getUserData();
+
+    char fileName[MAX_LABEL_SIZE + 1] = {0};
+    snprintf(fileName, MAX_LABEL_SIZE, "masterpiece%d.png", canvasNum);
+
+    paintWindow->getCanvas()->saveToFile(fileName);
 }
 
 void PaintController::onPalleteClose()

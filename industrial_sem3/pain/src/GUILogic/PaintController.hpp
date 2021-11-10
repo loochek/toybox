@@ -25,6 +25,7 @@ public:
     void openSplineWindow();
 
     void onCanvasClose(PaintWindow *paintWindow);
+    void onCanvasSave(PaintWindow *paintWindow);
     void onPalleteClose();
     void onSizePickerClose();
 
@@ -43,6 +44,8 @@ private:
 
     LGL::Color mCurrColor;
     float      mCurrPenSize;
+
+    int mCanvasesCounter;
 };
 
 #endif

@@ -27,6 +27,9 @@ namespace LGL
         // to be able to draw mTexture
         friend class RenderTarget;
         sf::RenderTexture mTexture;
+
+        // to be able to create Texture from RenderTexture
+        friend class Texture;
     };
 };
 

@@ -7,6 +7,7 @@
 #include "SFML/SFMLRenderWindow.hpp"
 #include "SFML/SFMLRenderTexture.hpp"
 #include "SFML/SFMLTexture.hpp"
+#include "SFML/SFMLImage.hpp"
 #endif
 
 #endif

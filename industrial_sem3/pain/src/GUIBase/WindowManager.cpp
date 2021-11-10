@@ -67,6 +67,8 @@ void WindowManager::onMouseClicked()
         mChildUnderMouse->onMouseClicked();
         mChildInFocus = mChildUnderMouse;
     }
+    else
+        mChildInFocus = nullptr;
     
     mMousePressed = true;
 }

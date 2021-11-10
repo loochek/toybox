@@ -4,7 +4,7 @@
 #include "../GUILogic/PaintWindow/PaintWindowCloseDelegate.hpp"
 
 PaintWindow::PaintWindow(const IntRect &canvasRect, PaintController *controller, Widget *parent) :
-    Window(canvasRect, parent)
+    Window(canvasRect, parent), mController(controller)
 {
     setTitle("Pain");
 
@@ -19,4 +19,15 @@ PaintWindow::PaintWindow(const IntRect &canvasRect, PaintController *controller,
 PaintWindow::~PaintWindow()
 {
     delete mCloseButtonDelegate;
+}
+
+EventResult PaintWindow::onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier modifier)
+{
+    if (key == LGL::KeyboardKey::S && LGL::isControlPressed(modifier))
+    {
+        mController->onCanvasSave(this);
+        return EventResult::Handled;
+    }
+
+    return EventResult::Ignored;
 }

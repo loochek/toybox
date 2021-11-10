@@ -12,19 +12,19 @@ class ButtonDelegate;
  */
 class Window : public Widget
 {
-protected:
-    Window() = delete;
-    Window(const IntRect &contentRect, Widget *parent = nullptr);
-    
-    virtual ~Window() {};
-
-protected:
+public:
     /**
      * Sets window header title
      * 
      * \param title Title text
      */
     void setTitle(const char *title);
+    
+protected:
+    Window() = delete;
+    Window(const IntRect &contentRect, Widget *parent = nullptr);
+    
+    virtual ~Window() {};
 
     virtual void onRedrawThis() override;
 

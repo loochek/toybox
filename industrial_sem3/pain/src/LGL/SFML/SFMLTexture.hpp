@@ -7,18 +7,15 @@
 
 namespace LGL
 {
+    class Image;
+    class RenderTexture;
+
+    /**
+     * Represent texture in the GPU memory
+     */
     class Texture
     {
     public:
-        /**
-         * Creates texture with blank color
-         * 
-         * \param width Texture width
-         * \param height Texture height
-         * \param color Fill color
-         */
-        bool create(int width, int height, const Color &color = Color::Transparent);
-
         /**
          * Loads texture from file
          * 
@@ -27,19 +24,25 @@ namespace LGL
         bool loadFromFile(const char *filename);
 
         /**
-         * Sets pixel of the texture image
-         * Applied only after update()
+         * Loads texture from image
          * 
-         * \param x Pixel X
-         * \param y Pixel Y
-         * \param color Pixel color
+         * \param image Image
          */
-        void setPixel(int x, int y, const Color &color);
+        bool loadFromImage(const Image &image);
         
         /**
-         * Updates texture with internal image
+         * Loads texture from the render texture
+         * 
+         * \param renderTexture Render texture
          */
-        void update();
+        void loadFromRenderTexture(const RenderTexture &renderTexture);
+
+        /**
+         * Makes an image from the texture
+         * 
+         * \return Image
+         */
+        Image copyToImage() const;
 
         /**
          * \return Texture size
@@ -47,10 +50,9 @@ namespace LGL
         Vec2i getSize() const;
 
     private:
-        // to be able to draw mTexture
+        // to be able to draw mTexture and create texture from render texture
         friend class RenderTarget;
         sf::Texture mTexture;
-        sf::Image   mImage;
     };
 }
 

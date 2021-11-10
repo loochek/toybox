@@ -7,6 +7,15 @@ Canvas::Canvas(const IntRect &widgetRect, Widget *parent) :
     mCanvas.clear(LGL::Color::White);
 }
 
+void Canvas::saveToFile(const char *fileName)
+{
+    LGL::Texture canvasTexture;
+    canvasTexture.loadFromRenderTexture(mCanvas);
+
+    if (!canvasTexture.copyToImage().saveToFile(fileName))
+        throw std::runtime_error("Unable to save canvas");
+}
+
 void Canvas::onRedrawThis()
 {
     mTexture.drawRenderTexture(mCanvas, Vec2f());

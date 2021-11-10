@@ -3,34 +3,31 @@
 
 namespace LGL
 {
-    bool Texture::create(int width, int height, const Color &color)
-    {
-        mImage.create(width, height, toSFMLColor(color));
-        
-        return mTexture.loadFromImage(mImage);
-    }
-
     bool Texture::loadFromFile(const char *filename)
     {
-        bool result = mImage.loadFromFile(filename);
-        if (!result)
-            return false;
-
-        return mTexture.loadFromImage(mImage);
+        return mTexture.loadFromFile(filename);
     }
 
-    void Texture::setPixel(int x, int y, const Color &color)
+    bool Texture::loadFromImage(const Image &image)
     {
-        mImage.setPixel(x, y, toSFMLColor(color));
+        return mTexture.loadFromImage(image.mImage);
+    }
+
+    void Texture::loadFromRenderTexture(const RenderTexture &renderTexture)
+    {
+        mTexture = sf::Texture(renderTexture.mTexture.getTexture());
+    }
+
+    Image Texture::copyToImage() const
+    {
+        Image image;
+        image.mImage = mTexture.copyToImage();
+        
+        return image;
     }
 
     Vec2i Texture::getSize() const
     {
         return fromSFMLVector(mTexture.getSize());
-    }
-
-    void Texture::update()
-    {
-        mTexture.update(mImage);
     }
 }

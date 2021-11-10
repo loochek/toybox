@@ -53,6 +53,7 @@ protected:
     Vec2i mMouseOffs;
 
     LGL::Texture mGradientTexture;
+    LGL::Image   mGradientImage;
     
     const LGL::Texture *mSelectorTexture;
 };

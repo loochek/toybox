@@ -40,6 +40,7 @@ private:
 protected:
     ColorChangeDelegate *mDelegate;
 
+    LGL::Image   mGradientImage;
     LGL::Texture mGradientTexture;
 
     int mSelectorOffs;

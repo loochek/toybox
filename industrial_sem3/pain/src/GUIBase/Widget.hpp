@@ -46,6 +46,11 @@ public:
     void setUserData(int userData) { mUserData = userData; };
 
     /**
+     * \return User data value
+     */
+    int getUserData() { return mUserData; };
+
+    /**
      * Sets new position for the widget relative to parent
      * 
      * \param newPosition New position

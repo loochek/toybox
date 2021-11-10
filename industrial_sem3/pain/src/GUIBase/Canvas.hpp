@@ -11,6 +11,8 @@ public:
 
     void setDrawingColor(const LGL::Color &color) { mDrawingColor = color; };
     void setPenSize(float penSize) { mPenSize = penSize; };
+    
+    void saveToFile(const char *fileName);
 
 protected:
     virtual void onRedrawThis() override;

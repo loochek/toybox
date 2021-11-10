@@ -21,8 +21,12 @@ public:
     Canvas *getCanvas() { return mCanvas; };
 
 protected:
+    virtual EventResult onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier modifier) override;
+
+protected:
     Canvas *mCanvas;
     PaintWindowCloseDelegate *mCloseButtonDelegate;
+    PaintController *mController;
 };
 
 #endif

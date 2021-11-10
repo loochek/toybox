@@ -9,7 +9,7 @@ MainColorPicker::MainColorPicker(const IntRect &widgetRect, Widget *parent) :
     if (mSelectorTexture == nullptr)
         throw std::runtime_error("Color picker selector texture is not loaded");
 
-    mGradientTexture.create(widgetRect.size.x, widgetRect.size.y, LGL::Color::Transparent);
+    mGradientImage.create(widgetRect.size.x, widgetRect.size.y, LGL::Color::Transparent);
     redrawGradient();
 }
 
@@ -65,11 +65,11 @@ void MainColorPicker::redrawGradient()
     {
         for (int x = 0; x < mRect.size.x; x++)
         {
-            mGradientTexture.setPixel(x, y, calcColor(Vec2i(x, y)));
+            mGradientImage.setPixel(x, y, calcColor(Vec2i(x, y)));
         }
     }
 
-    mGradientTexture.update();
+    mGradientTexture.loadFromImage(mGradientImage);
 }
 
 LGL::Color MainColorPicker::calcColor(Vec2i offset)
