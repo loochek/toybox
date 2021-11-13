@@ -8,9 +8,11 @@
 #include "../GUIElements/SizePickerWindow.hpp"
 #include "../GUIElements/SizePicker.hpp"
 #include "../GUIElements/SplineWindow.hpp"
+#include "../GUIElements/TextBoxDemoWindow.hpp"
 
 const IntRect CANVAS_INIT_RECT        = IntRect(Vec2i(200, 200), Vec2i(700, 400));
 const IntRect SPLINE_WINDOW_INIT_RECT = IntRect(Vec2i(100, 100), Vec2i(500, 500));
+const IntRect TEXT_BOX_DEMO_INIT_RECT = IntRect(Vec2i(200, 200), Vec2i(300, 300));
 const Vec2i   COLOR_PICKER_INIT_POS   = Vec2i(1000, 300);
 const Vec2i   SIZE_PICKER_INIT_POS    = Vec2i(1000, 100);
 
@@ -62,6 +64,11 @@ void PaintController::openSizePicker()
 void PaintController::openSplineWindow()
 {
     mRoot->addChild(new SplineWindow(SPLINE_WINDOW_INIT_RECT, mRoot));
+}
+
+void PaintController::openTextBoxDemo()
+{
+    mRoot->addChild(new TextBoxDemoWindow(SPLINE_WINDOW_INIT_RECT, mRoot));
 }
 
 void PaintController::onCanvasClose(PaintWindow *paintWindow)

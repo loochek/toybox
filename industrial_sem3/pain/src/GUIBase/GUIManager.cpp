@@ -21,25 +21,22 @@ void GUIManager::update(float elapsedTime)
 }
 
 void GUIManager::handleEvent(LGL::Event &event)
-{
-    Vec2i mouseMovePos(event.mouseMove.x, event.mouseMove.y);
-    Vec2i mouseButtonPos(event.mouseButton.x, event.mouseButton.y);
-    
+{   
     switch (event.type)
     {
     case LGL::Event::MouseMoved:
         
-        mRoot->onMouseMove(mouseMovePos, mouseMovePos);
+        mRoot->onMouseMove(event.mouseMove.position, event.mouseMove.position);
         break;
 
     case LGL::Event::MouseButtonPressed:
         if (event.mouseButton.button == LGL::MouseButton::Left)
-            mRoot->onMouseClicked(mouseButtonPos, mouseButtonPos);
+            mRoot->onMouseClicked(event.mouseButton.position, event.mouseButton.position);
         break;
 
     case LGL::Event::MouseButtonReleased:
         if (event.mouseButton.button == LGL::MouseButton::Left)
-            mRoot->onMouseReleased(mouseButtonPos, mouseButtonPos);
+            mRoot->onMouseReleased(event.mouseButton.position, event.mouseButton.position);
         break;
 
     case LGL::Event::KeyPressed:

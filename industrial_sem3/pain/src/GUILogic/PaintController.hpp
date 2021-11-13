@@ -23,6 +23,7 @@ public:
     void openPallete();
     void openSizePicker();
     void openSplineWindow();
+    void openTextBoxDemo();
 
     void onCanvasClose(PaintWindow *paintWindow);
     void onCanvasSave(PaintWindow *paintWindow);

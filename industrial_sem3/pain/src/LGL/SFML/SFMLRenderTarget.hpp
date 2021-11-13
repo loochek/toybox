@@ -2,6 +2,7 @@
 #define LGL_SFML_RENDER_TARGET_HPP
 
 #include <SFML/Graphics.hpp>
+#include "../LGLCommon.hpp"
 #include "SFMLCommon.hpp"
 #include "SFMLTexture.hpp"
 

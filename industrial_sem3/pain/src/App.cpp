@@ -25,6 +25,7 @@ App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "Pain")
     bar->addButton("Pallete", mDelegate, (int)MenuAction::OpenPallete);
     bar->addButton("Size picker", mDelegate, (int)MenuAction::OpenSizePicker);
     bar->addButton("Spline", mDelegate, (int)MenuAction::OpenSplineWindow);
+    bar->addButton("Text box demo", mDelegate, (int)MenuAction::OpenTextBoxDemo);
     root->addChild(bar);
 
     mGuiManager = new GUIManager(mWindow, root);

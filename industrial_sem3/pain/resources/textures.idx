@@ -27,3 +27,6 @@ slider_thumb_body            slider_thumb_body.png
 slider_thumb_left            slider_thumb_left.png
 slider_thumb_center          slider_thumb_center.png
 slider_thumb_right           slider_thumb_right.png
+text_box_body                text_box_body.png
+text_box_left                text_box_left.png
+text_box_right               text_box_right.png

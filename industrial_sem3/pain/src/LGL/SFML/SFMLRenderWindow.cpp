@@ -5,7 +5,7 @@ namespace LGL
     RenderWindow::RenderWindow(const Vec2i &resolution, const char *title) : RenderTarget(&mWindow)
     {
         mWindow.create(sf::VideoMode(resolution.x, resolution.y), title);
-        //mWindow.setFramerateLimit(60);
+        mWindow.setFramerateLimit(60);
     }
 
     RenderWindow::~RenderWindow()
@@ -51,9 +51,9 @@ namespace LGL
                 break;
             }
 
-            event.mouseWheelScroll.delta = sfmlEvent.mouseWheelScroll.delta;
-            event.mouseWheelScroll.x     = sfmlEvent.mouseWheelScroll.x;
-            event.mouseWheelScroll.y     = sfmlEvent.mouseWheelScroll.y;
+            event.mouseWheelScroll.delta    = sfmlEvent.mouseWheelScroll.delta;
+            event.mouseWheelScroll.position = Vec2i(sfmlEvent.mouseWheelScroll.x,
+                                                    sfmlEvent.mouseWheelScroll.y);
             break;
 
         case sf::Event::MouseButtonPressed:
@@ -68,8 +68,8 @@ namespace LGL
                 break;
             }
                 
-            event.mouseButton.x = sfmlEvent.mouseButton.x;
-            event.mouseButton.y = sfmlEvent.mouseButton.y;
+            event.mouseButton.position = Vec2i(sfmlEvent.mouseButton.x,
+                                               sfmlEvent.mouseButton.y);
             
             if (sfmlEvent.type == sf::Event::MouseButtonPressed)
                 event.type = Event::MouseButtonPressed;
@@ -80,8 +80,8 @@ namespace LGL
 
         case sf::Event::MouseMoved:
             event.type = Event::MouseMoved;
-            event.mouseMove.x = sfmlEvent.mouseMove.x;
-            event.mouseMove.y = sfmlEvent.mouseMove.y;
+            event.mouseMove.position = Vec2i(sfmlEvent.mouseMove.x,
+                                             sfmlEvent.mouseMove.y);
             break;
 
         default:
