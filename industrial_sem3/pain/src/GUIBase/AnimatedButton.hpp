@@ -15,13 +15,17 @@ protected:
     virtual ~AnimatedButton() {};
 
     virtual void onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
-    virtual void onMouseClicked() override;
-    virtual void onMouseReleased() override;
+    virtual void onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
+    virtual void onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
     virtual void onMouseHoverEnd() override;
 
     virtual void onUpdateThis(float elapsedTime) override;
     virtual EventResult onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier modifier) override;
     virtual EventResult onKeyReleasedThis(LGL::KeyboardKey key, LGL::InputModifier modifier) override;
+
+private:
+    void onPress();
+    void onRelease();
 
 protected:
     bool  mButtonHovered;

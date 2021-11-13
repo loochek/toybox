@@ -57,12 +57,12 @@ void SliderThumb::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMou
     mOldMousePosition = globalMousePos;
 }
 
-void SliderThumb::onMouseClicked()
+void SliderThumb::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mMousePressed = true;
 }
 
-void SliderThumb::onMouseReleased()
+void SliderThumb::onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mMousePressed = false;
 }

@@ -20,12 +20,12 @@ void DragArea::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMouseP
     mOldMousePosition = globalMousePos;
 }
 
-void DragArea::onMouseClicked()
+void DragArea::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mMousePressed = true;
 }
 
-void DragArea::onMouseReleased()
+void DragArea::onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mMousePressed = false;
 }

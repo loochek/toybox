@@ -27,6 +27,7 @@ void Canvas::onRedrawThis()
 void Canvas::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mPenPosition = localMousePos;
+    mDrawPen = true;
 }
 
 void Canvas::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)
@@ -36,17 +37,16 @@ void Canvas::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos
         mCanvas.drawLine(mPenPosition, localMousePos, mPenSize, mDrawingColor);
         mCanvas.drawCircle(localMousePos, mPenSize, mDrawingColor);
     }
-    
-    mDrawPen = true;
+
     mPenPosition = localMousePos;
 }
 
-void Canvas::onMouseClicked()
+void Canvas::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mPenDown = true;
 }
 
-void Canvas::onMouseReleased()
+void Canvas::onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mPenDown = false;
 }

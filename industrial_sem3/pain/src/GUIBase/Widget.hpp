@@ -97,15 +97,18 @@ protected:
     virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos);
 
     /// Called when mouse is clicked inside widget rect
-    virtual void onMouseClicked();
+    virtual void onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos);
 
     /// Called when mouse is released inside widget rect
-    virtual void onMouseReleased();
+    virtual void onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMousePos);
 
     /// Called when mouse scrolls inside widget rect
     virtual void onMouseScroll(int scrollDelta);
 
-    /// Called when mouse goes out from widget rect
+    /**
+     * Called when mouse goes out from widget rect IF mouse button was released.
+     * The widget "holds" the mouse until the mouse button is released.
+     */
     virtual void onMouseHoverEnd();
 
     /**

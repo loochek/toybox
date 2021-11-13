@@ -40,12 +40,24 @@ void MainColorPicker::onMouseMove(const Vec2i &localMousePos, const Vec2i &globa
     {
         mSelectorOffs = mMouseOffs;
 
+        if (mSelectorOffs.y > mRect.size.y)
+            mSelectorOffs.y = mRect.size.y;
+
+        if (mSelectorOffs.y < 0)
+            mSelectorOffs.y = 0;
+
+        if (mSelectorOffs.x > mRect.size.x)
+            mSelectorOffs.x = mRect.size.x;
+
+        if (mSelectorOffs.x < 0)
+            mSelectorOffs.x = 0;
+
         if (mDelegate != nullptr)
             mDelegate->onColorChange(calcColor(mSelectorOffs), mUserData);
     }
 }
 
-void MainColorPicker::onMouseClicked()
+void MainColorPicker::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mMousePressed = true;
     mSelectorOffs = mMouseOffs;
@@ -54,7 +66,7 @@ void MainColorPicker::onMouseClicked()
         mDelegate->onColorChange(calcColor(mSelectorOffs), mUserData);
 }
 
-void MainColorPicker::onMouseReleased()
+void MainColorPicker::onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mMousePressed = false;
 }

@@ -26,18 +26,14 @@ void AnimatedButton::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &
     mButtonHovered = true;
 }
 
-void AnimatedButton::onMouseClicked()
+void AnimatedButton::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
-    mButtonPressed = true;
-    mCurrAnimTime = ANIM_TIME;
-
-    if (mDelegate != nullptr)
-        mDelegate->onClick(mUserData);
+    onPress();
 }
 
-void AnimatedButton::onMouseReleased()
+void AnimatedButton::onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
-    mButtonPressed = false;
+    onRelease();
 }
 
 void AnimatedButton::onMouseHoverEnd()
@@ -49,7 +45,7 @@ EventResult AnimatedButton::onKeyPressedThis(LGL::KeyboardKey key, LGL::InputMod
 {
     if (key == LGL::KeyboardKey::Enter)
     {
-        onMouseClicked();
+        onPress();
         return EventResult::Handled;
     }
     
@@ -60,9 +56,23 @@ EventResult AnimatedButton::onKeyReleasedThis(LGL::KeyboardKey key, LGL::InputMo
 {
     if (key == LGL::KeyboardKey::Enter)
     {
-        onMouseReleased();
+        onRelease();
         return EventResult::Handled;
     }
     
     return EventResult::Ignored;
+}
+
+void AnimatedButton::onPress()
+{
+    mButtonPressed = true;
+    mCurrAnimTime = ANIM_TIME;
+
+    if (mDelegate != nullptr)
+        mDelegate->onClick(mUserData);
+}
+
+void AnimatedButton::onRelease()
+{
+    mButtonPressed = false;
 }

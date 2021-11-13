@@ -41,13 +41,19 @@ void KeyColorPicker::onMouseMove(const Vec2i &localMousePos, const Vec2i &global
     if (mMousePressed)
     {
         mSelectorOffs = mMouseOffs;
+
+        if (mSelectorOffs > mRect.size.y)
+            mSelectorOffs = mRect.size.y;
+
+        if (mSelectorOffs < 0)
+            mSelectorOffs = 0;
         
         if (mDelegate != nullptr)
             mDelegate->onColorChange(calcColor(mSelectorOffs), mUserData);
     }
 }
 
-void KeyColorPicker::onMouseClicked()
+void KeyColorPicker::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mMousePressed = true;
     mSelectorOffs = mMouseOffs;
@@ -56,7 +62,7 @@ void KeyColorPicker::onMouseClicked()
         mDelegate->onColorChange(calcColor(mSelectorOffs), mUserData);
 }
 
-void KeyColorPicker::onMouseReleased()
+void KeyColorPicker::onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     mMousePressed = false;
 }

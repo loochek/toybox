@@ -22,8 +22,8 @@ protected:
     
     virtual void onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
     virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
-    virtual void onMouseClicked() override;
-    virtual void onMouseReleased() override;
+    virtual void onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
+    virtual void onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
 
 private:
     void getTextures();

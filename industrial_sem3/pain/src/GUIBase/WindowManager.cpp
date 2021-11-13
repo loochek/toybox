@@ -14,62 +14,19 @@ void WindowManager::onRedrawThis()
     mTexture.drawTexture(*mWallpaperTexture, Vec2i());
 }
 
-void WindowManager::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)
-{
-    for (auto childIter = mChildren.rbegin(); childIter != mChildren.rend(); childIter++)
-    {
-        Widget *child = *childIter;
-        
-        if (child->getRect().contains(localMousePos))
-        {
-            if (child == mChildUnderMouse)
-            {
-                child->onMouseMove(localMousePos - child->getRect().position, globalMousePos);
-                return;
-            }
-                
-            if (mChildUnderMouse != nullptr)
-            {
-                if (mMousePressed)
-                    mChildUnderMouse->onMouseReleased();
-                mChildUnderMouse->onMouseHoverEnd();
-            }
-
-            child->onMouseHoverBegin(localMousePos - child->getRect().position, globalMousePos);
-            if (mMousePressed)
-            {
-                popUp(--childIter.base());
-                child->onMouseClicked();
-                mChildInFocus = child;
-            }
-
-            mChildUnderMouse = child;
-            return;
-        }
-    }
-
-    if (mChildUnderMouse != nullptr && !mChildUnderMouse->getRect().contains(localMousePos))
-    {
-        if (mMousePressed)
-            mChildUnderMouse->onMouseReleased();
-        mChildUnderMouse->onMouseHoverEnd();
-    }
-    
-    mChildUnderMouse = nullptr;
-}
-
-void WindowManager::onMouseClicked()
+void WindowManager::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     if (mChildUnderMouse != nullptr)
     {
         auto childIter = std::find(mChildren.begin(), mChildren.end(), mChildUnderMouse);
         popUp(childIter);
-        mChildUnderMouse->onMouseClicked();
+
+        mChildUnderMouse->onMouseClicked(localMousePos - mChildUnderMouse->getRect().position, globalMousePos);
         mChildInFocus = mChildUnderMouse;
     }
     else
         mChildInFocus = nullptr;
-    
+        
     mMousePressed = true;
 }
 
