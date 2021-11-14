@@ -2,8 +2,9 @@
 #include "../TextureManager.hpp"
 #include "TextBox.hpp"
 
-const int TEXT_BOX_HEIGHT    = 20;
-const int TEXT_BOX_SIDE_SIZE = 2;
+const int TEXT_BOX_HEIGHT       = 20;
+const int TEXT_BOX_SIDE_SIZE   = 2;
+const int TEXT_BOX_TEXT_OFFSET = 4;
 
 TextBox::TextBox(const Vec2i &textBoxPos, int textBoxSize, Widget *parent) :
     Widget(IntRect(textBoxPos, Vec2i(textBoxSize, TEXT_BOX_HEIGHT))), mCursorPos(0), mTextLen(0)
@@ -24,8 +25,7 @@ void TextBox::onRedrawThis()
                          Vec2i(TEXT_BOX_SIDE_SIZE, 0),
                          IntRect(Vec2i(), Vec2i(mRect.size.x - 2 * TEXT_BOX_SIDE_SIZE, TEXT_BOX_HEIGHT)));
 
-    mTexture.drawText(Vec2i(), mText);
-    printf("%s\n", mText);
+    mTexture.drawText(Vec2i(TEXT_BOX_TEXT_OFFSET, 0), mText);
 }
 
 EventResult TextBox::onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier modifier)

@@ -5,27 +5,26 @@ Button::Button(const IntRect &widgetRect, Widget *parent,
     AnimatedButton(widgetRect, parent), mLabel(nullptr),
     mIdleColor(idleColor), mHoveredColor(hoveredColor), mPressedColor(pressedColor)
 {
-    mLabel = new Label(Vec2i(), this);
+    mLabel = new Label(Vec2i(0, widgetRect.size.y / 2), this);
     addChild(mLabel);
 }
 
 void Button::setLabel(const char *label)
 {
     mLabel->setText(label);
-
-    Vec2f newLabelPos = mRect.size / 2 - mLabel->getRect().size / 2;
-    mLabel->setPosition(newLabelPos);
+    // Center label
+    mLabel->setPosition(Vec2i(mRect.size.x / 2 - mLabel->getRect().size.x / 2, mLabel->getRect().position.y));
 }
 
 void Button::onRedrawThis()
 {
     if (mButtonPressed)
-        mTexture.drawRect(FloatRect(Vec2i(), mRect.size), mPressedColor);
+        mTexture.drawRect(IntRect(Vec2i(), mRect.size), mPressedColor);
     else
     {
         float animProgress = mCurrAnimTime / ANIM_TIME;
         LGL::Color currColor = mHoveredColor * animProgress + mIdleColor * (1 - animProgress);
 
-        mTexture.drawRect(FloatRect(Vec2i(), mRect.size), currColor);
+        mTexture.drawRect(IntRect(Vec2i(), mRect.size), currColor);
     }
 }

@@ -16,7 +16,7 @@ const IntRect CURR_COLOR_RECT        = IntRect(Vec2i(220, 220), Vec2i(30, 30));
 const Vec2i OPACITY_SLIDER_POS  = Vec2i(10, 234);
 const int   OPACITY_SLIDER_SIZE = 200;
 
-const Vec2i OPACITY_LABEL_POS = Vec2i(10, 214);
+const Vec2i OPACITY_LABEL_POS = Vec2i(10, 220);
 
 Pallete::Pallete(const Vec2i &position, Widget *parent) :
     Widget(IntRect(position, PALLETE_SIZE), parent), mDelegate(nullptr)

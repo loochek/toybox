@@ -4,8 +4,8 @@
 
 const Vec2i LABEL_INIT_SIZE = Vec2i(10, 10);
 
-Label::Label(const Vec2i &position, Widget *parent) :
-    Widget(IntRect(position, LABEL_INIT_SIZE), parent), mText(), mTextPresent(false)
+Label::Label(const Vec2i &textAxis, Widget *parent) :
+    Widget(IntRect(textAxis, LABEL_INIT_SIZE), parent), mText(), mTextPresent(false), mAxis(textAxis)
 {
 }
 
@@ -19,8 +19,9 @@ void Label::setText(const char *text)
     else
     {
         Vec2f textRectSize = LGL::RenderTarget::calculateTextBounds(text);
+
         mTexture.resize(textRectSize);
-        mRect.size = textRectSize;
+        mRect = IntRect(mAxis - Vec2i(0, LGL::RenderTexture::calculateTextAxis(text)), textRectSize);
 
         strncpy(mText, text, MAX_LABEL_SIZE);
         mTextPresent = true;
@@ -32,5 +33,6 @@ void Label::onRedrawThis()
     if (!mTextPresent)
         return;
 
+    //mTexture.drawRect(IntRect(Vec2i(), mRect.size), LGL::Color::Yellow);
     mTexture.drawText(Vec2i(), mText);
 }

@@ -9,11 +9,16 @@ class Label : public Widget
 {
 public:
     Label() = delete;
-    Label(const Vec2i &position, Widget *parent = nullptr);
+
+    /**
+     * \param baseline Local coordinates of the initial point of the text axis
+     * (average between baseline and median).
+     */
+    Label(const Vec2i &textAxis, Widget *parent = nullptr);
 
     /**
      * Sets text to a label. 
-     * Note that widget rect size will be changed
+     * Note that widget rect size will be changed. 
      * Pass null pointer to clear the label
      * 
      * \param text Label text
@@ -24,6 +29,8 @@ protected:
     virtual void onRedrawThis() override;
 
 private:
+    Vec2i mAxis;
+
     char mText[MAX_LABEL_SIZE + 1];
     bool mTextPresent;
 };

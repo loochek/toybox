@@ -7,7 +7,7 @@ const Vec2i SizePicker::PICKER_SIZE = Vec2i(190, 60);
 
 const Vec2i BRUSH_PREVIEW_POS = Vec2i(160, 30);
 
-const Vec2i LABEL_POS = Vec2i(10, 10);
+const Vec2i LABEL_POS = Vec2i(10, 16);
 
 const Vec2i SLIDER_POS = Vec2i(10, 40);
 const int   SLIDER_SIZE = 120;

@@ -2,9 +2,9 @@
 #include "../LGL/LGL.hpp"
 #include "Button.hpp"
 
-const int MenuBar::MENU_BAR_HEIGHT = 20;
+const int MenuBar::MENU_BAR_HEIGHT = 22;
 
-const int BUTTON_SPACING = 10;
+const int BUTTON_SPACING = 15;
 
 MenuBar::MenuBar(Widget *parent) :
     Widget(IntRect(Vec2i(), Vec2i(parent->getRect().size.x, MENU_BAR_HEIGHT)), parent),

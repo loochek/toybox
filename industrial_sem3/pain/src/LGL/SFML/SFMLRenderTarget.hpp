@@ -136,6 +136,15 @@ namespace LGL
          */
         static Vec2f calculateTextBounds(const char *text, int size = 16);
 
+        /**
+         * Determines vertical axis offset of given text
+         * 
+         * \param text Text
+         * \param size Text size
+         * \return Determined axis offset
+         */
+        static float calculateTextAxis(const char *text, int size = 16);
+
     protected:
         RenderTarget(sf::RenderTarget *renderTarget);
 

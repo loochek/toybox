@@ -14,6 +14,12 @@ namespace LGL
     {
         char c = '\0';
 
+        if (key == LGL::KeyboardKey::Space)
+        {
+            c = ' ';
+            return c;
+        }
+
         int alphabetOffset = (int)key - (int)LGL::KeyboardKey::A;
         if (0 <= alphabetOffset && alphabetOffset < ALPHABET_SIZE)
         {

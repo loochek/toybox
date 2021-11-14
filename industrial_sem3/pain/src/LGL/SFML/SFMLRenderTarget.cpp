@@ -177,12 +177,31 @@ namespace LGL
 
     Vec2f RenderTarget::calculateTextBounds(const char *text, int size)
     {
+        sf::Text textDrawer;
+
+        textDrawer.setFont(sFont);
+        textDrawer.setString(text);
+        textDrawer.setCharacterSize(size);
+
+        sf::FloatRect bounds = textDrawer.getLocalBounds();
+
+        return Vec2f(bounds.left * 2 + bounds.width, bounds.top * 2 + bounds.height);
+    }
+
+    float RenderTarget::calculateTextAxis(const char *text, int size)
+    {
         // TODO: избавиться от костылей
 
-        const sf::Glyph &glyph = sFont.getGlyph('A', size, false);
-        int textLen = strlen(text);
+        sf::Text textDrawer;
 
-        return Vec2f(glyph.bounds.width * textLen * FONT_SPACING_COEFF,
-                     -glyph.bounds.top + glyph.bounds.height);
+        textDrawer.setFont(sFont);
+        textDrawer.setString(text);
+        textDrawer.setCharacterSize(size);
+
+        sf::FloatRect localBounds  = textDrawer.getLocalBounds();
+
+        sf::Vector2f textOffset = sf::Vector2f(localBounds.left, localBounds.top);
+
+        return (size + textOffset.y) / 2;
     }
 };

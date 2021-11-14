@@ -13,8 +13,6 @@ const int CLOSE_BUTTON_WIDTH  = 49;
 const int CLOSE_BUTTON_HEIGHT = 20;
 const int CLOSE_BUTTON_OFFSET = 8;
 
-const int LABEL_HEIGHT_OFFSET = 3;
-
 const LGL::Color WINDOW_BACKGROUND_COLOR = LGL::Color(0.94f, 0.94f, 0.94f);
 
 
@@ -26,7 +24,7 @@ Window::Window(const IntRect &contentRect, Widget *parent) :
 {
     getTextures();
 
-    mTitle = new Label(Vec2i(SIDE_BORDER_SIZE, LABEL_HEIGHT_OFFSET), this);
+    mTitle = new Label(Vec2i(SIDE_BORDER_SIZE, HEADER_HEIGHT / 2), this);
     addChild(mTitle);
     
     DragArea *dragArea = new DragArea(IntRect(Vec2i(), Vec2i(mRect.size.x, HEADER_HEIGHT)), this, this);
