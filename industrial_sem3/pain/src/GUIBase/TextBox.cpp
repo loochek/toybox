@@ -7,12 +7,14 @@ const float CURSOR_BLINK_PERIOD = 1.0f;
 
 const int TEXT_BOX_HEIGHT    = 20;
 const int TEXT_BOX_SIDE_SIZE = 2;
-const int TEXT_OFFSET        = 4;
+const int TEXT_SAFE_ZONE     = 4;
 const int CURSOR_WIDTH       = 1;
 
 TextBox::TextBox(const Vec2i &textBoxPos, int textBoxSize, Widget *parent) :
-    Widget(IntRect(textBoxPos, Vec2i(textBoxSize, TEXT_BOX_HEIGHT))), mDelegate(nullptr), mTextLen(0),
-    mCursorTextOffset(0), mCursorOffset(0), mDisplayCursor(false)
+    Widget(IntRect(textBoxPos, Vec2i(textBoxSize, TEXT_BOX_HEIGHT))), mDelegate(nullptr),
+    mTextLen(0), mTextWidth(0),
+    mCursorTextOffset(0), mCursorOffset(0), mDisplayCursor(false), mActiveAreaOffset(0),
+    mTextTexture(Vec2i(textBoxSize, TEXT_BOX_HEIGHT))
 {
     getTextures();
 
@@ -38,12 +40,14 @@ void TextBox::onRedrawThis()
                          IntRect(Vec2i(), Vec2i(mRect.size.x - 2 * TEXT_BOX_SIDE_SIZE, TEXT_BOX_HEIGHT)));
 
     // Text
-    mTexture.drawText(Vec2i(TEXT_OFFSET, 0), mText);
+    redrawText();
+    mTexture.drawRenderTexture(mTextTexture, Vec2i(TEXT_SAFE_ZONE, 0), Vec2i(mActiveAreaOffset, 0));
 
     if (mDisplayCursor && mBlinkTimer < CURSOR_BLINK_PERIOD / 2)
     {
         // Cursor
-        mTexture.drawRect(IntRect(Vec2i(TEXT_OFFSET + mCursorOffset, 0), Vec2i(CURSOR_WIDTH, mRect.size.y)),
+        mTexture.drawRect(IntRect(Vec2i(TEXT_SAFE_ZONE + mCursorOffset - mActiveAreaOffset, 0),
+                                  Vec2i(CURSOR_WIDTH, mRect.size.y)),
                           LGL::Color::Black);
     }
 }
@@ -79,7 +83,7 @@ EventResult TextBox::onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier m
                 mDelegate->onTextChange(mText);
         }
 
-        recalcCursorOffset();
+        handleCursorMovement();
         mBlinkTimer = 0.0f;
         return EventResult::Handled;
     }
@@ -145,7 +149,7 @@ EventResult TextBox::onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier m
         return EventResult::Ignored;
     }
 
-    recalcCursorOffset();
+    handleCursorMovement();
     mBlinkTimer = 0.0f;
     return EventResult::Handled;
 }
@@ -175,7 +179,24 @@ void TextBox::getTextures()
     }
 }
 
-void TextBox::recalcCursorOffset()
+void TextBox::handleCursorMovement()
 {
+    mTextWidth = LGL::RenderTarget::calculateTextBounds(mText).x;
+
+    int oldCursorOffset = mCursorOffset;
     mCursorOffset = LGL::RenderTexture::calculateCharacterOffset(mText, mCursorTextOffset);
+
+    if (mCursorOffset > mActiveAreaOffset + mRect.size.x - TEXT_SAFE_ZONE * 2)
+    {
+        mActiveAreaOffset += std::min(mCursorOffset - oldCursorOffset,
+                                      mTextWidth - mRect.size.x + TEXT_SAFE_ZONE * 2);
+    }
+    else if (mCursorOffset < mActiveAreaOffset)
+        mActiveAreaOffset = std::max(mActiveAreaOffset + mCursorOffset - oldCursorOffset, 0);
+}
+
+void TextBox::redrawText()
+{
+    mTextTexture.clear();
+    mTextTexture.drawText(Vec2i(), mText);
 }
