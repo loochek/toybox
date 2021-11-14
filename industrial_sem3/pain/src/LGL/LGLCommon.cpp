@@ -4,7 +4,7 @@ const int ALPHABET_SIZE      = 26;
 const int DIGITS_COUNT       = 10;
 const int SPECIAL_SYMS_COUNT = 11;
 
-const char *DIGITS_SHIFTED       = "!@#$%^&*()";
+const char *DIGITS_SHIFTED       = ")!@#$%^&*(";
 const char *SPECIAL_SYMS         = "[];,.'/\\`=-";
 const char *SPECIAL_SYMS_SHIFTED = "{}:<>\"?|~+_";
 

@@ -1,17 +1,29 @@
 #include <cstring>
 #include "../TextureManager.hpp"
+#include "../GUILogic/TextBox/TextBoxDelegate.hpp"
 #include "TextBox.hpp"
 
-const int TEXT_BOX_HEIGHT       = 20;
-const int TEXT_BOX_SIDE_SIZE   = 2;
-const int TEXT_BOX_TEXT_OFFSET = 4;
+const float CURSOR_BLINK_PERIOD = 1.0f;
+
+const int TEXT_BOX_HEIGHT    = 20;
+const int TEXT_BOX_SIDE_SIZE = 2;
+const int TEXT_OFFSET        = 4;
+const int CURSOR_WIDTH       = 1;
 
 TextBox::TextBox(const Vec2i &textBoxPos, int textBoxSize, Widget *parent) :
-    Widget(IntRect(textBoxPos, Vec2i(textBoxSize, TEXT_BOX_HEIGHT))), mCursorPos(0), mTextLen(0)
+    Widget(IntRect(textBoxPos, Vec2i(textBoxSize, TEXT_BOX_HEIGHT))), mDelegate(nullptr), mTextLen(0),
+    mCursorTextOffset(0), mCursorOffset(0), mDisplayCursor(false)
 {
     getTextures();
 
     memset(mText, 0, sizeof(char) * MAX_TEXT_BOX_LEN);
+}
+
+void TextBox::onUpdateThis(float elapsedTime)
+{
+    mBlinkTimer += elapsedTime;
+    if (mBlinkTimer >= CURSOR_BLINK_PERIOD)
+        mBlinkTimer -= CURSOR_BLINK_PERIOD;
 }
 
 void TextBox::onRedrawThis()
@@ -25,42 +37,64 @@ void TextBox::onRedrawThis()
                          Vec2i(TEXT_BOX_SIDE_SIZE, 0),
                          IntRect(Vec2i(), Vec2i(mRect.size.x - 2 * TEXT_BOX_SIDE_SIZE, TEXT_BOX_HEIGHT)));
 
-    mTexture.drawText(Vec2i(TEXT_BOX_TEXT_OFFSET, 0), mText);
+    // Text
+    mTexture.drawText(Vec2i(TEXT_OFFSET, 0), mText);
+
+    if (mDisplayCursor && mBlinkTimer < CURSOR_BLINK_PERIOD / 2)
+    {
+        // Cursor
+        mTexture.drawRect(IntRect(Vec2i(TEXT_OFFSET + mCursorOffset, 0), Vec2i(CURSOR_WIDTH, mRect.size.y)),
+                          LGL::Color::Black);
+    }
 }
 
 EventResult TextBox::onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier modifier)
 {
+    // 1. Check for the input
+
     char typedChar = LGL::toCharacter(key, modifier);
     if (typedChar != '\0')
     {
         // Insert symbol
 
-        char currChar = mText[mCursorPos];
-        mText[mCursorPos] = typedChar;
-
-        for (int i = mCursorPos + 1;; i++)
+        if (mTextLen < MAX_TEXT_BOX_LEN)
         {
-            char tmp = mText[i];
-            mText[i] = currChar;
-            currChar = tmp;
+            char currChar = mText[mCursorTextOffset];
+            mText[mCursorTextOffset] = typedChar;
 
-            if (currChar == '\0')
-                break;
+            for (int i = mCursorTextOffset + 1;; i++)
+            {
+                char tmp = mText[i];
+                mText[i] = currChar;
+                currChar = tmp;
+
+                if (currChar == '\0')
+                    break;
+            }
+
+            mCursorTextOffset++;
+            mTextLen++;
+
+            if (mDelegate != nullptr)
+                mDelegate->onTextChange(mText);
         }
 
-        mCursorPos++;
-        mTextLen++;
+        recalcCursorOffset();
+        mBlinkTimer = 0.0f;
         return EventResult::Handled;
     }
 
-    if (key == LGL::KeyboardKey::Backspace)
+    // 2. Check for control sequence
+
+    switch (key)
     {
+    case LGL::KeyboardKey::Backspace:
         // Delete symbol
 
-        if (mCursorPos == 0)
-            return EventResult::Handled;
+        if (mCursorTextOffset == 0)
+            break;
 
-        for (int i = mCursorPos - 1;; i++)
+        for (int i = mCursorTextOffset - 1;; i++)
         {
             mText[i] = mText[i + 1];
 
@@ -68,34 +102,63 @@ EventResult TextBox::onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier m
                 break;
         }
 
-        mCursorPos--;
+        mCursorTextOffset--;
         mTextLen--;
-        return EventResult::Handled;
-    }
 
-    if (key == LGL::KeyboardKey::Left)
-    {
+        if (mDelegate != nullptr)
+            mDelegate->onTextChange(mText);
+        
+        break;
+
+    case LGL::KeyboardKey::Left:
         // Move cursor left
 
-        mCursorPos--;
-        if (mCursorPos < 0)
-            mCursorPos = 0;
+        mCursorTextOffset--;
+        if (mCursorTextOffset < 0)
+            mCursorTextOffset = 0;
 
-        return EventResult::Handled;
-    }
+        break;
 
-    if (key == LGL::KeyboardKey::Right)
-    {
+    case LGL::KeyboardKey::Right:
         // Move cursor right
 
-        mCursorPos++;
-        if (mCursorPos > mTextLen)
-            mCursorPos = mTextLen;
+        mCursorTextOffset++;
+        if (mCursorTextOffset > mTextLen)
+            mCursorTextOffset = mTextLen;
 
-        return EventResult::Handled;
+        break;
+
+    case LGL::KeyboardKey::Home:
+        // Move cursor to the beginning
+
+        mCursorTextOffset = 0;
+        break;
+
+    case LGL::KeyboardKey::End:
+        // Move cursor to the end
+
+        mCursorTextOffset = mTextLen;
+        break;
+
+    default:
+        // Not a control sequence
+        return EventResult::Ignored;
     }
 
-    return EventResult::Ignored;
+    recalcCursorOffset();
+    mBlinkTimer = 0.0f;
+    return EventResult::Handled;
+}
+
+void TextBox::onKeyboardFocusReceivedThis()
+{
+    mDisplayCursor = true;
+    mBlinkTimer = 0.0f;
+}
+
+void TextBox::onKeyboardFocusLostThis()
+{
+    mDisplayCursor = false;
 }
 
 void TextBox::getTextures()
@@ -110,4 +173,9 @@ void TextBox::getTextures()
     {
         throw std::runtime_error("Text box textures are not loaded");
     }
+}
+
+void TextBox::recalcCursorOffset()
+{
+    mCursorOffset = LGL::RenderTexture::calculateCharacterOffset(mText, mCursorTextOffset);
 }

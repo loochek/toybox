@@ -144,6 +144,16 @@ namespace LGL
          * \return Determined axis offset
          */
         static float calculateTextAxis(const char *text, int size = 16);
+        
+        /**
+         * Determines character offset in given text
+         * 
+         * \param text Text
+         * \param index Character index
+         * \param size Text size
+         * \return Determined character offset
+         */
+        static float calculateCharacterOffset(const char *text, int index, int size = 16);
 
     protected:
         RenderTarget(sf::RenderTarget *renderTarget);

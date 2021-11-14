@@ -84,11 +84,21 @@ protected:
      * Event handlers
      */
 
-    /// Widget should update it's state
+    /// Called when widget should update it's state
     virtual void onUpdate(float elapsedTime);
 
-    /// Widget should update it's render texture with actual state
+    /// Called when widget should update it's render texture with actual state
     virtual void onRedraw();
+
+    /// Called when widget is about to be destroyed
+    virtual void onDestroy();
+
+    /// Called when children was destroyed. Widget should get rid of invalidated pointer to it.
+    virtual void onChildDestroy(Widget *child);
+
+    /**
+     * Mouse events
+     */
 
     /// Called when mouse enters widget rect
     virtual void onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos);
@@ -122,18 +132,17 @@ protected:
      * Focus is assigned to the child by click
      */
 
-    // Called when keyboard key is pressed
+    /// Called when keyboard key is pressed
     virtual EventResult onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier modifier);
 
-    // Called when keyboard key is released
+    /// Called when keyboard key is released
     virtual EventResult onKeyReleased(LGL::KeyboardKey key, LGL::InputModifier modifier);
 
-    /// Widget must destroy yourself and it's children
-    virtual void onDestroy();
+    /// Called when keyboard focus was received
+    virtual void onKeyboardFocusReceived();
 
-    /// Called when children was destroyed
-    virtual void onChildDestroy(Widget *child);
-
+    /// Called when keyboard focus was lost
+    virtual void onKeyboardFocusLost();
 
     /**
      * Functions which called by event handlers with/instead of dispatching event to children
@@ -142,6 +151,8 @@ protected:
     virtual void onRedrawThis() {};
     virtual void onUpdateThis(float elapsedTime) {};
     virtual void onDestroyThis() {};
+    virtual void onKeyboardFocusReceivedThis() {};
+    virtual void onKeyboardFocusLostThis() {};
 
     virtual EventResult onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier modifier)
     {

@@ -14,6 +14,11 @@ Widget::~Widget()
         delete child;
 }
 
+void Widget::addChild(Widget *child)
+{
+    mChildren.push_back(child);
+}
+
 void Widget::onUpdate(float elapsedTime)
 {
     onUpdateThis(elapsedTime);
@@ -30,6 +35,23 @@ void Widget::onRedraw()
         child->onRedraw();
         mTexture.drawRenderTexture(child->mTexture, child->mRect.position);
     }
+}
+
+void Widget::onDestroy()
+{
+    for (Widget *child : mChildren)
+        child->onDestroy();
+
+    onDestroyThis();
+}
+
+void Widget::onChildDestroy(Widget *child)
+{
+    if (child == mChildUnderMouse)
+        mChildUnderMouse = nullptr;
+
+    if (child == mChildInFocus)
+        mChildInFocus = nullptr;
 }
 
 void Widget::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
@@ -97,9 +119,14 @@ void Widget::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos
 
 void Widget::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
+    if (mChildInFocus != nullptr && mChildInFocus != mChildUnderMouse)
+        mChildInFocus->onKeyboardFocusLost();
+
     if (mChildUnderMouse != nullptr)
     {
         mChildUnderMouse->onMouseClicked(localMousePos - mChildUnderMouse->getRect().position, globalMousePos);
+
+        mChildUnderMouse->onKeyboardFocusReceived();
         mChildInFocus = mChildUnderMouse;
     }
     else
@@ -185,24 +212,16 @@ EventResult Widget::onKeyReleased(LGL::KeyboardKey key, LGL::InputModifier modif
     return EventResult::Ignored;
 }
 
-void Widget::onDestroy()
+void Widget::onKeyboardFocusReceived()
 {
-    for (Widget *child : mChildren)
-        child->onDestroy();
-
-    onDestroyThis();
+    onKeyboardFocusReceivedThis();
+    if (mChildInFocus != nullptr)
+        mChildInFocus->onKeyboardFocusReceived();
 }
 
-void Widget::onChildDestroy(Widget *child)
+void Widget::onKeyboardFocusLost()
 {
-    if (child == mChildUnderMouse)
-        mChildUnderMouse = nullptr;
-
-    if (child == mChildInFocus)
-        mChildInFocus = nullptr;
-}
-
-void Widget::addChild(Widget *child)
-{
-    mChildren.push_back(child);
+    onKeyboardFocusLostThis();
+    if (mChildInFocus != nullptr)
+        mChildInFocus->onKeyboardFocusLost();
 }

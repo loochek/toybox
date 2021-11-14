@@ -23,19 +23,31 @@ public:
     void setDelegate(TextBoxDelegate *delegate) { this->mDelegate = delegate; };
 
 protected:
+    virtual void onUpdateThis(float elapsedTime) override;
     virtual void onRedrawThis() override;
 
     virtual EventResult onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier modifier) override;
+    virtual void onKeyboardFocusReceivedThis() override;
+    virtual void onKeyboardFocusLostThis() override;
 
 private:
     void getTextures();
+    void recalcCursorOffset();
 
 protected:
     TextBoxDelegate *mDelegate;
 
     char mText[MAX_TEXT_BOX_LEN + 1];
-    int  mCursorPos;
     int  mTextLen;
+
+    /// In characters
+    int mCursorTextOffset;
+    /// In pixels
+    int mCursorOffset;
+
+    bool mDisplayCursor;
+
+    float mBlinkTimer;
 
     const LGL::Texture *mTextBoxBodyTexture;
     const LGL::Texture *mTextBoxLeftTexture;

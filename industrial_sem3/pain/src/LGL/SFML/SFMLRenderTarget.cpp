@@ -204,4 +204,15 @@ namespace LGL
 
         return (size + textOffset.y) / 2;
     }
+
+    float RenderTarget::calculateCharacterOffset(const char *text, int index, int size)
+    {
+        sf::Text textDrawer;
+
+        textDrawer.setFont(sFont);
+        textDrawer.setString(text);
+        textDrawer.setCharacterSize(size);
+
+        return textDrawer.findCharacterPos(index).x;
+    }
 };

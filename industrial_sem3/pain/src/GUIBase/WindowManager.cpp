@@ -16,12 +16,17 @@ void WindowManager::onRedrawThis()
 
 void WindowManager::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
+    if (mChildInFocus != nullptr && mChildInFocus != mChildUnderMouse)
+        mChildInFocus->onKeyboardFocusLost();
+
     if (mChildUnderMouse != nullptr)
     {
         auto childIter = std::find(mChildren.begin(), mChildren.end(), mChildUnderMouse);
         popUp(childIter);
 
         mChildUnderMouse->onMouseClicked(localMousePos - mChildUnderMouse->getRect().position, globalMousePos);
+
+        mChildUnderMouse->onKeyboardFocusReceived();
         mChildInFocus = mChildUnderMouse;
     }
     else

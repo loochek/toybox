@@ -9,7 +9,7 @@ TextBoxDemoWindow::TextBoxDemoWindow(const IntRect &windowRect, Widget *parent) 
     setTitle("Text box demo");
 
     TextBox *textBox = new TextBox(Vec2i(Window::SIDE_BORDER_SIZE, Window::HEADER_HEIGHT) + Vec2i(10, 10),
-                                   60, this);
+                                   300, this);
     addChild(textBox);
     
     mCloseButtonDelegate = new WindowCloseDelegate(this);
