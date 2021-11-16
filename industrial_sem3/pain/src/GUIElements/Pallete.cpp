@@ -26,22 +26,22 @@ Pallete::Pallete(const Vec2i &position, Widget *parent) :
     mKeyColorPicker = new KeyColorPicker(KEY_COLOR_PICKER_RECT, this);
     mKeyColorPicker->setDelegate(mController);
     mKeyColorPicker->setUserData((int)ColorPickerType::Key);
+    addChild(mKeyColorPicker);
 
     mMainColorPicker = new MainColorPicker(MAIN_COLOR_PICKER_RECT, this);
     mMainColorPicker->setDelegate(mController);
     mMainColorPicker->setUserData((int)ColorPickerType::Main);
+    addChild(mMainColorPicker);
 
     mOpacityLabel = new Label(OPACITY_LABEL_POS, this);
+    mOpacityLabel->setText("Opacity: 100%");
+    addChild(mOpacityLabel);
 
     mOpacitySlider = new Slider(OPACITY_SLIDER_POS, OPACITY_SLIDER_SIZE, this);
     mOpacitySlider->setDelegate(mController);
     mOpacitySlider->setMaxValue(EXTERNAL_RGB_BASE);
     mOpacitySlider->setValue(EXTERNAL_RGB_BASE);
-
-    addChild(mKeyColorPicker);
-    addChild(mMainColorPicker);
     addChild(mOpacitySlider);
-    addChild(mOpacityLabel);
 }
 
 Pallete::~Pallete()

@@ -71,6 +71,7 @@ protected:
     const LGL::Texture *mSliderBodyTexture;
 
     friend class SliderThumb;
+    friend class SliderSideButtonsDelegate;
 };
 
 #endif

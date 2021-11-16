@@ -1,42 +1,52 @@
 #include "SizePicker.hpp"
 #include "../GUIBase/Label.hpp"
 #include "../GUIBase/Slider.hpp"
-#include "../GUILogic/SizePicker/SizePickerSliderDelegate.hpp"
+#include "../GUIBase/TextBox.hpp"
+#include "../GUILogic/SizePicker/SizePickerController.hpp"
 
-const Vec2i SizePicker::PICKER_SIZE = Vec2i(190, 60);
+const Vec2i SizePicker::PICKER_SIZE = Vec2i(210, 60);
 
-const Vec2i BRUSH_PREVIEW_POS = Vec2i(160, 30);
+const Vec2i BRUSH_PREVIEW_POS = Vec2i(180, 30);
 
 const Vec2i LABEL_POS = Vec2i(10, 16);
+
+const Vec2i TEXT_BOX_POS  = Vec2i(90, 8);
+const int   TEXT_BOX_SIZE = 40;
 
 const Vec2i SLIDER_POS = Vec2i(10, 40);
 const int   SLIDER_SIZE = 120;
 
-const int INITIAL_SIZE = 2;
-const int MAX_SIZE = 20;
-
 SizePicker::SizePicker(const Vec2i &position, Widget *parent) :
-    Widget(IntRect(position, PICKER_SIZE), parent), mDelegate(nullptr), mPreviewBrushSize(INITIAL_SIZE)
+    Widget(IntRect(position, PICKER_SIZE), parent), mDelegate(nullptr), mCurrBrushSize(INITIAL_SIZE)
 {
-    mSliderDelegate = new SizePickerSliderDelegate(this);
+    mController = new SizePickerController(this);
     
     mLabel = new Label(LABEL_POS, this);
+    mLabel->setText("Brush size:");
     addChild(mLabel);
 
-    Slider *slider = new Slider(SLIDER_POS, SLIDER_SIZE, this);
-    slider->setDelegate(mSliderDelegate);
-    slider->setMaxValue(MAX_SIZE - 1);
-    slider->setValue(INITIAL_SIZE - 1);
+    mTextBox = new TextBox(TEXT_BOX_POS, TEXT_BOX_SIZE, this);
+    mTextBox->setDelegate(mController);
+
+    char newText[MAX_TEXT_BOX_LEN + 1] = {0};
+    snprintf(newText, MAX_TEXT_BOX_LEN, "%d", INITIAL_SIZE);
+    mTextBox->setText(newText);
     
-    addChild(slider);
+    addChild(mTextBox);
+
+    mSlider = new Slider(SLIDER_POS, SLIDER_SIZE, this);
+    mSlider->setDelegate(mController);
+    mSlider->setMaxValue(MAX_SIZE - 1);
+    mSlider->setValue(INITIAL_SIZE - 1);
+    addChild(mSlider);
 }
 
 SizePicker::~SizePicker()
 {
-    delete mSliderDelegate;
+    delete mController;
 }
 
 void SizePicker::onRedrawThis()
 {
-    mTexture.drawCircle(BRUSH_PREVIEW_POS, mPreviewBrushSize, LGL::Color::Black);
+    mTexture.drawCircle(BRUSH_PREVIEW_POS, mCurrBrushSize, LGL::Color::Black);
 }

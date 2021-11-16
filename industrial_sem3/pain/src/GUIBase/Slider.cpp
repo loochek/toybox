@@ -57,9 +57,6 @@ void Slider::setValue(int value)
 
     int newThumbXPos = mThumb->mLeftLimit + mValue * (mThumb->mRightLimit - mThumb->mLeftLimit) / mMaxValue;
     mThumb->setPosition(Vec2i(newThumbXPos, 0));
-    
-    if (mDelegate != nullptr)
-        mDelegate->onValueChange(mValue, mUserData);
 }
 
 void Slider::setMaxValue(int value)

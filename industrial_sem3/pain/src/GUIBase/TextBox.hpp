@@ -22,6 +22,18 @@ public:
      */
     void setDelegate(TextBoxDelegate *delegate) { this->mDelegate = delegate; };
 
+    /**
+     * Sets text for a text box
+     * 
+     * \param newText New text
+     */
+    void setText(const char *newText);
+
+    /**
+     * \return Current text
+     */
+    const char *getText() { return mText; };
+
 protected:
     virtual void onUpdateThis(float elapsedTime) override;
     virtual void onRedrawThis() override;
@@ -32,8 +44,7 @@ protected:
 
 private:
     void getTextures();
-    void handleCursorMovement();
-    void redrawText();
+    void recalcActiveArea();
 
 protected:
     TextBoxDelegate *mDelegate;
@@ -42,15 +53,21 @@ protected:
     int  mTextLen;
     int  mTextWidth;
 
-    /// In characters
+    // In characters
     int mCursorTextOffset;
-    /// In pixels
+    // In pixels
     int mCursorOffset;
 
     int mActiveAreaOffset;
 
-    bool mDisplayCursor;
+    // In characters
+    int mSelectionTextStart;
+    int mSelectionTextEnd;
+    // In pixels
+    int mSelectionStart;
+    int mSelectionEnd;
 
+    bool mDisplayCursor;
     float mBlinkTimer;
 
     LGL::RenderTexture mTextTexture;

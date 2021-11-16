@@ -28,6 +28,9 @@ public:
             mSlider->setValue(mSlider->getValue() + 1);
             break;
         }
+
+        if (mSlider->mDelegate != nullptr)
+            mSlider->mDelegate->onValueChange(mSlider->mValue, mSlider->mUserData);
     }
 
 protected:

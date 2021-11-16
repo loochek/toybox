@@ -5,8 +5,10 @@
 #include "../GUIBase/Widget.hpp"
 
 class Label;
+class Slider;
+class TextBox;
 class SizeChangedDelegate;
-class SizePickerSliderDelegate;
+class SizePickerController;
 
 class SizePicker : public Widget
 {
@@ -31,14 +33,16 @@ public:
     static const Vec2i PICKER_SIZE;
 
 protected:
-    SizeChangedDelegate      *mDelegate;
-    SizePickerSliderDelegate *mSliderDelegate;
+    SizeChangedDelegate  *mDelegate;
+    SizePickerController *mController;
 
-    Label *mLabel;
+    Label   *mLabel;
+    Slider  *mSlider;
+    TextBox *mTextBox;
 
-    int mPreviewBrushSize;
+    int mCurrBrushSize;
 
-    friend class SizePickerSliderDelegate;
+    friend class SizePickerController;
 };
 
 #endif
