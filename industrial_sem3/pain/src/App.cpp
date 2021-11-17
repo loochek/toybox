@@ -1,8 +1,9 @@
 #include "App.hpp"
 #include "TextureManager.hpp"
-#include "GUIBase/WindowManager.hpp"
-#include "GUIBase/MenuBar.hpp"
-#include "GUILogic/PaintControllerMenuDelegate.hpp"
+#include "BaseGUI/WindowManager.hpp"
+#include "BaseGUI/MenuBar.hpp"
+#include "EditorLogic/PaintControllerMenuDelegate.hpp"
+#include "EditorLogic/PaintController.hpp"
 
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;

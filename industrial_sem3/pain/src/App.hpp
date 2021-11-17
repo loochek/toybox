@@ -2,9 +2,9 @@
 #define APP_HPP
 
 #include "LGL/LGL.hpp"
-#include "GUIBase/GUIManager.hpp"
-#include "GUILogic/PaintController.hpp"
+#include "BaseGUI/GUIManager.hpp"
 
+class PaintController;
 class PaintControllerMenuDelegate;
 
 /**
