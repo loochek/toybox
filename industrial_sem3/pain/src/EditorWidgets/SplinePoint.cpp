@@ -13,3 +13,16 @@ void SplinePoint::onRedrawThis()
 {
     mTexture.drawRect(IntRect(DRAG_AREA_SIZE / 2 - POINT_SIZE / 2, POINT_SIZE), LGL::Color::Red);
 }
+
+void SplinePoint::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)
+{
+    // Using global mouse position because of self-moving
+
+    if (mMousePressed)
+    {
+        mWidgetToDrag->move(globalMousePos - mOldMousePosition);
+        ((SplineWidget*)mParent)->recalcSpline();
+    }
+    
+    mOldMousePosition = globalMousePos;
+}

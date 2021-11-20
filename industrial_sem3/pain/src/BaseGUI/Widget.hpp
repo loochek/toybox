@@ -29,12 +29,12 @@ public:
     /**
      * \return Widget rect
      */
-    IntRect getRect() { return mRect; };
+    IntRect getRect() const { return mRect; };
 
     /**
      * \return Widget's parent
      */
-    Widget *getParent() { return mParent; };
+    Widget *getParent() const { return mParent; };
 
     /**
      * Sets user data for the widget. 
@@ -48,7 +48,7 @@ public:
     /**
      * \return User data value
      */
-    int getUserData() { return mUserData; };
+    int getUserData() const { return mUserData; };
 
     /**
      * Sets new position for the widget relative to parent
@@ -191,6 +191,7 @@ protected:
     // To access protected fields and methods
     friend class WindowManager;
     friend class GUIManager;
+    friend class SplineWidget;
 };
 
 #endif

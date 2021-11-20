@@ -15,9 +15,6 @@ SplineWindow::SplineWindow(const IntRect &splineWidgetRect, Widget *parent) :
                                      this);
     addChild(mSplineWidget);
 
-    for (int i = 0; i < POINT_COUNT; i++)
-        mSplineWidget->addPoint(splineWidgetRect.size * i / (POINT_COUNT - 1));
-
     mCloseButtonDelegate = new WindowCloseDelegate(this);
     mCloseButton->setDelegate(mCloseButtonDelegate);
 }

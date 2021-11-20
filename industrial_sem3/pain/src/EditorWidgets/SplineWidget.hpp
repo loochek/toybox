@@ -2,19 +2,26 @@
 #define SPLINE_WIDGET_HPP
 
 #include <vector>
+#include "../Utils/CatmullRomSpline.hpp"
 #include "../BaseGUI/Widget.hpp"
-
-class SplinePoint;
 
 class SplineWidget : public Widget
 {
 public:
     SplineWidget(const IntRect &widgetRect, Widget *parent = nullptr);
 
-    void addPoint(const Vec2i &position);
-
 protected:
     virtual void onRedrawThis() override;
+    virtual void onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
+
+private:
+    void recalcSpline();
+
+private:
+    CatmullRomSpline mSpline;
+
+    // to call recalcSpline
+    friend class SplinePoint;
 };
 
 #endif

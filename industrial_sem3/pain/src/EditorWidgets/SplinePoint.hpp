@@ -14,6 +14,7 @@ protected:
     SplinePoint(const Vec2i &pointPos, SplineWidget *parent = nullptr);
 
     virtual void onRedrawThis() override;
+    virtual void onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
 
 protected:
     static const Vec2i DRAG_AREA_SIZE;

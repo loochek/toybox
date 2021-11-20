@@ -4,10 +4,6 @@
 
 const float ALPHA = 1;
 
-CatmullRomSpline::CatmullRomSpline()
-{
-}
-
 void CatmullRomSpline::addPoint(const Vec2f &point)
 {
     if (mPoints.size() == 0)
@@ -22,7 +18,13 @@ void CatmullRomSpline::addPoint(const Vec2f &point)
     mPoints.push_back(point);
 }
 
-Vec2f CatmullRomSpline::operator[](float t)
+void CatmullRomSpline::clear()
+{
+    mParams.clear();
+    mPoints.clear();
+}
+
+Vec2f CatmullRomSpline::operator[](float t) const
 {
     if (t < 0.0f || t > getMaxParam() || mParams.size() < 4)
         return Vec2f(0.0f, 0.0f);
@@ -35,6 +37,22 @@ Vec2f CatmullRomSpline::operator[](float t)
     int i0 = i2 - 2;
     int i1 = i2 - 1;
     int i3 = i2 + 1;
+
+    if (i0 < 0)
+    {
+        i0 = 0;
+        i1 = 1;
+        i2 = 2;
+        i3 = 3;
+    }
+
+    if (i3 >= mParams.size())
+    {
+        i3 = mParams.size() - 1;
+        i2 = i3 - 1;
+        i1 = i3 - 2;
+        i0 = i3 - 3;
+    }
 
     float t0 = mParams[i0];
     float t1 = mParams[i1] - t0;
@@ -60,7 +78,7 @@ Vec2f CatmullRomSpline::operator[](float t)
     return b1 * ((t2 - t) / (t2 - t1)) + b2 * ((t - t1) / (t2 - t1));
 }
 
-float CatmullRomSpline::getMaxParam()
+float CatmullRomSpline::getMaxParam() const
 {
     if (mParams.size() < 4)
         return 0.0f;

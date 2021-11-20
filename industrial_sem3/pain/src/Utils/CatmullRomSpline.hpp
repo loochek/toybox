@@ -10,7 +10,7 @@
 class CatmullRomSpline
 {
 public:
-    CatmullRomSpline();
+    CatmullRomSpline() {};
 
     /**
      * Extends the spline with a new point. 
@@ -21,11 +21,19 @@ public:
     void addPoint(const Vec2f &point);
 
     /**
+     * Clears the curve
+     */
+    void clear();
+
+    /**
      * \return Spline point according to parameter
      */
-    Vec2f operator[](float t);
+    Vec2f operator[](float t) const;
 
-    float getMaxParam();
+    /**
+     * \return Max possible value of parameterization of the curve
+     */
+    float getMaxParam() const;
 
 private:
     float getNextParam(float t, const Vec2f &p1, const Vec2f &p2);
