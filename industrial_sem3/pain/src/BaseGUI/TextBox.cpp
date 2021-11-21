@@ -1,4 +1,5 @@
 #include <cstring>
+#include <cassert>
 #include "../TextureManager.hpp"
 #include "../BaseGUILogic/TextBox/TextBoxDelegate.hpp"
 #include "TextBox.hpp"
@@ -10,16 +11,18 @@ const int TEXT_BOX_SIDE_SIZE = 2;
 const int TEXT_SAFE_ZONE     = 4;
 const int CURSOR_WIDTH       = 1;
 
+const LGL::Color SELECTION_COLOR = LGL::Color(0.16f, 0.85f, 0.86f);
+
 TextBox::TextBox(const Vec2i &textBoxPos, int textBoxSize, Widget *parent) :
     Widget(IntRect(textBoxPos, Vec2i(textBoxSize, TEXT_BOX_HEIGHT))), mDelegate(nullptr),
-    mTextLen(0), mTextWidth(0),
-    mCursorTextOffset(0), mCursorOffset(0), mDisplayCursor(false), mActiveAreaOffset(0),
-    mSelectionTextStart(-1), mSelectionTextEnd(-1), mSelectionStart(-1), mSelectionEnd(-1),
+    mTextLen(0), mTextWidth(0), mActiveAreaOffset(0),
+    mCursorTextOffset(0), mCursorOffset(0), mDisplayCursor(false),
+    mSelectionTextOffset(-1), mSelectionOffset(-1),
     mTextTexture(Vec2i(textBoxSize, TEXT_BOX_HEIGHT))
 {
     getTextures();
 
-    memset(mText, 0, sizeof(char) * MAX_TEXT_BOX_LEN);
+    memset(mText, 0, sizeof(char) * (MAX_TEXT_BOX_LEN + 1));
 }
 
 void TextBox::setText(const char *newText)
@@ -27,6 +30,7 @@ void TextBox::setText(const char *newText)
     strncpy(mText, newText, MAX_TEXT_BOX_LEN);
     mTextLen = strlen(mText);
     mCursorOffset = mTextLen;
+    mSelectionTextOffset = -1;
     recalcActiveArea();
 }
 
@@ -48,115 +52,74 @@ void TextBox::onRedrawThis()
                          Vec2i(TEXT_BOX_SIDE_SIZE, 0),
                          IntRect(Vec2i(), Vec2i(mRect.size.x - 2 * TEXT_BOX_SIDE_SIZE, TEXT_BOX_HEIGHT)));
 
-    // Text
-    mTextTexture.clear();
-    mTextTexture.drawText(Vec2i(), mText);
-    mTexture.drawRenderTexture(mTextTexture, Vec2i(TEXT_SAFE_ZONE, 0), Vec2i(mActiveAreaOffset, 0));
+    if (mSelectionTextOffset != -1)
+    {
+        // Selection
 
-    if (mDisplayCursor && mBlinkTimer < CURSOR_BLINK_PERIOD / 2)
+        int selectionStart = std::min(mCursorOffset, mSelectionOffset);
+        int selectionEnd   = std::max(mCursorOffset, mSelectionOffset);
+
+        mTexture.drawRect(IntRect(Vec2i(TEXT_SAFE_ZONE + selectionStart - mActiveAreaOffset, 0),
+                                Vec2i(selectionEnd - selectionStart, mRect.size.y)),
+                          SELECTION_COLOR);
+    }
+    else if (mDisplayCursor && mBlinkTimer < CURSOR_BLINK_PERIOD / 2)
     {
         // Cursor
         mTexture.drawRect(IntRect(Vec2i(TEXT_SAFE_ZONE + mCursorOffset - mActiveAreaOffset, 0),
                                   Vec2i(CURSOR_WIDTH, mRect.size.y)),
                           LGL::Color::Black);
     }
+
+    // Text
+    mTextTexture.clear();
+    mTextTexture.drawText(Vec2i(), mText);
+    mTexture.drawRenderTexture(mTextTexture, Vec2i(TEXT_SAFE_ZONE, 0), Vec2i(mActiveAreaOffset, 0));
 }
 
 EventResult TextBox::onKeyPressedThis(LGL::KeyboardKey key, LGL::InputModifier modifier)
 {
-    // 1. Check for the input
-
     char typedChar = LGL::toCharacter(key, modifier);
     if (typedChar != '\0')
     {
-        // Insert symbol
-
-        if (mTextLen < MAX_TEXT_BOX_LEN)
-        {
-            char currChar = mText[mCursorTextOffset];
-            mText[mCursorTextOffset] = typedChar;
-
-            for (int i = mCursorTextOffset + 1;; i++)
-            {
-                char tmp = mText[i];
-                mText[i] = currChar;
-                currChar = tmp;
-
-                if (currChar == '\0')
-                    break;
-            }
-
-            mCursorTextOffset++;
-            mTextLen++;
-
-            if (mDelegate != nullptr)
-                mDelegate->onTextChange(mText, mUserData);
-        }
-
-        recalcActiveArea();
-        mBlinkTimer = 0.0f;
-        return EventResult::Handled;
+        // Typeable char
+        onPrintableChar(typedChar);
     }
-
-    // 2. Check for control sequence
-
-    switch (key)
+    else
     {
-    case LGL::KeyboardKey::Backspace:
-        // Delete symbol
+        // Control sequence
+        bool shiftPressed = LGL::isShiftPressed(modifier);
 
-        if (mCursorTextOffset == 0)
+        switch (key)
+        {
+        case LGL::KeyboardKey::Delete:
+            onDelete(false);
             break;
 
-        for (int i = mCursorTextOffset - 1;; i++)
-        {
-            mText[i] = mText[i + 1];
+        case LGL::KeyboardKey::Backspace:
+            onDelete(true);
+            break;
 
-            if (mText[i + 1] == '\0')
-                break;
+        case LGL::KeyboardKey::Left:
+            onLeftArrow(shiftPressed);
+            break;
+
+        case LGL::KeyboardKey::Right:
+            onRightArrow(shiftPressed);
+            break;
+
+        case LGL::KeyboardKey::Home:
+            onHome(shiftPressed);
+            break;
+
+        case LGL::KeyboardKey::End:
+            onEnd(shiftPressed);
+            break;
+
+        default:
+            // Not a control sequence
+            return EventResult::Ignored;
         }
-
-        mCursorTextOffset--;
-        mTextLen--;
-
-        if (mDelegate != nullptr)
-            mDelegate->onTextChange(mText, mUserData);
-        
-        break;
-
-    case LGL::KeyboardKey::Left:
-        // Move cursor left
-
-        mCursorTextOffset--;
-        if (mCursorTextOffset < 0)
-            mCursorTextOffset = 0;
-
-        break;
-
-    case LGL::KeyboardKey::Right:
-        // Move cursor right
-
-        mCursorTextOffset++;
-        if (mCursorTextOffset > mTextLen)
-            mCursorTextOffset = mTextLen;
-
-        break;
-
-    case LGL::KeyboardKey::Home:
-        // Move cursor to the beginning
-
-        mCursorTextOffset = 0;
-        break;
-
-    case LGL::KeyboardKey::End:
-        // Move cursor to the end
-
-        mCursorTextOffset = mTextLen;
-        break;
-
-    default:
-        // Not a control sequence
-        return EventResult::Ignored;
     }
 
     recalcActiveArea();
@@ -193,6 +156,8 @@ void TextBox::recalcActiveArea()
 {
     mTextWidth = LGL::RenderTarget::calculateTextBounds(mText).x;
 
+    mSelectionOffset = LGL::RenderTexture::calculateCharacterOffset(mText, mSelectionTextOffset);
+
     int oldCursorOffset = mCursorOffset;
     mCursorOffset = LGL::RenderTexture::calculateCharacterOffset(mText, mCursorTextOffset);
 
@@ -203,4 +168,211 @@ void TextBox::recalcActiveArea()
     }
     else if (mCursorOffset < mActiveAreaOffset)
         mActiveAreaOffset = std::max(mActiveAreaOffset + mCursorOffset - oldCursorOffset, 0);
+}
+
+void TextBox::onPrintableChar(char c)
+{
+    if (mSelectionTextOffset != -1)
+    {
+        // If selection is present, delete it
+        onDelete(false);
+    }
+
+    if (insertChar(mCursorTextOffset, c))
+    {
+        mCursorTextOffset++;
+
+        if (mDelegate != nullptr)
+            mDelegate->onTextChange(mText, mUserData);
+    }
+}
+
+void TextBox::onDelete(bool backspace)
+{
+    if (mTextLen == 0)
+        return;
+
+    if (mSelectionTextOffset != -1)
+    {
+        int startOffset = std::min(mCursorTextOffset, mSelectionTextOffset);
+        int endOffset   = std::max(mCursorTextOffset, mSelectionTextOffset);
+        deleteSubstring(startOffset, endOffset - 1);
+
+        mCursorTextOffset = startOffset;
+        mSelectionTextOffset = -1;
+    }
+    else
+    {
+        int deletePos = mCursorTextOffset;
+        if (backspace)
+            deletePos--;
+
+        if (deletePos < 0 || deletePos >= mTextLen)
+            return;
+            
+        deleteSubstring(deletePos, deletePos);
+        mCursorTextOffset = deletePos;
+    }
+
+    if (mDelegate != nullptr)
+        mDelegate->onTextChange(mText, mUserData);
+}
+
+void TextBox::onLeftArrow(bool shiftPressed)
+{
+    if ((shiftPressed && mSelectionTextOffset != -1) ||
+        (!shiftPressed && mSelectionTextOffset == -1))
+    {
+        // Just move cursor pos if selection state isn't changed
+
+        mCursorTextOffset--;
+        if (mCursorTextOffset < 0)
+            mCursorTextOffset = 0;
+            
+        return;
+    }
+
+    if (shiftPressed)
+    {
+        // Selection must start
+
+        if (mCursorTextOffset != 0)
+        {
+            mSelectionTextOffset = mCursorTextOffset;
+            mCursorTextOffset--;
+        }
+    }
+    else
+    {
+        // Selection must gone
+
+        mCursorTextOffset = std::min(mCursorTextOffset, mSelectionTextOffset);
+        mSelectionTextOffset = -1;
+    }
+}
+
+void TextBox::onRightArrow(bool shiftPressed)
+{
+    if ((shiftPressed && mSelectionTextOffset != -1) ||
+        (!shiftPressed && mSelectionTextOffset == -1))
+    {
+        // Just move cursor pos if selection state isn't changed
+
+        mCursorTextOffset++;
+        if (mCursorTextOffset > mTextLen)
+            mCursorTextOffset = mTextLen;
+
+        return;
+    }
+
+    if (shiftPressed)
+    {
+        // Selection must start
+
+        if (mCursorTextOffset != mTextLen)
+        {
+            mSelectionTextOffset = mCursorTextOffset;
+            mCursorTextOffset++;
+        }
+    }
+    else
+    {
+        // Selection must gone
+
+        mCursorTextOffset = std::max(mCursorTextOffset, mSelectionTextOffset);
+        mSelectionTextOffset = -1;
+    }
+}
+
+void TextBox::onHome(bool shiftPressed)
+{
+    if ((shiftPressed && mSelectionTextOffset != -1) ||
+        (!shiftPressed && mSelectionTextOffset == -1))
+    {
+        // Just move cursor pos if selection state isn't changed
+        mCursorTextOffset = 0;
+        return;
+    }
+
+    if (shiftPressed)
+    {
+        // Selection must start
+
+        if (mCursorTextOffset != 0)
+        {
+            mSelectionTextOffset = mCursorTextOffset;
+            mCursorTextOffset = 0;
+        }
+    }
+    else
+    {
+        // Selection must gone
+
+        mCursorTextOffset = 0;
+        mSelectionTextOffset = -1;
+    }
+}
+
+void TextBox::onEnd(bool shiftPressed)
+{
+    if ((shiftPressed && mSelectionTextOffset != -1) ||
+        (!shiftPressed && mSelectionTextOffset == -1))
+    {
+        // Just move cursor pos if selection state isn't changed
+        mCursorTextOffset = mTextLen;
+        return;
+    }
+
+    if (shiftPressed)
+    {
+        // Selection must start
+
+        if (mCursorTextOffset != mTextLen)
+        {
+            mSelectionTextOffset = mCursorTextOffset;
+            mCursorTextOffset = mTextLen;
+        }
+    }
+    else
+    {
+        // Selection must gone
+
+        mCursorTextOffset = mTextLen;
+        mSelectionTextOffset = -1;
+    }
+}
+
+bool TextBox::insertChar(int offset, char c)
+{
+    assert(offset <= mTextLen);
+
+    if (mTextLen >= MAX_TEXT_BOX_LEN)
+        return false;
+
+    char currChar = mText[offset];
+    mText[offset] = c;
+
+    for (int i = offset + 1; currChar != '\0'; i++)
+    {
+        char tmp = mText[i];
+        mText[i] = currChar;
+        currChar = tmp;
+    }
+
+    mTextLen++;
+    return true;
+}
+
+void TextBox::deleteSubstring(int startOffset, int endOffset)
+{
+    assert(0 <= startOffset && startOffset <= endOffset && endOffset < mTextLen);
+
+    int space = endOffset - startOffset + 1;
+    for (int i = startOffset ; i + space <= mTextLen; i++)
+        mText[i] = mText[i + space];
+
+    int oldTextLen = mTextLen;
+    mTextLen -= endOffset - startOffset + 1;
+    for (int i = mTextLen; i < oldTextLen; i++)
+        mText[i] = '\0';
 }

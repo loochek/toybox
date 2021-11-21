@@ -4,7 +4,7 @@
 #include "../LGL/LGL.hpp"
 #include "Widget.hpp"
 
-const int MAX_TEXT_BOX_LEN = 100;
+const int MAX_TEXT_BOX_LEN = 200;
 
 class TextBoxDelegate;
 
@@ -46,6 +46,16 @@ private:
     void getTextures();
     void recalcActiveArea();
 
+    void onPrintableChar(char c);
+    void onDelete(bool backspace);
+    void onLeftArrow(bool shiftPressed);
+    void onRightArrow(bool shiftPressed);
+    void onHome(bool shiftPressed);
+    void onEnd(bool shiftPressed);
+
+    bool insertChar(int offset, char c);
+    void deleteSubstring(int startOffset, int endOffset);
+
 protected:
     TextBoxDelegate *mDelegate;
 
@@ -55,17 +65,12 @@ protected:
 
     // In characters
     int mCursorTextOffset;
+    int mSelectionTextOffset;
     // In pixels
     int mCursorOffset;
+    int mSelectionOffset;
 
     int mActiveAreaOffset;
-
-    // In characters
-    int mSelectionTextStart;
-    int mSelectionTextEnd;
-    // In pixels
-    int mSelectionStart;
-    int mSelectionEnd;
 
     bool mDisplayCursor;
     float mBlinkTimer;
