@@ -9,6 +9,7 @@ enum class MenuAction
     NewCanvas,
     OpenPallete,
     OpenSizePicker,
+    OpenToolPicker,
     OpenSplineWindow,
     OpenTextBoxDemo
 };
@@ -33,6 +34,10 @@ public:
 
         case MenuAction::OpenSizePicker:
             mController->openSizePicker();
+            break;
+
+        case MenuAction::OpenToolPicker:
+            mController->openToolPicker();
             break;
 
         case MenuAction::OpenSplineWindow:

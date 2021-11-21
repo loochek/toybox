@@ -11,6 +11,7 @@ class Canvas
 {
 public:
     Canvas(const Vec2i &canvasSize);
+    ~Canvas();
 
     void onMouseClicked(const Vec2i &position);
     void onMouseMove(const Vec2i &position);
@@ -21,6 +22,9 @@ public:
 
     void undo();
     void saveToFile(const char *fileName);
+
+private:
+    void pushHistoryState();
 
 public:
     std::deque<LGL::RenderTexture*> mHistory;

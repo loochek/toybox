@@ -14,9 +14,19 @@ namespace LGL
 {
     sf::Font RenderTarget::sFont;
 
-    RenderTarget::RenderTarget(sf::RenderTarget *renderTarget) : mRenderTarget(renderTarget)
+    RenderTarget::RenderTarget(sf::RenderTarget *renderTarget) :
+        mRenderTarget(renderTarget)
     {
         mTextDrawer.setFont(sFont);
+    }
+
+    void RenderTarget::setBlendMode(bool blendEnabled)
+    {
+        if (blendEnabled)
+            mBlendMode = sf::BlendAlpha;
+        else
+            mBlendMode = sf::BlendMode(sf::BlendMode::One, sf::BlendMode::Zero, sf::BlendMode::Add,
+                                       sf::BlendMode::One, sf::BlendMode::Zero, sf::BlendMode::Add);
     }
 
     void RenderTarget::drawTriangle(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Color &color)
@@ -28,7 +38,7 @@ namespace LGL
         mPolygonDrawer.setPoint(1, toSFMLVector(p2));
         mPolygonDrawer.setPoint(2, toSFMLVector(p3));
 
-        mRenderTarget->draw(mPolygonDrawer);
+        mRenderTarget->draw(mPolygonDrawer, mBlendMode);
     }
 
     void RenderTarget::drawQuad(const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Vec2f &p4, const Color &color)
@@ -41,7 +51,7 @@ namespace LGL
         mPolygonDrawer.setPoint(2, toSFMLVector(p3));
         mPolygonDrawer.setPoint(3, toSFMLVector(p4));
 
-        mRenderTarget->draw(mPolygonDrawer);
+        mRenderTarget->draw(mPolygonDrawer, mBlendMode);
     }
 
     void RenderTarget::drawRect(const FloatRect &rect, const Color &color)
@@ -61,7 +71,7 @@ namespace LGL
         mCircleDrawer.setOrigin(sf::Vector2f(radius, radius));
         mCircleDrawer.setFillColor(toSFMLColor(color));
 
-        mRenderTarget->draw(mCircleDrawer);
+        mRenderTarget->draw(mCircleDrawer, mBlendMode);
     }
 
     void RenderTarget::drawLine(const Vec2f &p1, const Vec2f &p2, float thickness, const Color &color)
@@ -82,7 +92,7 @@ namespace LGL
         mPolygonDrawer.setPoint(2, toSFMLVector(vert3));
         mPolygonDrawer.setPoint(3, toSFMLVector(vert4));
 
-        mRenderTarget->draw(mPolygonDrawer);
+        mRenderTarget->draw(mPolygonDrawer, mBlendMode);
     }
 
     void RenderTarget::drawArrow(const Vec2f &start, const Vec2f &end, float thickness, const Color &color)
@@ -102,7 +112,7 @@ namespace LGL
         mPolygonDrawer.setPoint(1, toSFMLVector(vert1));
         mPolygonDrawer.setPoint(2, toSFMLVector(vert2));
 
-        mRenderTarget->draw(mPolygonDrawer);
+        mRenderTarget->draw(mPolygonDrawer, mBlendMode);
     }
 
     void RenderTarget::drawText(const Vec2f &position, const char *text, TextOrigin textOrigin, 
@@ -124,7 +134,7 @@ namespace LGL
         else
             mTextDrawer.setOrigin(sf::Vector2f(0.0f, 0.0f));
 
-        mRenderTarget->draw(mTextDrawer);
+        mRenderTarget->draw(mTextDrawer, mBlendMode);
     }
 
     void RenderTarget::drawTexture(const Texture &texture, const Vec2f &position,
@@ -143,7 +153,7 @@ namespace LGL
 
         textureDrawer.setColor(sf::Color(255, 255, 255, 255 * opacity));
 
-        mRenderTarget->draw(textureDrawer);
+        mRenderTarget->draw(textureDrawer, mBlendMode);
     }
 
     void RenderTarget::drawRenderTexture(RenderTexture &texture, const Vec2f &position,
@@ -161,7 +171,7 @@ namespace LGL
         renderTextureDrawer.setTexture(texture.mTexture.getTexture());
         renderTextureDrawer.setPosition(toSFMLVector(position));
 
-        mRenderTarget->draw(renderTextureDrawer);
+        mRenderTarget->draw(renderTextureDrawer, mBlendMode);
     }
 
     void RenderTarget::clear(const Color &clearColor)

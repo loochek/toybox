@@ -7,6 +7,8 @@
 #include "../EditorWidgets/Pallete.hpp"
 #include "../EditorWidgets/SizePickerWindow.hpp"
 #include "../EditorWidgets/SizePicker.hpp"
+#include "../EditorWidgets/ToolPickerWindow.hpp"
+#include "../EditorWidgets/ToolPicker.hpp"
 #include "../EditorWidgets/SplineWindow.hpp"
 #include "../EditorWidgets/TextBoxDemoWindow.hpp"
 
@@ -15,10 +17,34 @@ const IntRect SPLINE_WINDOW_INIT_RECT = IntRect(Vec2i(100, 100), Vec2i(500, 500)
 const IntRect TEXT_BOX_DEMO_INIT_RECT = IntRect(Vec2i(200, 200), Vec2i(320, 40));
 const Vec2i   COLOR_PICKER_INIT_POS   = Vec2i(1000, 300);
 const Vec2i   SIZE_PICKER_INIT_POS    = Vec2i(1000, 100);
+const Vec2i   TOOL_PICKER_INIT_POS    = Vec2i(500, 300);
+
+const char *toolLibraries[] = {
+    "./libBrush.so",
+    "./libEraser.so"
+};
 
 PaintController::PaintController(WindowManager *root) : 
-    mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mCurrPenSize(1.0f), mCanvasesCounter(1)
+    mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mToolPicker(nullptr),
+    mCurrToolSize(2.0f), mCanvasesCounter(1)
 {
+    for (int i = 0; i < sizeof(toolLibraries) / sizeof(toolLibraries[0]); i++)
+    {
+        try
+        {
+            mToolKeeper.loadTool(toolLibraries[i]);
+        }
+        catch (const std::runtime_error& error)
+        {
+            printf("[WARN] Unable to load tool %s: %s\n", toolLibraries[i], error.what());
+        }
+    }
+
+    for (Tool *tool : mToolKeeper.getTools())
+    {
+        tool->onSizeChange(mCurrToolSize);
+        tool->onColorChange(mCurrColor);
+    }
 }
 
 void PaintController::createCanvas()
@@ -31,8 +57,6 @@ void PaintController::createCanvas()
     snprintf(title, MAX_LABEL_SIZE, "Pain - %d", mCanvasesCounter);
     paintWindow->setTitle(title);
     mCanvasesCounter++;
-
-    paintWindow->getCanvasWidget()->getCanvas().setTool(&mBrush);
 
     mPaintWindows.insert(paintWindow);
     mRoot->addChild(paintWindow);
@@ -58,6 +82,17 @@ void PaintController::openSizePicker()
     mSizePicker->getSizePicker()->setDelegate(this);
 
     mRoot->addChild(mSizePicker);
+}
+
+void PaintController::openToolPicker()
+{
+    if (mToolPicker != nullptr)
+        return;
+
+    mToolPicker = new ToolPickerWindow(TOOL_PICKER_INIT_POS, this, mRoot);
+    mToolPicker->getToolPicker()->setDelegate(this);
+
+    mRoot->addChild(mToolPicker);
 }
 
 void PaintController::openSplineWindow()
@@ -100,14 +135,28 @@ void PaintController::onSizePickerClose()
     mSizePicker = nullptr;
 }
 
+void PaintController::onToolPickerClose()
+{
+    mToolPicker = nullptr;
+}
+
 void PaintController::onSizeChange(float newPenSize, int userData)
 {
-    mCurrPenSize = newPenSize;
-    mBrush.onSizeChange(newPenSize);
+    mCurrToolSize = newPenSize;
+
+    for (Tool *tool : mToolKeeper.getTools())
+        tool->onSizeChange(newPenSize);
+}
+
+void PaintController::onToolChange(Tool *newTool, int userData)
+{
+    for (PaintWindow *paintWindow : mPaintWindows)
+        paintWindow->getCanvasWidget()->getCanvas().setTool(newTool);
 }
 
 void PaintController::onColorChange(const LGL::Color &color, int userData)
 {
     mCurrColor = color;
-    mBrush.onColorChange(mCurrColor);
+    for (Tool *tool : mToolKeeper.getTools())
+        tool->onColorChange(color);
 }

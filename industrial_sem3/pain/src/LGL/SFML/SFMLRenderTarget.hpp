@@ -19,6 +19,14 @@ namespace LGL
         RenderTarget() = delete;
 
         /**
+         * Disables and enables blending. 
+         * If blending is disabled, new color replaces old pixels on the target.
+         * 
+         * \param blendEnabled Disable blending or not
+         */
+        void setBlendMode(bool blendEnabled);
+
+        /**
          * Draws a triangle by points
          * 
          * \param p1 Point 1
@@ -164,6 +172,8 @@ namespace LGL
         sf::Text        mTextDrawer;
 
         sf::RenderTarget *mRenderTarget;
+
+        sf::BlendMode mBlendMode;
 
         static sf::Font sFont;
     };

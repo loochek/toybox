@@ -10,6 +10,8 @@
 class Tool
 {
 public:
+    virtual const char *getName() { return "Generic tool"; };
+
     virtual void onMouseClicked(Canvas &canvas, const Vec2i &position) {};
     virtual void onMouseMove(Canvas &canvas, const Vec2i &position) {};
     virtual void onMouseReleased(Canvas &canvas, const Vec2i &position) {};

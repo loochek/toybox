@@ -14,3 +14,8 @@ void Brush::draw(Canvas &canvas, const Vec2i &position)
 {
     canvas.mHistory.back()->drawCircle(position, mCurrSize, mCurrColor);
 }
+
+extern "C" Tool *createTool()
+{
+    return new Brush();
+}

@@ -8,8 +8,7 @@ CanvasWidget::CanvasWidget(const IntRect &widgetRect, Widget *parent) :
 
 void CanvasWidget::onRedrawThis()
 {
-    for (auto texture : mCanvas.mHistory)
-        mTexture.drawRenderTexture(*texture, Vec2f());
+    mTexture.drawRenderTexture(*mCanvas.mHistory.back(), Vec2f());
 }
 
 void CanvasWidget::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
