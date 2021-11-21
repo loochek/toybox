@@ -3,7 +3,7 @@
 
 #include "../BaseGUI/Window.hpp"
 
-class Canvas;
+class CanvasWidget;
 class PaintWindowCloseDelegate;
 class PaintController;
 
@@ -18,13 +18,13 @@ public:
     /**
      * \return Canvas widget
      */
-    Canvas *getCanvas() { return mCanvas; };
+    CanvasWidget *getCanvasWidget() { return mCanvasWidget; };
 
 protected:
     virtual EventResult onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier modifier) override;
 
 protected:
-    Canvas *mCanvas;
+    CanvasWidget *mCanvasWidget;
     PaintWindowCloseDelegate *mCloseButtonDelegate;
     PaintController *mController;
 };

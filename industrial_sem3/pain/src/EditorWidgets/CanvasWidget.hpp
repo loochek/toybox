@@ -1,18 +1,16 @@
-#ifndef CANVAS_HPP
-#define CANVAS_HPP
+#ifndef CANVAS_WIDGET_HPP
+#define CANVAS_WIDGET_HPP
 
-#include "Widget.hpp"
+#include "../BaseGUI/Widget.hpp"
+#include "../Editor/Canvas.hpp"
 
-class Canvas : public Widget
+class CanvasWidget : public Widget
 {
 public:
-    Canvas() = delete;
-    Canvas(const IntRect &widgetRect, Widget *parent = nullptr);
+    CanvasWidget() = delete;
+    CanvasWidget(const IntRect &widgetRect, Widget *parent = nullptr);
 
-    void setDrawingColor(const LGL::Color &color) { mDrawingColor = color; };
-    void setPenSize(float penSize) { mPenSize = penSize; };
-    
-    void saveToFile(const char *fileName);
+    Canvas &getCanvas() { return mCanvas; };
 
 protected:
     virtual void onRedrawThis() override;
@@ -24,14 +22,11 @@ protected:
     virtual void onMouseHoverEnd() override;
 
 protected:
-    LGL::RenderTexture mCanvas;
+    Canvas mCanvas;
 
-    Vec2i mPenPosition;
-    bool mPenDown;
-    bool mDrawPen;
-
-    LGL::Color mDrawingColor;
-    float mPenSize;
+    Vec2i mToolPosition;
+    bool mToolActive;
+    bool mDrawToolPreview;
 };
 
 #endif

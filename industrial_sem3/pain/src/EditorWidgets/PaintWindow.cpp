@@ -1,6 +1,6 @@
 #include "PaintWindow.hpp"
-#include "../BaseGUI/Canvas.hpp"
 #include "../BaseGUI/BaseButton.hpp"
+#include "CanvasWidget.hpp"
 #include "../EditorLogic/PaintWindow/PaintWindowCloseDelegate.hpp"
 
 PaintWindow::PaintWindow(const IntRect &canvasRect, PaintController *controller, Widget *parent) :
@@ -8,9 +8,10 @@ PaintWindow::PaintWindow(const IntRect &canvasRect, PaintController *controller,
 {
     setTitle("Pain");
 
-    mCanvas = new Canvas(IntRect(Vec2i(Window::SIDE_BORDER_SIZE, Window::HEADER_HEIGHT), canvasRect.size),
-                         this);
-    addChild(mCanvas);
+    mCanvasWidget = new CanvasWidget(IntRect(Vec2i(Window::SIDE_BORDER_SIZE, Window::HEADER_HEIGHT),
+                                             canvasRect.size),
+                                     this);
+    addChild(mCanvasWidget);
 
     mCloseButtonDelegate = new PaintWindowCloseDelegate(controller, this);
     mCloseButton->setDelegate(mCloseButtonDelegate);
@@ -23,10 +24,18 @@ PaintWindow::~PaintWindow()
 
 EventResult PaintWindow::onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier modifier)
 {
-    if (key == LGL::KeyboardKey::S && LGL::isControlPressed(modifier))
+    if (LGL::isControlPressed(modifier))
     {
-        mController->onCanvasSave(this);
-        return EventResult::Handled;
+        if (key == LGL::KeyboardKey::S)
+        {
+            mController->onCanvasSave(this);
+            return EventResult::Handled;
+        }
+        else if (key == LGL::KeyboardKey::Z)
+        {
+            mController->onCanvasUndo(this);
+            return EventResult::Handled;
+        }
     }
 
     return EventResult::Ignored;

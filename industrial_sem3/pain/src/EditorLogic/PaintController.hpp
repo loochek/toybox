@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include "ColorChangeDelegate.hpp"
 #include "SizePicker/SizeChangedDelegate.hpp"
+#include "../Editor/Tools/Brush.hpp"
 
 class WindowManager;
 class PaintWindow;
@@ -27,6 +28,8 @@ public:
 
     void onCanvasClose(PaintWindow *paintWindow);
     void onCanvasSave(PaintWindow *paintWindow);
+    void onCanvasUndo(PaintWindow *paintWindow);
+
     void onPalleteClose();
     void onSizePickerClose();
 
@@ -45,6 +48,8 @@ private:
 
     LGL::Color mCurrColor;
     float      mCurrPenSize;
+
+    Brush mBrush;
 
     int mCanvasesCounter;
 };

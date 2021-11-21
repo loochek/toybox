@@ -1,7 +1,7 @@
 #include "PaintController.hpp"
 #include "../BaseGUI/WindowManager.hpp"
-#include "../BaseGUI/Canvas.hpp"
 #include "../BaseGUI/Label.hpp"
+#include "../EditorWidgets/CanvasWidget.hpp"
 #include "../EditorWidgets/PaintWindow.hpp"
 #include "../EditorWidgets/PalleteWindow.hpp"
 #include "../EditorWidgets/Pallete.hpp"
@@ -32,8 +32,7 @@ void PaintController::createCanvas()
     paintWindow->setTitle(title);
     mCanvasesCounter++;
 
-    paintWindow->getCanvas()->setDrawingColor(mCurrColor);
-    paintWindow->getCanvas()->setPenSize(mCurrPenSize);
+    paintWindow->getCanvasWidget()->getCanvas().setTool(&mBrush);
 
     mPaintWindows.insert(paintWindow);
     mRoot->addChild(paintWindow);
@@ -83,7 +82,12 @@ void PaintController::onCanvasSave(PaintWindow *paintWindow)
     char fileName[MAX_LABEL_SIZE + 1] = {0};
     snprintf(fileName, MAX_LABEL_SIZE, "masterpiece%d.png", canvasNum);
 
-    paintWindow->getCanvas()->saveToFile(fileName);
+    paintWindow->getCanvasWidget()->getCanvas().saveToFile(fileName);
+}
+
+void PaintController::onCanvasUndo(PaintWindow *paintWindow)
+{
+    paintWindow->getCanvasWidget()->getCanvas().undo();
 }
 
 void PaintController::onPalleteClose()
@@ -99,15 +103,11 @@ void PaintController::onSizePickerClose()
 void PaintController::onSizeChange(float newPenSize, int userData)
 {
     mCurrPenSize = newPenSize;
-
-    for (PaintWindow *paintWindow : mPaintWindows)
-        paintWindow->getCanvas()->setPenSize(newPenSize);
+    mBrush.onSizeChange(newPenSize);
 }
 
 void PaintController::onColorChange(const LGL::Color &color, int userData)
 {
     mCurrColor = color;
-    
-    for (PaintWindow *paintWindow : mPaintWindows)
-        paintWindow->getCanvas()->setDrawingColor(mCurrColor);
+    mBrush.onColorChange(mCurrColor);
 }

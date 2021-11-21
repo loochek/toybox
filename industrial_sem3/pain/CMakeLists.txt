@@ -22,6 +22,8 @@ aux_source_directory(src/EditorLogic/Pallete PAIN_SOURCES)
 aux_source_directory(src/EditorLogic/PalleteWindow PAIN_SOURCES)
 aux_source_directory(src/EditorLogic/SizePicker PAIN_SOURCES)
 aux_source_directory(src/EditorLogic/SizePickerWindow PAIN_SOURCES)
+aux_source_directory(src/Editor PAIN_SOURCES)
+aux_source_directory(src/Editor/Tools PAIN_SOURCES)
 aux_source_directory(src/Math PAIN_SOURCES)
 aux_source_directory(src/LGL PAIN_SOURCES)
 
