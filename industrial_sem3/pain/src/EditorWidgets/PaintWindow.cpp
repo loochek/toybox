@@ -33,7 +33,7 @@ EventResult PaintWindow::onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier m
         }
         else if (key == LGL::KeyboardKey::Z)
         {
-            mController->onCanvasUndo(this);
+            mCanvasWidget->getCanvas().undo();
             return EventResult::Handled;
         }
     }

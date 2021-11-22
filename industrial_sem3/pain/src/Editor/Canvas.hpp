@@ -23,13 +23,13 @@ public:
     void undo();
     void saveToFile(const char *fileName);
 
+    LGL::RenderTexture *getCurrentState();
+
 private:
     void pushHistoryState();
 
-public:
-    std::deque<LGL::RenderTexture*> mHistory;
-
 private:
+    std::deque<LGL::RenderTexture*> mHistory;
     Tool *mTool;
 
     Vec2i mSize;

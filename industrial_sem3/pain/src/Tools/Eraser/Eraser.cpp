@@ -12,7 +12,7 @@ void Eraser::onMouseMove(Canvas &canvas, const Vec2i &position)
 
 void Eraser::erase(Canvas &canvas, const Vec2i &position)
 {    
-    canvas.mHistory.back()->drawRect(FloatRect(Vec2f(position) - Vec2f(mCurrSize, mCurrSize),
+    canvas.getCurrentState()->drawRect(FloatRect(Vec2f(position) - Vec2f(mCurrSize, mCurrSize),
                                                Vec2f(mCurrSize, mCurrSize) * 2),
                                      LGL::Color::Transparent);
 }

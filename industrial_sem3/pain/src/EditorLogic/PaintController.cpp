@@ -120,11 +120,6 @@ void PaintController::onCanvasSave(PaintWindow *paintWindow)
     paintWindow->getCanvasWidget()->getCanvas().saveToFile(fileName);
 }
 
-void PaintController::onCanvasUndo(PaintWindow *paintWindow)
-{
-    paintWindow->getCanvasWidget()->getCanvas().undo();
-}
-
 void PaintController::onPalleteClose()
 {
     mPallete = nullptr;

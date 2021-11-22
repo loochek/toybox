@@ -57,6 +57,11 @@ void Canvas::saveToFile(const char *fileName)
         throw std::runtime_error("Unable to save canvas");
 }
 
+LGL::RenderTexture *Canvas::getCurrentState()
+{
+    return mHistory.back();
+}
+
 void Canvas::pushHistoryState()
 {
     LGL::RenderTexture *newState = new LGL::RenderTexture(mSize);

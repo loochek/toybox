@@ -33,7 +33,6 @@ public:
 
     void onCanvasClose(PaintWindow *paintWindow);
     void onCanvasSave(PaintWindow *paintWindow);
-    void onCanvasUndo(PaintWindow *paintWindow);
 
     void onPalleteClose();
     void onSizePickerClose();

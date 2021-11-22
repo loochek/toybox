@@ -12,7 +12,7 @@ void Brush::onMouseMove(Canvas &canvas, const Vec2i &position)
 
 void Brush::draw(Canvas &canvas, const Vec2i &position)
 {
-    canvas.mHistory.back()->drawCircle(position, mCurrSize, mCurrColor);
+    canvas.getCurrentState()->drawCircle(position, mCurrSize, mCurrColor);
 }
 
 extern "C" Tool *createTool()
