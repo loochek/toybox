@@ -34,8 +34,10 @@ public:
     void deleteLayer(int idx);
 
     void setActiveLayer(int idx);
+    int  getActiveLayer() { return mCurrLayer; };
 
     LGL::RenderTexture *getLayer(int idx);
+    LGL::RenderTexture *getPreviewLayer() { return &mPreviewLayer; };
     int getLayersCount() { return mLayers.size(); };
 
     void undo();

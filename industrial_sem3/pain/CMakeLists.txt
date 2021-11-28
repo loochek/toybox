@@ -5,8 +5,8 @@ project(pain)
 # Add SDL2 CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2)
 
-#set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-#set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
 aux_source_directory(src PAIN_SOURCES)
 aux_source_directory(src/Utils PAIN_SOURCES)
@@ -28,16 +28,11 @@ aux_source_directory(src/Editor PAIN_SOURCES)
 aux_source_directory(src/Math PAIN_SOURCES)
 aux_source_directory(src/LGL PAIN_SOURCES)
 
-# aux_source_directory(src/Tools/Brush PAIN_BRUSH_SOURCES)
-# aux_source_directory(src/Utils PAIN_BRUSH_SOURCES)
-# aux_source_directory(src/LGL PAIN_BRUSH_SOURCES)
-# add_library(Brush SHARED ${PAIN_BRUSH_SOURCES})
+aux_source_directory(src/Plugins/Brush PAIN_BRUSH_SOURCES)
+add_library(Brush SHARED ${PAIN_BRUSH_SOURCES})
 
-# aux_source_directory(src/Tools/Eraser PAIN_ERASER_SOURCES)
-# aux_source_directory(src/Utils PAIN_ERASER_SOURCES)
-# aux_source_directory(src/LGL PAIN_ERASER_SOURCES)
-# add_library(Eraser SHARED ${PAIN_ERASER_SOURCES})
-
+aux_source_directory(src/Plugins/Eraser PAIN_ERASER_SOURCES)
+add_library(Eraser SHARED ${PAIN_ERASER_SOURCES})
 
 find_package(SFML COMPONENTS graphics window)
 if (SFML_FOUND)

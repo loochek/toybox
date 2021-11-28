@@ -9,7 +9,12 @@ CanvasWidget::CanvasWidget(const IntRect &widgetRect, Widget *parent) :
 void CanvasWidget::onRedrawThis()
 {
     for (int idx = 0; idx < mCanvas.getLayersCount(); idx++)
+    {
         mTexture.drawRenderTexture(*mCanvas.getLayer(idx), Vec2f());
+
+        if (idx == mCanvas.getActiveLayer())
+            mTexture.drawRenderTexture(*mCanvas.getPreviewLayer(), Vec2i());
+    }
 }
 
 void CanvasWidget::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)

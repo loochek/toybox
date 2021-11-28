@@ -18,8 +18,6 @@ Canvas::~Canvas()
 
 void Canvas::onMouseClicked(const Vec2i &position)
 {
-    mPreviewLayer.clear();
-
     if (mCurrTool != nullptr)
     {
         PluginManager::getInstance()->setActiveCanvas(this);
@@ -49,6 +47,7 @@ void Canvas::onMouseReleased(const Vec2i &position)
         
         mLayers[mCurrLayer]->setBlendMode(mCurrTool->getFlushPolicy() == PPLP_BLEND ? true : false);
         mLayers[mCurrLayer]->drawRenderTexture(mPreviewLayer, Vec2i());
+        mPreviewLayer.clear();
     }
     
     mOldMousePos = position;

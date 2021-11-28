@@ -46,7 +46,7 @@ public:
     }
 
     static PVec2f toPluginVec(Vec2f vec) { return PVec2f(vec.x, vec.y); }
-    static PRGBA toPluginColor(LGL::Color color)
+    static PRGBA toPluginColor(const LGL::Color &color)
     {
         return PRGBA(color.r * EXTERNAL_RGB_BASE,
                      color.g * EXTERNAL_RGB_BASE,
@@ -55,12 +55,12 @@ public:
     }
 
     static Vec2f fromPluginVec(PVec2f vec) { return Vec2f(vec.x, vec.y); }
-    static LGL::Color fromPluginColor(PRGBA color)
+    static LGL::Color fromPluginColor(const PRGBA &color)
     {
-        return LGL::Color(color.r / EXTERNAL_RGB_BASE,
-                          color.g / EXTERNAL_RGB_BASE,
-                          color.b / EXTERNAL_RGB_BASE,
-                          color.a / EXTERNAL_RGB_BASE);
+        return LGL::Color(color.r / (float)EXTERNAL_RGB_BASE,
+                          color.g / (float)EXTERNAL_RGB_BASE,
+                          color.b / (float)EXTERNAL_RGB_BASE,
+                          color.a / (float)EXTERNAL_RGB_BASE);
     }
 
 private:

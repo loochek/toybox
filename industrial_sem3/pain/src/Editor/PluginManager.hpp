@@ -23,6 +23,7 @@ public:
 
 private:
     PluginManager();
+    ~PluginManager();
 
 public:
     // Variables to be used by PAppInterface functions implementations
@@ -36,7 +37,7 @@ public:
     LGL::RenderTexture *mCurrPreviewLayer;
 
 private:
-    std::vector<Plugin> mPlugins;
+    std::vector<Plugin*> mPlugins;
 
     PAppInterface mAppInterface;
 };

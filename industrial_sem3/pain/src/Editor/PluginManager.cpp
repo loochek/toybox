@@ -58,9 +58,15 @@ PluginManager::PluginManager() : mCurrSize(0.0f), mCurrMainLayer(nullptr), mCurr
     mAppInterface.extensions.get_func          = nullptr;
 }
 
+PluginManager::~PluginManager()
+{
+    for (Plugin *plugin : mPlugins)
+        delete plugin;
+}
+
 void PluginManager::loadPlugin(const char *fileName)
 {
-    mPlugins.push_back(Plugin(fileName, &mAppInterface));
+    mPlugins.push_back(new Plugin(fileName, &mAppInterface));
 }
 
 void PluginManager::setActiveCanvas(Canvas *canvas)
@@ -75,7 +81,7 @@ Plugin *PluginManager::getPlugin(int idx)
 {
     assert(idx >= 0 && idx < mPlugins.size());
 
-    return &mPlugins[idx];
+    return mPlugins[idx];
 }
 
 PluginManager *PluginManager::getInstance()
