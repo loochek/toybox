@@ -23,6 +23,15 @@ namespace LGL
         void create(int width, int height, const Color &color = Color::Transparent);
 
         /**
+         * Creates texture from RGBA array
+         * 
+         * \param width Texture width
+         * \param height Texture height
+         * \param pixels RGBA array
+         */
+        void create(int width, int height, const uint8_t *pixels);
+
+        /**
          * Loads image from file
          * 
          * \param filename File name
@@ -44,6 +53,11 @@ namespace LGL
          * \param color Pixel color
          */
         void setPixel(int x, int y, const Color &color);
+
+        /**
+         * \return RGBA array of image pixels
+         */
+        const uint8_t *getPixels();
 
         /**
          * \return Image size

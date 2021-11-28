@@ -1,3 +1,6 @@
 [submodule "industrial/akinator/AkinatorDB"]
 	path = industrial_sem1/akinator/AkinatorDB
 	url = https://github.com/MIPTGroup/AkinatorDB
+[submodule "industrial_sem3/pain/src/Editor/EditorPluginAPI"]
+	path = industrial_sem3/pain/src/Editor/EditorPluginAPI
+	url = git@github.com:MIPTGroup/EditorPluginAPI.git

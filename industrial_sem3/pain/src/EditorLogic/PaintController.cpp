@@ -1,4 +1,6 @@
 #include "PaintController.hpp"
+#include "../Utils/Logger.hpp"
+#include "../Editor/PluginManager.hpp"
 #include "../BaseGUI/WindowManager.hpp"
 #include "../BaseGUI/Label.hpp"
 #include "../EditorWidgets/CanvasWidget.hpp"
@@ -28,23 +30,22 @@ PaintController::PaintController(WindowManager *root) :
     mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mToolPicker(nullptr),
     mCurrToolSize(2.0f), mCanvasesCounter(1)
 {
+    PluginManager *pluginMgr = PluginManager::getInstance();
+
     for (int i = 0; i < sizeof(toolLibraries) / sizeof(toolLibraries[0]); i++)
     {
         try
         {
-            mToolKeeper.loadTool(toolLibraries[i]);
+            pluginMgr->loadPlugin(toolLibraries[i]);
         }
-        catch (const std::runtime_error& error)
+        catch (const std::exception& error)
         {
-            printf("[WARN] Unable to load tool %s: %s\n", toolLibraries[i], error.what());
+            Logger::log(LogLevel::Warning, "%s\n", error.what());
         }
     }
 
-    for (Tool *tool : mToolKeeper.getTools())
-    {
-        tool->onSizeChange(mCurrToolSize);
-        tool->onColorChange(mCurrColor);
-    }
+    pluginMgr->onSizeChange(mCurrToolSize);
+    pluginMgr->onColorChange(mCurrColor);
 }
 
 void PaintController::createCanvas()
@@ -138,12 +139,10 @@ void PaintController::onToolPickerClose()
 void PaintController::onSizeChange(float newPenSize, int userData)
 {
     mCurrToolSize = newPenSize;
-
-    for (Tool *tool : mToolKeeper.getTools())
-        tool->onSizeChange(newPenSize);
+    PluginManager::getInstance()->onSizeChange(newPenSize);
 }
 
-void PaintController::onToolChange(Tool *newTool, int userData)
+void PaintController::onToolChange(Plugin *newTool, int userData)
 {
     for (PaintWindow *paintWindow : mPaintWindows)
         paintWindow->getCanvasWidget()->getCanvas().setTool(newTool);
@@ -152,6 +151,5 @@ void PaintController::onToolChange(Tool *newTool, int userData)
 void PaintController::onColorChange(const LGL::Color &color, int userData)
 {
     mCurrColor = color;
-    for (Tool *tool : mToolKeeper.getTools())
-        tool->onColorChange(color);
+    PluginManager::getInstance()->onColorChange(color);
 }

@@ -3,7 +3,7 @@
 
 #include "../BaseGUI/Widget.hpp"
 
-class Tool;
+class Plugin;
 class ToolChangedDelegate;
 class ToolPickerController;
 
@@ -15,7 +15,7 @@ public:
 
     virtual ~ToolPicker();
 
-    void addTool(Tool *tool);
+    void addTool(Plugin *tool);
 
     /**
      * Sets delegate for the tool picker
@@ -32,7 +32,7 @@ protected:
     ToolChangedDelegate  *mDelegate;
     ToolPickerController *mController;
 
-    std::vector<Tool*> mTools;
+    std::vector<Plugin*> mTools;
 
     friend class ToolPickerController;
 };

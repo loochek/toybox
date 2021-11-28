@@ -1,6 +1,6 @@
 #include "ToolPicker.hpp"
 #include "../BaseGUI/Button.hpp"
-#include "../Editor/Tool.hpp"
+#include "../Editor/Plugin.hpp"
 #include "../EditorLogic/ToolPicker/ToolPickerController.hpp"
 
 const Vec2i ONE_BUTTON_SIZE = Vec2i(90, 60);
@@ -13,10 +13,10 @@ ToolPicker::ToolPicker(const Vec2i &position, Widget *parent) :
     mController = new ToolPickerController(this);
 }
 
-void ToolPicker::addTool(Tool *tool)
+void ToolPicker::addTool(Plugin *tool)
 {
     Button *toolButton = new Button(IntRect(Vec2i(0, ONE_BUTTON_SIZE.y * mTools.size()), ONE_BUTTON_SIZE), this);
-    toolButton->setLabel(tool->getName());
+    toolButton->setLabel(tool->getInfo()->name);
     toolButton->setDelegate(mController);
     toolButton->setUserData(mTools.size());
     addChild(toolButton);

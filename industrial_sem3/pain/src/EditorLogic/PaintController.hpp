@@ -3,7 +3,6 @@
 
 #include <unordered_set>
 #include <vector>
-#include "../Editor/ToolKeeper.hpp"
 #include "ColorChangeDelegate.hpp"
 #include "SizePicker/SizeChangedDelegate.hpp"
 #include "ToolPicker/ToolChangedDelegate.hpp"
@@ -13,7 +12,6 @@ class PaintWindow;
 class PalleteWindow;
 class SizePickerWindow;
 class ToolPickerWindow;
-class Tool;
 
 /**
  * App logic controller
@@ -38,13 +36,11 @@ public:
     void onSizePickerClose();
     void onToolPickerClose();
 
-    std::vector<Tool*> &getTools() { return mToolKeeper.getTools(); };
-
     // Size picker callback
     virtual void onSizeChange(float newPenSize, int userData) override;
 
     // Tool picker callback
-    virtual void onToolChange(Tool *newTool, int userData) override;
+    virtual void onToolChange(Plugin *newTool, int userData) override;
 
     // Pallete callback
     virtual void onColorChange(const LGL::Color &color, int userData) override;
@@ -56,8 +52,6 @@ private:
     ToolPickerWindow  *mToolPicker;
 
     std::unordered_set<PaintWindow*> mPaintWindows;
-
-    ToolKeeper mToolKeeper;
 
     LGL::Color mCurrColor;
     float      mCurrToolSize;

@@ -28,15 +28,15 @@ aux_source_directory(src/Editor PAIN_SOURCES)
 aux_source_directory(src/Math PAIN_SOURCES)
 aux_source_directory(src/LGL PAIN_SOURCES)
 
-aux_source_directory(src/Tools/Brush PAIN_BRUSH_SOURCES)
-aux_source_directory(src/Utils PAIN_BRUSH_SOURCES)
-aux_source_directory(src/LGL PAIN_BRUSH_SOURCES)
-add_library(Brush SHARED ${PAIN_BRUSH_SOURCES})
+# aux_source_directory(src/Tools/Brush PAIN_BRUSH_SOURCES)
+# aux_source_directory(src/Utils PAIN_BRUSH_SOURCES)
+# aux_source_directory(src/LGL PAIN_BRUSH_SOURCES)
+# add_library(Brush SHARED ${PAIN_BRUSH_SOURCES})
 
-aux_source_directory(src/Tools/Eraser PAIN_ERASER_SOURCES)
-aux_source_directory(src/Utils PAIN_ERASER_SOURCES)
-aux_source_directory(src/LGL PAIN_ERASER_SOURCES)
-add_library(Eraser SHARED ${PAIN_ERASER_SOURCES})
+# aux_source_directory(src/Tools/Eraser PAIN_ERASER_SOURCES)
+# aux_source_directory(src/Utils PAIN_ERASER_SOURCES)
+# aux_source_directory(src/LGL PAIN_ERASER_SOURCES)
+# add_library(Eraser SHARED ${PAIN_ERASER_SOURCES})
 
 
 find_package(SFML COMPONENTS graphics window)

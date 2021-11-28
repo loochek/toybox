@@ -4,8 +4,7 @@
 #include <deque>
 #include "../LGL/LGL.hpp"
 
-class Tool;
-class Effect;
+class Plugin;
 
 class Canvas
 {
@@ -17,22 +16,45 @@ public:
     void onMouseMove(const Vec2i &position);
     void onMouseReleased(const Vec2i &position);
 
-    void applyEffect(Effect *effect);
-    void setTool(Tool *tool) { mTool = tool; };
+    void applyEffect(Plugin *effect);
+    void setTool(Plugin *tool);
+
+    /**
+     * Inserts a new layer before idx
+     * 
+     * \param idx Index of the layer to paste before
+     */
+    void newLayer(int idx);
+
+    /**
+     * Deletes a layer
+     * 
+     * \param idx Index of the layer to delete
+     */
+    void deleteLayer(int idx);
+
+    void setActiveLayer(int idx);
+
+    LGL::RenderTexture *getLayer(int idx);
+    int getLayersCount() { return mLayers.size(); };
 
     void undo();
     void saveToFile(const char *fileName);
 
-    LGL::RenderTexture *getCurrentState();
+private:
+    //void pushHistoryState();
 
 private:
-    void pushHistoryState();
+    std::vector<LGL::RenderTexture*> mLayers;
+    LGL::RenderTexture mPreviewLayer;
 
-private:
-    std::deque<LGL::RenderTexture*> mHistory;
-    Tool *mTool;
+    int mCurrLayer;
+    Plugin *mCurrTool;
 
     Vec2i mSize;
+    Vec2i mOldMousePos;
+
+    friend class PluginManager;
 };
 
 #endif

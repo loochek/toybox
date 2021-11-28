@@ -8,6 +8,11 @@ namespace LGL
         mImage.create(width, height, toSFMLColor(color));
     }
 
+    void Image::create(int width, int height, const uint8_t *pixels)
+    {
+        mImage.create(width, height, pixels);
+    }
+
     bool Image::loadFromFile(const char *filename)
     {
         return mImage.loadFromFile(filename);
@@ -21,6 +26,11 @@ namespace LGL
     void Image::setPixel(int x, int y, const Color &color)
     {
         mImage.setPixel(x, y, toSFMLColor(color));
+    }
+
+    const uint8_t *Image::getPixels()
+    {
+        return mImage.getPixelsPtr();
     }
 
     Vec2i Image::getSize() const
