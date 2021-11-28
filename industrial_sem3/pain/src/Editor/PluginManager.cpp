@@ -19,6 +19,8 @@ static void ai_line(PVec2f start, PVec2f end, PRGBA color, const PRenderMode *re
 static void ai_triangle(PVec2f p1, PVec2f p2, PVec2f p3, PRGBA color, const PRenderMode *render_mode);
 static void ai_rectangle(PVec2f p1_ext, PVec2f p2_ext, PRGBA color, const PRenderMode *render_mode);
 static void ai_pixels(PVec2f position, const PRGBA *data, size_t width, size_t height, const PRenderMode *render_mode);
+static bool ai_enable(const char *name);
+static void *get_func(const char *name);
 
 
 PluginManager::PluginManager() : mCurrSize(0.0f), mCurrMainLayer(nullptr), mCurrPreviewLayer(nullptr)
@@ -41,6 +43,9 @@ PluginManager::PluginManager() : mCurrSize(0.0f), mCurrMainLayer(nullptr), mCurr
     mAppInterface.render.rectangle             = ai_rectangle;
     mAppInterface.render.pixels                = ai_pixels;
 
+    mAppInterface.extensions.enable            = ai_enable;
+    mAppInterface.extensions.get_func          = get_func;
+
     mAppInterface.shader.apply                 = nullptr;
     mAppInterface.shader.compile               = nullptr;
     mAppInterface.shader.release               = nullptr;
@@ -53,9 +58,6 @@ PluginManager::PluginManager() : mCurrSize(0.0f), mCurrMainLayer(nullptr), mCurr
     mAppInterface.settings.get                 = nullptr;
     mAppInterface.settings.create_surface      = nullptr;
     mAppInterface.settings.destroy_surface     = nullptr;
-
-    mAppInterface.extensions.enable            = nullptr;
-    mAppInterface.extensions.get_func          = nullptr;
 }
 
 PluginManager::~PluginManager()
@@ -211,4 +213,14 @@ static void ai_pixels(PVec2f position, const PRGBA *data, size_t width, size_t h
     texture.loadFromImage(image);
 
     whereToDraw->drawTexture(texture, Plugin::fromPluginVec(position));
+}
+
+static bool ai_enable(const char *name)
+{
+    return false;
+}
+
+static void *get_func(const char *name)
+{
+    return nullptr;
 }

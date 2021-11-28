@@ -1,24 +1,31 @@
 #include "../../Editor/EditorPluginAPI/plugin_std.hpp"
 
-PPluginStatus init(const PAppInterface* appInterface);
-PPluginStatus deinit();
-void dump();
-const PPluginInfo *getInfo();
-void onUpdate(double elapsedTime);
-PPreviewLayerPolicy getFlushPolicy();
-void onMousePressed(PVec2f mousePos);
-void onMouseMove(PVec2f mouseOldPos, PVec2f mouseNewPos);
-void onMouseReleased(PVec2f mousePos);
+static PPluginStatus init(const PAppInterface* appInterface);
+static PPluginStatus deinit();
+
+static void dump();
+static void onUpdate(double elapsedTime);
+
+static const PPluginInfo  *getInfo();
+static PPreviewLayerPolicy getFlushPolicy();
+
+static void onMousePressed(PVec2f mousePos);
+static void onMouseMove(PVec2f mouseOldPos, PVec2f mouseNewPos);
+static void onMouseReleased(PVec2f mousePos);
+
+static bool enableExtension(const char *name);
+static void *getExtensionFunc(const char *name);
 
 static void draw(PVec2f mousePos);
+
 
 const PPluginInterface gPluginInterface =
 {
     0, // std_version
     0, // reserved
     
-    nullptr, // extensions.enable
-    nullptr, // extensions.get_func
+    enableExtension,
+    getExtensionFunc,
 
     // general
     getInfo,
@@ -62,53 +69,63 @@ extern "C" const PPluginInterface *get_plugin_interface()
     return &gPluginInterface;
 }
 
-PPluginStatus init(const PAppInterface* appInterface)
+static PPluginStatus init(const PAppInterface* appInterface)
 {
     gAppInterface = appInterface;
     appInterface->general.log("Eraser: succesful initialization!");
     return PPS_OK; 
 }
 
-PPluginStatus deinit()
+static PPluginStatus deinit()
 {
     return PPS_OK;
 }
 
-void dump()
+static void dump()
 {
 }
 
-const PPluginInfo *getInfo()
+static const PPluginInfo *getInfo()
 {
     return &gPluginInfo;
 }
 
-void onUpdate(double elapsedTime)
+static void onUpdate(double elapsedTime)
 {
 }
 
-PPreviewLayerPolicy getFlushPolicy()
+static PPreviewLayerPolicy getFlushPolicy()
 {
     return PPLP_BLEND;
 }
 
-void onMousePressed(PVec2f mousePos)
+static void onMousePressed(PVec2f mousePos)
 {
     draw(mousePos);
 }
 
-void onMouseMove(PVec2f mouseOldPos, PVec2f mouseNewPos)
+static void onMouseMove(PVec2f mouseOldPos, PVec2f mouseNewPos)
 {
     draw(mouseNewPos);
 }
 
-void onMouseReleased(PVec2f mousePos)
+static void onMouseReleased(PVec2f mousePos)
 {
+}
+
+static bool enableExtension(const char *name)
+{
+    return false;
+}
+
+static void *getExtensionFunc(const char *name)
+{
+    return nullptr;
 }
 
 static void draw(PVec2f mousePos)
 {
-    PRenderMode render_mode = { PPBM_COPY, PPDP_ACTIVE };
+    PRenderMode render_mode = { PPBM_COPY, PPDP_ACTIVE, nullptr };
 
     float currSize = gAppInterface->general.get_size();
 
