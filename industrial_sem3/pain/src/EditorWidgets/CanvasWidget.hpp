@@ -27,6 +27,8 @@ protected:
     Vec2i mToolPosition;
     bool mToolActive;
     bool mDrawToolPreview;
+
+    const LGL::Texture *mBackgroundTexture;
 };
 
 #endif

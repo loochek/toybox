@@ -23,7 +23,10 @@ const Vec2i   TOOL_PICKER_INIT_POS    = Vec2i(500, 300);
 
 const char *toolLibraries[] = {
     "./libBrush.so",
-    "./libEraser.so"
+    "./libEraser.so",
+    "./libFill.so",
+    "./kctf_rainbow_stamp.so",
+    "./kctf_sharpy.so"
 };
 
 PaintController::PaintController(WindowManager *root) : 

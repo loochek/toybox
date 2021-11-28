@@ -1,13 +1,21 @@
+#include "../TextureManager.hpp"
 #include "CanvasWidget.hpp"
 
 CanvasWidget::CanvasWidget(const IntRect &widgetRect, Widget *parent) : 
     Widget(widgetRect, parent), mCanvas(widgetRect.size),
     mToolActive(false), mDrawToolPreview(false)
 {
+    mBackgroundTexture = TextureManager::getInstance()->getTexture("transparency_background");
+    if (mBackgroundTexture == nullptr)
+        throw std::runtime_error("Canvas widget texture is not loaded");
 }
 
 void CanvasWidget::onRedrawThis()
 {
+    // Background
+    mTexture.drawTexture(*mBackgroundTexture, Vec2i(0, 0), IntRect(Vec2i(), mRect.size));
+
+    // Layers
     for (int idx = 0; idx < mCanvas.getLayersCount(); idx++)
     {
         mTexture.drawRenderTexture(*mCanvas.getLayer(idx), Vec2f());

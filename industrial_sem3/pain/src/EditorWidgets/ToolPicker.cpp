@@ -5,7 +5,7 @@
 
 const Vec2i ONE_BUTTON_SIZE = Vec2i(90, 60);
 
-const Vec2i ToolPicker::PICKER_SIZE = Vec2i(90, 180);
+const Vec2i ToolPicker::PICKER_SIZE = Vec2i(90, 300);
 
 ToolPicker::ToolPicker(const Vec2i &position, Widget *parent) :
     Widget(IntRect(position, PICKER_SIZE), parent), mDelegate(nullptr)

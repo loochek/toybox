@@ -34,6 +34,10 @@ add_library(Brush SHARED ${PAIN_BRUSH_SOURCES})
 aux_source_directory(src/Plugins/Eraser PAIN_ERASER_SOURCES)
 add_library(Eraser SHARED ${PAIN_ERASER_SOURCES})
 
+aux_source_directory(src/Plugins/Fill PAIN_FILL_SOURCES)
+set(PAIN_FILL_SOURCES ${PAIN_FILL_SOURCES} src/LGL/Color.cpp)
+add_library(Fill SHARED ${PAIN_FILL_SOURCES})
+
 find_package(SFML COMPONENTS graphics window)
 if (SFML_FOUND)
     set(PAIN_SFML_SOURCES ${PAIN_SOURCES})
