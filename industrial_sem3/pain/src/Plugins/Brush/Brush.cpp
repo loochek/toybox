@@ -108,7 +108,7 @@ void onMouseReleased(PVec2f mousePos)
 
 static void draw(PVec2f mousePos)
 {
-    PRenderMode render_mode = { PPBM_ALPHA_BLEND, PPDP_PREVIEW };
+    PRenderMode render_mode = { PPBM_COPY, PPDP_PREVIEW };
     gAppInterface->render.circle(mousePos,
                                  gAppInterface->general.get_size(),
                                  gAppInterface->general.get_color(),
