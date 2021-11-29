@@ -56,6 +56,8 @@ void Widget::onChildDestroy(Widget *child)
 
 void Widget::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
+    onMouseHoverBeginThis(localMousePos, globalMousePos);
+
     for (auto childIter = mChildren.rbegin(); childIter != mChildren.rend(); childIter++)
     {
         Widget *child = *childIter;
@@ -72,6 +74,8 @@ void Widget::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMo
 
 void Widget::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
+    onMouseMoveThis(localMousePos, globalMousePos);
+
     if (mMousePressed)
     {
         if (mChildUnderMouse != nullptr)
@@ -119,6 +123,8 @@ void Widget::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos
 
 void Widget::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
+    onMouseClickedThis(localMousePos, globalMousePos);
+
     if (mChildInFocus != nullptr && mChildInFocus != mChildUnderMouse)
         mChildInFocus->onKeyboardFocusLost();
 
@@ -137,6 +143,8 @@ void Widget::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMouse
 
 void Widget::onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
+    onMouseReleasedThis(localMousePos, globalMousePos);
+
     mMousePressed = false;
 
     if (mChildUnderMouse != nullptr)
@@ -173,6 +181,8 @@ void Widget::onMouseScroll(int scrollDelta)
 
 void Widget::onMouseHoverEnd()
 {
+    onMouseHoverEndThis();
+
     if (mChildUnderMouse != nullptr)
         mChildUnderMouse->onMouseHoverEnd();
 

@@ -12,6 +12,7 @@ class PaintWindow;
 class PalleteWindow;
 class SizePickerWindow;
 class ToolPickerWindow;
+class Plugin;
 
 /**
  * App logic controller
@@ -52,6 +53,8 @@ private:
     ToolPickerWindow  *mToolPicker;
 
     std::unordered_set<PaintWindow*> mPaintWindows;
+
+    Plugin *mCurrTool;
 
     LGL::Color mCurrColor;
     float      mCurrToolSize;

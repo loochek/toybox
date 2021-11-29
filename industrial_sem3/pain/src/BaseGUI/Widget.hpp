@@ -151,6 +151,11 @@ protected:
     virtual void onRedrawThis() {};
     virtual void onUpdateThis(float elapsedTime) {};
     virtual void onDestroyThis() {};
+    virtual void onMouseHoverBeginThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
+    virtual void onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
+    virtual void onMouseClickedThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
+    virtual void onMouseReleasedThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
+    virtual void onMouseHoverEndThis() {};
     virtual void onKeyboardFocusReceivedThis() {};
     virtual void onKeyboardFocusLostThis() {};
 

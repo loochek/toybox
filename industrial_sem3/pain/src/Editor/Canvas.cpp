@@ -19,10 +19,7 @@ Canvas::~Canvas()
 void Canvas::onMouseClicked(const Vec2i &position)
 {
     if (mCurrTool != nullptr)
-    {
-        PluginManager::getInstance()->setActiveCanvas(this);
         mCurrTool->onMouseClicked(position);
-    }
         
     mOldMousePos = position;
 }
@@ -30,10 +27,7 @@ void Canvas::onMouseClicked(const Vec2i &position)
 void Canvas::onMouseMove(const Vec2i &position)
 {
     if (mCurrTool != nullptr)
-    {
-        PluginManager::getInstance()->setActiveCanvas(this);
         mCurrTool->onMouseMove(mOldMousePos, position);
-    }
 
     mOldMousePos = position;
 }
@@ -42,7 +36,6 @@ void Canvas::onMouseReleased(const Vec2i &position)
 {
     if (mCurrTool != nullptr)
     {
-        PluginManager::getInstance()->setActiveCanvas(this);
         mCurrTool->onMouseReleased(position);
         
         mLayers[mCurrLayer]->setBlendMode(mCurrTool->getFlushPolicy() == PPLP_BLEND ? true : false);
@@ -58,7 +51,6 @@ void Canvas::applyEffect(Plugin *effect)
     if (effect->getInfo()->type != PPT_EFFECT)
         return;
 
-    PluginManager::getInstance()->setActiveCanvas(this);
     effect->apply();
 }
 

@@ -1,4 +1,5 @@
 #include "PaintWindow.hpp"
+#include "../Editor/PluginManager.hpp"
 #include "../BaseGUI/BaseButton.hpp"
 #include "CanvasWidget.hpp"
 #include "../EditorLogic/PaintWindow/PaintWindowCloseDelegate.hpp"
@@ -20,6 +21,11 @@ PaintWindow::PaintWindow(const IntRect &canvasRect, PaintController *controller,
 PaintWindow::~PaintWindow()
 {
     delete mCloseButtonDelegate;
+}
+
+void PaintWindow::onMouseClickedThis(const Vec2i &localMousePos, const Vec2i &globalMousePos)
+{
+    PluginManager::getInstance()->setActiveCanvas(&mCanvasWidget->getCanvas());
 }
 
 EventResult PaintWindow::onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier modifier)

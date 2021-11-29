@@ -31,7 +31,7 @@ const char *toolLibraries[] = {
 
 PaintController::PaintController(WindowManager *root) : 
     mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mToolPicker(nullptr),
-    mCurrToolSize(2.0f), mCanvasesCounter(1)
+    mCurrToolSize(2.0f), mCanvasesCounter(1), mCurrTool(nullptr)
 {
     PluginManager *pluginMgr = PluginManager::getInstance();
 
@@ -61,6 +61,9 @@ void PaintController::createCanvas()
     snprintf(title, MAX_LABEL_SIZE, "Pain - %d", mCanvasesCounter);
     paintWindow->setTitle(title);
     mCanvasesCounter++;
+
+    if (mCurrTool)
+        paintWindow->getCanvasWidget()->getCanvas().setTool(mCurrTool);
 
     mPaintWindows.insert(paintWindow);
     mRoot->addChild(paintWindow);
@@ -147,6 +150,8 @@ void PaintController::onSizeChange(float newPenSize, int userData)
 
 void PaintController::onToolChange(Plugin *newTool, int userData)
 {
+    mCurrTool = newTool;
+
     for (PaintWindow *paintWindow : mPaintWindows)
         paintWindow->getCanvasWidget()->getCanvas().setTool(newTool);
 }

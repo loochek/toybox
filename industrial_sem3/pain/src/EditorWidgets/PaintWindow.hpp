@@ -21,6 +21,7 @@ public:
     CanvasWidget *getCanvasWidget() { return mCanvasWidget; };
 
 protected:
+    virtual void onMouseClickedThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
     virtual EventResult onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier modifier) override;
 
 protected:
