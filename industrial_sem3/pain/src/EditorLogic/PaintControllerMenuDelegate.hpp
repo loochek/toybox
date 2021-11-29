@@ -11,7 +11,7 @@ enum class MenuAction
     OpenSizePicker,
     OpenToolPicker,
     OpenSplineWindow,
-    OpenTextBoxDemo
+    OpenImageOpenWindow
 };
 
 class PaintControllerMenuDelegate : public ButtonDelegate
@@ -44,8 +44,8 @@ public:
             mController->openSplineWindow();
             break;
 
-        case MenuAction::OpenTextBoxDemo:
-            mController->openTextBoxDemo();
+        case MenuAction::OpenImageOpenWindow:
+            mController->openImageOpenWindow();
             break;
         }
     }

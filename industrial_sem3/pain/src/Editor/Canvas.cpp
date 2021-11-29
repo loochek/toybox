@@ -95,6 +95,28 @@ void Canvas::undo()
     // mHistory.pop_back();
 }
 
+bool Canvas::loadFromFile(const char *fileName)
+{
+    LGL::Texture image;
+    if (!image.loadFromFile(fileName))
+        return false;
+
+    for (LGL::RenderTexture *layer : mLayers)
+        delete layer;
+
+    mLayers.clear();
+
+    LGL::RenderTexture *newLayer = new LGL::RenderTexture(mSize);
+
+    newLayer->drawTexture(image, Vec2i());
+    mLayers.push_back(newLayer);
+    mCurrLayer = 0;
+
+    mSize = image.getSize();
+
+    return true;
+}
+
 void Canvas::saveToFile(const char *fileName)
 {
     LGL::RenderTexture bakedLayers(mSize);

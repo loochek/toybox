@@ -65,6 +65,13 @@ public:
     void move(const Vec2i &offset) { mRect.position += offset; };
 
     /**
+     * Resizes widget
+     * 
+     * \param newSize New size
+     */
+    void resize(const Vec2i &newSize);
+
+    /**
      * Schedules widget for deletion. 
      * When GUI manager decides to delete widget, onDestroy will be called
      */

@@ -42,6 +42,11 @@ EventResult PaintWindow::onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier m
             mCanvasWidget->getCanvas().undo();
             return EventResult::Handled;
         }
+        else if (key == LGL::KeyboardKey::L)
+        {
+            mCanvasWidget->getCanvas().loadFromFile("test.jpg");
+            return EventResult::Handled;
+        }
     }
 
     return EventResult::Ignored;

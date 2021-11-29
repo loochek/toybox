@@ -41,7 +41,10 @@ public:
     int getLayersCount() { return mLayers.size(); };
 
     void undo();
+    bool loadFromFile(const char *fileName);
     void saveToFile(const char *fileName);
+
+    Vec2i getSize() { return mSize; };
 
 private:
     //void pushHistoryState();

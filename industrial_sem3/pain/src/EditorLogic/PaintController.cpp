@@ -1,3 +1,4 @@
+#include <cstring>
 #include "PaintController.hpp"
 #include "../Utils/Logger.hpp"
 #include "../Editor/PluginManager.hpp"
@@ -12,26 +13,29 @@
 #include "../EditorWidgets/ToolPickerWindow.hpp"
 #include "../EditorWidgets/ToolPicker.hpp"
 #include "../EditorWidgets/SplineWindow.hpp"
-#include "../EditorWidgets/TextBoxDemoWindow.hpp"
+#include "../EditorWidgets/ImageOpenWindow.hpp"
+
+const int MAX_FILE_NAME_SIZE = 256;
 
 const IntRect CANVAS_INIT_RECT        = IntRect(Vec2i(200, 200), Vec2i(700, 400));
 const IntRect SPLINE_WINDOW_INIT_RECT = IntRect(Vec2i(100, 100), Vec2i(500, 500));
-const IntRect TEXT_BOX_DEMO_INIT_RECT = IntRect(Vec2i(200, 200), Vec2i(320, 40));
+const Vec2i   IMAGE_OPEN_INIT_POS     = Vec2i(200, 200);
 const Vec2i   COLOR_PICKER_INIT_POS   = Vec2i(1000, 300);
 const Vec2i   SIZE_PICKER_INIT_POS    = Vec2i(1000, 100);
 const Vec2i   TOOL_PICKER_INIT_POS    = Vec2i(500, 300);
 
 const char *toolLibraries[] = {
-    "./libBrush.so",
-    "./libEraser.so",
-    "./libFill.so",
+    "./loochek_brush.so",
+    "./loochek_eraser.so",
+    "./loochek_fill.so",
     "./kctf_rainbow_stamp.so",
-    "./kctf_sharpy.so"
+    "./kctf_sharpy.so",
+    "./kctf_shdr.so"
 };
 
 PaintController::PaintController(WindowManager *root) : 
     mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mToolPicker(nullptr),
-    mCurrToolSize(2.0f), mCanvasesCounter(1), mCurrTool(nullptr)
+    mCurrToolSize(2.0f), mCurrTool(nullptr)
 {
     PluginManager *pluginMgr = PluginManager::getInstance();
 
@@ -51,22 +55,44 @@ PaintController::PaintController(WindowManager *root) :
     pluginMgr->onColorChange(mCurrColor);
 }
 
-void PaintController::createCanvas()
+PaintController::~PaintController()
+{
+    for (auto iter = mWindowsNames.begin(); iter != mWindowsNames.end(); iter++)
+        delete[] iter->second;
+}
+
+PaintWindow *PaintController::createCanvas()
 {
     PaintWindow *paintWindow = new PaintWindow(CANVAS_INIT_RECT, this, mRoot);
 
-    paintWindow->setUserData(mCanvasesCounter);
+    mWindowsNames[paintWindow] = new char[MAX_FILE_NAME_SIZE + 1]();
+    snprintf(mWindowsNames[paintWindow], MAX_FILE_NAME_SIZE, "Untitled %u.png", rand());
 
-    char title[MAX_LABEL_SIZE + 1] = {0};
-    snprintf(title, MAX_LABEL_SIZE, "Pain - %d", mCanvasesCounter);
-    paintWindow->setTitle(title);
-    mCanvasesCounter++;
+    updateTitle(paintWindow, mWindowsNames[paintWindow]);
 
     if (mCurrTool)
         paintWindow->getCanvasWidget()->getCanvas().setTool(mCurrTool);
 
     mPaintWindows.insert(paintWindow);
     mRoot->addChild(paintWindow);
+    return paintWindow;
+}
+
+bool PaintController::openFile(const char *fileName)
+{
+    PaintWindow *paintWindow = createCanvas();
+
+    if (!paintWindow->getCanvasWidget()->getCanvas().loadFromFile(fileName))
+        return false;
+
+    strncpy(mWindowsNames[paintWindow], fileName, MAX_FILE_NAME_SIZE);
+    updateTitle(paintWindow, mWindowsNames[paintWindow]);
+
+    Vec2i imageSize = paintWindow->getCanvasWidget()->getCanvas().getSize();
+    paintWindow->resize(imageSize);
+    paintWindow->getCanvasWidget()->resize(imageSize);
+
+    return true;
 }
 
 void PaintController::openPallete()
@@ -107,9 +133,9 @@ void PaintController::openSplineWindow()
     mRoot->addChild(new SplineWindow(SPLINE_WINDOW_INIT_RECT, mRoot));
 }
 
-void PaintController::openTextBoxDemo()
+void PaintController::openImageOpenWindow()
 {
-    mRoot->addChild(new TextBoxDemoWindow(TEXT_BOX_DEMO_INIT_RECT, mRoot));
+    mRoot->addChild(new ImageOpenWindow(IMAGE_OPEN_INIT_POS, this, mRoot));
 }
 
 void PaintController::onCanvasClose(PaintWindow *paintWindow)
@@ -119,12 +145,7 @@ void PaintController::onCanvasClose(PaintWindow *paintWindow)
 
 void PaintController::onCanvasSave(PaintWindow *paintWindow)
 {
-    int canvasNum = paintWindow->getUserData();
-
-    char fileName[MAX_LABEL_SIZE + 1] = {0};
-    snprintf(fileName, MAX_LABEL_SIZE, "masterpiece%d.png", canvasNum);
-
-    paintWindow->getCanvasWidget()->getCanvas().saveToFile(fileName);
+    paintWindow->getCanvasWidget()->getCanvas().saveToFile(mWindowsNames[paintWindow]);
 }
 
 void PaintController::onPalleteClose()
@@ -160,4 +181,11 @@ void PaintController::onColorChange(const LGL::Color &color, int userData)
 {
     mCurrColor = color;
     PluginManager::getInstance()->onColorChange(color);
+}
+
+void PaintController::updateTitle(PaintWindow *window, const char *newTitle)
+{
+    char title[MAX_LABEL_SIZE + 1] = {0};
+    snprintf(title, MAX_LABEL_SIZE, "%s - Pain", mWindowsNames[window]);
+    window->setTitle(title);
 }

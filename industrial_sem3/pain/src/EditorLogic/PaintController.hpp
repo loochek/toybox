@@ -2,6 +2,7 @@
 #define PAINT_CONTROLLER_HPP
 
 #include <unordered_set>
+#include <unordered_map>
 #include <vector>
 #include "ColorChangeDelegate.hpp"
 #include "SizePicker/SizeChangedDelegate.hpp"
@@ -23,12 +24,15 @@ public:
     PaintController() = delete;
     PaintController(WindowManager *root);
 
-    void createCanvas();
+    ~PaintController();
+
+    PaintWindow *createCanvas();
+    bool openFile(const char *fileName);
     void openPallete();
     void openSizePicker();
     void openToolPicker();
     void openSplineWindow();
-    void openTextBoxDemo();
+    void openImageOpenWindow();
 
     void onCanvasClose(PaintWindow *paintWindow);
     void onCanvasSave(PaintWindow *paintWindow);
@@ -47,6 +51,9 @@ public:
     virtual void onColorChange(const LGL::Color &color, int userData) override;
 
 private:
+    void updateTitle(PaintWindow *window, const char *newTitle);
+
+private:
     WindowManager     *mRoot;
     PalleteWindow     *mPallete;
     SizePickerWindow  *mSizePicker;
@@ -54,12 +61,12 @@ private:
 
     std::unordered_set<PaintWindow*> mPaintWindows;
 
+    std::unordered_map<PaintWindow*, char*> mWindowsNames;
+
     Plugin *mCurrTool;
 
     LGL::Color mCurrColor;
     float      mCurrToolSize;
-
-    int mCanvasesCounter;
 };
 
 #endif

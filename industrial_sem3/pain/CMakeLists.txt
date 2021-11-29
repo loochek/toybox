@@ -5,6 +5,8 @@ project(pain)
 # Add SDL2 CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2)
 
+set(CMAKE_SHARED_LIBRARY_PREFIX "")
+
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
@@ -29,14 +31,14 @@ aux_source_directory(src/Math PAIN_SOURCES)
 aux_source_directory(src/LGL PAIN_SOURCES)
 
 aux_source_directory(src/Plugins/Brush PAIN_BRUSH_SOURCES)
-add_library(Brush SHARED ${PAIN_BRUSH_SOURCES})
+add_library(loochek_brush SHARED ${PAIN_BRUSH_SOURCES})
 
 aux_source_directory(src/Plugins/Eraser PAIN_ERASER_SOURCES)
-add_library(Eraser SHARED ${PAIN_ERASER_SOURCES})
+add_library(loochek_eraser SHARED ${PAIN_ERASER_SOURCES})
 
 aux_source_directory(src/Plugins/Fill PAIN_FILL_SOURCES)
 set(PAIN_FILL_SOURCES ${PAIN_FILL_SOURCES} src/LGL/Color.cpp)
-add_library(Fill SHARED ${PAIN_FILL_SOURCES})
+add_library(loochek_fill SHARED ${PAIN_FILL_SOURCES})
 
 find_package(SFML COMPONENTS graphics window)
 if (SFML_FOUND)
