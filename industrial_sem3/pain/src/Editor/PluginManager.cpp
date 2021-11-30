@@ -154,8 +154,6 @@ static PRGBA *ai_target_get_pixels()
 
     LGL::Image image = texture.copyToImage();
     Vec2i imageSize = image.getSize();
-    
-    image.saveToFile("sdfsdf.png");
 
     PRGBA *pixels = new PRGBA[imageSize.x * imageSize.y];
     memcpy(pixels, image.getPixels(), sizeof(PRGBA) * imageSize.x * imageSize.y);

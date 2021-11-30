@@ -5,10 +5,10 @@
 #include "EditorLogic/PaintControllerMenuDelegate.hpp"
 #include "EditorLogic/PaintController.hpp"
 
-const int WINDOW_WIDTH  = 1280;
-const int WINDOW_HEIGHT = 720;
+const int WINDOW_WIDTH  = 1920;
+const int WINDOW_HEIGHT = 1080;
 
-App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "Pain")
+App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "Pain", true)
 {
     LGL::RenderTarget::loadFont();
     TextureManager::getInstance()->load();

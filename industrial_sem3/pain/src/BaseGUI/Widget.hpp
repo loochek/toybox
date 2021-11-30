@@ -103,6 +103,9 @@ protected:
     /// Called when children was destroyed. Widget should get rid of invalidated pointer to it.
     virtual void onChildDestroy(Widget *child);
 
+    /// Called when widget was resized
+    virtual void onResize() {};
+
     /**
      * Mouse events
      */

@@ -6,6 +6,7 @@
 class Label;
 class BaseButton;
 class ButtonDelegate;
+class DragArea;
 
 /**
  * Base class for windows
@@ -19,6 +20,13 @@ public:
      * \param title Title text
      */
     void setTitle(const char *title);
+
+    /**
+     * Same as resize, but depends on content size
+     * 
+     * \param newContentSize New content size
+     */
+    void resizeContent(const Vec2i &newContentSize);
     
 protected:
     Window() = delete;
@@ -27,6 +35,7 @@ protected:
     virtual ~Window() {};
 
     virtual void onRedrawThis() override;
+    virtual void onResize() override;
 
 private:
     void getTextures();
@@ -37,8 +46,9 @@ public:
     static const int BOTTOM_BORDER_SIZE;
 
 protected:
-    Label *mTitle;
+    Label      *mTitle;
     BaseButton *mCloseButton;
+    DragArea   *mDragArea;
 
     const LGL::Texture *mCorner1Texture;
     const LGL::Texture *mCorner2Texture;

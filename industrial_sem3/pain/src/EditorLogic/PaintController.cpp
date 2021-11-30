@@ -89,8 +89,8 @@ bool PaintController::openFile(const char *fileName)
     updateTitle(paintWindow, mWindowsNames[paintWindow]);
 
     Vec2i imageSize = paintWindow->getCanvasWidget()->getCanvas().getSize();
-    paintWindow->resize(imageSize);
     paintWindow->getCanvasWidget()->resize(imageSize);
+    paintWindow->resizeContent(imageSize);
 
     return true;
 }

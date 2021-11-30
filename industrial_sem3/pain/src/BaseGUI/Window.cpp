@@ -26,8 +26,8 @@ Window::Window(const IntRect &contentRect, Widget *parent) :
     mTitle = new Label(Vec2i(SIDE_BORDER_SIZE, HEADER_HEIGHT / 2), this);
     addChild(mTitle);
     
-    DragArea *dragArea = new DragArea(IntRect(Vec2i(), Vec2i(mRect.size.x, HEADER_HEIGHT)), this, this);
-    addChild(dragArea);
+    mDragArea = new DragArea(IntRect(Vec2i(), Vec2i(mRect.size.x, HEADER_HEIGHT)), this, this);
+    addChild(mDragArea);
 
     mCloseButton = new TextureButton(
         IntRect(Vec2i(mRect.size.x - CLOSE_BUTTON_OFFSET - CLOSE_BUTTON_WIDTH, 0),
@@ -42,6 +42,12 @@ Window::Window(const IntRect &contentRect, Widget *parent) :
 void Window::setTitle(const char *title)
 {
     mTitle->setText(title);
+}
+
+void Window::resizeContent(const Vec2i &newContentSize)
+{
+    resize(newContentSize + Vec2i(2 * Window::SIDE_BORDER_SIZE,
+                                  Window::HEADER_HEIGHT + Window::BOTTOM_BORDER_SIZE));
 }
 
 void Window::onRedrawThis()
@@ -82,6 +88,12 @@ void Window::onRedrawThis()
                               Vec2i(mRect.size.x - 2 * SIDE_BORDER_SIZE,
                                     mRect.size.y - HEADER_HEIGHT - BOTTOM_BORDER_SIZE)),
                       WINDOW_BACKGROUND_COLOR);
+}
+
+void Window::onResize()
+{
+    mCloseButton->setPosition(Vec2i(mRect.size.x - CLOSE_BUTTON_OFFSET - CLOSE_BUTTON_WIDTH, 0));
+    mDragArea->resize(Vec2i(mRect.size.x, HEADER_HEIGHT));
 }
 
 void Window::getTextures()

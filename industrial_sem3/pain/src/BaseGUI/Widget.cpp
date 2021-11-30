@@ -22,7 +22,8 @@ void Widget::addChild(Widget *child)
 void Widget::resize(const Vec2i &newSize)
 {
     mRect.size = newSize;
-    //mTexture.resize(newSize);
+    mTexture.resize(newSize);
+    onResize();
 }
 
 void Widget::onUpdate(float elapsedTime)

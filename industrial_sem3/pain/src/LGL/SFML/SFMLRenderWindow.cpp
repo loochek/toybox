@@ -2,9 +2,11 @@
 
 namespace LGL
 {
-    RenderWindow::RenderWindow(const Vec2i &resolution, const char *title) : RenderTarget(&mWindow)
+    RenderWindow::RenderWindow(const Vec2i &resolution, const char *title, bool fullscreen) :
+        RenderTarget(&mWindow)
     {
-        mWindow.create(sf::VideoMode(resolution.x, resolution.y), title);
+        mWindow.create(sf::VideoMode(resolution.x, resolution.y), title,
+                       fullscreen ? sf::Style::Fullscreen : sf::Style::Default);
         mWindow.setFramerateLimit(60);
     }
 

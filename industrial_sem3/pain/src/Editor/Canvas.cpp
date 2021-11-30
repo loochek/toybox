@@ -101,6 +101,11 @@ bool Canvas::loadFromFile(const char *fileName)
     if (!image.loadFromFile(fileName))
         return false;
 
+    mSize = image.getSize();
+
+    mPreviewLayer.resize(mSize);
+    mPreviewLayer.clear();
+
     for (LGL::RenderTexture *layer : mLayers)
         delete layer;
 
@@ -111,9 +116,7 @@ bool Canvas::loadFromFile(const char *fileName)
     newLayer->drawTexture(image, Vec2i());
     mLayers.push_back(newLayer);
     mCurrLayer = 0;
-
-    mSize = image.getSize();
-
+    
     return true;
 }
 
