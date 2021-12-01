@@ -4,7 +4,7 @@
 #include "../EditorLogic/ImageOpenWindow/ImageOpenDelegate.hpp"
 #include "ImageOpenWindow.hpp"
 
-const Vec2i   CONTENT_SIZE     = Vec2i(200, 75);
+const Vec2i   CONTENT_SIZE     = Vec2i(200, 74);
 const Vec2i   TEXT_BOX_OFFSET  = Vec2i(10, 10);
 const IntRect OPEN_BUTTON_RECT = IntRect(Vec2i(78, 70), Vec2i(60, 30));
 

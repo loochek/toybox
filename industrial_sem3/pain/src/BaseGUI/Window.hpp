@@ -22,11 +22,11 @@ public:
     void setTitle(const char *title);
 
     /**
-     * Same as resize, but depends on content size
+     * Resize which depends on content size
      * 
      * \param newContentSize New content size
      */
-    void resizeContent(const Vec2i &newContentSize);
+    virtual void resize(const Vec2i &newContentSize) override;
     
 protected:
     Window() = delete;

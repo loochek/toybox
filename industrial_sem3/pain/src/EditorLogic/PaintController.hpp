@@ -6,19 +6,19 @@
 #include <vector>
 #include "ColorChangeDelegate.hpp"
 #include "SizePicker/SizeChangedDelegate.hpp"
-#include "ToolPicker/ToolChangedDelegate.hpp"
+#include "PluginPicker/PluginChangedDelegate.hpp"
 
 class WindowManager;
 class PaintWindow;
 class PalleteWindow;
 class SizePickerWindow;
-class ToolPickerWindow;
+class PluginPickerWindow;
 class Plugin;
 
 /**
  * App logic controller
  */
-class PaintController : public ColorChangeDelegate, public SizeChangedDelegate, public ToolChangedDelegate
+class PaintController : public ColorChangeDelegate, public SizeChangedDelegate, public PluginChangedDelegate
 {
 public:
     PaintController() = delete;
@@ -31,6 +31,7 @@ public:
     void openPallete();
     void openSizePicker();
     void openToolPicker();
+    void openEffectPicker();
     void openSplineWindow();
     void openImageOpenWindow();
 
@@ -39,13 +40,15 @@ public:
 
     void onPalleteClose();
     void onSizePickerClose();
-    void onToolPickerClose();
+    void onPluginPickerClose(PluginPickerWindow *pickerWindow);
+
+    void onActivePaintWindowChange(PaintWindow *activeWindow) { mActivePaintWindow = activeWindow; };
 
     // Size picker callback
     virtual void onSizeChange(float newPenSize, int userData) override;
 
-    // Tool picker callback
-    virtual void onToolChange(Plugin *newTool, int userData) override;
+    // Plugin pickers callback
+    virtual void onPluginChange(Plugin *selectedPlugin, int userData) override;
 
     // Pallete callback
     virtual void onColorChange(const LGL::Color &color, int userData) override;
@@ -54,12 +57,14 @@ private:
     void updateTitle(PaintWindow *window, const char *newTitle);
 
 private:
-    WindowManager     *mRoot;
-    PalleteWindow     *mPallete;
-    SizePickerWindow  *mSizePicker;
-    ToolPickerWindow  *mToolPicker;
+    WindowManager      *mRoot;
+    PalleteWindow      *mPallete;
+    SizePickerWindow   *mSizePicker;
+    PluginPickerWindow *mToolPicker;
+    PluginPickerWindow *mEffectPicker;
 
     std::unordered_set<PaintWindow*> mPaintWindows;
+    PaintWindow *mActivePaintWindow;
 
     std::unordered_map<PaintWindow*, char*> mWindowsNames;
 

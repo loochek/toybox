@@ -10,6 +10,7 @@ enum class MenuAction
     OpenPallete,
     OpenSizePicker,
     OpenToolPicker,
+    OpenEffectPicker,
     OpenSplineWindow,
     OpenImageOpenWindow
 };
@@ -38,6 +39,10 @@ public:
 
         case MenuAction::OpenToolPicker:
             mController->openToolPicker();
+            break;
+
+        case MenuAction::OpenEffectPicker:
+            mController->openEffectPicker();
             break;
 
         case MenuAction::OpenSplineWindow:

@@ -1,7 +1,6 @@
 #include <deque>
 #include "../../Editor/EditorPluginAPI/plugin_std.hpp"
 #include "../../Utils/Vec2.hpp"
-#include "../../LGL/Color.hpp"
 
 const Vec2i DIRS[] = { Vec2i(-1, 0), Vec2i(1, 0), Vec2i(0, -1), Vec2i(0, 1) };
 

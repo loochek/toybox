@@ -69,7 +69,7 @@ public:
      * 
      * \param newSize New size
      */
-    void resize(const Vec2i &newSize);
+    virtual void resize(const Vec2i &newSize);
 
     /**
      * Schedules widget for deletion. 

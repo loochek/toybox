@@ -1,4 +1,5 @@
 #include <cstring>
+#include <cassert>
 #include "PaintController.hpp"
 #include "../Utils/Logger.hpp"
 #include "../Editor/PluginManager.hpp"
@@ -10,8 +11,8 @@
 #include "../EditorWidgets/Pallete.hpp"
 #include "../EditorWidgets/SizePickerWindow.hpp"
 #include "../EditorWidgets/SizePicker.hpp"
-#include "../EditorWidgets/ToolPickerWindow.hpp"
-#include "../EditorWidgets/ToolPicker.hpp"
+#include "../EditorWidgets/PluginPickerWindow.hpp"
+#include "../EditorWidgets/PluginPicker.hpp"
 #include "../EditorWidgets/SplineWindow.hpp"
 #include "../EditorWidgets/ImageOpenWindow.hpp"
 
@@ -23,27 +24,31 @@ const Vec2i   IMAGE_OPEN_INIT_POS     = Vec2i(200, 200);
 const Vec2i   COLOR_PICKER_INIT_POS   = Vec2i(1000, 300);
 const Vec2i   SIZE_PICKER_INIT_POS    = Vec2i(1000, 100);
 const Vec2i   TOOL_PICKER_INIT_POS    = Vec2i(500, 300);
+const Vec2i   EFFECT_PICKER_INIT_POS  = Vec2i(700, 300);
 
-const char *toolLibraries[] = {
+const char *pluginPreloadList[] = {
     "./loochek_brush.so",
     "./loochek_eraser.so",
     "./loochek_fill.so",
+    "./loochek_negative.so",
+    "./kctf_bloor.so",
+    "./kctf_negative.so",
     "./kctf_rainbow_stamp.so",
     "./kctf_sharpy.so",
     "./kctf_shdr.so"
 };
 
 PaintController::PaintController(WindowManager *root) : 
-    mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mToolPicker(nullptr),
-    mCurrToolSize(2.0f), mCurrTool(nullptr)
+    mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mToolPicker(nullptr), mEffectPicker(nullptr),
+    mCurrToolSize(2.0f), mCurrTool(nullptr), mActivePaintWindow(nullptr)
 {
     PluginManager *pluginMgr = PluginManager::getInstance();
 
-    for (int i = 0; i < sizeof(toolLibraries) / sizeof(toolLibraries[0]); i++)
+    for (int i = 0; i < sizeof(pluginPreloadList) / sizeof(pluginPreloadList[0]); i++)
     {
         try
         {
-            pluginMgr->loadPlugin(toolLibraries[i]);
+            pluginMgr->loadPlugin(pluginPreloadList[i]);
         }
         catch (const std::exception& error)
         {
@@ -90,7 +95,7 @@ bool PaintController::openFile(const char *fileName)
 
     Vec2i imageSize = paintWindow->getCanvasWidget()->getCanvas().getSize();
     paintWindow->getCanvasWidget()->resize(imageSize);
-    paintWindow->resizeContent(imageSize);
+    paintWindow->resize(imageSize);
 
     return true;
 }
@@ -122,10 +127,21 @@ void PaintController::openToolPicker()
     if (mToolPicker != nullptr)
         return;
 
-    mToolPicker = new ToolPickerWindow(TOOL_PICKER_INIT_POS, this, mRoot);
-    mToolPicker->getToolPicker()->setDelegate(this);
+    mToolPicker = new PluginPickerWindow(TOOL_PICKER_INIT_POS, this, PPT_TOOL, mRoot);
+    mToolPicker->getPluginPicker()->setDelegate(this);
 
     mRoot->addChild(mToolPicker);
+}
+
+void PaintController::openEffectPicker()
+{
+    if (mEffectPicker != nullptr)
+        return;
+
+    mEffectPicker = new PluginPickerWindow(EFFECT_PICKER_INIT_POS, this, PPT_EFFECT, mRoot);
+    mEffectPicker->getPluginPicker()->setDelegate(this);
+
+    mRoot->addChild(mEffectPicker);
 }
 
 void PaintController::openSplineWindow()
@@ -158,9 +174,14 @@ void PaintController::onSizePickerClose()
     mSizePicker = nullptr;
 }
 
-void PaintController::onToolPickerClose()
+void PaintController::onPluginPickerClose(PluginPickerWindow *pickerWindow)
 {
-    mToolPicker = nullptr;
+    if (pickerWindow == mToolPicker)
+        mToolPicker = nullptr;
+    else if (pickerWindow == mEffectPicker)
+        mEffectPicker = nullptr;
+    else
+        assert(false);
 }
 
 void PaintController::onSizeChange(float newPenSize, int userData)
@@ -169,12 +190,25 @@ void PaintController::onSizeChange(float newPenSize, int userData)
     PluginManager::getInstance()->onSizeChange(newPenSize);
 }
 
-void PaintController::onToolChange(Plugin *newTool, int userData)
+void PaintController::onPluginChange(Plugin *selectedPlugin, int userData)
 {
-    mCurrTool = newTool;
+    switch (selectedPlugin->getInfo()->type)
+    {
+    case PPT_TOOL:
+        mCurrTool = selectedPlugin;
 
-    for (PaintWindow *paintWindow : mPaintWindows)
-        paintWindow->getCanvasWidget()->getCanvas().setTool(newTool);
+        for (PaintWindow *paintWindow : mPaintWindows)
+            paintWindow->getCanvasWidget()->getCanvas().setTool(selectedPlugin);
+        
+        break;
+
+    case PPT_EFFECT:
+        mActivePaintWindow->getCanvasWidget()->getCanvas().applyEffect(selectedPlugin);
+        break;
+
+    default:
+        assert(false);
+    }
 }
 
 void PaintController::onColorChange(const LGL::Color &color, int userData)

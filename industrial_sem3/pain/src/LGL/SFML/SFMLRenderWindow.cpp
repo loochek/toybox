@@ -7,7 +7,7 @@ namespace LGL
     {
         mWindow.create(sf::VideoMode(resolution.x, resolution.y), title,
                        fullscreen ? sf::Style::Fullscreen : sf::Style::Default);
-        mWindow.setFramerateLimit(60);
+        mWindow.setVerticalSyncEnabled(true);
     }
 
     RenderWindow::~RenderWindow()

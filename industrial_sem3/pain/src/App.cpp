@@ -27,6 +27,7 @@ App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "Pain", true)
     bar->addButton("Pallete", mDelegate, (int)MenuAction::OpenPallete);
     bar->addButton("Size picker", mDelegate, (int)MenuAction::OpenSizePicker);
     bar->addButton("Tool picker", mDelegate, (int)MenuAction::OpenToolPicker);
+    bar->addButton("Effect picker", mDelegate, (int)MenuAction::OpenEffectPicker);
     bar->addButton("Spline", mDelegate, (int)MenuAction::OpenSplineWindow);
     root->addChild(bar);
 

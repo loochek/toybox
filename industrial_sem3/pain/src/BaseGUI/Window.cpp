@@ -44,10 +44,10 @@ void Window::setTitle(const char *title)
     mTitle->setText(title);
 }
 
-void Window::resizeContent(const Vec2i &newContentSize)
+void Window::resize(const Vec2i &newContentSize)
 {
-    resize(newContentSize + Vec2i(2 * Window::SIDE_BORDER_SIZE,
-                                  Window::HEADER_HEIGHT + Window::BOTTOM_BORDER_SIZE));
+    Widget::resize(newContentSize + Vec2i(2 * Window::SIDE_BORDER_SIZE,
+                   Window::HEADER_HEIGHT + Window::BOTTOM_BORDER_SIZE));
 }
 
 void Window::onRedrawThis()
