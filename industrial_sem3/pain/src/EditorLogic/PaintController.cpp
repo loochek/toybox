@@ -15,6 +15,7 @@
 #include "../EditorWidgets/PluginPicker.hpp"
 #include "../EditorWidgets/SplineWindow.hpp"
 #include "../EditorWidgets/ImageOpenWindow.hpp"
+#include "../EditorWidgets/PluginConfigWindow.hpp"
 
 const int MAX_FILE_NAME_SIZE = 256;
 
@@ -25,6 +26,7 @@ const Vec2i   COLOR_PICKER_INIT_POS   = Vec2i(1000, 300);
 const Vec2i   SIZE_PICKER_INIT_POS    = Vec2i(1000, 100);
 const Vec2i   TOOL_PICKER_INIT_POS    = Vec2i(500, 300);
 const Vec2i   EFFECT_PICKER_INIT_POS  = Vec2i(700, 300);
+const Vec2i   PLUGIN_CONFIG_INIT_POS  = Vec2i(200, 200);
 
 const char *pluginPreloadList[] = {
     "./loochek_brush.so",
@@ -44,6 +46,7 @@ PaintController::PaintController(WindowManager *root) :
     mCurrToolSize(2.0f), mCurrTool(nullptr), mActivePaintWindow(nullptr)
 {
     PluginManager *pluginMgr = PluginManager::getInstance();
+    pluginMgr->setPaintController(this);
 
     for (int i = 0; i < sizeof(pluginPreloadList) / sizeof(pluginPreloadList[0]); i++)
     {
@@ -63,7 +66,7 @@ PaintController::PaintController(WindowManager *root) :
 
 PaintController::~PaintController()
 {
-    for (auto iter = mWindowsNames.begin(); iter != mWindowsNames.end(); iter++)
+    for (auto iter = mWindowsFileNames.begin(); iter != mWindowsFileNames.end(); iter++)
         delete[] iter->second;
 }
 
@@ -71,10 +74,10 @@ PaintWindow *PaintController::createCanvas()
 {
     PaintWindow *paintWindow = new PaintWindow(CANVAS_INIT_RECT, this, mRoot);
 
-    mWindowsNames[paintWindow] = new char[MAX_FILE_NAME_SIZE + 1]();
-    snprintf(mWindowsNames[paintWindow], MAX_FILE_NAME_SIZE, "Untitled %u.png", rand());
+    mWindowsFileNames[paintWindow] = new char[MAX_FILE_NAME_SIZE + 1]();
+    snprintf(mWindowsFileNames[paintWindow], MAX_FILE_NAME_SIZE, "Untitled %u.png", rand());
 
-    updateTitle(paintWindow, mWindowsNames[paintWindow]);
+    updateTitle(paintWindow, mWindowsFileNames[paintWindow]);
 
     if (mCurrTool)
         paintWindow->getCanvasWidget()->getCanvas().setTool(mCurrTool);
@@ -91,8 +94,8 @@ bool PaintController::openFile(const char *fileName)
     if (!paintWindow->getCanvasWidget()->getCanvas().loadFromFile(fileName))
         return false;
 
-    strncpy(mWindowsNames[paintWindow], fileName, MAX_FILE_NAME_SIZE);
-    updateTitle(paintWindow, mWindowsNames[paintWindow]);
+    strncpy(mWindowsFileNames[paintWindow], fileName, MAX_FILE_NAME_SIZE);
+    updateTitle(paintWindow, mWindowsFileNames[paintWindow]);
 
     Vec2i imageSize = paintWindow->getCanvasWidget()->getCanvas().getSize();
     paintWindow->getCanvasWidget()->resize(imageSize);
@@ -155,6 +158,13 @@ void PaintController::openImageOpenWindow()
     mRoot->addChild(new ImageOpenWindow(IMAGE_OPEN_INIT_POS, this, mRoot));
 }
 
+PluginConfigWindow *PaintController::createPluginSettingsWindow()
+{
+    PluginConfigWindow *configWindow = new PluginConfigWindow(PLUGIN_CONFIG_INIT_POS, this, mRoot);
+    mRoot->addChild(configWindow);
+    return configWindow;
+}
+
 void PaintController::onCanvasClose(PaintWindow *paintWindow)
 {
     mPaintWindows.erase(paintWindow);
@@ -162,7 +172,7 @@ void PaintController::onCanvasClose(PaintWindow *paintWindow)
 
 void PaintController::onCanvasSave(PaintWindow *paintWindow)
 {
-    paintWindow->getCanvasWidget()->getCanvas().saveToFile(mWindowsNames[paintWindow]);
+    paintWindow->getCanvasWidget()->getCanvas().saveToFile(mWindowsFileNames[paintWindow]);
 }
 
 void PaintController::onPalleteClose()
@@ -223,6 +233,6 @@ void PaintController::onColorChange(const LGL::Color &color, int userData)
 void PaintController::updateTitle(PaintWindow *window, const char *newTitle)
 {
     char title[MAX_LABEL_SIZE + 1] = {0};
-    snprintf(title, MAX_LABEL_SIZE, "%s - Pain", mWindowsNames[window]);
+    snprintf(title, MAX_LABEL_SIZE, "%s - Pain", mWindowsFileNames[window]);
     window->setTitle(title);
 }

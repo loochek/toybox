@@ -5,6 +5,8 @@
 #include "EditorPluginAPI/plugin_std.hpp"
 #include "Canvas.hpp"
 
+class PluginConfigWindow;
+
 /**
  * Handles plugin and provides its interface
  */
@@ -46,6 +48,7 @@ public:
     }
 
     static PVec2f toPluginVec(Vec2f vec) { return PVec2f(vec.x, vec.y); }
+
     static PRGBA toPluginColor(const LGL::Color &color)
     {
         return PRGBA(color.r * EXTERNAL_RGB_BASE,
@@ -55,6 +58,7 @@ public:
     }
 
     static Vec2f fromPluginVec(PVec2f vec) { return Vec2f(vec.x, vec.y); }
+
     static LGL::Color fromPluginColor(const PRGBA &color)
     {
         return LGL::Color(color.r / (float)EXTERNAL_RGB_BASE,
@@ -66,9 +70,15 @@ public:
 private:
     Plugin(const char *fileName, const PAppInterface *appInterface);
 
+public:
+    /// Plugin which us initializing now
+    static Plugin *sCurrInitPlugin;
+
 private:
     const PPluginInterface *mPluginInterface;
     void *mLibraryHandle;
+
+    PluginConfigWindow *mConfigWindow;
 
     friend class PluginManager;
 };

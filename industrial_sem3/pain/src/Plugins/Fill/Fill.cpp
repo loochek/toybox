@@ -18,7 +18,7 @@ static void onMouseMove(PVec2f mouseOldPos, PVec2f mouseNewPos);
 static void onMouseReleased(PVec2f mousePos);
 
 static bool enableExtension(const char *name);
-static void *getExtensionFunc(const char *name);
+static void *getExtensionFunc(const char *extension, const char *func);
 
 static bool areColorsEqual(const PRGBA &first, const PRGBA &second);
 
@@ -164,7 +164,7 @@ static bool enableExtension(const char *name)
     return false;
 }
 
-static void *getExtensionFunc(const char *name)
+static void *getExtensionFunc(const char *extension, const char *func)
 {
     return nullptr;
 }

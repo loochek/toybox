@@ -3,9 +3,9 @@
 #include <cassert>
 #include "../Utils/Logger.hpp"
 #include "PluginManager.hpp"
-
-/// Supported version of the standart
-const uint32_t PLUGIN_STD_VERSION = 0;
+#include "../EditorLogic/PaintController.hpp"
+#include "../EditorWidgets/PluginConfigWindow.hpp"
+#include "../BaseGUI/Label.hpp"
 
 static void ai_general_log(const char *fmt, ...);
 static double ai_general_get_absolute_time();
@@ -17,16 +17,25 @@ static void ai_target_get_size(size_t *width, size_t *height);
 static void ai_render_circle(PVec2f position, float radius, PRGBA color, const PRenderMode *render_mode);
 static void ai_render_line(PVec2f start, PVec2f end, PRGBA color, const PRenderMode *render_mode);
 static void ai_render_triangle(PVec2f p1, PVec2f p2, PVec2f p3, PRGBA color, const PRenderMode *render_mode);
-static void ai_render_rectangle(PVec2f p1_ext, PVec2f p2_ext, PRGBA color, const PRenderMode *render_mode);
-static void ai_render_pixels(PVec2f position, const PRGBA *data, size_t width, size_t height, const PRenderMode *render_mode);
+static void ai_render_rectangle(PVec2f p1, PVec2f p2, PRGBA color, const PRenderMode *render_mode);
+static void ai_render_pixels(PVec2f position, const PRGBA *data, size_t width, size_t height,
+                             const PRenderMode *render_mode);
 static bool ai_extensions_enable(const char *name);
-static void *ai_extensions_get_func(const char *name);
+static void *ai_extensions_get_func(const char *extension, const char *func);
+static void ai_settings_create_surface(const PPluginInterface *self, size_t width, size_t height);
+static void ai_settings_destroy_surface(const PPluginInterface *self);
+static void *ai_settings_add(const PPluginInterface *self, PSettingType type, const char *name);
+static void ai_settings_get(const PPluginInterface *self, void *handle, void *answer);
 
 
-PluginManager::PluginManager() : mCurrSize(0.0f), mCurrMainLayer(nullptr), mCurrPreviewLayer(nullptr)
+/// Supported version of the standart
+const uint32_t PLUGIN_STD_VERSION = 0;
+
+PluginManager::PluginManager() :
+    mCurrSize(0.0f), mCurrMainLayer(nullptr), mCurrPreviewLayer(nullptr), mPaintController(nullptr)
 {
     mAppInterface.std_version                  = PLUGIN_STD_VERSION;
-    mAppInterface.general.feature_level        = (PFeatureLevel)0;
+    mAppInterface.general.feature_level        = PFL_SETTINGS_SUPPORT;
     
     mAppInterface.general.log                  = ai_general_log;
     mAppInterface.general.get_absolute_time    = ai_general_get_absolute_time;
@@ -54,10 +63,10 @@ PluginManager::PluginManager() : mCurrSize(0.0f), mCurrMainLayer(nullptr), mCurr
     mAppInterface.shader.set_uniform_int       = nullptr;
     mAppInterface.shader.set_uniform_int_arr   = nullptr;
 
-    mAppInterface.settings.add                 = nullptr;
-    mAppInterface.settings.get                 = nullptr;
-    mAppInterface.settings.create_surface      = nullptr;
-    mAppInterface.settings.destroy_surface     = nullptr;
+    mAppInterface.settings.add                 = ai_settings_add;
+    mAppInterface.settings.get                 = ai_settings_get;
+    mAppInterface.settings.create_surface      = ai_settings_create_surface;
+    mAppInterface.settings.destroy_surface     = ai_settings_destroy_surface;
 }
 
 PluginManager::~PluginManager()
@@ -92,65 +101,43 @@ PluginManager *PluginManager::getInstance()
     return &instance;
 }
 
-
 //---------------------------------------------//
 // Implementations of PAppInterface functions  //
 //---------------------------------------------//
 
 const float LINE_THICKNESS = 1.0f;
 
-/// Helper function
-static LGL::RenderTexture *handleRenderMode(const PRenderMode *render_mode)
+
+void PluginManager::aiGeneralLog(const char *fmt, va_list args)
 {
-    PluginManager *mgr = PluginManager::getInstance();
-
-    LGL::RenderTexture *whereToDraw = nullptr;
-    if (render_mode->draw_policy == PPDP_ACTIVE)
-        whereToDraw = mgr->mCurrMainLayer;
-    else
-        whereToDraw = mgr->mCurrPreviewLayer;
-
-    if (render_mode->blend == PPBM_ALPHA_BLEND)
-        whereToDraw->setBlendMode(true);
-    else
-        whereToDraw->setBlendMode(false);
-
-    return whereToDraw;
-}
-
-static void ai_general_log(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
     Logger::log(LogLevel::Info, fmt, args);
-    va_end(args);
 }
 
-static double ai_general_get_absolute_time()
+double PluginManager::aiGeneralGetAbsoluteTime()
 {
     /// TODO:
     return 0;
 }
 
-static void ai_general_release_pixels(PRGBA *pixels)
+void PluginManager::aiGeneralReleasePixels(PRGBA *pixels)
 {
     delete[] pixels;
 }
 
-static PRGBA ai_general_get_color()
+PRGBA PluginManager::aiGeneralGetColor()
 {
-    return Plugin::toPluginColor(PluginManager::getInstance()->mCurrColor);
+    return Plugin::toPluginColor(mCurrColor);
 }
 
-static float ai_general_get_size()
+float PluginManager::aiGeneralGetSize()
 {
-    return PluginManager::getInstance()->mCurrSize;
+    return mCurrSize;
 }
 
-static PRGBA *ai_target_get_pixels()
+PRGBA *PluginManager::aiTargetGetPixels()
 {
     LGL::Texture texture;
-    texture.loadFromRenderTexture(*PluginManager::getInstance()->mCurrMainLayer);
+    texture.loadFromRenderTexture(*mCurrMainLayer);
 
     LGL::Image image = texture.copyToImage();
     Vec2i imageSize = image.getSize();
@@ -160,21 +147,19 @@ static PRGBA *ai_target_get_pixels()
     return pixels;
 }
 
-static void ai_target_get_size(size_t *width, size_t *height)
+void PluginManager::aiTargetGetSize(size_t *width, size_t *height)
 {
-    PluginManager *mgr = PluginManager::getInstance();
-
-    *width  = mgr->mCurrCanvasSize.x;
-    *height = mgr->mCurrCanvasSize.y;
+    *width  = mCurrCanvasSize.x;
+    *height = mCurrCanvasSize.y;
 }
 
-static void ai_render_circle(PVec2f position, float radius, PRGBA color, const PRenderMode *render_mode)
+void PluginManager::aiRenderCircle(PVec2f position, float radius, PRGBA color, const PRenderMode *render_mode)
 {
     LGL::RenderTexture *whereToDraw = handleRenderMode(render_mode);
     whereToDraw->drawCircle(Plugin::fromPluginVec(position), radius, Plugin::fromPluginColor(color));
 }
 
-static void ai_render_line(PVec2f start, PVec2f end, PRGBA color, const PRenderMode *render_mode)
+void PluginManager::aiRenderLine(PVec2f start, PVec2f end, PRGBA color, const PRenderMode *render_mode)
 {
     LGL::RenderTexture *whereToDraw = handleRenderMode(render_mode);
     whereToDraw->drawLine(Plugin::fromPluginVec(start),
@@ -183,7 +168,7 @@ static void ai_render_line(PVec2f start, PVec2f end, PRGBA color, const PRenderM
                           Plugin::fromPluginColor(color));
 }
 
-static void ai_render_triangle(PVec2f p1, PVec2f p2, PVec2f p3, PRGBA color, const PRenderMode *render_mode)
+void PluginManager::aiRenderTriangle(PVec2f p1, PVec2f p2, PVec2f p3, PRGBA color, const PRenderMode *render_mode)
 {
     LGL::RenderTexture *whereToDraw = handleRenderMode(render_mode);
     whereToDraw->drawTriangle(Plugin::fromPluginVec(p1),
@@ -192,7 +177,7 @@ static void ai_render_triangle(PVec2f p1, PVec2f p2, PVec2f p3, PRGBA color, con
                               Plugin::fromPluginColor(color));
 }
 
-static void ai_render_rectangle(PVec2f p1_ext, PVec2f p2_ext, PRGBA color, const PRenderMode *render_mode)
+void PluginManager::aiRenderRectangle(PVec2f p1_ext, PVec2f p2_ext, PRGBA color, const PRenderMode *render_mode)
 {
     LGL::RenderTexture *whereToDraw = handleRenderMode(render_mode);
 
@@ -202,7 +187,8 @@ static void ai_render_rectangle(PVec2f p1_ext, PVec2f p2_ext, PRGBA color, const
     whereToDraw->drawRect(FloatRect(p1, p2 - p1), Plugin::fromPluginColor(color));
 }
 
-static void ai_render_pixels(PVec2f position, const PRGBA *data, size_t width, size_t height, const PRenderMode *render_mode)
+void PluginManager::aiRenderPixels(PVec2f position, const PRGBA *data, size_t width, size_t height,
+                                   const PRenderMode *render_mode)
 {
     LGL::RenderTexture *whereToDraw = handleRenderMode(render_mode);
     
@@ -215,12 +201,195 @@ static void ai_render_pixels(PVec2f position, const PRGBA *data, size_t width, s
     whereToDraw->drawTexture(texture, Plugin::fromPluginVec(position));
 }
 
-static bool ai_extensions_enable(const char *name)
+bool PluginManager::aiExtensionsEnable(const char *name)
 {
     return false;
 }
 
-static void *ai_extensions_get_func(const char *name)
+void *PluginManager::aiExtensionsGetFunc(const char *extension, const char *func)
 {
     return nullptr;
+}
+
+void PluginManager::aiSettingsCreateSurface(const PPluginInterface *self, size_t width, size_t height)
+{
+    Plugin *plugin = searchPluginByHandle(self);
+    if (plugin == nullptr)
+        return;
+
+    if (mPaintController != nullptr)
+    {
+        plugin->mConfigWindow = mPaintController->createPluginSettingsWindow();
+
+        char title[MAX_LABEL_SIZE + 1] = {0};
+        snprintf(title, MAX_LABEL_SIZE, "%s's settings", plugin->getInfo()->name);
+        plugin->mConfigWindow->setTitle(title);
+    }
+        
+}
+
+void PluginManager::aiSettingsDestroySurface(const PPluginInterface *self)
+{
+    Plugin *plugin = searchPluginByHandle(self);
+    if (plugin == nullptr)
+        return;
+
+    if (plugin->mConfigWindow == nullptr)
+        return;
+        
+    plugin->mConfigWindow->scheduleForDeletion();
+}
+
+void *PluginManager::aiSettingsAdd(const PPluginInterface *self, PSettingType type, const char *name)
+{
+    Plugin *plugin = searchPluginByHandle(self);
+    if (plugin == nullptr)
+        return nullptr;
+
+    if (plugin->mConfigWindow == nullptr)
+        return nullptr;
+
+    return plugin->mConfigWindow->addParameter(type, name);
+}
+
+void PluginManager::aiSettingsGet(const PPluginInterface *self, void *handle, void *answer)
+{
+    Plugin *plugin = searchPluginByHandle(self);
+    if (plugin == nullptr)
+        return;
+
+    if (plugin->mConfigWindow == nullptr)
+        return;
+
+    plugin->mConfigWindow->getParameter(handle, answer);
+}
+
+
+Plugin *PluginManager::searchPluginByHandle(const PPluginInterface *interface)
+{
+    if (Plugin::sCurrInitPlugin->mPluginInterface == interface)
+        return Plugin::sCurrInitPlugin;
+
+    for (Plugin *plugin : mPlugins)
+    {
+        if (plugin->mPluginInterface == interface)
+            return plugin;
+    }
+
+    return nullptr;
+}
+
+LGL::RenderTexture *PluginManager::handleRenderMode(const PRenderMode *render_mode)
+{
+    LGL::RenderTexture *whereToDraw = nullptr;
+    if (render_mode->draw_policy == PPDP_ACTIVE)
+        whereToDraw = mCurrMainLayer;
+    else
+        whereToDraw = mCurrPreviewLayer;
+
+    if (render_mode->blend == PPBM_ALPHA_BLEND)
+        whereToDraw->setBlendMode(true);
+    else
+        whereToDraw->setBlendMode(false);
+
+    return whereToDraw;
+}
+
+
+//----------------------------------------------//
+// C wrappers to PAppInterface implementations  //
+//----------------------------------------------//
+
+static void ai_general_log(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    PluginManager::getInstance()->aiGeneralLog(fmt, args);
+    va_end(args);
+}
+
+static double ai_general_get_absolute_time()
+{
+    return PluginManager::getInstance()->aiGeneralGetAbsoluteTime();
+}
+
+static void ai_general_release_pixels(PRGBA *pixels)
+{
+    PluginManager::getInstance()->aiGeneralReleasePixels(pixels);
+}
+
+static PRGBA ai_general_get_color()
+{
+    return PluginManager::getInstance()->aiGeneralGetColor();
+}
+
+static float ai_general_get_size()
+{
+    return PluginManager::getInstance()->aiGeneralGetSize();
+}
+
+static PRGBA *ai_target_get_pixels()
+{
+    return PluginManager::getInstance()->aiTargetGetPixels();
+}
+
+static void ai_target_get_size(size_t *width, size_t *height)
+{
+    PluginManager::getInstance()->aiTargetGetSize(width, height);
+}
+
+static void ai_render_circle(PVec2f position, float radius, PRGBA color, const PRenderMode *render_mode)
+{
+    PluginManager::getInstance()->aiRenderCircle(position, radius, color, render_mode);
+}
+
+static void ai_render_line(PVec2f start, PVec2f end, PRGBA color, const PRenderMode *render_mode)
+{
+    PluginManager::getInstance()->aiRenderLine(start, end, color, render_mode);
+}
+
+static void ai_render_triangle(PVec2f p1, PVec2f p2, PVec2f p3, PRGBA color, const PRenderMode *render_mode)
+{
+    PluginManager::getInstance()->aiRenderTriangle(p1, p2, p3, color, render_mode);
+}
+
+static void ai_render_rectangle(PVec2f p1, PVec2f p2, PRGBA color, const PRenderMode *render_mode)
+{
+    PluginManager::getInstance()->aiRenderRectangle(p1, p2, color, render_mode);
+}
+
+static void ai_render_pixels(PVec2f position, const PRGBA *data, size_t width, size_t height,
+                             const PRenderMode *render_mode)
+{
+    PluginManager::getInstance()->aiRenderPixels(position, data, width, height, render_mode);
+}
+
+static bool ai_extensions_enable(const char *name)
+{
+    return PluginManager::getInstance()->aiExtensionsEnable(name);
+}
+
+static void *ai_extensions_get_func(const char *extension, const char *func)
+{
+    return PluginManager::getInstance()->aiExtensionsGetFunc(extension, func);
+}
+
+static void ai_settings_create_surface(const PPluginInterface *self, size_t width, size_t height)
+{
+    PluginManager::getInstance()->aiSettingsCreateSurface(self, width, height);
+}
+
+static void ai_settings_destroy_surface(const PPluginInterface *self)
+{
+    PluginManager::getInstance()->aiSettingsDestroySurface(self);
+}
+
+static void *ai_settings_add(const PPluginInterface *self, PSettingType type, const char *name)
+{
+    return PluginManager::getInstance()->aiSettingsAdd(self, type, name);
+}
+
+static void ai_settings_get(const PPluginInterface *self, void *handle, void *answer)
+{
+    PluginManager::getInstance()->aiSettingsGet(self, handle, answer);
 }

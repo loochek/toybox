@@ -12,7 +12,7 @@ static PPreviewLayerPolicy getFlushPolicy();
 static void apply();
 
 static bool enableExtension(const char *name);
-static void *getExtensionFunc(const char *name);
+static void *getExtensionFunc(const char *extension, const char *func);
 
 const PPluginInterface gPluginInterface =
 {
@@ -125,7 +125,7 @@ static bool enableExtension(const char *name)
     return false;
 }
 
-static void *getExtensionFunc(const char *name)
+static void *getExtensionFunc(const char *extension, const char *func)
 {
     return nullptr;
 }

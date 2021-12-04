@@ -13,6 +13,7 @@ class PaintWindow;
 class PalleteWindow;
 class SizePickerWindow;
 class PluginPickerWindow;
+class PluginConfigWindow;
 class Plugin;
 
 /**
@@ -34,6 +35,8 @@ public:
     void openEffectPicker();
     void openSplineWindow();
     void openImageOpenWindow();
+
+    PluginConfigWindow *createPluginSettingsWindow();
 
     void onCanvasClose(PaintWindow *paintWindow);
     void onCanvasSave(PaintWindow *paintWindow);
@@ -66,7 +69,7 @@ private:
     std::unordered_set<PaintWindow*> mPaintWindows;
     PaintWindow *mActivePaintWindow;
 
-    std::unordered_map<PaintWindow*, char*> mWindowsNames;
+    std::unordered_map<PaintWindow*, char*> mWindowsFileNames;
 
     Plugin *mCurrTool;
 
