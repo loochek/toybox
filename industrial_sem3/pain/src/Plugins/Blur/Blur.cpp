@@ -14,6 +14,17 @@ static void apply();
 static bool enableExtension(const char *name);
 static void *getExtensionFunc(const char *name);
 
+
+static PRGBA *applyKernel(PRGBA *pixels, int width, int height, const float kernel[]);
+
+
+static const float GAUSS_BLUR[3][3] =
+{
+    { 1.f / 16, 2.f / 16, 1.f / 16 },
+    { 2.f / 16, 4.f / 16, 2.f / 16 },
+    { 1.f / 16, 2.f / 16, 1.f / 16 }
+};
+
 const PPluginInterface gPluginInterface =
 {
     0, // std_version
@@ -47,10 +58,10 @@ const PPluginInfo gPluginInfo =
 
     &gPluginInterface,
 
-    "Negative",
+    "Gauss blur",
     "1.0",
     "loochek",
-    "Simple negative effect",
+    "Simple blur effect",
     
     PPT_EFFECT
 };
@@ -67,7 +78,7 @@ extern "C" const PPluginInterface *get_plugin_interface()
 static PPluginStatus init(const PAppInterface* appInterface)
 {
     gAppInterface = appInterface;
-    appInterface->general.log("Negative: succesful initialization!");
+    appInterface->general.log("Blur: succesful initialization!");
     return PPS_OK; 
 }
 
@@ -102,22 +113,12 @@ static void apply()
     gAppInterface->target.get_size(&layerWidth, &layerHeight);
 
     PRGBA *pixels = gAppInterface->target.get_pixels();
+    
+    PRGBA *dstPixels = applyKernel(pixels, layerWidth, layerHeight, (float*)GAUSS_BLUR);
 
-    for (int y = 0; y < layerHeight; y++)
-    {
-        for (int x = 0; x < layerWidth; x++)
-        {
-            PRGBA color = pixels[layerWidth * y + x];
-            color.r = 255 - color.r;
-            color.g = 255 - color.g;
-            color.b = 255 - color.b;
-
-            pixels[layerWidth * y + x] = color;
-        }
-    }
-
-    gAppInterface->render.pixels(PVec2f(0, 0), pixels, layerWidth, layerHeight, &render_mode);
+    gAppInterface->render.pixels(PVec2f(0, 0), dstPixels, layerWidth, layerHeight, &render_mode);
     gAppInterface->general.release_pixels(pixels);
+    delete[] dstPixels;
 }
 
 static bool enableExtension(const char *name)
@@ -128,4 +129,47 @@ static bool enableExtension(const char *name)
 static void *getExtensionFunc(const char *name)
 {
     return nullptr;
+}
+
+static PRGBA *applyKernel(PRGBA *pixels, int width, int height, const float kernel[])
+{
+    PRGBA *dstPixels = new PRGBA[width * height];
+
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            float r = 0, g = 0, b = 0;
+
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    int ky = (y + i - 1), kx = (x + j - 1);
+
+                    if (kx < 0)
+                        kx = 0;
+
+                    if (ky < 0)
+                        ky = 0;
+
+                    if (kx >= width)
+                        kx = width - 1;
+
+                    if (ky >= height)
+                        ky = height - 1;
+
+                    PRGBA color = pixels[width * ky + kx];
+
+                    r += color.r * kernel[i * 3 + j];
+                    g += color.g * kernel[i * 3 + j];
+                    b += color.b * kernel[i * 3 + j];
+                }
+            }
+
+            dstPixels[width * y + x] = PRGBA(r, g, b, pixels[width * y + x].a);
+        }
+    }
+
+    return dstPixels;
 }

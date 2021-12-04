@@ -42,6 +42,9 @@ add_library(loochek_fill SHARED ${PAIN_FILL_SOURCES})
 aux_source_directory(src/Plugins/Negative PAIN_NEGATIVE_SOURCES)
 add_library(loochek_negative SHARED ${PAIN_NEGATIVE_SOURCES})
 
+aux_source_directory(src/Plugins/Blur PAIN_BLUR_SOURCES)
+add_library(loochek_blur SHARED ${PAIN_BLUR_SOURCES})
+
 find_package(SFML COMPONENTS graphics window)
 if (SFML_FOUND)
     set(PAIN_SFML_SOURCES ${PAIN_SOURCES})

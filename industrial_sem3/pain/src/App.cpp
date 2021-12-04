@@ -8,7 +8,7 @@
 const int WINDOW_WIDTH  = 1920;
 const int WINDOW_HEIGHT = 1080;
 
-App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "Pain", true)
+App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "Pain", false)
 {
     LGL::RenderTarget::loadFont();
     TextureManager::getInstance()->load();

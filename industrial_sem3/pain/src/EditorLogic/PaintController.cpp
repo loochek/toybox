@@ -31,6 +31,7 @@ const char *pluginPreloadList[] = {
     "./loochek_eraser.so",
     "./loochek_fill.so",
     "./loochek_negative.so",
+    "./loochek_blur.so",
     "./kctf_bloor.so",
     "./kctf_negative.so",
     "./kctf_rainbow_stamp.so",
@@ -203,7 +204,9 @@ void PaintController::onPluginChange(Plugin *selectedPlugin, int userData)
         break;
 
     case PPT_EFFECT:
-        mActivePaintWindow->getCanvasWidget()->getCanvas().applyEffect(selectedPlugin);
+        if (mActivePaintWindow != nullptr)
+            mActivePaintWindow->getCanvasWidget()->getCanvas().applyEffect(selectedPlugin);
+
         break;
 
     default:
