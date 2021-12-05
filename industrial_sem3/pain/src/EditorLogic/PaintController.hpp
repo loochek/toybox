@@ -36,7 +36,7 @@ public:
     void openSplineWindow();
     void openImageOpenWindow();
 
-    PluginConfigWindow *createPluginSettingsWindow();
+    PluginConfigWindow *createPluginSettingsWindow(Plugin *plugin);
 
     void onCanvasClose(PaintWindow *paintWindow);
     void onCanvasSave(PaintWindow *paintWindow);

@@ -3,9 +3,10 @@
 
 #include "../BaseGUI/Window.hpp"
 #include "../Editor/EditorPluginAPI/plugin_std.hpp"
+#include "../Editor/Plugin.hpp"
 
 class PaintController;
-class PluginConfigWindowController;
+class PluginSettingsNotifier;
 
 /**
  * Flexible window with an arbitrary set of plugin settings
@@ -14,7 +15,8 @@ class PluginConfigWindow : public Window
 {
 public:
     PluginConfigWindow() = delete;
-    PluginConfigWindow(const Vec2i &windowPos, PaintController *controller, Widget *parent = nullptr);
+    PluginConfigWindow(const Vec2i &windowPos, PaintController *controller,
+                       Plugin *plugin, Widget *parent = nullptr);
 
     virtual ~PluginConfigWindow();
 
@@ -29,7 +31,7 @@ public:
     void *addParameter(PSettingType type, const char *name);
 
     /**
-     * Returns a requested parameter. Nothing is written if the handle is unknown to the window
+     * Returns a requested parameter. Passing some bad thing as handle is UB
      * 
      * \param handle Parameter handle
      * \param structPtr Structure to write into (e.g. PTextFieldSetting, etc). Type is defined by handle. 
@@ -44,7 +46,7 @@ private:
     void addLabel(const char *text);
 
 private:
-    PluginConfigWindowController *mController;
+    PluginSettingsNotifier *mNotifier;
 
     float mNewParamVertOffset;
     float mNewParamHorizOffset;

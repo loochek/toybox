@@ -23,6 +23,8 @@ public:
 
     PPreviewLayerPolicy getFlushPolicy() { return mPluginInterface->general.get_flush_policy(); }
 
+    void onSettingsUpdate() { mPluginInterface->general.on_settings_update(); };
+
     void onMouseClicked(const Vec2i &position)
     {
         if (mPluginInterface->tool.on_press != nullptr)

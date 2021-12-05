@@ -34,11 +34,8 @@ const char *pluginPreloadList[] = {
     "./loochek_fill.so",
     "./loochek_negative.so",
     "./loochek_blur.so",
-    "./kctf_bloor.so",
-    "./kctf_negative.so",
     "./kctf_rainbow_stamp.so",
-    "./kctf_sharpy.so",
-    "./kctf_shdr.so"
+    "./kctf_sharpy.so"
 };
 
 PaintController::PaintController(WindowManager *root) : 
@@ -158,9 +155,9 @@ void PaintController::openImageOpenWindow()
     mRoot->addChild(new ImageOpenWindow(IMAGE_OPEN_INIT_POS, this, mRoot));
 }
 
-PluginConfigWindow *PaintController::createPluginSettingsWindow()
+PluginConfigWindow *PaintController::createPluginSettingsWindow(Plugin *plugin)
 {
-    PluginConfigWindow *configWindow = new PluginConfigWindow(PLUGIN_CONFIG_INIT_POS, this, mRoot);
+    PluginConfigWindow *configWindow = new PluginConfigWindow(PLUGIN_CONFIG_INIT_POS, this, plugin, mRoot);
     mRoot->addChild(configWindow);
     return configWindow;
 }

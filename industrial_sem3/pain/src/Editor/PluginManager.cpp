@@ -219,7 +219,7 @@ void PluginManager::aiSettingsCreateSurface(const PPluginInterface *self, size_t
 
     if (mPaintController != nullptr)
     {
-        plugin->mConfigWindow = mPaintController->createPluginSettingsWindow();
+        plugin->mConfigWindow = mPaintController->createPluginSettingsWindow(plugin);
 
         char title[MAX_LABEL_SIZE + 1] = {0};
         snprintf(title, MAX_LABEL_SIZE, "%s's settings", plugin->getInfo()->name);
@@ -267,7 +267,7 @@ void PluginManager::aiSettingsGet(const PPluginInterface *self, void *handle, vo
 
 Plugin *PluginManager::searchPluginByHandle(const PPluginInterface *interface)
 {
-    if (Plugin::sCurrInitPlugin->mPluginInterface == interface)
+    if (Plugin::sCurrInitPlugin != nullptr && Plugin::sCurrInitPlugin->mPluginInterface == interface)
         return Plugin::sCurrInitPlugin;
 
     for (Plugin *plugin : mPlugins)
