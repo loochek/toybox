@@ -34,6 +34,7 @@ const char *pluginPreloadList[] = {
     "./loochek_fill.so",
     "./loochek_negative.so",
     "./loochek_blur.so",
+    "./loochek_unsharp.so",
     "./kctf_rainbow_stamp.so",
     "./kctf_sharpy.so"
 };

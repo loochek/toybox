@@ -3,6 +3,7 @@
 
 const int   DEFAULT_RADIUS   = 1;
 const float DEFAULT_STRENGTH = 1.3;
+const float DEFAULT_AMOUNT   = 1.5;
 
 static PPluginStatus init(const PAppInterface* appInterface);
 static PPluginStatus deinit();
@@ -19,9 +20,9 @@ static void apply();
 static bool enableExtension(const char *name);
 static void *getExtensionFunc(const char *extension, const char *func);
 
-static void getSettings(int &radius, float &strength);
+static void getSettings(int &radius, float &strength, float &amount);
 static void calcGaussianKernel(int radius, float sigma, float kernel[]);
-static PRGBA *applyKernel(PRGBA *pixels, int width, int height, int kernelSize, const float kernel[]);
+static PRGBA *unsharp(PRGBA *pixels, int width, int height, float amount, int kernelSize, const float kernel[]);
 static float gaussian(float x, float y, float sigma);
 static LGL::Color toLGLColor(const PRGBA &color);
 static PRGBA toPluginColor(const LGL::Color &color);
@@ -59,10 +60,10 @@ const PPluginInfo gPluginInfo =
 
     &gPluginInterface,
 
-    "Gauss blur",
+    "Unsharp mask",
     "1.0",
     "loochek",
-    "Simple blur effect",
+    "Simple unsharp masking effect",
     
     PPT_EFFECT
 };
@@ -71,6 +72,7 @@ const PPluginInfo gPluginInfo =
 const PAppInterface *gAppInterface = nullptr;
 void *gRadiusSettingHandle   = nullptr;
 void *gStrengthSettingHandle = nullptr;
+void *gAmountSettingHandle   = nullptr;
 
 
 extern "C" const PPluginInterface *get_plugin_interface()
@@ -84,15 +86,16 @@ static PPluginStatus init(const PAppInterface* appInterface)
 
     if (gAppInterface->general.feature_level & PFL_SETTINGS_SUPPORT)
     {
-        appInterface->general.log("[Blur] Settings support is present");
+        appInterface->general.log("[Unsharp mask] Settings support is present");
         appInterface->settings.create_surface(&gPluginInterface, 100, 100);
         gRadiusSettingHandle   = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Radius");
         gStrengthSettingHandle = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Strength");
+        gAmountSettingHandle   = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Amount");
     }
     else
-        appInterface->general.log("[Blur] Settings support is NOT present!");
+        appInterface->general.log("[Unsharp mask] Settings support is NOT present!");
 
-    appInterface->general.log("[Blur] Succesful initialization!");
+    appInterface->general.log("[Unsharp mask] Succesful initialization!");
     return PPS_OK; 
 }
 
@@ -131,8 +134,8 @@ static void apply()
     gAppInterface->target.get_size(&layerWidth, &layerHeight);
 
     int   radius = 0;
-    float strength = 0;
-    getSettings(radius, strength);
+    float strength = 0, amount = 0;
+    getSettings(radius, strength, amount);
 
     PRGBA *pixels = gAppInterface->target.get_pixels();
 
@@ -140,7 +143,7 @@ static void apply()
     float *kernel = new float[kernelSize * kernelSize];
     calcGaussianKernel(radius, strength, kernel);
     
-    PRGBA *dstPixels = applyKernel(pixels, layerWidth, layerHeight, kernelSize, kernel);
+    PRGBA *dstPixels = unsharp(pixels, layerWidth, layerHeight, amount, kernelSize, kernel);
 
     gAppInterface->render.pixels(PVec2f(0, 0), dstPixels, layerWidth, layerHeight, &render_mode);
     gAppInterface->general.release_pixels(pixels);
@@ -158,7 +161,7 @@ static void *getExtensionFunc(const char *extension, const char *func)
     return nullptr;
 }
 
-static void getSettings(int &radius, float &strength)
+static void getSettings(int &radius, float &strength, float &amount)
 {
     PTextFieldSetting settingValue;
     if (gRadiusSettingHandle != nullptr)
@@ -180,9 +183,19 @@ static void getSettings(int &radius, float &strength)
     }
     else
         strength = DEFAULT_STRENGTH;
+
+    if (gAmountSettingHandle != nullptr)
+    {
+        gAppInterface->settings.get(&gPluginInterface, gAmountSettingHandle, &settingValue);
+        amount = atof(settingValue.text);
+        if (amount < 0.01f)
+            amount = DEFAULT_AMOUNT;
+    }
+    else
+        amount = DEFAULT_AMOUNT;
 }
 
-static PRGBA *applyKernel(PRGBA *pixels, int width, int height, int kernelSize, const float kernel[])
+static PRGBA *unsharp(PRGBA *pixels, int width, int height, float amount, int kernelSize, const float kernel[])
 {
     PRGBA *dstPixels = new PRGBA[width * height];
 
@@ -218,8 +231,12 @@ static PRGBA *applyKernel(PRGBA *pixels, int width, int height, int kernelSize, 
                 }
             }
 
-            dstPixels[width * y + x] = toPluginColor(sumColor);
-            dstPixels[width * y + x].a = pixels[width * y + x].a;
+            LGL::Color originalColor = toLGLColor(pixels[width * y + x]);
+            LGL::Color blurredColor  = sumColor.applyAlpha((float)pixels[width * y + x].a / EXTERNAL_RGB_BASE);
+
+            LGL::Color finalColor = (originalColor - (blurredColor - originalColor) * amount).norm();
+
+            dstPixels[width * y + x] = toPluginColor(finalColor);
         }
     }
 

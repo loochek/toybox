@@ -1,6 +1,8 @@
 #ifndef LGL_COLOR_HPP
 #define LGL_COLOR_HPP
 
+#include <algorithm>
+
 const int EXTERNAL_RGB_BASE = 255;
 
 namespace LGL
@@ -26,9 +28,58 @@ namespace LGL
             return Color(r * multiplier, g * multiplier, b * multiplier, a * multiplier);
         }
 
+        Color operator/(float divider) const
+        {
+            return Color(r / divider, g / divider, b / divider, a / divider);
+        }
+
+        Color &operator+=(const Color &other)
+        {
+            r += other.r;
+            g += other.g;
+            b += other.b;
+            a += other.a;
+            return *this;
+        }
+
+        Color &operator-=(const Color &other)
+        {
+            r -= other.r;
+            g -= other.g;
+            b -= other.b;
+            a -= other.a;
+            return *this;
+        }
+
+        Color &operator*=(float multiplier)
+        {
+            r *= multiplier;
+            g *= multiplier;
+            b *= multiplier;
+            a *= multiplier;
+            return *this;
+        }
+
+        Color &operator/=(float divider)
+        {
+            r /= divider;
+            g /= divider;
+            b /= divider;
+            a /= divider;
+            return *this;
+        }
+
         Color applyAlpha(float alpha) const
         {
             return Color(r, g, b, alpha);
+        }
+
+        Color norm() const
+        {
+            return Color(std::max(0.0f, std::min(r, 1.0f)),
+                         std::max(0.0f, std::min(g, 1.0f)),
+                         std::max(0.0f, std::min(b, 1.0f)),
+                         std::max(0.0f, std::min(a, 1.0f)));
         }
 
     public:
