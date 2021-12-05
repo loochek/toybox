@@ -6,6 +6,7 @@
 #include "../BaseGUI/TextBox.hpp"
 #include "../BaseGUI/Slider.hpp"
 #include "Pallete.hpp"
+#include "../BaseGUILogic/Window/WindowHideDelegate.hpp"
 #include "../EditorLogic/PluginConfigWindow/PluginSettingsNotifier.hpp"
 
 const int WINDOW_WIDTH   = 378;
@@ -27,11 +28,15 @@ PluginConfigWindow::PluginConfigWindow(const Vec2i &windowPos, PaintController *
     mNewParamVertOffset(Window::HEADER_HEIGHT + VERTICAL_SPACING),
     mNewParamHorizOffset(Window::SIDE_BORDER_SIZE + HORIZONTAL_SPACING)
 {
+    mCloseButtonDelegate = new WindowHideDelegate(this);
+    mCloseButton->setDelegate(mCloseButtonDelegate);
+
     mNotifier = new PluginSettingsNotifier(plugin);
 }
 
 PluginConfigWindow::~PluginConfigWindow()
 {
+    delete mCloseButtonDelegate;
     delete mNotifier;
 }
 
@@ -86,7 +91,7 @@ void *PluginConfigWindow::addTextField(const char *name)
 
     mNewParamVertOffset += textBox->getRect().size.y + VERTICAL_SPACING;
 
-    resize(Vec2i(WINDOW_WIDTH, mNewParamVertOffset));
+    resize(Vec2i(WINDOW_WIDTH, mNewParamVertOffset - Window::HEADER_HEIGHT));
     return textBox;
 }
 
@@ -102,7 +107,7 @@ void *PluginConfigWindow::addSlider1D(const char *name)
 
     mNewParamVertOffset += slider->getRect().size.y + VERTICAL_SPACING;
 
-    resize(Vec2i(WINDOW_WIDTH, mNewParamVertOffset));
+    resize(Vec2i(WINDOW_WIDTH, mNewParamVertOffset - Window::HEADER_HEIGHT));
     return slider;
 }
 
@@ -116,7 +121,7 @@ void *PluginConfigWindow::addColorPicker(const char *name)
 
     mNewParamVertOffset += pallete->getRect().size.y;
 
-    resize(Vec2i(WINDOW_WIDTH, mNewParamVertOffset));
+    resize(Vec2i(WINDOW_WIDTH, mNewParamVertOffset - Window::HEADER_HEIGHT));
     return pallete;
 }
 

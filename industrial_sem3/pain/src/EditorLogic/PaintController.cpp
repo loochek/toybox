@@ -3,8 +3,9 @@
 #include "PaintController.hpp"
 #include "../Utils/Logger.hpp"
 #include "../Editor/PluginManager.hpp"
-#include "../BaseGUI/WindowManager.hpp"
 #include "../BaseGUI/Label.hpp"
+#include "../BaseGUI/ButtonBar.hpp"
+#include "../EditorWidgets/PaintMainWindow.hpp"
 #include "../EditorWidgets/CanvasWidget.hpp"
 #include "../EditorWidgets/PaintWindow.hpp"
 #include "../EditorWidgets/PalleteWindow.hpp"
@@ -18,6 +19,9 @@
 #include "../EditorWidgets/PluginConfigWindow.hpp"
 
 const int MAX_FILE_NAME_SIZE = 256;
+
+const int PLUGIN_CFG_WINDOWS_UD_OFFS = 1000;
+const int PAINT_WINDOWS_UD_OFFS      = 2000;
 
 const IntRect CANVAS_INIT_RECT        = IntRect(Vec2i(200, 200), Vec2i(700, 400));
 const IntRect SPLINE_WINDOW_INIT_RECT = IntRect(Vec2i(100, 100), Vec2i(500, 500));
@@ -39,27 +43,20 @@ const char *pluginPreloadList[] = {
     "./kctf_sharpy.so"
 };
 
-PaintController::PaintController(WindowManager *root) : 
+PaintController::PaintController(PaintMainWindow *root) : 
     mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mToolPicker(nullptr), mEffectPicker(nullptr),
-    mCurrToolSize(2.0f), mCurrTool(nullptr), mActivePaintWindow(nullptr)
+    mCurrToolSize(2.0f), mCurrTool(nullptr), mActivePaintWindow(nullptr),
+    mPluginWindowsCounter(0), mPaintWindowsCounter(0)
 {
-    PluginManager *pluginMgr = PluginManager::getInstance();
-    pluginMgr->setPaintController(this);
+    root->mMenuBar->addButton("New canvas"   , this, (int)MenuAction::NewCanvas);
+    root->mMenuBar->addButton("Open image"   , this, (int)MenuAction::OpenImageOpenWindow);
+    root->mMenuBar->addButton("Pallete"      , this, (int)MenuAction::OpenPallete);
+    root->mMenuBar->addButton("Size picker"  , this, (int)MenuAction::OpenSizePicker);
+    root->mMenuBar->addButton("Tool picker"  , this, (int)MenuAction::OpenToolPicker);
+    root->mMenuBar->addButton("Effect picker", this, (int)MenuAction::OpenEffectPicker);
+    root->mMenuBar->addButton("Spline"       , this, (int)MenuAction::OpenSplineWindow);
 
-    for (int i = 0; i < sizeof(pluginPreloadList) / sizeof(pluginPreloadList[0]); i++)
-    {
-        try
-        {
-            pluginMgr->loadPlugin(pluginPreloadList[i]);
-        }
-        catch (const std::exception& error)
-        {
-            Logger::log(LogLevel::Warning, "%s\n", error.what());
-        }
-    }
-
-    pluginMgr->onSizeChange(mCurrToolSize);
-    pluginMgr->onColorChange(mCurrColor);
+    loadPlugins();
 }
 
 PaintController::~PaintController()
@@ -159,12 +156,22 @@ void PaintController::openImageOpenWindow()
 PluginConfigWindow *PaintController::createPluginSettingsWindow(Plugin *plugin)
 {
     PluginConfigWindow *configWindow = new PluginConfigWindow(PLUGIN_CONFIG_INIT_POS, this, plugin, mRoot);
+    configWindow->scheduleForDisable();
     mRoot->addChild(configWindow);
+
+    const BaseButton *menuButton = mRoot->mMenuBar->addButton(plugin->getInfo()->name, this, 
+                                                              PLUGIN_CFG_WINDOWS_UD_OFFS + mPluginWindowsCounter);
+    
+    mPluginConfigWindows.push_back(configWindow);
+    mPluginWindowsCounter++;
     return configWindow;
 }
 
 void PaintController::onCanvasClose(PaintWindow *paintWindow)
 {
+    if (mActivePaintWindow == paintWindow)
+        mActivePaintWindow = nullptr;
+        
     mPaintWindows.erase(paintWindow);
 }
 
@@ -228,9 +235,71 @@ void PaintController::onColorChange(const LGL::Color &color, int userData)
     PluginManager::getInstance()->onColorChange(color);
 }
 
+void PaintController::onClick(int userData)
+{
+    switch ((MenuAction)userData)
+    {
+    case MenuAction::NewCanvas:
+        createCanvas();
+        return;
+
+    case MenuAction::OpenPallete:
+        openPallete();
+        return;
+
+    case MenuAction::OpenSizePicker:
+        openSizePicker();
+        return;
+
+    case MenuAction::OpenToolPicker:
+        openToolPicker();
+        return;
+
+    case MenuAction::OpenEffectPicker:
+        openEffectPicker();
+        return;
+
+    case MenuAction::OpenSplineWindow:
+        openSplineWindow();
+        return;
+
+    case MenuAction::OpenImageOpenWindow:
+        openImageOpenWindow();
+        return;
+    }
+
+    if (userData >= PLUGIN_CFG_WINDOWS_UD_OFFS)
+    {
+        PluginConfigWindow *configWindow = mPluginConfigWindows[userData - PLUGIN_CFG_WINDOWS_UD_OFFS];
+        if (!configWindow->isEnabled())
+            configWindow->scheduleForEnable();
+    }
+}
+
 void PaintController::updateTitle(PaintWindow *window, const char *newTitle)
 {
     char title[MAX_LABEL_SIZE + 1] = {0};
     snprintf(title, MAX_LABEL_SIZE, "%s - Pain", mWindowsFileNames[window]);
     window->setTitle(title);
+}
+
+void PaintController::loadPlugins()
+{
+    PluginManager *pluginMgr = PluginManager::getInstance();
+    pluginMgr->setPaintController(this);
+
+    for (int i = 0; i < sizeof(pluginPreloadList) / sizeof(pluginPreloadList[0]); i++)
+    {
+        try
+        {
+            pluginMgr->loadPlugin(pluginPreloadList[i]);
+        }
+        catch (const std::exception& error)
+        {
+            Logger::log(LogLevel::Warning, "%s\n", error.what());
+        }
+    }
+
+    pluginMgr->onSizeChange(mCurrToolSize);
+    pluginMgr->onColorChange(mCurrColor);
 }

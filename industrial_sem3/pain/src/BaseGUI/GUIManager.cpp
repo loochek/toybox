@@ -16,7 +16,9 @@ GUIManager::~GUIManager()
 void GUIManager::update(float elapsedTime)
 {
     mRoot->onUpdate(elapsedTime);
-    // delete widgets marked as "scheduled for deletion"
+    // do all scheduled things
+    disableScheduled(mRoot);
+    enableScheduled(mRoot);
     deleteScheduled(mRoot);
 }
 
@@ -80,4 +82,41 @@ bool GUIManager::deleteScheduled(Widget *widget)
     }
 
     return false;
+}
+
+bool GUIManager::disableScheduled(Widget *widget)
+{
+    if (widget->mScheduledForDisable)
+    {
+        widget->onDisable();
+        widget->mScheduledForDisable = false;
+        widget->mEnabled = false;
+
+        return true;
+    }
+
+    for (Widget *child : widget->mChildren)
+    {
+        if (disableScheduled(child))
+            widget->onChildDisable(child);
+    }
+
+    return false;
+}
+
+void GUIManager::enableScheduled(Widget *widget)
+{
+    if (widget->mScheduledForEnable)
+    {
+        widget->onEnable();
+        widget->mScheduledForEnable = false;
+        widget->mEnabled = true;
+
+        return;
+    }
+
+    for (Widget *child : widget->mChildren)
+        enableScheduled(child);
+
+    return;
 }

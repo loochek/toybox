@@ -7,23 +7,37 @@
 #include "ColorChangeDelegate.hpp"
 #include "SizePicker/SizeChangedDelegate.hpp"
 #include "PluginPicker/PluginChangedDelegate.hpp"
+#include "../BaseGUILogic/BaseButton/ButtonDelegate.hpp"
 
-class WindowManager;
+enum class MenuAction
+{
+    NewCanvas           = 0,
+    OpenPallete         = 1,
+    OpenSizePicker      = 2,
+    OpenToolPicker      = 3,
+    OpenEffectPicker    = 4,
+    OpenSplineWindow    = 5,
+    OpenImageOpenWindow = 6
+};
+
+class PaintMainWindow;
 class PaintWindow;
 class PalleteWindow;
 class SizePickerWindow;
 class PluginPickerWindow;
 class PluginConfigWindow;
+class BaseButton;
 class Plugin;
 
 /**
  * App logic controller
  */
-class PaintController : public ColorChangeDelegate, public SizeChangedDelegate, public PluginChangedDelegate
+class PaintController :
+    public ColorChangeDelegate, public SizeChangedDelegate, public PluginChangedDelegate, public ButtonDelegate
 {
 public:
     PaintController() = delete;
-    PaintController(WindowManager *root);
+    PaintController(PaintMainWindow *root);
 
     ~PaintController();
 
@@ -56,11 +70,15 @@ public:
     // Pallete callback
     virtual void onColorChange(const LGL::Color &color, int userData) override;
 
-private:
-    void updateTitle(PaintWindow *window, const char *newTitle);
+    // Menu bar and paint windows bottom bar buttons callback
+    virtual void onClick(int userData) override;
 
 private:
-    WindowManager      *mRoot;
+    void updateTitle(PaintWindow *window, const char *newTitle);
+    void loadPlugins();
+
+private:
+    PaintMainWindow    *mRoot;
     PalleteWindow      *mPallete;
     SizePickerWindow   *mSizePicker;
     PluginPickerWindow *mToolPicker;
@@ -68,6 +86,11 @@ private:
 
     std::unordered_set<PaintWindow*> mPaintWindows;
     PaintWindow *mActivePaintWindow;
+
+    std::vector<PluginConfigWindow*> mPluginConfigWindows;
+
+    int mPluginWindowsCounter;
+    int mPaintWindowsCounter;
 
     std::unordered_map<PaintWindow*, char*> mWindowsFileNames;
 

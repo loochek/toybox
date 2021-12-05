@@ -77,6 +77,24 @@ public:
      */
     void scheduleForDeletion() { mScheduledForDeletion = true; };
 
+    /**
+     * Schedules widget to be enabled. 
+     * When GUI manager decides to enable widget, onEnable will be called. 
+     */
+    void scheduleForEnable() { mScheduledForEnable = true; };
+
+    /**
+     * Schedules widget to be disabled. 
+     * When GUI manager decides to disable widget, onDisable will be called. 
+     * Disabled widget is not shown and doesn't receive (almost) any events
+     */
+    void scheduleForDisable() { mScheduledForDisable = true; };
+
+    /**
+     * \return Is widget enabled or not
+     */
+    bool isEnabled() { return mEnabled; };
+
 protected:
     Widget() = delete;
     
@@ -102,6 +120,15 @@ protected:
 
     /// Called when children was destroyed. Widget should get rid of invalidated pointer to it.
     virtual void onChildDestroy(Widget *child);
+
+    /// Called when widget is about to be disabled
+    virtual void onDisable();
+
+    /// Called when children was disabled
+    virtual void onChildDisable(Widget *child);
+
+    /// Called when widget is about to be disabled
+    virtual void onEnable();
 
     /// Called when widget was resized
     virtual void onResize() {};
@@ -161,6 +188,8 @@ protected:
     virtual void onRedrawThis() {};
     virtual void onUpdateThis(float elapsedTime) {};
     virtual void onDestroyThis() {};
+    virtual void onDisableThis() {};
+    virtual void onEnableThis() {};
     virtual void onMouseHoverBeginThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
     virtual void onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
     virtual void onMouseClickedThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
@@ -191,6 +220,9 @@ protected:
     /// Widget's texture
     LGL::RenderTexture mTexture;
 
+    bool mEnabled;
+    bool mScheduledForEnable;
+    bool mScheduledForDisable;
     bool mScheduledForDeletion;
     
     // Data for handling mouse events

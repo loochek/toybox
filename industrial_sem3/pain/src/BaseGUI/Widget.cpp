@@ -3,7 +3,8 @@
 #include "Widget.hpp"
 
 Widget::Widget(const IntRect &widgetRect, Widget *parent) : mRect(widgetRect), mParent(parent),
-    mUserData(-1), mTexture(widgetRect.size), mScheduledForDeletion(false),
+    mUserData(-1), mTexture(widgetRect.size), mScheduledForDeletion(false), mEnabled(true),
+    mScheduledForEnable(false), mScheduledForDisable(false),
     mChildUnderMouse(nullptr), mChildInFocus(nullptr), mMousePressed(false)
 {
 };
@@ -30,7 +31,10 @@ void Widget::onUpdate(float elapsedTime)
 {
     onUpdateThis(elapsedTime);
     for (Widget *child : mChildren)
-        child->onUpdate(elapsedTime);
+    {
+        if (child->mEnabled)
+            child->onUpdate(elapsedTime);
+    }
 }
 
 void Widget::onRedraw()
@@ -39,8 +43,11 @@ void Widget::onRedraw()
     onRedrawThis();
     for (Widget *child : mChildren)
     {
-        child->onRedraw();
-        mTexture.drawRenderTexture(child->mTexture, child->mRect.position);
+        if (child->mEnabled)
+        {
+            child->onRedraw();
+            mTexture.drawRenderTexture(child->mTexture, child->mRect.position);
+        }
     }
 }
 
@@ -61,6 +68,30 @@ void Widget::onChildDestroy(Widget *child)
         mChildInFocus = nullptr;
 }
 
+void Widget::onDisable()
+{
+    for (Widget *child : mChildren)
+        child->onDisable();
+
+    onDisableThis();
+}
+
+void Widget::onChildDisable(Widget *child)
+{
+    if (child == mChildUnderMouse)
+        mChildUnderMouse = nullptr;
+
+    if (child == mChildInFocus)
+        mChildInFocus = nullptr;
+}
+
+void Widget::onEnable()
+{
+    onEnableThis();
+    for (Widget *child : mChildren)
+        child->onEnable();
+}
+
 void Widget::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     onMouseHoverBeginThis(localMousePos, globalMousePos);
@@ -69,7 +100,7 @@ void Widget::onMouseHoverBegin(const Vec2i &localMousePos, const Vec2i &globalMo
     {
         Widget *child = *childIter;
         
-        if (child->getRect().contains(localMousePos))
+        if (child->getRect().contains(localMousePos) && child->mEnabled)
         {
             child->onMouseHoverBegin(localMousePos - child->getRect().position, globalMousePos);
 
@@ -101,7 +132,7 @@ void Widget::onMouseMove(const Vec2i &localMousePos, const Vec2i &globalMousePos
     {
         Widget *child = *childIter;
         
-        if (child->getRect().contains(localMousePos))
+        if (child->getRect().contains(localMousePos) && child->mEnabled)
         {
             if (child == mChildUnderMouse)
             {
@@ -171,7 +202,7 @@ void Widget::onMouseReleased(const Vec2i &localMousePos, const Vec2i &globalMous
     {
         Widget *child = *childIter;
         
-        if (child->getRect().contains(localMousePos))
+        if (child->getRect().contains(localMousePos) && child->mEnabled)
         {
             child->onMouseHoverBegin(localMousePos - child->getRect().position, globalMousePos);
             mChildUnderMouse = child;

@@ -13,14 +13,10 @@ public:
     WindowManager(const IntRect &widgetRect, Widget *parent = nullptr);
 
 protected:
-    virtual void onRedrawThis() override;
-
     virtual void onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
 
 private:
     void popUp(std::list<Widget*>::iterator widgetIter);
-
-    const LGL::Texture *mWallpaperTexture; 
 };
 
 #endif

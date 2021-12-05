@@ -33,6 +33,8 @@ public:
 
 private:
     bool deleteScheduled(Widget *widget);
+    bool disableScheduled(Widget *widget);
+    void enableScheduled(Widget *widget);
 
 private:
     LGL::RenderWindow &mWindow;

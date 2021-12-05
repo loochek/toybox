@@ -1,45 +1,30 @@
 #include "App.hpp"
 #include "TextureManager.hpp"
-#include "BaseGUI/WindowManager.hpp"
-#include "BaseGUI/MenuBar.hpp"
-#include "EditorLogic/PaintControllerMenuDelegate.hpp"
-#include "EditorLogic/PaintController.hpp"
-#include "Editor/PluginManager.hpp"
+#include "EditorWidgets/PaintMainWindow.hpp"
+
+#ifndef NDEBUG
+const float FULLSCREEN = false;
+#else
+const float FULLSCREEN = true;
+#endif
 
 const int WINDOW_WIDTH  = 1920;
 const int WINDOW_HEIGHT = 1080;
 
-App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "Pain", false)
+App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "Pain", FULLSCREEN)
 {
     LGL::RenderTarget::loadFont();
     TextureManager::getInstance()->load();
     
     // GUI initialization
 
-    WindowManager *root = new WindowManager(IntRect(Vec2i(), Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), nullptr);
-    
-    mPaintController = new PaintController(root);
-
-    mDelegate = new PaintControllerMenuDelegate(mPaintController);
-
-    MenuBar *bar = new MenuBar(root);
-    bar->addButton("New canvas", mDelegate, (int)MenuAction::NewCanvas);
-    bar->addButton("Open image", mDelegate, (int)MenuAction::OpenImageOpenWindow);
-    bar->addButton("Pallete", mDelegate, (int)MenuAction::OpenPallete);
-    bar->addButton("Size picker", mDelegate, (int)MenuAction::OpenSizePicker);
-    bar->addButton("Tool picker", mDelegate, (int)MenuAction::OpenToolPicker);
-    bar->addButton("Effect picker", mDelegate, (int)MenuAction::OpenEffectPicker);
-    bar->addButton("Spline", mDelegate, (int)MenuAction::OpenSplineWindow);
-    root->addChild(bar);
-
+    PaintMainWindow *root = new PaintMainWindow(IntRect(Vec2i(), Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), nullptr);
     mGuiManager = new GUIManager(mWindow, root);
 }
 
 App::~App()
 {
     delete mGuiManager;
-    delete mDelegate;
-    delete mPaintController;
 }
 
 void App::run()

@@ -7,6 +7,7 @@
 
 class PaintController;
 class PluginSettingsNotifier;
+class WindowHideDelegate;
 
 /**
  * Flexible window with an arbitrary set of plugin settings
@@ -46,6 +47,7 @@ private:
     void addLabel(const char *text);
 
 private:
+    WindowHideDelegate *mCloseButtonDelegate;
     PluginSettingsNotifier *mNotifier;
 
     float mNewParamVertOffset;

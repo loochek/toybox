@@ -4,9 +4,6 @@
 #include "LGL/LGL.hpp"
 #include "BaseGUI/GUIManager.hpp"
 
-class PaintController;
-class PaintControllerMenuDelegate;
-
 /**
  * App framework
  */
@@ -22,9 +19,6 @@ public:
 private:
     LGL::RenderWindow mWindow;
     GUIManager       *mGuiManager;
-
-    PaintController  *mPaintController;
-    PaintControllerMenuDelegate *mDelegate;
 };
 
 #endif
