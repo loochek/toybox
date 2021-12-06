@@ -1,9 +1,8 @@
 #include "../../Editor/EditorPluginAPI/plugin_std.hpp"
 #include "../../LGL/Color.hpp"
 
-const int   DEFAULT_RADIUS   = 1;
-const float DEFAULT_STRENGTH = 1.3;
-const float DEFAULT_AMOUNT   = 1.5;
+const float DEFAULT_POWER  = 0.1;
+const float DEFAULT_AMOUNT = 1.5;
 
 static PPluginStatus init(const PAppInterface* appInterface);
 static PPluginStatus deinit();
@@ -20,8 +19,8 @@ static void apply();
 static bool enableExtension(const char *name);
 static void *getExtensionFunc(const char *extension, const char *func);
 
-static void getSettings(int &radius, float &strength, float &amount);
-static void calcGaussianKernel(int radius, float sigma, float kernel[]);
+static void getSettings(float &power, float &amount);
+static void calcGaussianKernel(int kernelRadius, float sigma, float kernel[]);
 static PRGBA *unsharp(PRGBA *pixels, int width, int height, float amount, int kernelSize, const float kernel[]);
 static float gaussian(float x, float y, float sigma);
 static LGL::Color toLGLColor(const PRGBA &color);
@@ -70,9 +69,8 @@ const PPluginInfo gPluginInfo =
 
 
 const PAppInterface *gAppInterface = nullptr;
-void *gRadiusSettingHandle   = nullptr;
-void *gStrengthSettingHandle = nullptr;
-void *gAmountSettingHandle   = nullptr;
+void *gPowerSettingHandle  = nullptr;
+void *gAmountSettingHandle = nullptr;
 
 
 extern "C" const PPluginInterface *get_plugin_interface()
@@ -88,9 +86,8 @@ static PPluginStatus init(const PAppInterface* appInterface)
     {
         appInterface->general.log("[Unsharp mask] Settings support is present");
         appInterface->settings.create_surface(&gPluginInterface, 100, 100);
-        gRadiusSettingHandle   = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Radius");
-        gStrengthSettingHandle = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Strength");
-        gAmountSettingHandle   = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Amount");
+        gPowerSettingHandle  = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Power");
+        gAmountSettingHandle = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Amount");
     }
     else
         appInterface->general.log("[Unsharp mask] Settings support is NOT present!");
@@ -133,15 +130,16 @@ static void apply()
     size_t layerWidth = 0, layerHeight = 0;
     gAppInterface->target.get_size(&layerWidth, &layerHeight);
 
-    int   radius = 0;
-    float strength = 0, amount = 0;
-    getSettings(radius, strength, amount);
+    float power  = 0;
+    float amount = 0;
+    getSettings(power, amount);
+    int kernelRadius = ceil(2 * power);
 
     PRGBA *pixels = gAppInterface->target.get_pixels();
 
-    int kernelSize = 1 + 2 * radius;
+    int kernelSize = 1 + 2 * kernelRadius;
     float *kernel = new float[kernelSize * kernelSize];
-    calcGaussianKernel(radius, strength, kernel);
+    calcGaussianKernel(kernelRadius, power, kernel);
     
     PRGBA *dstPixels = unsharp(pixels, layerWidth, layerHeight, amount, kernelSize, kernel);
 
@@ -161,28 +159,18 @@ static void *getExtensionFunc(const char *extension, const char *func)
     return nullptr;
 }
 
-static void getSettings(int &radius, float &strength, float &amount)
+static void getSettings(float &power, float &amount)
 {
     PTextFieldSetting settingValue;
-    if (gRadiusSettingHandle != nullptr)
+    if (gPowerSettingHandle != nullptr)
     {
-        gAppInterface->settings.get(&gPluginInterface, gRadiusSettingHandle, &settingValue);
-        radius = atoi(settingValue.text);
-        if (radius < 1)
-            radius = DEFAULT_RADIUS;
+        gAppInterface->settings.get(&gPluginInterface, gPowerSettingHandle, &settingValue);
+        power = atof(settingValue.text);
+        if (power < 0.1f)
+            power = DEFAULT_POWER;
     }
     else
-        radius = DEFAULT_RADIUS;
-
-    if (gStrengthSettingHandle != nullptr)
-    {
-        gAppInterface->settings.get(&gPluginInterface, gStrengthSettingHandle, &settingValue);
-        strength = atof(settingValue.text);
-        if (strength < 0.01f)
-            strength = DEFAULT_STRENGTH;
-    }
-    else
-        strength = DEFAULT_STRENGTH;
+        power = DEFAULT_POWER;
 
     if (gAmountSettingHandle != nullptr)
     {
@@ -243,17 +231,17 @@ static PRGBA *unsharp(PRGBA *pixels, int width, int height, float amount, int ke
     return dstPixels;
 }
 
-static void calcGaussianKernel(int radius, float sigma, float kernel[])
+static void calcGaussianKernel(int kernelRadius, float sigma, float kernel[])
 {
-    int kernelSize = 1 + radius * 2;
+    int kernelSize = 1 + kernelRadius * 2;
 
     float sum = 0;
-    for (int y = -radius; y <= radius; y++)
+    for (int y = -kernelRadius; y <= kernelRadius; y++)
     {
-        for (int x = -radius; x <= radius; x++)
+        for (int x = -kernelRadius; x <= kernelRadius; x++)
         {
             float val = gaussian(x, y, sigma);
-            kernel[(y + radius) * kernelSize + (x + radius)] = val;
+            kernel[(y + kernelRadius) * kernelSize + (x + kernelRadius)] = val;
             sum += val;
         }
     }

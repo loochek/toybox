@@ -40,7 +40,8 @@ const char *pluginPreloadList[] = {
     "./loochek_blur.so",
     "./loochek_unsharp.so",
     "./kctf_rainbow_stamp.so",
-    "./kctf_sharpy.so"
+    "./kctf_sharpy.so",
+    "./jules_dt.so"
 };
 
 PaintController::PaintController(PaintMainWindow *root) : 
