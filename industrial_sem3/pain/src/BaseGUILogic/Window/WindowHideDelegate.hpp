@@ -10,7 +10,7 @@ public:
     WindowHideDelegate() = delete;
     WindowHideDelegate(Window *window) : mWindow(window) {};
 
-    virtual void onClick(int userData) override
+    virtual void onClick(uint64_t userData) override
     {
         mWindow->scheduleForDisable();
     }

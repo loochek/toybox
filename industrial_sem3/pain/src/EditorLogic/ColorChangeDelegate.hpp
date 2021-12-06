@@ -11,7 +11,7 @@ class ColorChangeDelegate
 public:
     virtual ~ColorChangeDelegate() {};
 
-    virtual void onColorChange(const LGL::Color &color, int userData) = 0;
+    virtual void onColorChange(const LGL::Color &color, uint64_t userData) = 0;
 };
 
 #endif

@@ -12,7 +12,7 @@ public:
     ImageOpenDelegate(ImageOpenWindow *window, PaintController *controller) :
         mWindow(window), mController(controller) {};
 
-    virtual void onClick(int userData) override
+    virtual void onClick(uint64_t userData) override
     {
         mController->openFile(mWindow->mFileNameBox->getText());
     }

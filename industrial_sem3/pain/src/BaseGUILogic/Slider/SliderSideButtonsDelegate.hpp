@@ -16,7 +16,7 @@ public:
     SliderSideButtonsDelegate() = delete;
     SliderSideButtonsDelegate(Slider *slider) : mSlider(slider) {};
 
-    virtual void onClick(int userData) override
+    virtual void onClick(uint64_t userData) override
     {
         switch ((SliderButton)userData)
         {

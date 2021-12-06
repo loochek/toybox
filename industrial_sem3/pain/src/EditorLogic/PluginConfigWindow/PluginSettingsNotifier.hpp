@@ -13,19 +13,19 @@ public:
     PluginSettingsNotifier(Plugin *plugin) : mPlugin(plugin) {};
 
     // Slider callback
-    virtual void onValueChange(int newValue, int userData) override
+    virtual void onValueChange(int newValue, uint64_t userData) override
     {
         notify();
     }
 
     // Text box callback
-    virtual void onTextChange(const char *newText, int userData) override
+    virtual void onTextChange(const char *newText, uint64_t userData) override
     {
         notify();
     }
 
     // Pallete callback
-    virtual void onColorChange(const LGL::Color &color, int userData) override
+    virtual void onColorChange(const LGL::Color &color, uint64_t userData) override
     {
         notify();
     }

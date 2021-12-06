@@ -12,7 +12,7 @@ public:
     PaintWindowCloseDelegate(PaintController *controller, PaintWindow *window) :
         mWindow(window), mController(controller) {};
 
-    virtual void onClick(int userData) override
+    virtual void onClick(uint64_t userData) override
     {
         mWindow->scheduleForDeletion();
         mController->onCanvasClose(mWindow);

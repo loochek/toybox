@@ -43,12 +43,12 @@ public:
      * 
      * \param userData User data
      */
-    void setUserData(int userData) { mUserData = userData; };
+    void setUserData(uint64_t userData) { mUserData = userData; };
 
     /**
      * \return User data value
      */
-    int getUserData() const { return mUserData; };
+    uint64_t getUserData() const { return mUserData; };
 
     /**
      * Sets new position for the widget relative to parent
@@ -212,7 +212,7 @@ protected:
     Widget *mParent;
     std::list<Widget*> mChildren;
 
-    int mUserData;
+    uint64_t mUserData;
 
     /// Widget's size and position relative to parent widget
     IntRect mRect;

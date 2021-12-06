@@ -6,7 +6,7 @@ class ButtonDelegate
 public:
     virtual ~ButtonDelegate() {};
 
-    virtual void onClick(int userData) = 0;
+    virtual void onClick(uint64_t userData) = 0;
 };
 
 #endif

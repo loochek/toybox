@@ -18,7 +18,7 @@ public:
     SizePickerController(SizePicker *picker) : mPicker(picker) {};
 
     // Slider callback
-    virtual void onValueChange(int newValue, int userData) override
+    virtual void onValueChange(int newValue, uint64_t userData) override
     {
         mPicker->mCurrBrushSize = newValue + 1;
 
@@ -32,7 +32,7 @@ public:
     }
 
     // Text box callback
-    virtual void onTextChange(const char *newText, int userData) override
+    virtual void onTextChange(const char *newText, uint64_t userData) override
     {
         int typedNum = atoi(newText);
         

@@ -6,7 +6,7 @@ class SizeChangedDelegate
 public:
     virtual ~SizeChangedDelegate() {};
 
-    virtual void onSizeChange(float size, int userData) = 0;
+    virtual void onSizeChange(float size, uint64_t userData) = 0;
 };
 
 #endif

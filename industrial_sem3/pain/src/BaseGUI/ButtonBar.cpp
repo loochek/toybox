@@ -13,7 +13,7 @@ ButtonBar::ButtonBar(Widget *parent, ButtonBarLocation location) :
         setPosition(Vec2i(0, parent->getRect().size.y - MENU_BAR_HEIGHT));
 }
 
-const BaseButton *ButtonBar::addButton(const char *text, ButtonDelegate *delegate, int userData)
+const BaseButton *ButtonBar::addButton(const char *text, ButtonDelegate *delegate, uint64_t userData)
 {
     Vec2i textBounds = LGL::RenderTarget::calculateTextBounds(text);
 

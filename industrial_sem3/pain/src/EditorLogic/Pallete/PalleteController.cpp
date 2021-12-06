@@ -8,7 +8,7 @@ PalleteController::PalleteController(Pallete *pallete) : mPallete(pallete)
 {
 }
 
-void PalleteController::onColorChange(const LGL::Color &color, int userData)
+void PalleteController::onColorChange(const LGL::Color &color, uint64_t userData)
 {
     switch ((ColorPickerType)userData)
     {
@@ -26,7 +26,7 @@ void PalleteController::onColorChange(const LGL::Color &color, int userData)
     }
 }
 
-void PalleteController::onValueChange(int newOpacity, int userData)
+void PalleteController::onValueChange(int newOpacity, uint64_t userData)
 {
     mCurrColor = mCurrColor.applyAlpha(newOpacity / (float)EXTERNAL_RGB_BASE);
     if (mPallete->mDelegate != nullptr)

@@ -20,10 +20,10 @@ public:
     PalleteController(Pallete *pallete);
 
     // Color pickers callback
-    virtual void onColorChange(const LGL::Color &color, int userData) override;
+    virtual void onColorChange(const LGL::Color &color, uint64_t userData) override;
 
     // Opacity slider callback
-    virtual void onValueChange(int newOpacity, int userData) override;
+    virtual void onValueChange(int newOpacity, uint64_t userData) override;
 
 private:
     Pallete *mPallete;

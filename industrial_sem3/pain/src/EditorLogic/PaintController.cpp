@@ -20,9 +20,6 @@
 
 const int MAX_FILE_NAME_SIZE = 256;
 
-const int PLUGIN_CFG_WINDOWS_UD_OFFS = 1000;
-const int PAINT_WINDOWS_UD_OFFS      = 2000;
-
 const IntRect CANVAS_INIT_RECT        = IntRect(Vec2i(200, 200), Vec2i(700, 400));
 const IntRect SPLINE_WINDOW_INIT_RECT = IntRect(Vec2i(100, 100), Vec2i(500, 500));
 const Vec2i   IMAGE_OPEN_INIT_POS     = Vec2i(200, 200);
@@ -46,8 +43,7 @@ const char *pluginPreloadList[] = {
 
 PaintController::PaintController(PaintMainWindow *root) : 
     mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mToolPicker(nullptr), mEffectPicker(nullptr),
-    mCurrToolSize(2.0f), mCurrTool(nullptr), mActivePaintWindow(nullptr),
-    mPluginWindowsCounter(0), mPaintWindowsCounter(0)
+    mCurrToolSize(2.0f), mCurrTool(nullptr), mActivePaintWindow(nullptr)
 {
     root->mMenuBar->addButton("New canvas"   , this, (int)MenuAction::NewCanvas);
     root->mMenuBar->addButton("Open image"   , this, (int)MenuAction::OpenImageOpenWindow);
@@ -160,11 +156,9 @@ PluginConfigWindow *PaintController::createPluginSettingsWindow(Plugin *plugin)
     configWindow->scheduleForDisable();
     mRoot->addChild(configWindow);
 
-    const BaseButton *menuButton = mRoot->mMenuBar->addButton(plugin->getInfo()->name, this, 
-                                                              PLUGIN_CFG_WINDOWS_UD_OFFS + mPluginWindowsCounter);
-    
-    mPluginConfigWindows.push_back(configWindow);
-    mPluginWindowsCounter++;
+    const BaseButton *menuButton = mRoot->mMenuBar->addButton(plugin->getInfo()->name, this,
+                                                              (uint64_t)configWindow);
+
     return configWindow;
 }
 
@@ -201,13 +195,13 @@ void PaintController::onPluginPickerClose(PluginPickerWindow *pickerWindow)
         assert(false);
 }
 
-void PaintController::onSizeChange(float newPenSize, int userData)
+void PaintController::onSizeChange(float newPenSize, uint64_t userData)
 {
     mCurrToolSize = newPenSize;
     PluginManager::getInstance()->onSizeChange(newPenSize);
 }
 
-void PaintController::onPluginChange(Plugin *selectedPlugin, int userData)
+void PaintController::onPluginChange(Plugin *selectedPlugin, uint64_t userData)
 {
     switch (selectedPlugin->getInfo()->type)
     {
@@ -230,13 +224,13 @@ void PaintController::onPluginChange(Plugin *selectedPlugin, int userData)
     }
 }
 
-void PaintController::onColorChange(const LGL::Color &color, int userData)
+void PaintController::onColorChange(const LGL::Color &color, uint64_t userData)
 {
     mCurrColor = color;
     PluginManager::getInstance()->onColorChange(color);
 }
 
-void PaintController::onClick(int userData)
+void PaintController::onClick(uint64_t userData)
 {
     switch ((MenuAction)userData)
     {
@@ -269,11 +263,15 @@ void PaintController::onClick(int userData)
         return;
     }
 
-    if (userData >= PLUGIN_CFG_WINDOWS_UD_OFFS)
+    Widget *widget = (Widget*)userData;
+
+    PluginConfigWindow *configWindow = dynamic_cast<PluginConfigWindow*>(widget);
+    if (configWindow != nullptr)
     {
-        PluginConfigWindow *configWindow = mPluginConfigWindows[userData - PLUGIN_CFG_WINDOWS_UD_OFFS];
         if (!configWindow->isEnabled())
             configWindow->scheduleForEnable();
+            
+        return;
     }
 }
 

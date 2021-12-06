@@ -62,16 +62,16 @@ public:
     void onActivePaintWindowChange(PaintWindow *activeWindow) { mActivePaintWindow = activeWindow; };
 
     // Size picker callback
-    virtual void onSizeChange(float newPenSize, int userData) override;
+    virtual void onSizeChange(float newPenSize, uint64_t userData) override;
 
     // Plugin pickers callback
-    virtual void onPluginChange(Plugin *selectedPlugin, int userData) override;
+    virtual void onPluginChange(Plugin *selectedPlugin, uint64_t userData) override;
 
     // Pallete callback
-    virtual void onColorChange(const LGL::Color &color, int userData) override;
+    virtual void onColorChange(const LGL::Color &color, uint64_t userData) override;
 
     // Menu bar and paint windows bottom bar buttons callback
-    virtual void onClick(int userData) override;
+    virtual void onClick(uint64_t userData) override;
 
 private:
     void updateTitle(PaintWindow *window, const char *newTitle);
@@ -86,11 +86,6 @@ private:
 
     std::unordered_set<PaintWindow*> mPaintWindows;
     PaintWindow *mActivePaintWindow;
-
-    std::vector<PluginConfigWindow*> mPluginConfigWindows;
-
-    int mPluginWindowsCounter;
-    int mPaintWindowsCounter;
 
     std::unordered_map<PaintWindow*, char*> mWindowsFileNames;
 

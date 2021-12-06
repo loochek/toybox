@@ -8,7 +8,7 @@ class PluginChangedDelegate
 public:
     virtual ~PluginChangedDelegate() {};
 
-    virtual void onPluginChange(Plugin *newPlugin, int userData) = 0;
+    virtual void onPluginChange(Plugin *newPlugin, uint64_t userData) = 0;
 };
 
 #endif

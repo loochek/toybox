@@ -12,7 +12,7 @@ public:
     PluginPickerController(PluginPicker *picker) : mPicker(picker) {};
 
     // Buttons callback
-    virtual void onClick(int userData) override
+    virtual void onClick(uint64_t userData) override
     {
         if (mPicker->mDelegate != nullptr)
             mPicker->mDelegate->onPluginChange(mPicker->mPlugins[userData], mPicker->mUserData);

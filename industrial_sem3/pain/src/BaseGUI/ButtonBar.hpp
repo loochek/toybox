@@ -29,7 +29,7 @@ public:
      * \param userData User data for a button
      * \return Const button which can be passed to deleteButton
      */
-    const BaseButton *addButton(const char *text, ButtonDelegate *delegate, int userData = -1);
+    const BaseButton *addButton(const char *text, ButtonDelegate *delegate, uint64_t userData = -1);
 
     /**
      * Deletes the button
