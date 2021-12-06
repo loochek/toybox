@@ -11,11 +11,11 @@ PaintMainWindow::PaintMainWindow(const IntRect &widgetRect, Widget *parent) :
     if (mWallpaperTexture == nullptr)
         throw std::runtime_error("Wallpaper texture is not loaded");
 
-    mMenuBar = new ButtonBar(this, ButtonBarLocation::Top);    
+    mMenuBar = new ButtonBar(ButtonBarLocation::Top, this);    
     addChild(mMenuBar);
 
-    // mPaintWindowsBar = new ButtonBar(this, ButtonBarLocation::Bottom);
-    // addChild(mPaintWindowsBar);
+    mTaskBar = new ButtonBar(ButtonBarLocation::Bottom, this);
+    addChild(mTaskBar);
 
     mPaintController = new PaintController(this);
 }

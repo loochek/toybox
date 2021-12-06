@@ -19,7 +19,7 @@ protected:
     PaintController *mPaintController;
 
     ButtonBar *mMenuBar;
-    ButtonBar *mPaintWindowsBar;
+    ButtonBar *mTaskBar;
 
     const LGL::Texture *mWallpaperTexture;
 

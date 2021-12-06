@@ -5,6 +5,15 @@ WindowManager::WindowManager(const IntRect &widgetRect, Widget *parent) : Widget
 {
 }
 
+void WindowManager::popUp(Widget* widget)
+{
+    auto iter = std::find(mChildren.begin(), mChildren.end(), widget);
+    if (iter == mChildren.end())
+        return;
+
+    popUp(iter);
+}
+
 void WindowManager::onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
     if (mChildInFocus != nullptr && mChildInFocus != mChildUnderMouse)

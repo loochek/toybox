@@ -43,7 +43,7 @@ const char *pluginPreloadList[] = {
 
 PaintController::PaintController(PaintMainWindow *root) : 
     mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mToolPicker(nullptr), mEffectPicker(nullptr),
-    mCurrToolSize(2.0f), mCurrTool(nullptr), mActivePaintWindow(nullptr)
+    mImageOpenWindow(nullptr), mCurrToolSize(2.0f), mCurrTool(nullptr), mActivePaintWindow(nullptr)
 {
     root->mMenuBar->addButton("New canvas"   , this, (int)MenuAction::NewCanvas);
     root->mMenuBar->addButton("Open image"   , this, (int)MenuAction::OpenImageOpenWindow);
@@ -62,36 +62,37 @@ PaintController::~PaintController()
         delete[] iter->second;
 }
 
-PaintWindow *PaintController::createCanvas()
+void PaintController::createCanvas()
 {
-    PaintWindow *paintWindow = new PaintWindow(CANVAS_INIT_RECT, this, mRoot);
+    PaintWindow *paintWindow = createCanvasGeneric();
 
     mWindowsFileNames[paintWindow] = new char[MAX_FILE_NAME_SIZE + 1]();
     snprintf(mWindowsFileNames[paintWindow], MAX_FILE_NAME_SIZE, "Untitled %u.png", rand());
-
     updateTitle(paintWindow, mWindowsFileNames[paintWindow]);
 
-    if (mCurrTool)
-        paintWindow->getCanvasWidget()->getCanvas().setTool(mCurrTool);
-
-    mPaintWindows.insert(paintWindow);
-    mRoot->addChild(paintWindow);
-    return paintWindow;
+    const BaseButton *taskBarButton = mRoot->mTaskBar->addButton(mWindowsFileNames[paintWindow], this,
+                                                                 (int64_t)paintWindow);
+    mTaskBarButtons[paintWindow] = taskBarButton;
 }
 
 bool PaintController::openFile(const char *fileName)
 {
-    PaintWindow *paintWindow = createCanvas();
+    PaintWindow *paintWindow = createCanvasGeneric();
 
     if (!paintWindow->getCanvasWidget()->getCanvas().loadFromFile(fileName))
         return false;
 
-    strncpy(mWindowsFileNames[paintWindow], fileName, MAX_FILE_NAME_SIZE);
-    updateTitle(paintWindow, mWindowsFileNames[paintWindow]);
-
     Vec2i imageSize = paintWindow->getCanvasWidget()->getCanvas().getSize();
     paintWindow->getCanvasWidget()->resize(imageSize);
     paintWindow->resize(imageSize);
+
+    mWindowsFileNames[paintWindow] = new char[MAX_FILE_NAME_SIZE + 1]();
+    strncpy(mWindowsFileNames[paintWindow], fileName, MAX_FILE_NAME_SIZE);
+    updateTitle(paintWindow, mWindowsFileNames[paintWindow]);
+
+    const BaseButton *taskBarButton = mRoot->mTaskBar->addButton(mWindowsFileNames[paintWindow], this,
+                                                                 (int64_t)paintWindow);
+    mTaskBarButtons[paintWindow] = taskBarButton;
 
     return true;
 }
@@ -99,7 +100,10 @@ bool PaintController::openFile(const char *fileName)
 void PaintController::openPallete()
 {
     if (mPallete != nullptr)
+    {
+        mRoot->popUp(mPallete);
         return;
+    }
 
     mPallete = new PalleteWindow(COLOR_PICKER_INIT_POS, this, mRoot);
     mPallete->getPallete()->setDelegate(this);
@@ -110,7 +114,10 @@ void PaintController::openPallete()
 void PaintController::openSizePicker()
 {
     if (mSizePicker != nullptr)
+    {
+        mRoot->popUp(mSizePicker);
         return;
+    }
 
     mSizePicker = new SizePickerWindow(SIZE_PICKER_INIT_POS, this, mRoot);
     mSizePicker->getSizePicker()->setDelegate(this);
@@ -121,7 +128,10 @@ void PaintController::openSizePicker()
 void PaintController::openToolPicker()
 {
     if (mToolPicker != nullptr)
+    {
+        mRoot->popUp(mToolPicker);
         return;
+    }
 
     mToolPicker = new PluginPickerWindow(TOOL_PICKER_INIT_POS, this, PPT_TOOL, mRoot);
     mToolPicker->getPluginPicker()->setDelegate(this);
@@ -132,7 +142,10 @@ void PaintController::openToolPicker()
 void PaintController::openEffectPicker()
 {
     if (mEffectPicker != nullptr)
+    {
+        mRoot->popUp(mEffectPicker);
         return;
+    }
 
     mEffectPicker = new PluginPickerWindow(EFFECT_PICKER_INIT_POS, this, PPT_EFFECT, mRoot);
     mEffectPicker->getPluginPicker()->setDelegate(this);
@@ -147,7 +160,14 @@ void PaintController::openSplineWindow()
 
 void PaintController::openImageOpenWindow()
 {
-    mRoot->addChild(new ImageOpenWindow(IMAGE_OPEN_INIT_POS, this, mRoot));
+    if (mImageOpenWindow != nullptr)
+    {
+        mRoot->popUp(mImageOpenWindow);
+        return;
+    }
+
+    mImageOpenWindow = new ImageOpenWindow(IMAGE_OPEN_INIT_POS, this, mRoot);
+    mRoot->addChild(mImageOpenWindow);
 }
 
 PluginConfigWindow *PaintController::createPluginSettingsWindow(Plugin *plugin)
@@ -168,6 +188,8 @@ void PaintController::onCanvasClose(PaintWindow *paintWindow)
         mActivePaintWindow = nullptr;
         
     mPaintWindows.erase(paintWindow);
+    mRoot->mTaskBar->deleteButton(mTaskBarButtons[paintWindow]);
+    mTaskBarButtons.erase(paintWindow);
 }
 
 void PaintController::onCanvasSave(PaintWindow *paintWindow)
@@ -193,6 +215,11 @@ void PaintController::onPluginPickerClose(PluginPickerWindow *pickerWindow)
         mEffectPicker = nullptr;
     else
         assert(false);
+}
+
+void PaintController::onImageOpenWindowClose()
+{
+    mImageOpenWindow = nullptr;
 }
 
 void PaintController::onSizeChange(float newPenSize, uint64_t userData)
@@ -270,7 +297,21 @@ void PaintController::onClick(uint64_t userData)
     {
         if (!configWindow->isEnabled())
             configWindow->scheduleForEnable();
-            
+
+        return;
+    }
+
+    PaintWindow *paintWindow = dynamic_cast<PaintWindow*>(widget);
+    if (paintWindow != nullptr)
+    {
+        if (paintWindow->isEnabled())
+            paintWindow->scheduleForDisable();
+        else
+        {
+            paintWindow->scheduleForEnable();
+            mRoot->popUp(paintWindow);
+        }
+
         return;
     }
 }
@@ -301,4 +342,16 @@ void PaintController::loadPlugins()
 
     pluginMgr->onSizeChange(mCurrToolSize);
     pluginMgr->onColorChange(mCurrColor);
+}
+
+PaintWindow *PaintController::createCanvasGeneric()
+{
+    PaintWindow *paintWindow = new PaintWindow(CANVAS_INIT_RECT, this, mRoot);
+
+    if (mCurrTool)
+        paintWindow->getCanvasWidget()->getCanvas().setTool(mCurrTool);
+
+    mPaintWindows.insert(paintWindow);
+    mRoot->addChild(paintWindow);
+    return paintWindow;
 }

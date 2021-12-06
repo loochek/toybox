@@ -28,6 +28,7 @@ class PluginPickerWindow;
 class PluginConfigWindow;
 class BaseButton;
 class Plugin;
+class ImageOpenWindow;
 
 /**
  * App logic controller
@@ -41,7 +42,7 @@ public:
 
     ~PaintController();
 
-    PaintWindow *createCanvas();
+    void createCanvas();
     bool openFile(const char *fileName);
     void openPallete();
     void openSizePicker();
@@ -58,6 +59,7 @@ public:
     void onPalleteClose();
     void onSizePickerClose();
     void onPluginPickerClose(PluginPickerWindow *pickerWindow);
+    void onImageOpenWindowClose();
 
     void onActivePaintWindowChange(PaintWindow *activeWindow) { mActivePaintWindow = activeWindow; };
 
@@ -76,6 +78,7 @@ public:
 private:
     void updateTitle(PaintWindow *window, const char *newTitle);
     void loadPlugins();
+    PaintWindow *createCanvasGeneric();
 
 private:
     PaintMainWindow    *mRoot;
@@ -83,9 +86,12 @@ private:
     SizePickerWindow   *mSizePicker;
     PluginPickerWindow *mToolPicker;
     PluginPickerWindow *mEffectPicker;
+    ImageOpenWindow    *mImageOpenWindow;
 
     std::unordered_set<PaintWindow*> mPaintWindows;
     PaintWindow *mActivePaintWindow;
+
+    std::unordered_map<PaintWindow*, const BaseButton*> mTaskBarButtons;
 
     std::unordered_map<PaintWindow*, char*> mWindowsFileNames;
 

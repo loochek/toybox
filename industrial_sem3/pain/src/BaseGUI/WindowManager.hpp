@@ -12,6 +12,13 @@ public:
     WindowManager() = delete;
     WindowManager(const IntRect &widgetRect, Widget *parent = nullptr);
 
+    /**
+     * Puts widget above others
+     * 
+     * \param widget Widget to pop up
+     */
+    void popUp(Widget* widget);
+
 protected:
     virtual void onMouseClicked(const Vec2i &localMousePos, const Vec2i &globalMousePos) override;
 

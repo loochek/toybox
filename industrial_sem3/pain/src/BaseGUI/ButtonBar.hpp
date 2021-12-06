@@ -19,7 +19,7 @@ class ButtonBar : public Widget
 {
 public:
     ButtonBar() = delete;
-    ButtonBar(Widget *parent, ButtonBarLocation location);
+    ButtonBar(ButtonBarLocation location, Widget *parent);
 
     /**
      * Adds a new text button

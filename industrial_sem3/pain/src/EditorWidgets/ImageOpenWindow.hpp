@@ -3,7 +3,7 @@
 
 #include "../BaseGUI/Window.hpp"
 
-class WindowCloseDelegate;
+class ImageOpenCloseDelegate;
 class PaintController;
 class ImageOpenDelegate;
 class TextBox;
@@ -17,8 +17,8 @@ public:
     virtual ~ImageOpenWindow();
     
 protected:
-    WindowCloseDelegate *mCloseButtonDelegate;
-    ImageOpenDelegate   *mOpenDelegate;
+    ImageOpenCloseDelegate *mCloseButtonDelegate;
+    ImageOpenDelegate      *mOpenDelegate;
 
     TextBox *mFileNameBox;
 

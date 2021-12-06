@@ -1,6 +1,6 @@
 #include "../BaseGUI/Button.hpp"
 #include "../BaseGUI/TextBox.hpp"
-#include "../BaseGUILogic/Window/WindowCloseDelegate.hpp"
+#include "../EditorLogic/ImageOpenWindow/ImageOpenCloseDelegate.hpp"
 #include "../EditorLogic/ImageOpenWindow/ImageOpenDelegate.hpp"
 #include "ImageOpenWindow.hpp"
 
@@ -24,7 +24,7 @@ ImageOpenWindow::ImageOpenWindow(const Vec2i &windowPos, PaintController *contro
     button->setDelegate(mOpenDelegate);
     addChild(button);
     
-    mCloseButtonDelegate = new WindowCloseDelegate(this);
+    mCloseButtonDelegate = new ImageOpenCloseDelegate(controller, this);
     mCloseButton->setDelegate(mCloseButtonDelegate);
 }
 

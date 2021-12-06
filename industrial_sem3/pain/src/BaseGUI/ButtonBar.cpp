@@ -6,7 +6,7 @@ const int ButtonBar::MENU_BAR_HEIGHT = 22;
 
 const int BUTTON_SPACING = 15;
 
-ButtonBar::ButtonBar(Widget *parent, ButtonBarLocation location) :
+ButtonBar::ButtonBar(ButtonBarLocation location, Widget *parent) :
     Widget(IntRect(Vec2i(), Vec2i(parent->getRect().size.x, MENU_BAR_HEIGHT)), parent), mFilledWidth(0)
 {
     if (location == ButtonBarLocation::Bottom)
@@ -31,7 +31,7 @@ const BaseButton *ButtonBar::addButton(const char *text, ButtonDelegate *delegat
 
 void ButtonBar::deleteButton(const BaseButton *button)
 {
-    mChildren.remove((Widget*)button);
+    ((Widget*)button)->scheduleForDeletion();
     rearrangeButtons();
 }
 
@@ -46,7 +46,10 @@ void ButtonBar::rearrangeButtons()
 
     for (Widget *button : mChildren)
     {
-        button->setPosition(Vec2i(mFilledWidth, 0));
-        mFilledWidth += button->getRect().size.x;
+        if (!button->scheduledForDeletion())
+        {
+            button->setPosition(Vec2i(mFilledWidth, 0));
+            mFilledWidth += button->getRect().size.x;
+        }
     }
 }

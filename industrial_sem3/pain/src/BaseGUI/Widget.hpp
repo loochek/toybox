@@ -91,6 +91,11 @@ public:
     void scheduleForDisable() { mScheduledForDisable = true; };
 
     /**
+     * \return Is widget scheduled for deletion or not
+     */
+    bool scheduledForDeletion() { return mScheduledForDeletion; };
+
+    /**
      * \return Is widget enabled or not
      */
     bool isEnabled() { return mEnabled; };
