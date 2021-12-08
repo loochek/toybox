@@ -82,6 +82,8 @@ bool PaintController::openFile(const char *fileName)
 {
     PaintWindow *paintWindow = createCanvasGeneric();
 
+    /// TODO: Fix unsucessful opening
+
     if (!paintWindow->getCanvasWidget()->getCanvas().loadFromFile(fileName))
         return false;
 

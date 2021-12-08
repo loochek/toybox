@@ -1,11 +1,26 @@
 #include "AnimatedButton.hpp"
+#include "Label.hpp"
 #include "../BaseGUILogic/BaseButton/ButtonDelegate.hpp"
 
 const float AnimatedButton::ANIM_TIME = 0.4f;
 
 AnimatedButton::AnimatedButton(const IntRect &widgetRect, Widget *parent) : 
-    BaseButton(widgetRect, parent), mButtonHovered(false), mButtonPressed(false), mCurrAnimTime(0.0f)
+    BaseButton(widgetRect, parent), mLabel(nullptr),
+    mButtonHovered(false), mButtonPressed(false), mCurrAnimTime(0.0f)
 {
+}
+
+void AnimatedButton::setLabel(const char *label)
+{
+    if (mLabel == nullptr)
+    {
+        mLabel = new Label(Vec2i(0, mRect.size.y / 2), this);
+        addChild(mLabel);
+    }
+    
+    mLabel->setText(label);
+    // Center label
+    mLabel->setPosition(Vec2i(mRect.size.x / 2 - mLabel->getRect().size.x / 2, mLabel->getRect().position.y));
 }
 
 void AnimatedButton::onUpdateThis(float elapsedTime)

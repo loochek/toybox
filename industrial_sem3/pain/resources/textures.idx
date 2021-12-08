@@ -8,7 +8,15 @@ window_edge_right            window_edge_right.png
 window_edge_top              window_edge_top.png
 window_close_button_idle     window_close_button_idle.png
 window_close_button_hovered  window_close_button_hovered.png
-wallpaper                    wallpaper.png
+button_left_idle             button_left_idle.png
+button_left_hovered          button_left_hovered.png
+button_left_pressed          button_left_pressed.png
+button_body_idle             button_body_idle.png
+button_body_hovered          button_body_hovered.png
+button_body_pressed          button_body_pressed.png
+button_right_idle            button_right_idle.png
+button_right_hovered         button_right_hovered.png
+button_right_pressed         button_right_pressed.png
 color_picker_selector        color_picker_selector.png
 slider_button_bottom_idle    slider_button_bottom_idle.png
 slider_button_bottom_hovered slider_button_bottom_hovered.png
@@ -31,3 +39,4 @@ text_box_body                text_box_body.png
 text_box_left                text_box_left.png
 text_box_right               text_box_right.png
 transparency_background      transparency_background.png
+wallpaper                    wallpaper.png

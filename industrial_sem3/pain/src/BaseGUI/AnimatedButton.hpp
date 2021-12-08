@@ -3,11 +3,22 @@
 
 #include "BaseButton.hpp"
 
+class Label;
+
 /**
  * Base class for animated button
  */
 class AnimatedButton : public BaseButton
 {
+public:
+    /**
+     * Sets a label for the button. 
+     * No label will drawn if null pointer is passed
+     * 
+     * \param label Label text
+     */
+    void setLabel(const char *label);
+    
 protected:
     AnimatedButton() = delete;
     AnimatedButton(const IntRect &widgetRect, Widget *parent = nullptr);
@@ -31,6 +42,8 @@ protected:
     bool  mButtonHovered;
     bool  mButtonPressed;
     float mCurrAnimTime;
+
+    Label *mLabel;
 
     static const float ANIM_TIME;
 };

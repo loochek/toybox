@@ -21,14 +21,6 @@ public:
     virtual ~Button() {};
 
     /**
-     * Sets a label for the button. 
-     * No label will drawn if null pointer is passed
-     * 
-     * \param label Label text
-     */
-    void setLabel(const char *label);
-
-    /**
      * Sets idle color
      * 
      * \param color Color
@@ -56,8 +48,6 @@ protected:
     LGL::Color mIdleColor;
     LGL::Color mHoveredColor;
     LGL::Color mPressedColor;
-
-    Label *mLabel;
 };
 
 #endif
