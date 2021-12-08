@@ -2,7 +2,7 @@
 #include "TextureManager.hpp"
 #include "EditorWidgets/PaintMainWindow.hpp"
 
-#ifndef NDEBUG
+#ifdef NDEBUG
 const float FULLSCREEN = false;
 #else
 const float FULLSCREEN = true;

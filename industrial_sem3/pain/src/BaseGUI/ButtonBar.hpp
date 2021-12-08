@@ -22,6 +22,13 @@ public:
     ButtonBar(ButtonBarLocation location, Widget *parent);
 
     /**
+     * Sets color to the menu bar
+     * 
+     * \param color Color
+     */
+    void setColor(const LGL::Color &color) {mColor = color; };
+
+    /**
      * Adds a new text button
      * 
      * \param text Button text
@@ -47,6 +54,7 @@ public:
 
 protected:
     int mFilledWidth;
+    LGL::Color mColor;
 };
 
 #endif

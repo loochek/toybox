@@ -7,7 +7,8 @@ const int ButtonBar::MENU_BAR_HEIGHT = 22;
 const int BUTTON_SPACING = 15;
 
 ButtonBar::ButtonBar(ButtonBarLocation location, Widget *parent) :
-    Widget(IntRect(Vec2i(), Vec2i(parent->getRect().size.x, MENU_BAR_HEIGHT)), parent), mFilledWidth(0)
+    Widget(IntRect(Vec2i(), Vec2i(parent->getRect().size.x, MENU_BAR_HEIGHT)), parent), mFilledWidth(0),
+    mColor(LGL::Color::White)
 {
     if (location == ButtonBarLocation::Bottom)
         setPosition(Vec2i(0, parent->getRect().size.y - MENU_BAR_HEIGHT));
@@ -37,7 +38,7 @@ void ButtonBar::deleteButton(const BaseButton *button)
 
 void ButtonBar::onRedrawThis()
 {
-    mTexture.drawRect(mRect, LGL::Color::White);
+    mTexture.drawRect(IntRect(Vec2i(), mRect.size), mColor);
 }
 
 void ButtonBar::rearrangeButtons()

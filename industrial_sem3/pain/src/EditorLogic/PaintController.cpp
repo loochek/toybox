@@ -299,7 +299,7 @@ void PaintController::onClick(uint64_t userData)
     if (configWindow != nullptr)
     {
         if (configWindow->isEnabled())
-            configWindow->scheduleForDisable();
+            mRoot->popUp(configWindow);
         else
             configWindow->scheduleForEnable();
 

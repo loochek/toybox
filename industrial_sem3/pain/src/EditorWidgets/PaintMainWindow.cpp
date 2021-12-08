@@ -4,6 +4,8 @@
 #include "../Editor/PluginManager.hpp"
 #include "PaintMainWindow.hpp"
 
+const LGL::Color TASK_BAR_COLOR = LGL::Color(0.75f, 0.96f, 0.95f, 0.25f);
+
 PaintMainWindow::PaintMainWindow(const IntRect &widgetRect, Widget *parent) :
     WindowManager(widgetRect, parent)
 {
@@ -15,6 +17,7 @@ PaintMainWindow::PaintMainWindow(const IntRect &widgetRect, Widget *parent) :
     addChild(mMenuBar);
 
     mTaskBar = new ButtonBar(ButtonBarLocation::Bottom, this);
+    mTaskBar->setColor(TASK_BAR_COLOR);
     addChild(mTaskBar);
 
     mPaintController = new PaintController(this);
