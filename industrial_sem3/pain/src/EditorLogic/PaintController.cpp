@@ -38,7 +38,10 @@ const char *pluginPreloadList[] = {
     "./loochek_unsharp.so",
     "./kctf_rainbow_stamp.so",
     "./kctf_sharpy.so",
-    "./jules_dt.so"
+    "./jules_dt.so",
+    "./jules_chromakey.so",
+    "./mystery_plugin.so",
+    "./jakmobius_mul33.so"
 };
 
 PaintController::PaintController(PaintMainWindow *root) : 
@@ -295,7 +298,9 @@ void PaintController::onClick(uint64_t userData)
     PluginConfigWindow *configWindow = dynamic_cast<PluginConfigWindow*>(widget);
     if (configWindow != nullptr)
     {
-        if (!configWindow->isEnabled())
+        if (configWindow->isEnabled())
+            configWindow->scheduleForDisable();
+        else
             configWindow->scheduleForEnable();
 
         return;

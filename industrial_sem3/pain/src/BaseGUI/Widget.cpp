@@ -53,10 +53,9 @@ void Widget::onRedraw()
 
 void Widget::onDestroy()
 {
+    onDestroyThis();
     for (Widget *child : mChildren)
         child->onDestroy();
-
-    onDestroyThis();
 }
 
 void Widget::onChildDestroy(Widget *child)
@@ -70,10 +69,9 @@ void Widget::onChildDestroy(Widget *child)
 
 void Widget::onDisable()
 {
+    onDisableThis();
     for (Widget *child : mChildren)
         child->onDisable();
-
-    onDisableThis();
 }
 
 void Widget::onChildDisable(Widget *child)
@@ -272,4 +270,24 @@ void Widget::onKeyboardFocusLost()
     onKeyboardFocusLostThis();
     if (mChildInFocus != nullptr)
         mChildInFocus->onKeyboardFocusLost();
+}
+
+void Widget::onDisableThis()
+{
+    if (mChildUnderMouse != nullptr)
+    {
+        if (mMousePressed)
+            mChildUnderMouse->onMouseReleased(Vec2i(), Vec2i());
+
+        mChildUnderMouse->onMouseHoverEnd();
+        mChildUnderMouse = nullptr;
+    }
+
+    if (mChildInFocus != nullptr)
+    {
+        mChildInFocus->onKeyboardFocusLost();
+        mChildInFocus = nullptr;
+    }
+
+    mMousePressed = false;
 }

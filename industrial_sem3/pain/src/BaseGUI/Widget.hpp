@@ -193,7 +193,7 @@ protected:
     virtual void onRedrawThis() {};
     virtual void onUpdateThis(float elapsedTime) {};
     virtual void onDestroyThis() {};
-    virtual void onDisableThis() {};
+    virtual void onDisableThis();
     virtual void onEnableThis() {};
     virtual void onMouseHoverBeginThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
     virtual void onMouseMoveThis(const Vec2i &localMousePos, const Vec2i &globalMousePos) {};
