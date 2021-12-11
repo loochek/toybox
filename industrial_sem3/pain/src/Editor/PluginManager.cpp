@@ -1,83 +1,71 @@
 #include <cstdarg>
 #include <cstring>
 #include <cassert>
+#include <dlfcn.h>
+#include "../Utils/FormattedError.hpp"
 #include "../Utils/Logger.hpp"
-#include "PluginManager.hpp"
 #include "../EditorLogic/PaintController.hpp"
 #include "../EditorWidgets/PluginConfigWindow.hpp"
 #include "../BaseGUI/Label.hpp"
+#include "PluginManager.hpp"
 
-static void ai_general_log(const char *fmt, ...);
-static double ai_general_get_absolute_time();
-static void ai_general_release_pixels(PRGBA *pixels);
-static PRGBA ai_general_get_color();
-static float ai_general_get_size();
-static PRGBA *ai_target_get_pixels();
-static void ai_target_get_size(size_t *width, size_t *height);
-static void ai_render_circle(PVec2f position, float radius, PRGBA color, const PRenderMode *render_mode);
-static void ai_render_line(PVec2f start, PVec2f end, PRGBA color, const PRenderMode *render_mode);
-static void ai_render_triangle(PVec2f p1, PVec2f p2, PVec2f p3, PRGBA color, const PRenderMode *render_mode);
-static void ai_render_rectangle(PVec2f p1, PVec2f p2, PRGBA color, const PRenderMode *render_mode);
-static void ai_render_pixels(PVec2f position, const PRGBA *data, size_t width, size_t height,
-                             const PRenderMode *render_mode);
-static bool ai_extensions_enable(const char *name);
-static void *ai_extensions_get_func(const char *extension, const char *func);
-static void ai_settings_create_surface(const PPluginInterface *self, size_t width, size_t height);
-static void ai_settings_destroy_surface(const PPluginInterface *self);
-static void *ai_settings_add(const PPluginInterface *self, PSettingType type, const char *name);
-static void ai_settings_get(const PPluginInterface *self, void *handle, void *answer);
-
+typedef const P::PluginInterface* (*PIFunc)();
 
 /// Supported version of the standart
 const uint32_t PLUGIN_STD_VERSION = 0;
 
+
 PluginManager::PluginManager() :
     mCurrSize(0.0f), mCurrMainLayer(nullptr), mCurrPreviewLayer(nullptr), mPaintController(nullptr)
 {
-    mAppInterface.std_version                  = PLUGIN_STD_VERSION;
-    mAppInterface.general.feature_level        = PFL_SETTINGS_SUPPORT;
-    
-    mAppInterface.general.log                  = ai_general_log;
-    mAppInterface.general.get_absolute_time    = ai_general_get_absolute_time;
-    mAppInterface.general.release_pixels       = ai_general_release_pixels;
-    mAppInterface.general.get_color            = ai_general_get_color;
-    mAppInterface.general.get_size             = ai_general_get_size;
-
-    mAppInterface.target.get_pixels            = ai_target_get_pixels;
-    mAppInterface.target.get_size              = ai_target_get_size;
-
-    mAppInterface.render.circle                = ai_render_circle;
-    mAppInterface.render.line                  = ai_render_line;
-    mAppInterface.render.triangle              = ai_render_triangle;
-    mAppInterface.render.rectangle             = ai_render_rectangle;
-    mAppInterface.render.pixels                = ai_render_pixels;
-
-    mAppInterface.extensions.enable            = ai_extensions_enable;
-    mAppInterface.extensions.get_func          = ai_extensions_get_func;
-
-    mAppInterface.shader.apply                 = nullptr;
-    mAppInterface.shader.compile               = nullptr;
-    mAppInterface.shader.release               = nullptr;
-    mAppInterface.shader.set_uniform_float     = nullptr;
-    mAppInterface.shader.set_uniform_float_arr = nullptr;
-    mAppInterface.shader.set_uniform_int       = nullptr;
-    mAppInterface.shader.set_uniform_int_arr   = nullptr;
-
-    mAppInterface.settings.add                 = ai_settings_add;
-    mAppInterface.settings.get                 = ai_settings_get;
-    mAppInterface.settings.create_surface      = ai_settings_create_surface;
-    mAppInterface.settings.destroy_surface     = ai_settings_destroy_surface;
 }
 
 PluginManager::~PluginManager()
 {
-    for (Plugin *plugin : mPlugins)
-        delete plugin;
+    for (int i = 0; i < mPlugins.size(); i++)
+    {
+        const P::PluginInterface *plugin = mPlugins[i];
+
+        P::Status status = plugin->deinit();
+        if (status != P::Status::OK)
+            Logger::log(LogLevel::Warning, "Unable to deinit plugin %s", plugin->get_info()->name);
+
+        if (dlclose(mLibraryHandles[i]) != 0)
+            Logger::log(LogLevel::Warning, "Unable to close plugin %s", dlerror());
+    }
 }
 
 void PluginManager::loadPlugin(const char *fileName)
 {
-    mPlugins.push_back(new Plugin(fileName, &mAppInterface));
+    void *libraryHandle = dlopen(fileName, RTLD_NOW);
+    if (libraryHandle == nullptr)
+        throw FormattedError("unable to load plugin %s: %s", fileName, dlerror());
+
+    PIFunc getPluginInterface = (PIFunc)dlsym(libraryHandle, PGET_INTERFACE_FUNC);
+    if (getPluginInterface == nullptr)
+    {
+        FormattedError error("unable to load %s from %s: %s", PGET_INTERFACE_FUNC, fileName, dlerror());
+        dlclose(libraryHandle);
+        //sCurrInitPlugin = nullptr;
+        throw error;
+    }
+
+    const P::PluginInterface *pluginInterface = getPluginInterface();
+
+    //sCurrInitPlugin = this;
+
+    P::Status status = pluginInterface->init();
+    if (status != P::Status::OK)
+    {
+        FormattedError error("plugin %s initialization failed", fileName);
+        dlclose(libraryHandle);
+        //sCurrInitPlugin = nullptr;
+        throw error;
+    }
+
+    //sCurrInitPlugin = nullptr;
+    mPlugins.push_back(pluginInterface);
+    mLibraryHandles.push_back(libraryHandle);
 }
 
 void PluginManager::setActiveCanvas(Canvas *canvas)
@@ -88,7 +76,7 @@ void PluginManager::setActiveCanvas(Canvas *canvas)
     mCurrPreviewLayer = &canvas->mPreviewLayer;
 }
 
-Plugin *PluginManager::getPlugin(int idx)
+const P::PluginInterface *PluginManager::getPluginInterface(int idx)
 {
     assert(idx >= 0 && idx < mPlugins.size());
 

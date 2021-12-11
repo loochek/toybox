@@ -24,6 +24,14 @@ namespace LGL
         return sf::Color(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
     }
 
+    inline Color fromSFMLColor(const sf::Color &color)
+    {
+        return Color((float)color.r / 255.0f,
+                     (float)color.g / 255.0f,
+                     (float)color.b / 255.0f,
+                     (float)color.a / 255.0f);
+    }
+
     inline Vec2f fromSFMLVector(const sf::Vector2f &vector)
     {
         return Vec2f(vector.x, vector.y);

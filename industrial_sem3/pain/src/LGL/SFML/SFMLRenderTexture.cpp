@@ -11,4 +11,9 @@ namespace LGL
     {
         mTexture.create(newResolution.x, newResolution.y);
     }
+
+    Vec2i RenderTexture::getSize() const
+    {
+        return fromSFMLVector(mTexture.getSize());
+    }
 };

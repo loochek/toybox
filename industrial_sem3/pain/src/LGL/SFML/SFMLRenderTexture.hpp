@@ -23,6 +23,11 @@ namespace LGL
          */
         void resize(const Vec2i &newResolution);
 
+        /** 
+         * \return newResolution Render texture resolution
+         */
+        Vec2i getSize() const;
+
     private:
         // to be able to draw mTexture
         friend class RenderTarget;

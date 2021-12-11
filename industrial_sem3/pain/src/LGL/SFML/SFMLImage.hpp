@@ -55,6 +55,15 @@ namespace LGL
         void setPixel(int x, int y, const Color &color);
 
         /**
+         * Returns pixel of the image
+         * 
+         * \param x Pixel X
+         * \param y Pixel Y
+         * \return Pixel color
+         */
+        const LGL::Color Image::getPixel(int x, int y);
+
+        /**
          * \return RGBA array of image pixels
          */
         const uint8_t *getPixels();

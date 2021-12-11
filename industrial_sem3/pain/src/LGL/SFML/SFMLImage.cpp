@@ -28,6 +28,11 @@ namespace LGL
         mImage.setPixel(x, y, toSFMLColor(color));
     }
 
+    const LGL::Color Image::getPixel(int x, int y)
+    {
+        return fromSFMLColor(mImage.getPixel(x, y));
+    }
+
     const uint8_t *Image::getPixels()
     {
         return mImage.getPixelsPtr();
