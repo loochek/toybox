@@ -16,7 +16,7 @@ void CanvasWidget::onRedrawThis()
     mTexture.drawTexture(*mBackgroundTexture, Vec2i(0, 0), IntRect(Vec2i(), mRect.size));
 
     // Layers
-    for (int idx = 0; idx < mCanvas.getLayersCount(); idx++)
+    for (int idx = mCanvas.getLayersCount() - 1; idx >= 0; idx--)
     {
         mTexture.drawRenderTexture(*mCanvas.getLayer(idx), Vec2f());
 

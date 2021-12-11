@@ -3,9 +3,9 @@
 #include "EditorWidgets/PaintMainWindow.hpp"
 
 #ifdef NDEBUG
-const float FULLSCREEN = false;
-#else
 const float FULLSCREEN = true;
+#else
+const float FULLSCREEN = false;
 #endif
 
 const int WINDOW_WIDTH  = 1920;

@@ -71,7 +71,16 @@ void Canvas::newLayer(int idx)
 void Canvas::deleteLayer(int idx)
 {
     assert(idx >= 0 && idx < mLayers.size());
-    mLayers.erase(mLayers.begin() + idx);
+
+    auto iter = mLayers.begin() + idx;
+    delete *iter;
+    mLayers.erase(iter);
+
+    if (mLayers.size() == 0)
+        mLayers.push_back(new LGL::RenderTexture(mSize));
+
+    if (mCurrLayer >= mLayers.size())
+        mCurrLayer = mLayers.size() - 1;
 }
 
 void Canvas::setActiveLayer(int idx)
@@ -123,8 +132,8 @@ bool Canvas::loadFromFile(const char *fileName)
 void Canvas::saveToFile(const char *fileName)
 {
     LGL::RenderTexture bakedLayers(mSize);
-    for (LGL::RenderTexture *layer : mLayers)
-        bakedLayers.drawRenderTexture(*layer, Vec2i());
+    for (auto iter = mLayers.rbegin(); iter != mLayers.rend(); iter++)
+        bakedLayers.drawRenderTexture(**iter, Vec2i());
 
     LGL::Texture canvasTexture;
     canvasTexture.loadFromRenderTexture(bakedLayers);

@@ -53,8 +53,11 @@ public:
 
     PluginConfigWindow *createPluginSettingsWindow(Plugin *plugin);
 
-    void onCanvasClose(PaintWindow *paintWindow);
-    void onCanvasSave(PaintWindow *paintWindow);
+    void onCanvasClose       (PaintWindow *paintWindow);
+    void onCanvasSave        (PaintWindow *paintWindow);
+    void onCanvasLayerAdd    (PaintWindow *paintWindow);
+    void onCanvasLayerRemove (PaintWindow *paintWindow);
+    void onCanvasLayerChanged(PaintWindow *paintWindow, bool up);
 
     void onPalleteClose();
     void onSizePickerClose();

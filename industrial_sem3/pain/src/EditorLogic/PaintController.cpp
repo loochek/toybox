@@ -202,6 +202,46 @@ void PaintController::onCanvasSave(PaintWindow *paintWindow)
     paintWindow->getCanvasWidget()->getCanvas().saveToFile(mWindowsFileNames[paintWindow]);
 }
 
+void PaintController::onCanvasLayerAdd(PaintWindow *paintWindow)
+{
+    Canvas *canvas = &paintWindow->getCanvasWidget()->getCanvas();
+
+    int activeLayer = canvas->getActiveLayer();
+    canvas->newLayer(activeLayer);
+    canvas->setActiveLayer(activeLayer + 1);
+
+    updateTitle(paintWindow, mWindowsFileNames[paintWindow]);
+}
+
+void PaintController::onCanvasLayerRemove(PaintWindow *paintWindow)
+{
+    Canvas *canvas = &paintWindow->getCanvasWidget()->getCanvas();
+    int activeLayer = canvas->getActiveLayer();
+
+    canvas->deleteLayer(activeLayer);
+
+    updateTitle(paintWindow, mWindowsFileNames[paintWindow]);
+}
+
+void PaintController::onCanvasLayerChanged(PaintWindow *paintWindow, bool up)
+{
+    Canvas *canvas = &paintWindow->getCanvasWidget()->getCanvas();
+    int activeLayer = canvas->getActiveLayer();
+
+    if (up)
+    {
+        if (activeLayer > 0)
+            canvas->setActiveLayer(activeLayer - 1);
+    }
+    else
+    {
+        if (activeLayer < canvas->getLayersCount() - 1)
+            canvas->setActiveLayer(activeLayer + 1);   
+    }
+
+    updateTitle(paintWindow, mWindowsFileNames[paintWindow]);
+}
+
 void PaintController::onPalleteClose()
 {
     mPallete = nullptr;
@@ -325,8 +365,11 @@ void PaintController::onClick(uint64_t userData)
 
 void PaintController::updateTitle(PaintWindow *window, const char *newTitle)
 {
+    Canvas *canvas = &window->getCanvasWidget()->getCanvas();
+
     char title[MAX_LABEL_SIZE + 1] = {0};
-    snprintf(title, MAX_LABEL_SIZE, "%s - Pain", mWindowsFileNames[window]);
+    snprintf(title, MAX_LABEL_SIZE, "%s [layer %d/%d] - Pain",
+             mWindowsFileNames[window], canvas->getActiveLayer() + 1, canvas->getLayersCount());
     window->setTitle(title);
 }
 

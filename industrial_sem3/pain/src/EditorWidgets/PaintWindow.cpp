@@ -31,22 +31,32 @@ void PaintWindow::onMouseClickedThis(const Vec2i &localMousePos, const Vec2i &gl
 
 EventResult PaintWindow::onKeyPressed(LGL::KeyboardKey key, LGL::InputModifier modifier)
 {
+    Canvas *canvas = &mCanvasWidget->getCanvas();
+
     if (LGL::isControlPressed(modifier))
     {
-        if (key == LGL::KeyboardKey::S)
+        switch (key)
         {
+        case LGL::KeyboardKey::S:
             mController->onCanvasSave(this);
-            return EventResult::Handled;
-        }
-        else if (key == LGL::KeyboardKey::Z)
-        {
-            mCanvasWidget->getCanvas().undo();
-            return EventResult::Handled;
-        }
-        else if (key == LGL::KeyboardKey::L)
-        {
-            mCanvasWidget->getCanvas().loadFromFile("test.jpg");
-            return EventResult::Handled;
+            break;
+
+        case LGL::KeyboardKey::Z:
+            canvas->undo();
+            break;
+
+        case LGL::KeyboardKey::Equal:
+            mController->onCanvasLayerAdd(this);
+            break;
+
+        case LGL::KeyboardKey::Hyphen:
+            mController->onCanvasLayerRemove(this);
+            break;
+        
+        case LGL::KeyboardKey::Up:
+        case LGL::KeyboardKey::Down:
+            mController->onCanvasLayerChanged(this, key == LGL::KeyboardKey::Up);
+            break;
         }
     }
 
