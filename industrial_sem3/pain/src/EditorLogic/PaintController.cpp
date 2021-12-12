@@ -272,6 +272,11 @@ Canvas *PaintController::getActiveCanvas()
     return &mActivePaintWindow->getCanvasWidget()->getCanvas();
 }
 
+Widget *PaintController::getRoot()
+{
+    return mRoot;
+}
+
 void PaintController::onSizeChange(float newPenSize, uint64_t userData)
 {
     mCurrToolSize = newPenSize;

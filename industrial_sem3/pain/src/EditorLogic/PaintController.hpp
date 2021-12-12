@@ -21,6 +21,7 @@ enum class MenuAction
     OpenImageOpenWindow = 6
 };
 
+class Widget;
 class PaintMainWindow;
 class PaintWindow;
 class PalleteWindow;
@@ -69,6 +70,8 @@ public:
     LGL::Color getCurrColor() { return mCurrColor; };
     float      getCurrSize() { return mCurrToolSize; };
     Canvas    *getActiveCanvas();
+
+    Widget *getRoot();
 
     // Size picker callback
     virtual void onSizeChange(float newPenSize, uint64_t userData) override;

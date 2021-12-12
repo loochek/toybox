@@ -33,4 +33,14 @@ inline LGL::Color fromPluginColor(const P::RGBA &color)
                       color.a / (float)EXTERNAL_RGB_BASE);
 }
 
+inline P::WBody toPluginRect(const IntRect &rect)
+{
+    return (P::WBody){ toPluginVec(Vec2f(rect.position)), toPluginVec(Vec2f(rect.size)) };
+}
+
+inline IntRect fromPluginRect(const P::WBody &rect)
+{
+    return IntRect(fromPluginVec(rect.position), fromPluginVec(rect.size));
+}
+
 #endif

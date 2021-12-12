@@ -29,6 +29,7 @@ aux_source_directory(src/EditorLogic/ToolPicker PAIN_SOURCES)
 aux_source_directory(src/EditorLogic/ToolPickerWindow PAIN_SOURCES)
 aux_source_directory(src/Editor PAIN_SOURCES)
 aux_source_directory(src/Editor/AppInterface PAIN_SOURCES)
+aux_source_directory(src/Editor/AppInterface/Widgets PAIN_SOURCES)
 aux_source_directory(src/Math PAIN_SOURCES)
 aux_source_directory(src/LGL PAIN_SOURCES)
 

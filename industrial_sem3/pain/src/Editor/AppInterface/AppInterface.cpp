@@ -3,6 +3,7 @@
 #include "../Canvas.hpp"
 #include "PluginTypesProxy.hpp"
 #include "RenderTarget.hpp"
+#include "WidgetFactory.hpp"
 #include "AppInterface.hpp"
 
 AppInterfaceImpl::AppInterfaceImpl(PaintController *controller) : mController(controller)
@@ -10,7 +11,7 @@ AppInterfaceImpl::AppInterfaceImpl(PaintController *controller) : mController(co
     std_version = PSTD_VERSION;
 
     factory.target = new RenderTargetFactoryImpl();
-    factory.widget = nullptr;
+    factory.widget = new WidgetFactoryImpl(controller->getRoot());
     factory.shader = nullptr;
 }
 
