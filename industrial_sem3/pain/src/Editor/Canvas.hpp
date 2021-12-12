@@ -3,8 +3,7 @@
 
 #include <deque>
 #include "../LGL/LGL.hpp"
-
-class Plugin;
+#include "PluginManager.hpp"
 
 class Canvas
 {
@@ -40,6 +39,8 @@ public:
     LGL::RenderTexture *getPreviewLayer() { return &mPreviewLayer; };
     int getLayersCount() { return mLayers.size(); };
 
+    void flushPreview();
+
     void undo();
     bool loadFromFile(const char *fileName);
     void saveToFile(const char *fileName);
@@ -58,8 +59,6 @@ private:
 
     Vec2i mSize;
     Vec2i mOldMousePos;
-
-    friend class PluginManager;
 };
 
 #endif

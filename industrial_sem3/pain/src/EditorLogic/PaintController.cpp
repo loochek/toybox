@@ -16,7 +16,7 @@
 #include "../EditorWidgets/PluginPicker.hpp"
 #include "../EditorWidgets/SplineWindow.hpp"
 #include "../EditorWidgets/ImageOpenWindow.hpp"
-#include "../EditorWidgets/PluginConfigWindow.hpp"
+//#include "../EditorWidgets/PluginConfigWindow.hpp"
 
 const int MAX_FILE_NAME_SIZE = 256;
 
@@ -138,7 +138,7 @@ void PaintController::openToolPicker()
         return;
     }
 
-    mToolPicker = new PluginPickerWindow(TOOL_PICKER_INIT_POS, this, PPT_TOOL, mRoot);
+    mToolPicker = new PluginPickerWindow(TOOL_PICKER_INIT_POS, this, P::PluginType::TOOL, mRoot);
     mToolPicker->getPluginPicker()->setDelegate(this);
 
     mRoot->addChild(mToolPicker);
@@ -152,7 +152,7 @@ void PaintController::openEffectPicker()
         return;
     }
 
-    mEffectPicker = new PluginPickerWindow(EFFECT_PICKER_INIT_POS, this, PPT_EFFECT, mRoot);
+    mEffectPicker = new PluginPickerWindow(EFFECT_PICKER_INIT_POS, this, P::PluginType::EFFECT, mRoot);
     mEffectPicker->getPluginPicker()->setDelegate(this);
 
     mRoot->addChild(mEffectPicker);
@@ -175,17 +175,17 @@ void PaintController::openImageOpenWindow()
     mRoot->addChild(mImageOpenWindow);
 }
 
-PluginConfigWindow *PaintController::createPluginSettingsWindow(Plugin *plugin)
-{
-    PluginConfigWindow *configWindow = new PluginConfigWindow(PLUGIN_CONFIG_INIT_POS, this, plugin, mRoot);
-    configWindow->scheduleForDisable();
-    mRoot->addChild(configWindow);
+// PluginConfigWindow *PaintController::createPluginSettingsWindow(Plugin *plugin)
+// {
+//     PluginConfigWindow *configWindow = new PluginConfigWindow(PLUGIN_CONFIG_INIT_POS, this, plugin, mRoot);
+//     configWindow->scheduleForDisable();
+//     mRoot->addChild(configWindow);
 
-    const BaseButton *menuButton = mRoot->mMenuBar->addButton(plugin->getInfo()->name, this,
-                                                              (uint64_t)configWindow);
+//     const BaseButton *menuButton = mRoot->mMenuBar->addButton(plugin->getInfo()->name, this,
+//                                                               (uint64_t)configWindow);
 
-    return configWindow;
-}
+//     return configWindow;
+// }
 
 void PaintController::onCanvasClose(PaintWindow *paintWindow)
 {
@@ -267,17 +267,21 @@ void PaintController::onImageOpenWindowClose()
     mImageOpenWindow = nullptr;
 }
 
+Canvas *PaintController::getActiveCanvas()
+{
+    return &mActivePaintWindow->getCanvasWidget()->getCanvas();
+}
+
 void PaintController::onSizeChange(float newPenSize, uint64_t userData)
 {
     mCurrToolSize = newPenSize;
-    PluginManager::getInstance()->onSizeChange(newPenSize);
 }
 
 void PaintController::onPluginChange(Plugin *selectedPlugin, uint64_t userData)
 {
-    switch (selectedPlugin->getInfo()->type)
+    switch (selectedPlugin->get_info()->type)
     {
-    case PPT_TOOL:
+    case P::PluginType::TOOL:
         mCurrTool = selectedPlugin;
 
         for (PaintWindow *paintWindow : mPaintWindows)
@@ -285,7 +289,7 @@ void PaintController::onPluginChange(Plugin *selectedPlugin, uint64_t userData)
         
         break;
 
-    case PPT_EFFECT:
+    case P::PluginType::EFFECT:
         if (mActivePaintWindow != nullptr)
             mActivePaintWindow->getCanvasWidget()->getCanvas().applyEffect(selectedPlugin);
 
@@ -299,7 +303,6 @@ void PaintController::onPluginChange(Plugin *selectedPlugin, uint64_t userData)
 void PaintController::onColorChange(const LGL::Color &color, uint64_t userData)
 {
     mCurrColor = color;
-    PluginManager::getInstance()->onColorChange(color);
 }
 
 void PaintController::onClick(uint64_t userData)
@@ -337,16 +340,16 @@ void PaintController::onClick(uint64_t userData)
 
     Widget *widget = (Widget*)userData;
 
-    PluginConfigWindow *configWindow = dynamic_cast<PluginConfigWindow*>(widget);
-    if (configWindow != nullptr)
-    {
-        if (configWindow->isEnabled())
-            mRoot->popUp(configWindow);
-        else
-            configWindow->scheduleForEnable();
+    // PluginConfigWindow *configWindow = dynamic_cast<PluginConfigWindow*>(widget);
+    // if (configWindow != nullptr)
+    // {
+    //     if (configWindow->isEnabled())
+    //         mRoot->popUp(configWindow);
+    //     else
+    //         configWindow->scheduleForEnable();
 
-        return;
-    }
+    //     return;
+    // }
 
     PaintWindow *paintWindow = dynamic_cast<PaintWindow*>(widget);
     if (paintWindow != nullptr)
@@ -376,7 +379,7 @@ void PaintController::updateTitle(PaintWindow *window, const char *newTitle)
 void PaintController::loadPlugins()
 {
     PluginManager *pluginMgr = PluginManager::getInstance();
-    pluginMgr->setPaintController(this);
+    pluginMgr->init(this);
 
     for (int i = 0; i < sizeof(pluginPreloadList) / sizeof(pluginPreloadList[0]); i++)
     {
@@ -389,9 +392,6 @@ void PaintController::loadPlugins()
             Logger::log(LogLevel::Warning, "%s\n", error.what());
         }
     }
-
-    pluginMgr->onSizeChange(mCurrToolSize);
-    pluginMgr->onColorChange(mCurrColor);
 }
 
 PaintWindow *PaintController::createCanvasGeneric()

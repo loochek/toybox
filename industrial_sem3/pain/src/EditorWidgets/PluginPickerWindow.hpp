@@ -2,7 +2,7 @@
 #define PLUGIN_PICKER_WINDOW_HPP
 
 #include "../BaseGUI/Window.hpp"
-#include "../Editor/Plugin.hpp"
+#include "../Editor/PluginManager.hpp"
 
 class PluginPicker;
 class PluginPickerCloseDelegate;
@@ -19,7 +19,7 @@ public:
      * \param pickerType Which type of plugin picker should be created
      */
     PluginPickerWindow(const Vec2f &pickerPos, PaintController *controller,
-                       PPluginType pickerType, Widget *parent = nullptr);
+                       P::PluginType pickerType, Widget *parent = nullptr);
 
     virtual ~PluginPickerWindow();
 
@@ -32,7 +32,7 @@ private:
     PluginPicker *mPluginPicker;
     PluginPickerCloseDelegate *mCloseButtonDelegate;
 
-    PPluginType mType;
+    P::PluginType mType;
 };
 
 #endif

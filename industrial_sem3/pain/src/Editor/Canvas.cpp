@@ -1,8 +1,7 @@
 #include <cassert>
 #include "../Utils/FormattedError.hpp"
-#include "PluginManager.hpp"
+#include "AppInterface/PluginTypesProxy.hpp"
 #include "Canvas.hpp"
-#include "Plugin.hpp"
 
 Canvas::Canvas(const Vec2i &canvasSize) :
     mCurrTool(nullptr), mSize(canvasSize), mPreviewLayer(canvasSize), mCurrLayer(0)
@@ -19,7 +18,7 @@ Canvas::~Canvas()
 void Canvas::onMouseClicked(const Vec2i &position)
 {
     if (mCurrTool != nullptr)
-        mCurrTool->onMouseClicked(position);
+        mCurrTool->tool_on_press(toPluginVec(Vec2f(position)));
         
     mOldMousePos = position;
 }
@@ -27,7 +26,7 @@ void Canvas::onMouseClicked(const Vec2i &position)
 void Canvas::onMouseMove(const Vec2i &position)
 {
     if (mCurrTool != nullptr)
-        mCurrTool->onMouseMove(mOldMousePos, position);
+        mCurrTool->tool_on_move(toPluginVec(Vec2f(mOldMousePos)), toPluginVec(Vec2f(position)));
 
     mOldMousePos = position;
 }
@@ -36,11 +35,8 @@ void Canvas::onMouseReleased(const Vec2i &position)
 {
     if (mCurrTool != nullptr)
     {
-        mCurrTool->onMouseReleased(position);
-        
-        mLayers[mCurrLayer]->setBlendMode(mCurrTool->getFlushPolicy() == PPLP_BLEND ? true : false);
-        mLayers[mCurrLayer]->drawRenderTexture(mPreviewLayer, Vec2i());
-        mPreviewLayer.clear();
+        mCurrTool->tool_on_release(toPluginVec(Vec2f(position)));
+        flushPreview();
     }
     
     mOldMousePos = position;
@@ -48,16 +44,14 @@ void Canvas::onMouseReleased(const Vec2i &position)
 
 void Canvas::applyEffect(Plugin *effect)
 {
-    if (effect->getInfo()->type != PPT_EFFECT)
-        return;
+    assert(effect->get_info()->type == P::PluginType::EFFECT);
 
-    effect->apply();
+    effect->effect_apply();
 }
 
 void Canvas::setTool(Plugin *tool)
 {
-    if (tool->getInfo()->type != PPT_TOOL)
-        return;
+    assert(tool->get_info()->type == P::PluginType::TOOL);
 
     mCurrTool = tool;
 }
@@ -93,6 +87,13 @@ LGL::RenderTexture *Canvas::getLayer(int idx)
 {
     assert(idx >= 0 && idx < mLayers.size());
     return mLayers[idx];
+}
+
+void Canvas::flushPreview()
+{
+    mLayers[mCurrLayer]->setBlendMode(true);
+    mLayers[mCurrLayer]->drawRenderTexture(mPreviewLayer, Vec2i());
+    mPreviewLayer.clear();
 }
 
 void Canvas::undo()

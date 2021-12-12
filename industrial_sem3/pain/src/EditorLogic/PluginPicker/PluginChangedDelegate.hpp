@@ -1,7 +1,7 @@
 #ifndef PLUGIN_CHANGED_DELEGATE_HPP
 #define PLUGIN_CHANGED_DELEGATE_HPP
 
-class Plugin;
+#include "../../Editor/PluginManager.hpp"
 
 class PluginChangedDelegate
 {

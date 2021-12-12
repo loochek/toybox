@@ -25,7 +25,6 @@ PaintWindow::~PaintWindow()
 
 void PaintWindow::onMouseClickedThis(const Vec2i &localMousePos, const Vec2i &globalMousePos)
 {
-    PluginManager::getInstance()->setActiveCanvas(&mCanvasWidget->getCanvas());
     mController->onActivePaintWindowChange(this);
 }
 

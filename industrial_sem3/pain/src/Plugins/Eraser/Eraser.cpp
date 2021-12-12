@@ -1,136 +1,133 @@
 #include "../../Editor/EditorPluginAPI/plugin_std.hpp"
 
-static PPluginStatus init(const PAppInterface* appInterface);
-static PPluginStatus deinit();
-
-static void dump();
-static void onUpdate(double elapsedTime);
-
-static const PPluginInfo  *getInfo();
-static PPreviewLayerPolicy getFlushPolicy();
-
-static void onMousePressed(PVec2f mousePos);
-static void onMouseMove(PVec2f mouseOldPos, PVec2f mouseNewPos);
-static void onMouseReleased(PVec2f mousePos);
-
-static bool enableExtension(const char *name);
-static void *getExtensionFunc(const char *extension, const char *func);
-
-static void draw(PVec2f mousePos);
-
-
-const PPluginInterface gPluginInterface =
+class Eraser : public P::PluginInterface
 {
-    0, // std_version
-    0, // reserved
-    
-    enableExtension,
-    getExtensionFunc,
+public:
+    Eraser() : P::PluginInterface() {};
 
-    // general
-    getInfo,
-    init,
-    deinit,
-    dump,
-    onUpdate,
-    nullptr,
-    getFlushPolicy,
+    virtual bool ext_enable(const char *name) const override;
 
-    // effect
-    nullptr,
+    virtual void *ext_get_func(const char *extension, const char *func) const override;
 
-    // tool
-    onMousePressed,
-    onMouseReleased,
-    onMouseMove
+    virtual void *ext_get_interface(const char *extension, const char *name) const override;
+
+    virtual const P::PluginInfo *get_info() const override;
+    virtual P::Status init(const P::AppInterface* appInterface) const override;
+    virtual P::Status deinit() const override;
+    virtual void dump()const override;
+
+    virtual void on_tick(double dt) const override;
+
+    virtual void effect_apply() const override;
+
+    virtual void tool_on_press(const P::Vec2f &position) const override;
+    virtual void tool_on_release(const P::Vec2f &position) const override;
+    virtual void tool_on_move(const P::Vec2f &from, const P::Vec2f &to) const override;
+
+    virtual void show_settings() const override;
+
+private:
+    virtual void draw(const P::Vec2f mousePos) const;
 };
 
-const PPluginInfo gPluginInfo =
-{
-    0, // std_version
-    0, // reserved
+const P::AppInterface* gAppInterface = nullptr;
 
-    &gPluginInterface,
+const Eraser gPluginInterface;
+
+const P::PluginInfo gPluginInfo =
+{
+    PSTD_VERSION,           // std_version
+    0,                      // reserved
+
+    &gPluginInterface,      // plugin interface
 
     "Eraser",
-    "1.0",
+    "2.0",
     "loochek",
     "Simple square eraser",
+
+    nullptr,                // icon
     
-    PPT_TOOL
+    P::PluginType::TOOL
 };
 
-
-const PAppInterface *gAppInterface = nullptr;
-
-
-extern "C" const PPluginInterface *get_plugin_interface()
+extern "C" const P::PluginInterface *get_plugin_interface()
 {
     return &gPluginInterface;
 }
 
-static PPluginStatus init(const PAppInterface* appInterface)
-{
-    gAppInterface = appInterface;
-    appInterface->general.log("Eraser: succesful initialization!");
-    return PPS_OK; 
-}
-
-static PPluginStatus deinit()
-{
-    return PPS_OK;
-}
-
-static void dump()
-{
-}
-
-static const PPluginInfo *getInfo()
-{
-    return &gPluginInfo;
-}
-
-static void onUpdate(double elapsedTime)
-{
-}
-
-static PPreviewLayerPolicy getFlushPolicy()
-{
-    return PPLP_BLEND;
-}
-
-static void onMousePressed(PVec2f mousePos)
-{
-    draw(mousePos);
-}
-
-static void onMouseMove(PVec2f mouseOldPos, PVec2f mouseNewPos)
-{
-    draw(mouseNewPos);
-}
-
-static void onMouseReleased(PVec2f mousePos)
-{
-}
-
-static bool enableExtension(const char *name)
+bool Eraser::ext_enable(const char *name) const
 {
     return false;
 }
 
-static void *getExtensionFunc(const char *extension, const char *func)
+void *Eraser::ext_get_func(const char *extension, const char *func) const
 {
     return nullptr;
 }
 
-static void draw(PVec2f mousePos)
+void *Eraser::ext_get_interface(const char *extension, const char *name)  const
 {
-    PRenderMode render_mode = { PPBM_COPY, PPDP_ACTIVE, nullptr };
+    return nullptr;
+}
 
-    float currSize = gAppInterface->general.get_size();
+const P::PluginInfo *Eraser::get_info() const
+{
+    return &gPluginInfo;
+}
 
-    PVec2f p1(mousePos.x - currSize, mousePos.y - currSize);
-    PVec2f p2(mousePos.x + currSize, mousePos.y + currSize);
+P::Status Eraser::init(const P::AppInterface* appInterface) const
+{
+    gAppInterface = appInterface;
+    appInterface->log("Eraser: succesful initialization!");
+    return P::Status::OK;
+}
 
-    gAppInterface->render.rectangle(p1, p2, PRGBA(0, 0, 0, 0), &render_mode);
+P::Status Eraser::deinit() const
+{
+    return P::Status::OK;
+}
+
+void Eraser::dump() const
+{
+}
+
+void Eraser::on_tick(double dt) const
+{
+}
+
+void Eraser::effect_apply() const
+{
+}
+
+void Eraser::tool_on_press(const P::Vec2f &position) const
+{
+    draw(position);
+}
+
+void Eraser::tool_on_release(const P::Vec2f &position) const
+{
+}
+
+void Eraser::tool_on_move(const P::Vec2f &from, const P::Vec2f &to) const
+{
+    draw(to);
+}
+
+void Eraser::show_settings() const
+{
+}
+
+void Eraser::draw(P::Vec2f mousePos) const
+{
+    P::RenderMode mode(P::BlendMode::COPY);
+
+    float currSize = gAppInterface->get_size();
+
+    P::Vec2f p1(mousePos.x - currSize, mousePos.y - currSize);
+    P::Vec2f p2(mousePos.x + currSize, mousePos.y + currSize);
+
+    P::RenderTarget *activeLayer = gAppInterface->get_target();
+    activeLayer->render_rectangle(p1, p2, P::RGBA(0), mode);
+    delete activeLayer;
 }

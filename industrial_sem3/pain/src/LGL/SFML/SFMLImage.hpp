@@ -61,7 +61,7 @@ namespace LGL
          * \param y Pixel Y
          * \return Pixel color
          */
-        const LGL::Color Image::getPixel(int x, int y);
+        const LGL::Color getPixel(int x, int y);
 
         /**
          * \return RGBA array of image pixels

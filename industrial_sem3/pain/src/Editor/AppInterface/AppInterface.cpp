@@ -1,116 +1,91 @@
+#include "../../Utils/Logger.hpp"
+#include "../../EditorLogic/PaintController.hpp"
+#include "../Canvas.hpp"
+#include "PluginTypesProxy.hpp"
+#include "RenderTarget.hpp"
 #include "AppInterface.hpp"
 
-// RenderTarget implementation
-
-RenderTargetImpl::~RenderTargetImpl()
+AppInterfaceImpl::AppInterfaceImpl(PaintController *controller) : mController(controller)
 {
-};
+    std_version = PSTD_VERSION;
 
-P::RenderTarget *RenderTargetImpl::get_copy() const
-{
+    factory.target = new RenderTargetFactoryImpl();
+    factory.widget = nullptr;
+    factory.shader = nullptr;
 }
 
-P::Vec2s RenderTargetImpl::get_size() const
+AppInterfaceImpl::~AppInterfaceImpl()
 {
+    delete factory.target;
 }
 
-P::RGBA RenderTargetImpl::get_pixel(size_t x, size_t y) const
+bool AppInterfaceImpl::ext_enable(const char *name) const
 {
+    // Ignore extensions now
+    return false;
 }
 
-void RenderTargetImpl::set_pixel(size_t x, size_t y, P::RGBA color)
+void *AppInterfaceImpl::ext_get_func(const char *extension, const char *func) const
 {
+    Logger::log(LogLevel::Warning, "Some plugin tried to access extensions, but it's not supported");
+    return nullptr;
 }
 
-P::RGBA *RenderTargetImpl::get_pixels()
+void *AppInterfaceImpl::ext_get_interface(const char *extension, const char *name) const
 {
-}
-
-void RenderTargetImpl::clear(P::RGBA color)
-{
-}
-
-void RenderTargetImpl::render_circle(P::Vec2f position, float radius, P::RGBA color,
-                                     const P::RenderMode *render_mode)
-{
-}
-
-void RenderTargetImpl::render_line(P::Vec2f start, P::Vec2f end, P::RGBA color,
-                                   const P::RenderMode *render_mode)
-{
-}
-
-void RenderTargetImpl::render_triangle(P::Vec2f p1, P::Vec2f p2, P::Vec2f p3, P::RGBA color,
-                                       const P::RenderMode *render_mode)
-{
-}
-
-void RenderTargetImpl::render_rectangle(P::Vec2f p1, P::Vec2f p2, P::RGBA color,
-                                const P::RenderMode *render_mode)
-{
-}
-
-void RenderTargetImpl::render_texture(P::Vec2f position, const P::RenderTarget *texture, 
-                                      const P::RenderMode *render_mode)
-{
-}
-
-void RenderTargetImpl::render_pixels(P::Vec2f position, const P::RGBA *data, size_t width, size_t height,
-                                     const P::RenderMode *render_mode)
-{
-}
-
-void RenderTargetImpl::apply_shader(const P::Shader *shader)
-{
-}
-
-// AppInterface implementation
-
-bool AppInterfaceImpl::enable(std::string_view name) const
-{
-}
-
-void *AppInterfaceImpl::get_func(std::string_view extension, std::string_view func) const
-{
-
-}
-
-void *AppInterfaceImpl::get_interface(const char *extension, const char *name) const
-{
-
+    Logger::log(LogLevel::Warning, "Some plugin tried to access extensions, but it's not supported");
+    return nullptr;
 }
 
 void AppInterfaceImpl::log(const char *fmt, ...) const
 {
-
+    va_list args;
+    va_start(args, fmt);
+    Logger::log(LogLevel::Info, fmt, args);
+    va_end(args);
 }
 
 double AppInterfaceImpl::get_absolute_time() const
 {
-
+    /// TODO:
+    return 0;
 }
 
 P::RGBA AppInterfaceImpl::get_color() const
 {
-
+    return toPluginColor(mController->getCurrColor());
 }
 
 float AppInterfaceImpl::get_size() const
 {
+    return mController->getCurrSize();
+}
 
+void AppInterfaceImpl::set_color(const P::RGBA &color) const
+{
+    /// TODO:
+    return;
+}
+
+void AppInterfaceImpl::set_size(float size) const
+{
+    /// TODO:
+    return;
 }
 
 P::RenderTarget *AppInterfaceImpl::get_target() const
 {
-
+    Canvas *canvas = mController->getActiveCanvas();
+    return new RenderTargetImpl(canvas->getLayer(canvas->getActiveLayer()), true);
 }
 
 P::RenderTarget *AppInterfaceImpl::get_preview() const
 {
-
+    Canvas *canvas = mController->getActiveCanvas();
+    return new RenderTargetImpl(canvas->getPreviewLayer(), true);
 }
 
 void AppInterfaceImpl::flush_preview() const
 {
-
+    mController->getActiveCanvas()->flushPreview();
 }

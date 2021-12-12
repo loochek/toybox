@@ -1,123 +1,121 @@
 #include <deque>
 #include "../../Editor/EditorPluginAPI/plugin_std.hpp"
 #include "../../Utils/Vec2.hpp"
+#include "../../Editor/AppInterface/PluginTypesProxy.hpp"
 
-const Vec2i DIRS[] = { Vec2i(-1, 0), Vec2i(1, 0), Vec2i(0, -1), Vec2i(0, 1) };
-
-static PPluginStatus init(const PAppInterface* appInterface);
-static PPluginStatus deinit();
-
-static void dump();
-static void onUpdate(double elapsedTime);
-
-static const PPluginInfo  *getInfo();
-static PPreviewLayerPolicy getFlushPolicy();
-
-static void onMousePressed(PVec2f mousePos);
-static void onMouseMove(PVec2f mouseOldPos, PVec2f mouseNewPos);
-static void onMouseReleased(PVec2f mousePos);
-
-static bool enableExtension(const char *name);
-static void *getExtensionFunc(const char *extension, const char *func);
-
-static bool areColorsEqual(const PRGBA &first, const PRGBA &second);
-
-
-const PPluginInterface gPluginInterface =
+class Fill : public P::PluginInterface
 {
-    0, // std_version
-    0, // reserved
-    
-    enableExtension,
-    getExtensionFunc,
+public:
+    Fill() : P::PluginInterface() {};
 
-    // general
-    getInfo,
-    init,
-    deinit,
-    dump,
-    onUpdate,
-    nullptr,
-    getFlushPolicy,
+    virtual bool ext_enable(const char *name) const override;
 
-    // effect
-    nullptr,
+    virtual void *ext_get_func(const char *extension, const char *func) const override;
 
-    // tool
-    onMousePressed,
-    onMouseReleased,
-    onMouseMove
+    virtual void *ext_get_interface(const char *extension, const char *name) const override;
+
+    virtual const P::PluginInfo *get_info() const override;
+    virtual P::Status init(const P::AppInterface* appInterface) const override;
+    virtual P::Status deinit() const override;
+    virtual void dump()const override;
+
+    virtual void on_tick(double dt) const override;
+
+    virtual void effect_apply() const override;
+
+    virtual void tool_on_press(const P::Vec2f &position) const override;
+    virtual void tool_on_release(const P::Vec2f &position) const override;
+    virtual void tool_on_move(const P::Vec2f &from, const P::Vec2f &to) const override;
+
+    virtual void show_settings() const override;
+
+private:
+    static bool areColorsEqual(const P::RGBA &first, const P::RGBA &second);
 };
 
-const PPluginInfo gPluginInfo =
-{
-    0, // std_version
-    0, // reserved
+const P::AppInterface* gAppInterface = nullptr;
 
-    &gPluginInterface,
+const Fill gPluginInterface;
+
+const P::PluginInfo gPluginInfo =
+{
+    PSTD_VERSION,           // std_version
+    0,                      // reserved
+
+    &gPluginInterface,      // plugin interface
 
     "Fill",
-    "1.0",
+    "2.0",
     "loochek",
     "Simple Paint-like fill",
+
+    nullptr,                // icon
     
-    PPT_TOOL
+    P::PluginType::TOOL
 };
 
-
-const PAppInterface *gAppInterface = nullptr;
-
-
-extern "C" const PPluginInterface *get_plugin_interface()
+extern "C" const P::PluginInterface *get_plugin_interface()
 {
     return &gPluginInterface;
 }
 
-static PPluginStatus init(const PAppInterface* appInterface)
+const Vec2i DIRS[] = { Vec2i(-1, 0), Vec2i(1, 0), Vec2i(0, -1), Vec2i(0, 1) };
+
+bool Fill::ext_enable(const char *name) const
 {
-    gAppInterface = appInterface;
-    appInterface->general.log("Fill: succesful initialization!");
-    return PPS_OK; 
+    return false;
 }
 
-static PPluginStatus deinit()
+void *Fill::ext_get_func(const char *extension, const char *func) const
 {
-    return PPS_OK;
+    return nullptr;
 }
 
-static void dump()
+void *Fill::ext_get_interface(const char *extension, const char *name)  const
 {
+    return nullptr;
 }
 
-static const PPluginInfo *getInfo()
+const P::PluginInfo *Fill::get_info() const
 {
     return &gPluginInfo;
 }
 
-static void onUpdate(double elapsedTime)
+P::Status Fill::init(const P::AppInterface* appInterface) const
+{
+    gAppInterface = appInterface;
+    appInterface->log("Fill: succesful initialization!");
+    return P::Status::OK;
+}
+
+P::Status Fill::deinit() const
+{
+    return P::Status::OK;
+}
+
+void Fill::dump() const
 {
 }
 
-static PPreviewLayerPolicy getFlushPolicy()
+void Fill::on_tick(double dt) const
 {
-    return PPLP_BLEND;
 }
 
-static void onMousePressed(PVec2f mousePos)
+void Fill::effect_apply() const
 {
-    PRenderMode render_mode = { PPBM_COPY, PPDP_ACTIVE, nullptr };
+}
 
-    Vec2i clickPos(mousePos.x, mousePos.y);
+void Fill::tool_on_press(const P::Vec2f &position) const
+{
+    P::RenderTarget *activeLayer = gAppInterface->get_target();
 
-    size_t layerWidth = 0, layerHeight = 0;
-    gAppInterface->target.get_size(&layerWidth, &layerHeight);
-
-    if (clickPos.x < 0 || clickPos.x >= layerWidth || clickPos.y < 0 || clickPos.y >= layerHeight)
+    Vec2i clickPos(fromPluginVec(position)), layerSize(fromPluginVec(activeLayer->get_size()));;
+    if (clickPos.x < 0 || clickPos.x >= layerSize.x || clickPos.y < 0 || clickPos.y >= layerSize.y)
         return;
 
-    PRGBA fillColor = gAppInterface->general.get_color();
+    P::RGBA fillColor = gAppInterface->get_color();
 
-    PRGBA *pixels = gAppInterface->target.get_pixels();
+    P::RGBA *pixels = activeLayer->get_pixels();
 
     std::deque<Vec2i> fillQueue;
     fillQueue.push_back(clickPos);
@@ -127,49 +125,46 @@ static void onMousePressed(PVec2f mousePos)
         Vec2i currPixel = fillQueue.front();
         fillQueue.pop_front();
 
-        if (areColorsEqual(pixels[layerWidth * currPixel.y + currPixel.x], fillColor))
+        if (areColorsEqual(pixels[layerSize.x * currPixel.y + currPixel.x], fillColor))
             continue;
 
         for (Vec2i dir : DIRS)
         {
-            if (currPixel.x + dir.x >= 0 && currPixel.x + dir.x < layerWidth &&
-                currPixel.y + dir.y >= 0 && currPixel.y + dir.y < layerHeight)
+            if (currPixel.x + dir.x >= 0 && currPixel.x + dir.x < layerSize.x &&
+                currPixel.y + dir.y >= 0 && currPixel.y + dir.y < layerSize.y)
             {
                 Vec2i sidePixel = currPixel + dir;
-                if (areColorsEqual(pixels[layerWidth * currPixel.y + currPixel.x],
-                                   pixels[layerWidth * sidePixel.y + sidePixel.x]))
+                if (areColorsEqual(pixels[layerSize.x * currPixel.y + currPixel.x],
+                                   pixels[layerSize.x * sidePixel.y + sidePixel.x]))
                 {
                     fillQueue.push_back(sidePixel);
                 }
             }
         }
 
-        pixels[layerWidth * currPixel.y + currPixel.x] = fillColor;
+        pixels[layerSize.x * currPixel.y + currPixel.x] = fillColor;
     }
 
-    gAppInterface->render.pixels(PVec2f(0, 0), pixels, layerWidth, layerHeight, &render_mode);
-    gAppInterface->general.release_pixels(pixels);
+    P::RenderMode mode(P::BlendMode::COPY);
+    activeLayer->render_pixels(P::Vec2f(0, 0), toPluginVec(Vec2<size_t>(layerSize)), pixels, mode);
+
+    delete[] pixels;
+    delete activeLayer;
 }
 
-static void onMouseMove(PVec2f mouseOldPos, PVec2f mouseNewPos)
+void Fill::tool_on_release(const P::Vec2f &position) const
 {
 }
 
-static void onMouseReleased(PVec2f mousePos)
+void Fill::tool_on_move(const P::Vec2f &from, const P::Vec2f &to) const
 {
 }
 
-static bool enableExtension(const char *name)
+void Fill::show_settings() const
 {
-    return false;
 }
 
-static void *getExtensionFunc(const char *extension, const char *func)
-{
-    return nullptr;
-}
-
-static bool areColorsEqual(const PRGBA &first, const PRGBA &second)
+bool Fill::areColorsEqual(const P::RGBA &first, const P::RGBA &second)
 {
     return first.r == second.r && first.g == second.g && first.b == second.b && first.a == second.a;
 }

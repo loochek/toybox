@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
+#include "../Editor/PluginManager.hpp"
 #include "ColorChangeDelegate.hpp"
 #include "SizePicker/SizeChangedDelegate.hpp"
 #include "PluginPicker/PluginChangedDelegate.hpp"
@@ -27,7 +28,6 @@ class SizePickerWindow;
 class PluginPickerWindow;
 class PluginConfigWindow;
 class BaseButton;
-class Plugin;
 class ImageOpenWindow;
 
 /**
@@ -51,7 +51,7 @@ public:
     void openSplineWindow();
     void openImageOpenWindow();
 
-    PluginConfigWindow *createPluginSettingsWindow(Plugin *plugin);
+    //PluginConfigWindow *createPluginSettingsWindow(Plugin *plugin);
 
     void onCanvasClose       (PaintWindow *paintWindow);
     void onCanvasSave        (PaintWindow *paintWindow);
@@ -65,6 +65,10 @@ public:
     void onImageOpenWindowClose();
 
     void onActivePaintWindowChange(PaintWindow *activeWindow) { mActivePaintWindow = activeWindow; };
+
+    LGL::Color getCurrColor() { return mCurrColor; };
+    float      getCurrSize() { return mCurrToolSize; };
+    Canvas    *getActiveCanvas();
 
     // Size picker callback
     virtual void onSizeChange(float newPenSize, uint64_t userData) override;

@@ -4,47 +4,53 @@
 
 const float LINE_THICKNESS = 1.0f;
 
-RenderTargetImpl::RenderTargetImpl(const Vec2i &size) : mTarget(size) {}
+RenderTargetImpl::RenderTargetImpl(LGL::RenderTexture *texture, bool isRef) :
+    mTarget(texture), mIsRef(isRef) {}
+
+RenderTargetImpl::~RenderTargetImpl()
+{
+    if (!mIsRef)
+        delete mTarget;
+}
 
 P::RenderTarget *RenderTargetImpl::get_copy() const
 {
     LGL::Texture texture;
-    texture.loadFromRenderTexture(mTarget);
+    texture.loadFromRenderTexture(*mTarget);
 
-    RenderTargetImpl *copy = new RenderTargetImpl(mTarget.getSize());
-    copy->mTarget.drawTexture(texture, Vec2i());
-
+    LGL::RenderTexture *copyRT = new LGL::RenderTexture(mTarget->getSize());
+    RenderTargetImpl *copy = new RenderTargetImpl(copyRT);
+    copy->mTarget->drawTexture(texture, Vec2i());
     return copy;
 }
 
 P::Vec2s RenderTargetImpl::get_size() const
 {
-    Vec2i size = mTarget.getSize();
-    return P::Vec2s(size.x, size.y);
+    return toPluginVec(Vec2<size_t>(mTarget->getSize()));
 }
 
 P::RGBA RenderTargetImpl::get_pixel(size_t x, size_t y) const
 {
     LGL::Texture texture;
-    texture.loadFromRenderTexture(mTarget);
+    texture.loadFromRenderTexture(*mTarget);
 
     return toPluginColor(texture.copyToImage().getPixel(x, y));
 }
 
-void RenderTargetImpl::set_pixel(size_t x, size_t y, P::RGBA color)
+void RenderTargetImpl::set_pixel(size_t x, size_t y, const P::RGBA &color)
 {
     LGL::Texture texture;
-    texture.loadFromRenderTexture(mTarget);
+    texture.loadFromRenderTexture(*mTarget);
     LGL::Image image = texture.copyToImage();
     image.setPixel(x, y, fromPluginColor(color));
     texture.loadFromImage(image);
-    mTarget.drawTexture(texture, Vec2i());
+    mTarget->drawTexture(texture, Vec2i());
 }
 
-P::RGBA *RenderTargetImpl::get_pixels()
+P::RGBA *RenderTargetImpl::get_pixels() const
 {
     LGL::Texture texture;
-    texture.loadFromRenderTexture(mTarget);
+    texture.loadFromRenderTexture(*mTarget);
 
     LGL::Image image = texture.copyToImage();
     Vec2i imageSize = image.getSize();
@@ -54,67 +60,70 @@ P::RGBA *RenderTargetImpl::get_pixels()
     return pixels;
 }
 
-void RenderTargetImpl::clear(P::RGBA color)
+void RenderTargetImpl::clear(const P::RGBA &color)
 {
-    mTarget.clear(fromPluginColor(color));
+    mTarget->clear(fromPluginColor(color));
 }
 
-void RenderTargetImpl::render_circle(P::Vec2f position, float radius, P::RGBA color,
-                                     const P::RenderMode *render_mode)
+void RenderTargetImpl::render_circle(const P::Vec2f &position, float radius, const P::RGBA &color,
+                                     const P::RenderMode &render_mode)
 {
-    handleBlendMode(*render_mode);
-    mTarget.drawCircle(fromPluginVec(position), radius, fromPluginColor(color));
+    handleBlendMode(render_mode);
+    mTarget->drawCircle(fromPluginVec(position), radius, fromPluginColor(color));
 }
 
-void RenderTargetImpl::render_line(P::Vec2f start, P::Vec2f end, P::RGBA color,
-                                   const P::RenderMode *render_mode)
+void RenderTargetImpl::render_line(const P::Vec2f &start, const P::Vec2f &end, const P::RGBA &color,
+                                   const P::RenderMode &render_mode)
 {
-    handleBlendMode(*render_mode);
-    mTarget.drawLine(fromPluginVec(start),
-                     fromPluginVec(end),
-                     LINE_THICKNESS,
-                     fromPluginColor(color));
+    handleBlendMode(render_mode);
+    mTarget->drawLine(fromPluginVec(start),
+                      fromPluginVec(end),
+                      LINE_THICKNESS,
+                      fromPluginColor(color));
 }
 
-void RenderTargetImpl::render_triangle(P::Vec2f p1, P::Vec2f p2, P::Vec2f p3, P::RGBA color,
-                                       const P::RenderMode *render_mode)
+void RenderTargetImpl::render_triangle(const P::Vec2f &p1, const P::Vec2f &p2, const P::Vec2f &p3,
+                                       const P::RGBA &color, const P::RenderMode &render_mode)
 {
-    handleBlendMode(*render_mode);
-    mTarget.drawTriangle(fromPluginVec(p1),
-                         fromPluginVec(p2),
-                         fromPluginVec(p3),
-                         fromPluginColor(color));
+    handleBlendMode(render_mode);
+    mTarget->drawTriangle(fromPluginVec(p1),
+                          fromPluginVec(p2),
+                          fromPluginVec(p3),
+                          fromPluginColor(color));
 }
 
-void RenderTargetImpl::render_rectangle(P::Vec2f p1_ext, P::Vec2f p2_ext, P::RGBA color,
-                                        const P::RenderMode *render_mode)
+void RenderTargetImpl::render_rectangle(const P::Vec2f &p1_ext, const P::Vec2f &p2_ext, const P::RGBA &color,
+                                        const P::RenderMode &render_mode)
 {
-    handleBlendMode(*render_mode);
+    handleBlendMode(render_mode);
 
     Vec2f p1 = fromPluginVec(p1_ext);
     Vec2f p2 = fromPluginVec(p2_ext);
 
-    mTarget.drawRect(FloatRect(p1, p2 - p1), fromPluginColor(color));
+    mTarget->drawRect(FloatRect(p1, p2 - p1), fromPluginColor(color));
 }
 
-void RenderTargetImpl::render_texture(P::Vec2f position, const P::RenderTarget *texture, 
-                                      const P::RenderMode *render_mode)
+void RenderTargetImpl::render_texture(const P::Vec2f &position, const P::RenderTarget *texture, 
+                                      const P::RenderMode &render_mode)
 {
-    handleBlendMode(*render_mode);
+    handleBlendMode(render_mode);
+
+    RenderTargetImpl *impl = (RenderTargetImpl*)texture;
+    mTarget->drawRenderTexture(*impl->mTarget, Vec2f());
 }
 
-void RenderTargetImpl::render_pixels(P::Vec2f position, const P::RGBA *data, size_t width, size_t height,
-                                     const P::RenderMode *render_mode)
+void RenderTargetImpl::render_pixels(const P::Vec2f &position, const P::Vec2s &size, const P::RGBA *data,
+                                     const P::RenderMode &render_mode)
 {
-    handleBlendMode(*render_mode);
+    handleBlendMode(render_mode);
 
     LGL::Image image;
-    image.create(width, height, (const uint8_t*)data);
+    image.create(size.x, size.y, (const uint8_t*)data);
 
     LGL::Texture texture;
     texture.loadFromImage(image);
 
-    mTarget.drawTexture(texture, fromPluginVec(position));
+    mTarget->drawTexture(texture, fromPluginVec(position));
 }
 
 void RenderTargetImpl::apply_shader(const P::Shader *shader)
@@ -125,25 +134,26 @@ void RenderTargetImpl::apply_shader(const P::Shader *shader)
 void RenderTargetImpl::handleBlendMode(const P::RenderMode &mode)
 {
     if (mode.blend == P::BlendMode::ALPHA_BLEND)
-        mTarget.setBlendMode(true);
+        mTarget->setBlendMode(true);
     else
-        mTarget.setBlendMode(false);
+        mTarget->setBlendMode(false);
 }
 
-P::RenderTarget *RenderTargetFactoryImpl::spawn(P::Vec2s size, P::RGBA color) const
+P::RenderTarget *RenderTargetFactoryImpl::spawn(const P::Vec2s &size, const P::RGBA &color) const
 {
-    RenderTargetImpl *target = new RenderTargetImpl(fromPluginVec(size));
-    target->mTarget.clear();
+    LGL::RenderTexture *rt = new LGL::RenderTexture(fromPluginVec(size));
+    rt->clear(fromPluginColor(color));
 
+    RenderTargetImpl *target = new RenderTargetImpl(rt);
     return target;
 }
 
-P::RenderTarget *RenderTargetFactoryImpl::from_pixels(P::Vec2s size, const P::RGBA *data) const
+P::RenderTarget *RenderTargetFactoryImpl::from_pixels(const P::Vec2s &size, const P::RGBA *data) const
 {
-    P::RenderTarget *target = new RenderTargetImpl(fromPluginVec(size));
+    LGL::RenderTexture *rt = new LGL::RenderTexture(fromPluginVec(size));
+    P::RenderTarget *target = new RenderTargetImpl(rt);
 
-    P::RenderMode mode = { P::BlendMode::COPY, nullptr };
-    target->render_pixels(P::Vec2f(), data, size.x, size.y, &mode);
+    target->render_pixels(P::Vec2f(), size, data);
     return target;
 }
 
@@ -153,12 +163,9 @@ P::RenderTarget *RenderTargetFactoryImpl::from_file(const char *path) const
     if (!texture.loadFromFile(path))
         return nullptr;
 
-    RenderTargetImpl *target = new RenderTargetImpl(texture.getSize());
-    target->mTarget.drawTexture(texture, Vec2i());
+    LGL::RenderTexture *rt = new LGL::RenderTexture(texture.getSize());
+    rt->drawTexture(texture, Vec2f());
+    
+    RenderTargetImpl *target = new RenderTargetImpl(rt);
     return target;
-}
-
-void RenderTargetFactoryImpl::release(P::RGBA *data) const
-{
-    delete[] data;
 }

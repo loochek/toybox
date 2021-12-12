@@ -2,9 +2,8 @@
 #define PLUGIN_PICKER_HPP
 
 #include "../BaseGUI/Widget.hpp"
-#include "../Editor/Plugin.hpp"
+#include "../Editor/PluginManager.hpp"
 
-class Plugin;
 class PluginChangedDelegate;
 class PluginPickerController;
 
@@ -12,7 +11,7 @@ class PluginPicker : public Widget
 {
 public:
     PluginPicker() = delete;
-    PluginPicker(const Vec2i &position, PPluginType pickerType, Widget *parent = nullptr);
+    PluginPicker(const Vec2i &position, P::PluginType pickerType, Widget *parent = nullptr);
 
     virtual ~PluginPicker();
 
@@ -33,7 +32,7 @@ protected:
     PluginChangedDelegate  *mDelegate;
     PluginPickerController *mController;
 
-    PPluginType mType;
+    P::PluginType mType;
     int mButtonsCount;
 
     std::vector<Plugin*> mPlugins;
