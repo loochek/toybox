@@ -138,7 +138,7 @@ void PaintController::openToolPicker()
         return;
     }
 
-    mToolPicker = new PluginPickerWindow(TOOL_PICKER_INIT_POS, this, P::PluginType::TOOL, mRoot);
+    mToolPicker = new PluginPickerWindow(TOOL_PICKER_INIT_POS, this, PUPPY::PluginType::TOOL, mRoot);
     mToolPicker->getPluginPicker()->setDelegate(this);
 
     mRoot->addChild(mToolPicker);
@@ -152,7 +152,7 @@ void PaintController::openEffectPicker()
         return;
     }
 
-    mEffectPicker = new PluginPickerWindow(EFFECT_PICKER_INIT_POS, this, P::PluginType::EFFECT, mRoot);
+    mEffectPicker = new PluginPickerWindow(EFFECT_PICKER_INIT_POS, this, PUPPY::PluginType::EFFECT, mRoot);
     mEffectPicker->getPluginPicker()->setDelegate(this);
 
     mRoot->addChild(mEffectPicker);
@@ -286,7 +286,7 @@ void PaintController::onPluginChange(Plugin *selectedPlugin, uint64_t userData)
 {
     switch (selectedPlugin->get_info()->type)
     {
-    case P::PluginType::TOOL:
+    case PUPPY::PluginType::TOOL:
         mCurrTool = selectedPlugin;
 
         for (PaintWindow *paintWindow : mPaintWindows)
@@ -294,7 +294,7 @@ void PaintController::onPluginChange(Plugin *selectedPlugin, uint64_t userData)
         
         break;
 
-    case P::PluginType::EFFECT:
+    case PUPPY::PluginType::EFFECT:
         if (mActivePaintWindow != nullptr)
             mActivePaintWindow->getCanvasWidget()->getCanvas().applyEffect(selectedPlugin);
 

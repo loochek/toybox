@@ -37,6 +37,11 @@ public:
     Widget *getParent() const { return mParent; };
 
     /**
+     * Sets a new parent
+     */
+    void setParent(Widget *parent) { mParent = parent; };
+
+    /**
      * Sets user data for the widget. 
      * This value can be used to distinguish widgets in some cases. 
      * For example, to handle multiple widgets with single delegate
@@ -99,6 +104,11 @@ public:
      * \return Is widget enabled or not
      */
     bool isEnabled() { return mEnabled; };
+
+    /**
+     * \return Widget texture
+     */
+    LGL::RenderTexture *getTexture() { return &mTexture; };
 
 protected:
     Widget() = delete;

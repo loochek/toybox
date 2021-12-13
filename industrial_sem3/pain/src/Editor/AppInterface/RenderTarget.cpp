@@ -13,7 +13,7 @@ RenderTargetImpl::~RenderTargetImpl()
         delete mTarget;
 }
 
-P::RenderTarget *RenderTargetImpl::get_copy() const
+PUPPY::RenderTarget *RenderTargetImpl::get_copy() const
 {
     LGL::Texture texture;
     texture.loadFromRenderTexture(*mTarget);
@@ -24,12 +24,12 @@ P::RenderTarget *RenderTargetImpl::get_copy() const
     return copy;
 }
 
-P::Vec2s RenderTargetImpl::get_size() const
+PUPPY::Vec2s RenderTargetImpl::get_size() const
 {
     return toPluginVec(Vec2<size_t>(mTarget->getSize()));
 }
 
-P::RGBA RenderTargetImpl::get_pixel(size_t x, size_t y) const
+PUPPY::RGBA RenderTargetImpl::get_pixel(size_t x, size_t y) const
 {
     LGL::Texture texture;
     texture.loadFromRenderTexture(*mTarget);
@@ -37,7 +37,7 @@ P::RGBA RenderTargetImpl::get_pixel(size_t x, size_t y) const
     return toPluginColor(texture.copyToImage().getPixel(x, y));
 }
 
-void RenderTargetImpl::set_pixel(size_t x, size_t y, const P::RGBA &color)
+void RenderTargetImpl::set_pixel(size_t x, size_t y, const PUPPY::RGBA &color)
 {
     LGL::Texture texture;
     texture.loadFromRenderTexture(*mTarget);
@@ -47,7 +47,7 @@ void RenderTargetImpl::set_pixel(size_t x, size_t y, const P::RGBA &color)
     mTarget->drawTexture(texture, Vec2i());
 }
 
-P::RGBA *RenderTargetImpl::get_pixels() const
+PUPPY::RGBA *RenderTargetImpl::get_pixels() const
 {
     LGL::Texture texture;
     texture.loadFromRenderTexture(*mTarget);
@@ -55,25 +55,25 @@ P::RGBA *RenderTargetImpl::get_pixels() const
     LGL::Image image = texture.copyToImage();
     Vec2i imageSize = image.getSize();
 
-    P::RGBA *pixels = new P::RGBA[imageSize.x * imageSize.y];
-    memcpy(pixels, image.getPixels(), sizeof(P::RGBA) * imageSize.x * imageSize.y);
+    PUPPY::RGBA *pixels = new PUPPY::RGBA[imageSize.x * imageSize.y];
+    memcpy(pixels, image.getPixels(), sizeof(PUPPY::RGBA) * imageSize.x * imageSize.y);
     return pixels;
 }
 
-void RenderTargetImpl::clear(const P::RGBA &color)
+void RenderTargetImpl::clear(const PUPPY::RGBA &color)
 {
     mTarget->clear(fromPluginColor(color));
 }
 
-void RenderTargetImpl::render_circle(const P::Vec2f &position, float radius, const P::RGBA &color,
-                                     const P::RenderMode &render_mode)
+void RenderTargetImpl::render_circle(const PUPPY::Vec2f &position, float radius, const PUPPY::RGBA &color,
+                                     const PUPPY::RenderMode &render_mode)
 {
     handleBlendMode(render_mode);
     mTarget->drawCircle(fromPluginVec(position), radius, fromPluginColor(color));
 }
 
-void RenderTargetImpl::render_line(const P::Vec2f &start, const P::Vec2f &end, const P::RGBA &color,
-                                   const P::RenderMode &render_mode)
+void RenderTargetImpl::render_line(const PUPPY::Vec2f &start, const PUPPY::Vec2f &end, const PUPPY::RGBA &color,
+                                   const PUPPY::RenderMode &render_mode)
 {
     handleBlendMode(render_mode);
     mTarget->drawLine(fromPluginVec(start),
@@ -82,8 +82,8 @@ void RenderTargetImpl::render_line(const P::Vec2f &start, const P::Vec2f &end, c
                       fromPluginColor(color));
 }
 
-void RenderTargetImpl::render_triangle(const P::Vec2f &p1, const P::Vec2f &p2, const P::Vec2f &p3,
-                                       const P::RGBA &color, const P::RenderMode &render_mode)
+void RenderTargetImpl::render_triangle(const PUPPY::Vec2f &p1, const PUPPY::Vec2f &p2, const PUPPY::Vec2f &p3,
+                                       const PUPPY::RGBA &color, const PUPPY::RenderMode &render_mode)
 {
     handleBlendMode(render_mode);
     mTarget->drawTriangle(fromPluginVec(p1),
@@ -92,8 +92,8 @@ void RenderTargetImpl::render_triangle(const P::Vec2f &p1, const P::Vec2f &p2, c
                           fromPluginColor(color));
 }
 
-void RenderTargetImpl::render_rectangle(const P::Vec2f &p1_ext, const P::Vec2f &p2_ext, const P::RGBA &color,
-                                        const P::RenderMode &render_mode)
+void RenderTargetImpl::render_rectangle(const PUPPY::Vec2f &p1_ext, const PUPPY::Vec2f &p2_ext, const PUPPY::RGBA &color,
+                                        const PUPPY::RenderMode &render_mode)
 {
     handleBlendMode(render_mode);
 
@@ -103,8 +103,8 @@ void RenderTargetImpl::render_rectangle(const P::Vec2f &p1_ext, const P::Vec2f &
     mTarget->drawRect(FloatRect(p1, p2 - p1), fromPluginColor(color));
 }
 
-void RenderTargetImpl::render_texture(const P::Vec2f &position, const P::RenderTarget *texture, 
-                                      const P::RenderMode &render_mode)
+void RenderTargetImpl::render_texture(const PUPPY::Vec2f &position, const PUPPY::RenderTarget *texture, 
+                                      const PUPPY::RenderMode &render_mode)
 {
     handleBlendMode(render_mode);
 
@@ -112,8 +112,8 @@ void RenderTargetImpl::render_texture(const P::Vec2f &position, const P::RenderT
     mTarget->drawRenderTexture(*impl->mTarget, Vec2f());
 }
 
-void RenderTargetImpl::render_pixels(const P::Vec2f &position, const P::Vec2s &size, const P::RGBA *data,
-                                     const P::RenderMode &render_mode)
+void RenderTargetImpl::render_pixels(const PUPPY::Vec2f &position, const PUPPY::Vec2s &size, const PUPPY::RGBA *data,
+                                     const PUPPY::RenderMode &render_mode)
 {
     handleBlendMode(render_mode);
 
@@ -126,20 +126,20 @@ void RenderTargetImpl::render_pixels(const P::Vec2f &position, const P::Vec2s &s
     mTarget->drawTexture(texture, fromPluginVec(position));
 }
 
-void RenderTargetImpl::apply_shader(const P::Shader *shader)
+void RenderTargetImpl::apply_shader(const PUPPY::Shader *shader)
 {
     Logger::log(LogLevel::Warning, "Some plugin tried to apply shader, but it's not supported");
 }
 
-void RenderTargetImpl::handleBlendMode(const P::RenderMode &mode)
+void RenderTargetImpl::handleBlendMode(const PUPPY::RenderMode &mode)
 {
-    if (mode.blend == P::BlendMode::ALPHA_BLEND)
+    if (mode.blend == PUPPY::BlendMode::ALPHA_BLEND)
         mTarget->setBlendMode(true);
     else
         mTarget->setBlendMode(false);
 }
 
-P::RenderTarget *RenderTargetFactoryImpl::spawn(const P::Vec2s &size, const P::RGBA &color) const
+PUPPY::RenderTarget *RenderTargetFactoryImpl::spawn(const PUPPY::Vec2s &size, const PUPPY::RGBA &color) const
 {
     LGL::RenderTexture *rt = new LGL::RenderTexture(fromPluginVec(size));
     rt->clear(fromPluginColor(color));
@@ -148,16 +148,16 @@ P::RenderTarget *RenderTargetFactoryImpl::spawn(const P::Vec2s &size, const P::R
     return target;
 }
 
-P::RenderTarget *RenderTargetFactoryImpl::from_pixels(const P::Vec2s &size, const P::RGBA *data) const
+PUPPY::RenderTarget *RenderTargetFactoryImpl::from_pixels(const PUPPY::Vec2s &size, const PUPPY::RGBA *data) const
 {
     LGL::RenderTexture *rt = new LGL::RenderTexture(fromPluginVec(size));
-    P::RenderTarget *target = new RenderTargetImpl(rt);
+    PUPPY::RenderTarget *target = new RenderTargetImpl(rt);
 
-    target->render_pixels(P::Vec2f(), size, data);
+    target->render_pixels(PUPPY::Vec2f(), size, data);
     return target;
 }
 
-P::RenderTarget *RenderTargetFactoryImpl::from_file(const char *path) const
+PUPPY::RenderTarget *RenderTargetFactoryImpl::from_file(const char *path) const
 {
     LGL::Texture texture;
     if (!texture.loadFromFile(path))

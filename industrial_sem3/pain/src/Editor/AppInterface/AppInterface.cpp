@@ -8,7 +8,7 @@
 
 AppInterfaceImpl::AppInterfaceImpl(PaintController *controller) : mController(controller)
 {
-    std_version = PSTD_VERSION;
+    std_version = PUPPY::STD_VERSION;
 
     factory.target = new RenderTargetFactoryImpl();
     factory.widget = new WidgetFactoryImpl(controller->getRoot());
@@ -38,6 +38,10 @@ void *AppInterfaceImpl::ext_get_interface(const char *extension, const char *nam
     return nullptr;
 }
 
+void AppInterfaceImpl::ext_register_as(const char *extension) const
+{
+}
+
 void AppInterfaceImpl::log(const char *fmt, ...) const
 {
     va_list args;
@@ -52,7 +56,7 @@ double AppInterfaceImpl::get_absolute_time() const
     return 0;
 }
 
-P::RGBA AppInterfaceImpl::get_color() const
+PUPPY::RGBA AppInterfaceImpl::get_color() const
 {
     return toPluginColor(mController->getCurrColor());
 }
@@ -62,7 +66,7 @@ float AppInterfaceImpl::get_size() const
     return mController->getCurrSize();
 }
 
-void AppInterfaceImpl::set_color(const P::RGBA &color) const
+void AppInterfaceImpl::set_color(const PUPPY::RGBA &color) const
 {
     /// TODO:
     return;
@@ -74,13 +78,13 @@ void AppInterfaceImpl::set_size(float size) const
     return;
 }
 
-P::RenderTarget *AppInterfaceImpl::get_target() const
+PUPPY::RenderTarget *AppInterfaceImpl::get_target() const
 {
     Canvas *canvas = mController->getActiveCanvas();
     return new RenderTargetImpl(canvas->getLayer(canvas->getActiveLayer()), true);
 }
 
-P::RenderTarget *AppInterfaceImpl::get_preview() const
+PUPPY::RenderTarget *AppInterfaceImpl::get_preview() const
 {
     Canvas *canvas = mController->getActiveCanvas();
     return new RenderTargetImpl(canvas->getPreviewLayer(), true);
@@ -89,4 +93,14 @@ P::RenderTarget *AppInterfaceImpl::get_preview() const
 void AppInterfaceImpl::flush_preview() const
 {
     mController->getActiveCanvas()->flushPreview();
+}
+
+const std::vector<PUPPY::WBody> &AppInterfaceImpl::get_windows() const
+{
+    return mDummy;
+}
+
+PUPPY::Widget *AppInterfaceImpl::get_root_widget() const
+{
+    return nullptr;
 }

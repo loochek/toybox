@@ -19,7 +19,7 @@ public:
      * \param pickerType Which type of plugin picker should be created
      */
     PluginPickerWindow(const Vec2f &pickerPos, PaintController *controller,
-                       P::PluginType pickerType, Widget *parent = nullptr);
+                       PUPPY::PluginType pickerType, Widget *parent = nullptr);
 
     virtual ~PluginPickerWindow();
 
@@ -32,7 +32,7 @@ private:
     PluginPicker *mPluginPicker;
     PluginPickerCloseDelegate *mCloseButtonDelegate;
 
-    P::PluginType mType;
+    PUPPY::PluginType mType;
 };
 
 #endif

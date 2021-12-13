@@ -44,14 +44,14 @@ void Canvas::onMouseReleased(const Vec2i &position)
 
 void Canvas::applyEffect(Plugin *effect)
 {
-    assert(effect->get_info()->type == P::PluginType::EFFECT);
+    assert(effect->get_info()->type == PUPPY::PluginType::EFFECT);
 
     effect->effect_apply();
 }
 
 void Canvas::setTool(Plugin *tool)
 {
-    assert(tool->get_info()->type == P::PluginType::TOOL);
+    assert(tool->get_info()->type == PUPPY::PluginType::TOOL);
 
     mCurrTool = tool;
 }

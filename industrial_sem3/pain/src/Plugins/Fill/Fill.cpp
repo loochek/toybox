@@ -3,10 +3,10 @@
 #include "../../Utils/Vec2.hpp"
 #include "../../Editor/AppInterface/PluginTypesProxy.hpp"
 
-class Fill : public P::PluginInterface
+class Fill : public PUPPY::PluginInterface
 {
 public:
-    Fill() : P::PluginInterface() {};
+    Fill() : PUPPY::PluginInterface() {};
 
     virtual bool ext_enable(const char *name) const override;
 
@@ -14,32 +14,32 @@ public:
 
     virtual void *ext_get_interface(const char *extension, const char *name) const override;
 
-    virtual const P::PluginInfo *get_info() const override;
-    virtual P::Status init(const P::AppInterface* appInterface) const override;
-    virtual P::Status deinit() const override;
+    virtual const PUPPY::PluginInfo *get_info() const override;
+    virtual PUPPY::Status init(const PUPPY::AppInterface* appInterface) const override;
+    virtual PUPPY::Status deinit() const override;
     virtual void dump()const override;
 
     virtual void on_tick(double dt) const override;
 
     virtual void effect_apply() const override;
 
-    virtual void tool_on_press(const P::Vec2f &position) const override;
-    virtual void tool_on_release(const P::Vec2f &position) const override;
-    virtual void tool_on_move(const P::Vec2f &from, const P::Vec2f &to) const override;
+    virtual void tool_on_press(const PUPPY::Vec2f &position) const override;
+    virtual void tool_on_release(const PUPPY::Vec2f &position) const override;
+    virtual void tool_on_move(const PUPPY::Vec2f &from, const PUPPY::Vec2f &to) const override;
 
     virtual void show_settings() const override;
 
 private:
-    static bool areColorsEqual(const P::RGBA &first, const P::RGBA &second);
+    static bool areColorsEqual(const PUPPY::RGBA &first, const PUPPY::RGBA &second);
 };
 
-const P::AppInterface* gAppInterface = nullptr;
+const PUPPY::AppInterface* gAppInterface = nullptr;
 
 const Fill gPluginInterface;
 
-const P::PluginInfo gPluginInfo =
+const PUPPY::PluginInfo gPluginInfo =
 {
-    PSTD_VERSION,           // std_version
+    PUPPY::STD_VERSION,           // std_version
     0,                      // reserved
 
     &gPluginInterface,      // plugin interface
@@ -51,10 +51,10 @@ const P::PluginInfo gPluginInfo =
 
     nullptr,                // icon
     
-    P::PluginType::TOOL
+    PUPPY::PluginType::TOOL
 };
 
-extern "C" const P::PluginInterface *get_plugin_interface()
+extern "C" const PUPPY::PluginInterface *get_plugin_interface()
 {
     return &gPluginInterface;
 }
@@ -76,21 +76,21 @@ void *Fill::ext_get_interface(const char *extension, const char *name)  const
     return nullptr;
 }
 
-const P::PluginInfo *Fill::get_info() const
+const PUPPY::PluginInfo *Fill::get_info() const
 {
     return &gPluginInfo;
 }
 
-P::Status Fill::init(const P::AppInterface* appInterface) const
+PUPPY::Status Fill::init(const PUPPY::AppInterface* appInterface) const
 {
     gAppInterface = appInterface;
     appInterface->log("Fill: succesful initialization!");
-    return P::Status::OK;
+    return PUPPY::Status::OK;
 }
 
-P::Status Fill::deinit() const
+PUPPY::Status Fill::deinit() const
 {
-    return P::Status::OK;
+    return PUPPY::Status::OK;
 }
 
 void Fill::dump() const
@@ -105,17 +105,17 @@ void Fill::effect_apply() const
 {
 }
 
-void Fill::tool_on_press(const P::Vec2f &position) const
+void Fill::tool_on_press(const PUPPY::Vec2f &position) const
 {
-    P::RenderTarget *activeLayer = gAppInterface->get_target();
+    PUPPY::RenderTarget *activeLayer = gAppInterface->get_target();
 
     Vec2i clickPos(fromPluginVec(position)), layerSize(fromPluginVec(activeLayer->get_size()));;
     if (clickPos.x < 0 || clickPos.x >= layerSize.x || clickPos.y < 0 || clickPos.y >= layerSize.y)
         return;
 
-    P::RGBA fillColor = gAppInterface->get_color();
+    PUPPY::RGBA fillColor = gAppInterface->get_color();
 
-    P::RGBA *pixels = activeLayer->get_pixels();
+    PUPPY::RGBA *pixels = activeLayer->get_pixels();
 
     std::deque<Vec2i> fillQueue;
     fillQueue.push_back(clickPos);
@@ -145,18 +145,18 @@ void Fill::tool_on_press(const P::Vec2f &position) const
         pixels[layerSize.x * currPixel.y + currPixel.x] = fillColor;
     }
 
-    P::RenderMode mode(P::BlendMode::COPY);
-    activeLayer->render_pixels(P::Vec2f(0, 0), toPluginVec(Vec2<size_t>(layerSize)), pixels, mode);
+    PUPPY::RenderMode mode(PUPPY::BlendMode::COPY);
+    activeLayer->render_pixels(PUPPY::Vec2f(0, 0), toPluginVec(Vec2<size_t>(layerSize)), pixels, mode);
 
     delete[] pixels;
     delete activeLayer;
 }
 
-void Fill::tool_on_release(const P::Vec2f &position) const
+void Fill::tool_on_release(const PUPPY::Vec2f &position) const
 {
 }
 
-void Fill::tool_on_move(const P::Vec2f &from, const P::Vec2f &to) const
+void Fill::tool_on_move(const PUPPY::Vec2f &from, const PUPPY::Vec2f &to) const
 {
 }
 
@@ -164,7 +164,7 @@ void Fill::show_settings() const
 {
 }
 
-bool Fill::areColorsEqual(const P::RGBA &first, const P::RGBA &second)
+bool Fill::areColorsEqual(const PUPPY::RGBA &first, const PUPPY::RGBA &second)
 {
     return first.r == second.r && first.g == second.g && first.b == second.b && first.a == second.a;
 }

@@ -1,70 +1,57 @@
 #include "WidgetFactory.hpp"
 #include "Widgets/PluginWidget.hpp"
 #include "Widgets/PluginWindow.hpp"
+#include "Widgets/PluginButton.hpp"
+#include "Widgets/PluginSlider.hpp"
+#include "Widgets/PluginTextBox.hpp"
+#include "Widgets/PluginColorPicker.hpp"
 
 WidgetFactoryImpl::WidgetFactoryImpl(Widget *root) : mRoot(root)
 {
 }
 
-P::Button *WidgetFactoryImpl::button(const P::WBody &body, P::Widget *parent) const
+PUPPY::Button *WidgetFactoryImpl::button(const PUPPY::WBody &body, PUPPY::Widget *parent) const
+{
+    return new PluginButtonImpl(body, parent);
+}
+
+PUPPY::Button *WidgetFactoryImpl::button(const PUPPY::Vec2f &pos, const char *caption, PUPPY::Widget *parent) const
+{
+    return new PluginButtonImpl(pos, caption, parent);
+}
+
+PUPPY::Slider *WidgetFactoryImpl::slider(PUPPY::Slider::Type type, const PUPPY::WBody &body, PUPPY::Widget *parent) const
+{
+    if (type == PUPPY::Slider::Type::D2)
+        return nullptr;
+
+    return new PluginSliderImpl(body, parent);
+}
+
+PUPPY::TextField *WidgetFactoryImpl::text_field(const PUPPY::WBody &body, PUPPY::Widget *parent) const
+{
+    return new PluginTextBoxImpl(body, parent);
+}
+
+PUPPY::ColorPicker *WidgetFactoryImpl::color_picker(const PUPPY::WBody &body, PUPPY::Widget *parent) const
+{
+    return new PluginColorPickerImpl(body, parent);
+}
+
+PUPPY::Label *WidgetFactoryImpl::label(const PUPPY::Vec2f &pos, const char *text, PUPPY::Widget *parent) const
 {
     return nullptr;
 }
 
-P::Button *WidgetFactoryImpl::button(const P::Vec2f &pos, const char *caption, P::Widget *parent) const
+PUPPY::Window *WidgetFactoryImpl::window(const char *name, const PUPPY::WBody &body, PUPPY::Widget *parent) const
 {
-    return nullptr;
-}
-
-P::Slider *WidgetFactoryImpl::slider(P::Slider::Type type, const P::WBody &body, P::Widget *parent) const
-{
-    return nullptr;
-}
-
-P::TextField *WidgetFactoryImpl::text_field(const P::WBody &body, P::Widget *parent) const
-{
-    return nullptr;
-}
-
-P::ColorPicker *WidgetFactoryImpl::color_picker(const P::WBody &body, P::Widget *parent) const
-{
-    return nullptr;
-}
-
-P::Label *WidgetFactoryImpl::label(const P::Vec2f &pos, const char *text, P::Widget *parent) const
-{
-    return nullptr;
-}
-
-P::Window *WidgetFactoryImpl::window(const char *name, const P::WBody &body, P::Widget *parent) const
-{
-    PluginWidgetIntl *parentWidget = nullptr;
-    if (parent != nullptr)
-    {
-        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
-        parentWidget = dynamic_cast<PluginWidgetIntl*>(parentImpl->mWidget->getParent());
-    }
-
-    PluginWindowIntl *widget = new PluginWindowIntl(fromPluginRect(body), parentWidget);
-    PluginWindowImpl *impl   = new PluginWindowImpl(body, widget, parent);
-
-    if (parent == nullptr)
-        mRoot->addChild(widget);
-
+    PluginWindowImpl *impl = new PluginWindowImpl(body, parent);
+    impl->set_name(name);
+    mRoot->addChild(impl->getWidget());
     return impl;
 }
 
-P::Widget *WidgetFactoryImpl::abstract(const P::WBody &body, P::Widget *parent) const
+PUPPY::Widget *WidgetFactoryImpl::abstract(const PUPPY::WBody &body, PUPPY::Widget *parent) const
 {
-    PluginWidgetIntl *parentWidget = nullptr;
-    if (parent != nullptr)
-    {
-        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
-        parentWidget = dynamic_cast<PluginWidgetIntl*>(parentImpl->mWidget->getParent());
-    }
-
-    PluginWidgetIntl *widget = new PluginWidgetIntl(fromPluginRect(body), parentWidget);
-    PluginWidgetImpl *impl   = new PluginWidgetImpl(body, widget, parent);
-
-    return impl;
+    return new PluginWidgetImpl(body, true, parent);
 }

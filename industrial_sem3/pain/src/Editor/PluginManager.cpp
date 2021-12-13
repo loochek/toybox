@@ -9,7 +9,7 @@
 #include "AppInterface/AppInterface.hpp"
 #include "PluginManager.hpp"
 
-typedef const P::PluginInterface* (*PIFunc)();
+typedef const PUPPY::PluginInterface* (*PIFunc)();
 
 PluginManager::PluginManager() : mAppInterface(nullptr) {}
 
@@ -17,10 +17,10 @@ PluginManager::~PluginManager()
 {
     for (int i = 0; i < mPlugins.size(); i++)
     {
-        const P::PluginInterface *plugin = mPlugins[i];
+        const PUPPY::PluginInterface *plugin = mPlugins[i];
 
-        P::Status status = plugin->deinit();
-        if (status != P::Status::OK)
+        PUPPY::Status status = plugin->deinit();
+        if (status != PUPPY::Status::OK)
             Logger::log(LogLevel::Warning, "Unable to deinit plugin %s", plugin->get_info()->name);
 
         if (dlclose(mLibraryHandles[i]) != 0)
@@ -42,10 +42,10 @@ void PluginManager::loadPlugin(const char *fileName)
     if (libraryHandle == nullptr)
         throw FormattedError("Unable to load plugin %s", dlerror());
 
-    PIFunc getPluginInterface = (PIFunc)dlsym(libraryHandle, PGET_INTERFACE_FUNC);
+    PIFunc getPluginInterface = (PIFunc)dlsym(libraryHandle, PUPPY::GET_INTERFACE_FUNC);
     if (getPluginInterface == nullptr)
     {
-        FormattedError error("Unable to load %s from %s", PGET_INTERFACE_FUNC, dlerror());
+        FormattedError error("Unable to load %s from %s", PUPPY::GET_INTERFACE_FUNC, dlerror());
         dlclose(libraryHandle);
         //sCurrInitPlugin = nullptr;
         throw error;
@@ -55,8 +55,8 @@ void PluginManager::loadPlugin(const char *fileName)
 
     //sCurrInitPlugin = this;
 
-    P::Status status = pluginInterface->init(mAppInterface);
-    if (status != P::Status::OK)
+    PUPPY::Status status = pluginInterface->init(mAppInterface);
+    if (status != PUPPY::Status::OK)
     {
         FormattedError error("Plugin %s initialization failed", fileName);
         dlclose(libraryHandle);

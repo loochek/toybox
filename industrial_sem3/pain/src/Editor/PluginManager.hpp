@@ -5,7 +5,7 @@
 #include "../LGL/LGL.hpp"
 #include "EditorPluginAPI/plugin_std.hpp"
 
-typedef const P::PluginInterface Plugin;
+typedef const PUPPY::PluginInterface Plugin;
 
 class Canvas;
 class PaintController;

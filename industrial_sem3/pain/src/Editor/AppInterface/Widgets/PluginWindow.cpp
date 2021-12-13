@@ -1,35 +1,22 @@
+#include "../RenderTarget.hpp"
 #include "PluginWindow.hpp"
 
-PluginWindowIntl::PluginWindowIntl(const IntRect &contentRect, PluginWidgetIntl *parent) :
-    Window(contentRect, parent),
-    PluginWidgetIntl(IntRect(contentRect.position - Vec2i(SIDE_BORDER_SIZE, HEADER_HEIGHT),
-                     contentRect.size + Vec2i(SIDE_BORDER_SIZE * 2, HEADER_HEIGHT + BOTTOM_BORDER_SIZE)), parent)
+PluginWindowIntl::PluginWindowIntl(const IntRect &contentRect, PluginWindowImpl *impl, Widget *parent) :
+    Window(contentRect, parent), mImpl(impl)
 {
 }
 
-PluginWindowImpl::PluginWindowImpl(const P::WBody &body, PluginWindowIntl *widget, P::Widget *parent) :
-    P::Window(body, parent), PluginWidgetImpl(body, widget, parent), P::Widget(body, parent)
+PluginWindowImpl::PluginWindowImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 
+    PluginWidgetImpl(body, false, parent)
 {
-}
+    ::Widget *parentWidget = nullptr;
+    if (parent != nullptr)
+    {
+        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
+        parentWidget = parentImpl->getWidget();
+    }
 
-void PluginWindowImpl::set_show_handler(HandlerType &handler_)
-{
-
-}
-
-P::Window::HandlerType &PluginWindowImpl::get_show_handler()
-{
-
-}
-
-void PluginWindowImpl::set_hide_handler(HandlerType &handler_)
-{
-
-}
-
-P::Window::HandlerType &PluginWindowImpl::get_hide_handler()
-{
-
+    mWidget = new PluginWindowIntl(fromPluginRect(body), this, parentWidget);
 }
 
 bool PluginWindowImpl::set_name(const char *name)

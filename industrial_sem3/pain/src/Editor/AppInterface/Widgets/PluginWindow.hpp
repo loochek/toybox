@@ -11,26 +11,35 @@ class PluginWindowImpl;
 /**
  * Special window which holds wrapper structure
  */
-class PluginWindowIntl : public virtual PluginWidgetIntl, public Window
+class PluginWindowIntl : public Window
 {
 public:
-    PluginWindowIntl(const IntRect &contentRect, PluginWidgetIntl *parent = nullptr);
+    PluginWindowIntl(const IntRect &contentRect, PluginWindowImpl *impl, Widget *parent = nullptr);
+
+    PluginWindowImpl *getImpl() { return mImpl; };
+
+protected:
+    PluginWindowImpl *mImpl;
 };
 
-class PluginWindowImpl : public PluginWidgetImpl, public P::Window
+class PluginWindowImpl : public PluginWidgetImpl, public PUPPY::Window
 {
 public:
     PluginWindowImpl() = delete;
-    PluginWindowImpl(const P::WBody &body, PluginWindowIntl *widget, P::Widget *parent = nullptr);
+    PluginWindowImpl(const PUPPY::WBody &body, PUPPY::Widget *parent = nullptr);
 
-    virtual void set_show_handler(HandlerType &handler_) override;
-    virtual HandlerType &get_show_handler() override;
+    virtual void set_show_handler(HandlerType &handler_) { mShowHandler = handler_; };
+    virtual HandlerType &get_show_handler() override { return mShowHandler; };
 
-    virtual void set_hide_handler(HandlerType &handler_) override;
-    virtual HandlerType &get_hide_handler() override;
+    virtual void set_hide_handler(HandlerType &handler_) override { mHideHandler = handler_; };
+    virtual HandlerType &get_hide_handler() override { return mHideHandler; };
 
     virtual bool set_name(const char *name) override;
     virtual const char *get_name() override;
+
+protected:
+    HandlerType mShowHandler;
+    HandlerType mHideHandler;
 };
 
 #endif

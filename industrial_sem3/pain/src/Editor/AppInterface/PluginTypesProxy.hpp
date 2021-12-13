@@ -6,26 +6,26 @@
 #include "../../LGL/LGL.hpp"
 
 template<typename T>
-inline P::Vec2T<T> toPluginVec(Vec2<T> vec)
+inline PUPPY::Vec2T<T> toPluginVec(Vec2<T> vec)
 {
-    return P::Vec2T<T>(vec.x, vec.y);
+    return PUPPY::Vec2T<T>(vec.x, vec.y);
 }
 
-inline P::RGBA toPluginColor(const LGL::Color &color)
+inline PUPPY::RGBA toPluginColor(const LGL::Color &color)
 {
-    return P::RGBA(color.r * EXTERNAL_RGB_BASE,
+    return PUPPY::RGBA(color.r * EXTERNAL_RGB_BASE,
                    color.g * EXTERNAL_RGB_BASE,
                    color.b * EXTERNAL_RGB_BASE,
                    color.a * EXTERNAL_RGB_BASE);
 }
 
 template<typename T>
-inline Vec2<T> fromPluginVec(P::Vec2T<T> vec)
+inline Vec2<T> fromPluginVec(PUPPY::Vec2T<T> vec)
 {
     return Vec2<T>(vec.x, vec.y);
 }
 
-inline LGL::Color fromPluginColor(const P::RGBA &color)
+inline LGL::Color fromPluginColor(const PUPPY::RGBA &color)
 {
     return LGL::Color(color.r / (float)EXTERNAL_RGB_BASE,
                       color.g / (float)EXTERNAL_RGB_BASE,
@@ -33,12 +33,12 @@ inline LGL::Color fromPluginColor(const P::RGBA &color)
                       color.a / (float)EXTERNAL_RGB_BASE);
 }
 
-inline P::WBody toPluginRect(const IntRect &rect)
+inline PUPPY::WBody toPluginRect(const IntRect &rect)
 {
-    return (P::WBody){ toPluginVec(Vec2f(rect.position)), toPluginVec(Vec2f(rect.size)) };
+    return (PUPPY::WBody){ toPluginVec(Vec2f(rect.position)), toPluginVec(Vec2f(rect.size)) };
 }
 
-inline IntRect fromPluginRect(const P::WBody &rect)
+inline IntRect fromPluginRect(const PUPPY::WBody &rect)
 {
     return IntRect(fromPluginVec(rect.position), fromPluginVec(rect.size));
 }

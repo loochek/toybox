@@ -7,7 +7,7 @@ const Vec2i ONE_BUTTON_SIZE = Vec2i(120, 60);
 
 const Vec2i PluginPicker::PICKER_INIT_SIZE = ONE_BUTTON_SIZE;
 
-PluginPicker::PluginPicker(const Vec2i &position, P::PluginType pickerType, Widget *parent) :
+PluginPicker::PluginPicker(const Vec2i &position, PUPPY::PluginType pickerType, Widget *parent) :
     Widget(IntRect(position, PICKER_INIT_SIZE), parent), mDelegate(nullptr), mType(pickerType), mButtonsCount(0)
 {
     mController = new PluginPickerController(this);
