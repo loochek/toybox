@@ -27,6 +27,9 @@ PluginSliderImpl::PluginSliderImpl(const PUPPY::WBody &body, PUPPY::Widget *pare
     ::Slider *slider = new PluginSliderIntl(fromPluginVec(body.position), body.size.x, this, parentWidget);
     slider->setMaxValue(SLIDER_PREC);
     mWidget = slider;
+
+    if (parent != nullptr)
+        parent->add_child(this);
 }
 
 PUPPY::Vec2f PluginSliderImpl::get_fraction_2d()
@@ -40,12 +43,12 @@ void PluginSliderImpl::set_fraction_2d(const PUPPY::Vec2f &frac)
 
 float PluginSliderImpl::get_fraction()
 {
-    ::Slider *slider = (::Slider*)mWidget;
+    ::Slider *slider = static_cast<::Slider*>(mWidget);
     return (float)slider->getValue() / SLIDER_PREC;
 }
 
 void PluginSliderImpl::set_fraction(float frac)
 {
-    ::Slider *slider = (::Slider*)mWidget;
+    ::Slider *slider = static_cast<::Slider*>(mWidget);
     slider->setValue(frac * SLIDER_PREC);
 }

@@ -25,15 +25,17 @@ PluginTextBoxImpl::PluginTextBoxImpl(const PUPPY::WBody &body, PUPPY::Widget *pa
     }
 
     mWidget = new PluginTextBoxIntl(fromPluginVec(body.position), body.size.x, this, parentWidget);
+    if (parent != nullptr)
+        parent->add_child(this);
 }
 
 
 std::string_view PluginTextBoxImpl::get_text() const
 {
-    return ((TextBox*)mWidget)->getText();
+    return static_cast<TextBox*>(mWidget)->getText();
 }
 
 void PluginTextBoxImpl::set_text(std::string_view text)
 {
-    ((TextBox*)mWidget)->setText(text.data());
+    static_cast<TextBox*>(mWidget)->setText(text.data());
 }

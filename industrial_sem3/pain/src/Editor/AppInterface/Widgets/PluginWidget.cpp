@@ -20,11 +20,9 @@ PluginWidgetImpl::PluginWidgetImpl(const PUPPY::WBody &body, bool spawn, PUPPY::
         }
 
         mWidget = new PluginWidgetIntl(fromPluginRect(body), this, parentWidget);
+        if (parent != nullptr)
+            parent->add_child(this);
     }
-
-    /// TODO: fix
-    // if (parent != nullptr)
-    //     parent->add_child(this);
 }
 
 void PluginWidgetImpl::set_position(const PUPPY::Vec2f &position_)

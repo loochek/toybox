@@ -27,6 +27,8 @@ PluginButtonImpl::PluginButtonImpl(const PUPPY::WBody &body, PUPPY::Widget *pare
     }
 
     mWidget = new PluginButtonIntl(fromPluginRect(body), this, parentWidget);
+    if (parent != nullptr)
+        parent->add_child(this);
 }
 
 PluginButtonImpl::PluginButtonImpl(const PUPPY::WBody &body, const char *label, PUPPY::Widget *parent) : 

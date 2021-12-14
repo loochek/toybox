@@ -17,11 +17,13 @@ PluginWindowImpl::PluginWindowImpl(const PUPPY::WBody &body, PUPPY::Widget *pare
     }
 
     mWidget = new PluginWindowIntl(fromPluginRect(body), this, parentWidget);
+    if (parent != nullptr)
+        parent->add_child(this);
 }
 
 bool PluginWindowImpl::set_name(const char *name)
 {
-    dynamic_cast<::Window*>(mWidget)->setTitle(name);
+    static_cast<::Window*>(mWidget)->setTitle(name);
     return true;
 }
 

@@ -25,11 +25,13 @@ PluginColorPickerImpl::PluginColorPickerImpl(const PUPPY::WBody &body, PUPPY::Wi
     }
 
     mWidget = new PluginColorPickerIntl(fromPluginVec(body.position), this, parentWidget);
+    if (parent != nullptr)
+        parent->add_child(this);
 }
 
 PUPPY::RGBA PluginColorPickerImpl::get_color()
 {
-    return toPluginColor(((Pallete*)mWidget)->getColor());
+    return toPluginColor((static_cast<Pallete*>(mWidget))->getColor());
 }
 
 void PluginColorPickerImpl::set_color(PUPPY::RGBA color)
