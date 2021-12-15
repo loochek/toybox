@@ -5,7 +5,8 @@
 #include "../BaseGUILogic/Slider/SliderDelegate.hpp"
 #include "../BaseGUILogic/Slider/SliderSideButtonsDelegate.hpp"
 
-const int SLIDER_HEIGHT       = 16;
+const int Slider::SLIDER_HEIGHT = 16;
+
 const int SIDE_BUTTONS_LENGTH = 16;
 const int MIN_THUMB_WIDTH     = 18;
 const int PIXELS_PER_VALUE    = 4;

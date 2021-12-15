@@ -14,7 +14,7 @@ class Pallete : public Widget
 {
 public:
     Pallete() = delete;
-    Pallete(const Vec2i &position, Widget *parent = nullptr);
+    Pallete(const IntRect &widgetRect, Widget *parent = nullptr);
 
     virtual ~Pallete();
 
@@ -45,6 +45,8 @@ protected:
     KeyColorPicker  *mKeyColorPicker;
     Slider          *mOpacitySlider;
     Label           *mOpacityLabel;
+
+    Vec2i mColorPreviewPos;
 
     friend class PalleteController;
 };

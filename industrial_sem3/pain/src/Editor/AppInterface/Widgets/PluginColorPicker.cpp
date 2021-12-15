@@ -2,8 +2,9 @@
 #include "Logic/PColorPickerDelegate.hpp"
 #include "PluginColorPicker.hpp"
 
-PluginColorPickerIntl::PluginColorPickerIntl(const Vec2i &position, PluginColorPickerImpl *impl, Widget *parent) :
-    Pallete(position, parent), mImpl(impl)
+PluginColorPickerIntl::PluginColorPickerIntl(const IntRect &widgetRect, PluginColorPickerImpl *impl,
+                                             Widget *parent) :
+    Pallete(widgetRect, parent), mImpl(impl)
 {
     mDelegate = new PColorPickerDelegate(this);
     setDelegate(mDelegate);
@@ -25,7 +26,7 @@ PluginColorPickerImpl::PluginColorPickerImpl(const PUPPY::WBody &body, PUPPY::Wi
         parentWidget = parentImpl->getWidget();
     }
 
-    mWidget = new PluginColorPickerIntl(fromPluginVec(body.position), this, parentWidget);
+    mWidget = new PluginColorPickerIntl(fromPluginRect(body), this, parentWidget);
     if (parent != nullptr)
         parent->add_child(this);
 }

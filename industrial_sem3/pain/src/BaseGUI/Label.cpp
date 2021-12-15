@@ -19,7 +19,13 @@ void Label::setText(const char *text)
     else
     {
         Vec2f textRectSize = LGL::RenderTarget::calculateTextBounds(text);
+        
+        if (textRectSize.x < LABEL_INIT_SIZE.x)
+            textRectSize.x = LABEL_INIT_SIZE.x;
 
+        if (textRectSize.y < LABEL_INIT_SIZE.y)
+            textRectSize.y = LABEL_INIT_SIZE.y;
+           
         mTexture.resize(textRectSize);
         mRect = IntRect(mAxis - Vec2i(0, LGL::RenderTexture::calculateTextAxis(text)), textRectSize);
 

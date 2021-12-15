@@ -39,6 +39,14 @@ public:
     const BaseButton *addButton(const char *text, ButtonDelegate *delegate, uint64_t userData = -1);
 
     /**
+     * Renames the button
+     * 
+     * \param button Button to delete
+     * \param text New text
+     */
+    void renameButton(const BaseButton *button, const char *text);
+
+    /**
      * Deletes the button
      * 
      * \param button Button to delete

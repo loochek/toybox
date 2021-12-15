@@ -11,7 +11,7 @@ AppInterfaceImpl::AppInterfaceImpl(PaintController *controller) : mController(co
     std_version = PUPPY::STD_VERSION;
 
     factory.target = new RenderTargetFactoryImpl();
-    factory.widget = new WidgetFactoryImpl(controller->getRoot());
+    factory.widget = new WidgetFactoryImpl(controller);
     factory.shader = nullptr;
 }
 

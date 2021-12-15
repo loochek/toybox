@@ -53,6 +53,9 @@ private:
     void getTextures();
     int calcThumbSize(int sliderSize, int maxValue);
 
+public:
+    static const int SLIDER_HEIGHT;
+
 protected:
     SliderDelegate *mDelegate;
 

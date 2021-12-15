@@ -30,6 +30,7 @@ class PluginPickerWindow;
 class PluginConfigWindow;
 class BaseButton;
 class ImageOpenWindow;
+class PluginWindowIntl;
 
 /**
  * App logic controller
@@ -52,7 +53,9 @@ public:
     void openSplineWindow();
     void openImageOpenWindow();
 
-    //PluginConfigWindow *createPluginSettingsWindow(Plugin *plugin);
+    void onPluginWindowCreate      (PluginWindowIntl *window);
+    void onPluginWindowTitleChanged(PluginWindowIntl *window);
+    void onPluginWindowDestroy     (PluginWindowIntl *window);
 
     void onCanvasClose       (PaintWindow *paintWindow);
     void onCanvasSave        (PaintWindow *paintWindow);
@@ -101,6 +104,7 @@ private:
     std::unordered_set<PaintWindow*> mPaintWindows;
     PaintWindow *mActivePaintWindow;
 
+    std::unordered_map<PluginWindowIntl*, const BaseButton*> mMenuBarPluginButtons;
     std::unordered_map<PaintWindow*, const BaseButton*> mTaskBarButtons;
 
     std::unordered_map<PaintWindow*, char*> mWindowsFileNames;

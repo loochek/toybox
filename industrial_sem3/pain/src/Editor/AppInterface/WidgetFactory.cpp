@@ -1,12 +1,13 @@
 #include "WidgetFactory.hpp"
 #include "Widgets/PluginWidget.hpp"
 #include "Widgets/PluginWindow.hpp"
+#include "Widgets/PluginLabel.hpp"
 #include "Widgets/PluginButton.hpp"
 #include "Widgets/PluginSlider.hpp"
 #include "Widgets/PluginTextBox.hpp"
 #include "Widgets/PluginColorPicker.hpp"
 
-WidgetFactoryImpl::WidgetFactoryImpl(Widget *root) : mRoot(root)
+WidgetFactoryImpl::WidgetFactoryImpl(PaintController *controller) : mController(controller)
 {
 }
 
@@ -41,14 +42,12 @@ PUPPY::ColorPicker *WidgetFactoryImpl::color_picker(const PUPPY::WBody &body, PU
 PUPPY::Label *WidgetFactoryImpl::label(const PUPPY::Vec2f &pos, const char *text, PUPPY::Widget *parent) const
 {
     return nullptr;
+    //return new PluginLabelImpl(pos, text, parent);
 }
 
 PUPPY::Window *WidgetFactoryImpl::window(const char *name, const PUPPY::WBody &body, PUPPY::Widget *parent) const
 {
-    PluginWindowImpl *impl = new PluginWindowImpl(body, parent);
-    impl->set_name(name);
-    mRoot->addChild(impl->getWidget());
-    return impl;
+    return new PluginWindowImpl(name, body, mController, parent);
 }
 
 PUPPY::Widget *WidgetFactoryImpl::abstract(const PUPPY::WBody &body, PUPPY::Widget *parent) const

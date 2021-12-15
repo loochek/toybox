@@ -3,12 +3,12 @@
 
 #include "../EditorPluginAPI/plugin_std.hpp"
 
-class Widget;
+class PaintController;
 
 class WidgetFactoryImpl : public PUPPY::WidgetFactory
 {
 public:
-    WidgetFactoryImpl(Widget *root);
+    WidgetFactoryImpl(PaintController *controller);
 
     virtual PUPPY::Button      *button      (const PUPPY::WBody &body, PUPPY::Widget *parent = nullptr) const override;
     virtual PUPPY::Button      *button      (const PUPPY::Vec2f &pos, const char *caption, PUPPY::Widget *parent = nullptr) const override;
@@ -20,7 +20,7 @@ public:
     virtual PUPPY::Widget      *abstract    (const PUPPY::WBody &body, PUPPY::Widget *parent = nullptr) const override;
 
 private:
-    Widget *mRoot;
+    PaintController *mController;
 };
 
 #endif

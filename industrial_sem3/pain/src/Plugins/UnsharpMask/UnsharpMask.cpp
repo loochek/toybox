@@ -1,195 +1,200 @@
 #include "../../Editor/EditorPluginAPI/plugin_std.hpp"
 #include "../../LGL/Color.hpp"
 
-const float DEFAULT_POWER  = 0.1;
-const float DEFAULT_AMOUNT = 1.5;
-
-static PPluginStatus init(const PAppInterface* appInterface);
-static PPluginStatus deinit();
-
-static void dump();
-static void onUpdate(double elapsedTime);
-static void onSettingsUpdate();
-
-static const PPluginInfo  *getInfo();
-static PPreviewLayerPolicy getFlushPolicy();
-
-static void apply();
-
-static bool enableExtension(const char *name);
-static void *getExtensionFunc(const char *extension, const char *func);
-
-static void getSettings(float &power, float &amount);
-static void calcGaussianKernel(int kernelRadius, float sigma, float kernel[]);
-static PRGBA *unsharp(PRGBA *pixels, int width, int height, float amount, int kernelSize, const float kernel[]);
-static float gaussian(float x, float y, float sigma);
-static LGL::Color toLGLColor(const PRGBA &color);
-static PRGBA toPluginColor(const LGL::Color &color);
-
-const PPluginInterface gPluginInterface =
+class Unsharp : public PUPPY::PluginInterface
 {
-    0, // std_version
-    0, // reserved
-    
-    enableExtension,
-    getExtensionFunc,
+public:
+    Unsharp() : PUPPY::PluginInterface() {};
 
-    // general
-    getInfo,
-    init,
-    deinit,
-    dump,
-    onUpdate,
-    onSettingsUpdate,
-    getFlushPolicy,
+    virtual bool ext_enable(const char *name) const override;
 
-    // effect
-    apply,
+    virtual void *ext_get_func(const char *extension, const char *func) const override;
 
-    // tool
-    nullptr,
-    nullptr,
-    nullptr
+    virtual void *ext_get_interface(const char *extension, const char *name) const override;
+
+    virtual const PUPPY::PluginInfo *get_info() const override;
+    virtual PUPPY::Status init(const PUPPY::AppInterface* appInterface) const override;
+    virtual PUPPY::Status deinit() const override;
+    virtual void dump() const override;
+
+    virtual void on_tick(double dt) const override;
+
+    virtual void effect_apply() const override;
+
+    virtual void tool_on_press(const PUPPY::Vec2f &position) const override;
+    virtual void tool_on_release(const PUPPY::Vec2f &position) const override;
+    virtual void tool_on_move(const PUPPY::Vec2f &from, const PUPPY::Vec2f &to) const override;
+
+    virtual void show_settings() const override;
+
+private:
+    PUPPY::RGBA *unsharp(PUPPY::RGBA *pixels, const PUPPY::Vec2s &size, float amount, int kernelSize,
+                             const float kernel[]) const;
+    void calcGaussianKernel(int kernelRadius, float sigma, float kernel[]) const;
+    float gaussian(float x, float y, float sigma) const;
+    void getSettings(float &power, float &amount) const;
+    LGL::Color toLGLColor(const PUPPY::RGBA &color) const;
+    PUPPY::RGBA toPluginColor(const LGL::Color &color) const;
 };
 
-const PPluginInfo gPluginInfo =
-{
-    0, // std_version
-    0, // reserved
+//===================================================================
 
-    &gPluginInterface,
+const PUPPY::AppInterface* gAppInterface = nullptr;
+
+struct {
+    PUPPY::Window    *window;
+    PUPPY::TextField *powerTextBox;
+    PUPPY::TextField *amountTextBox;
+} gWidgets;
+
+const PUPPY::WBody WINDOW_BODY(PUPPY::Vec2f(400, 400), PUPPY::Vec2f(200, 50));
+const PUPPY::WBody POWER_TEXT_BOX_BODY (PUPPY::Vec2f(40, 10), PUPPY::Vec2f(30, 20));
+const PUPPY::WBody AMOUNT_TEXT_BOX_BODY(PUPPY::Vec2f(40, 40), PUPPY::Vec2f(30, 20));
+const PUPPY::Vec2f POWER_LABEL_POS(10, 10);
+const PUPPY::Vec2f AMOUNT_LABEL_POS(10, 40);
+
+const float DEFAULT_POWER  = 1.3;
+const float DEFAULT_AMOUNT = 0.8;
+
+//===================================================================
+
+const Unsharp gPluginInterface;
+
+const PUPPY::PluginInfo gPluginInfo =
+{
+    PUPPY::STD_VERSION,     // std_version
+    0,                      // reserved
+
+    &gPluginInterface,      // plugin interface
 
     "Unsharp mask",
-    "1.0",
+    "2.0",
     "loochek",
     "Simple unsharp masking effect",
+
+    nullptr,                // icon
     
-    PPT_EFFECT
+    PUPPY::PluginType::EFFECT
 };
 
-
-const PAppInterface *gAppInterface = nullptr;
-void *gPowerSettingHandle  = nullptr;
-void *gAmountSettingHandle = nullptr;
-
-
-extern "C" const PPluginInterface *get_plugin_interface()
+extern "C" const PUPPY::PluginInterface *get_plugin_interface()
 {
     return &gPluginInterface;
 }
 
-static PPluginStatus init(const PAppInterface* appInterface)
+//===================================================================
+
+bool Unsharp::ext_enable(const char *name) const
 {
-    gAppInterface = appInterface;
-
-    if (gAppInterface->general.feature_level & PFL_SETTINGS_SUPPORT)
-    {
-        appInterface->general.log("[Unsharp mask] Settings support is present");
-        appInterface->settings.create_surface(&gPluginInterface, 100, 100);
-        gPowerSettingHandle  = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Power");
-        gAmountSettingHandle = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Amount");
-    }
-    else
-        appInterface->general.log("[Unsharp mask] Settings support is NOT present!");
-
-    appInterface->general.log("[Unsharp mask] Succesful initialization!");
-    return PPS_OK; 
+    return false;
 }
 
-static PPluginStatus deinit()
+void *Unsharp::ext_get_func(const char *extension, const char *func) const
 {
-    return PPS_OK;
+    return nullptr;
 }
 
-static void dump()
+void *Unsharp::ext_get_interface(const char *extension, const char *name)  const
 {
+    return nullptr;
 }
 
-static const PPluginInfo *getInfo()
+const PUPPY::PluginInfo *Unsharp::get_info() const
 {
     return &gPluginInfo;
 }
 
-static void onUpdate(double elapsedTime)
+PUPPY::Status Unsharp::init(const PUPPY::AppInterface* appInterface) const
+{
+    gAppInterface = appInterface;
+
+    if (appInterface->factory.widget)
+    {
+        const PUPPY::WidgetFactory *factory = appInterface->factory.widget;
+
+        gWidgets.window        = factory->window("Unsharp mask", WINDOW_BODY);
+        gWidgets.powerTextBox  = factory->text_field(POWER_TEXT_BOX_BODY , gWidgets.window);
+        gWidgets.amountTextBox = factory->text_field(AMOUNT_TEXT_BOX_BODY, gWidgets.window);
+
+        factory->label(POWER_LABEL_POS, "Power:", gWidgets.window);
+        factory->label(AMOUNT_LABEL_POS, "Amount:", gWidgets.window);
+
+        gWidgets.powerTextBox->set_text("1.3");
+        gWidgets.amountTextBox->set_text("0.8");
+    }
+
+    appInterface->log("Unsharp: succesful initialization!");
+    return PUPPY::Status::OK;
+}
+
+PUPPY::Status Unsharp::deinit() const
+{
+    if (gWidgets.window) {
+        gWidgets.window->set_to_delete();
+    }
+
+    return PUPPY::Status::OK;
+}
+
+void Unsharp::dump() const
 {
 }
 
-static void onSettingsUpdate()
+void Unsharp::on_tick(double dt) const
 {
 }
 
-static PPreviewLayerPolicy getFlushPolicy()
+void Unsharp::effect_apply() const
 {
-    return PPLP_BLEND;
-}
+    PUPPY::RenderTarget *activeLayer = gAppInterface->get_target();
+    PUPPY::Vec2s layerSize(activeLayer->get_size());
 
-static void apply()
-{
-    PRenderMode render_mode = { PPBM_COPY, PPDP_ACTIVE, nullptr };
+    PUPPY::RGBA *pixels = activeLayer->get_pixels();
 
-    size_t layerWidth = 0, layerHeight = 0;
-    gAppInterface->target.get_size(&layerWidth, &layerHeight);
-
-    float power  = 0;
+    float power = 0;
     float amount = 0;
     getSettings(power, amount);
     int kernelRadius = ceil(2 * power);
-
-    PRGBA *pixels = gAppInterface->target.get_pixels();
 
     int kernelSize = 1 + 2 * kernelRadius;
     float *kernel = new float[kernelSize * kernelSize];
     calcGaussianKernel(kernelRadius, power, kernel);
     
-    PRGBA *dstPixels = unsharp(pixels, layerWidth, layerHeight, amount, kernelSize, kernel);
+    PUPPY::RGBA *dstPixels = unsharp(pixels, layerSize, amount, kernelSize, kernel);
 
-    gAppInterface->render.pixels(PVec2f(0, 0), dstPixels, layerWidth, layerHeight, &render_mode);
-    gAppInterface->general.release_pixels(pixels);
+    PUPPY::RenderMode mode(PUPPY::BlendMode::COPY);
+    activeLayer->render_pixels(PUPPY::Vec2f(0, 0), layerSize, dstPixels, mode);
+    
+    delete[] pixels;
     delete[] dstPixels;
     delete[] kernel;
+    delete activeLayer;
 }
 
-static bool enableExtension(const char *name)
+void Unsharp::tool_on_press(const PUPPY::Vec2f &position) const
 {
-    return false;
 }
 
-static void *getExtensionFunc(const char *extension, const char *func)
+void Unsharp::tool_on_release(const PUPPY::Vec2f &position) const
 {
-    return nullptr;
 }
 
-static void getSettings(float &power, float &amount)
+void Unsharp::tool_on_move(const PUPPY::Vec2f &from, const PUPPY::Vec2f &to) const
 {
-    PTextFieldSetting settingValue;
-    if (gPowerSettingHandle != nullptr)
+}
+
+void Unsharp::show_settings() const
+{
+}
+
+PUPPY::RGBA *Unsharp::unsharp(PUPPY::RGBA *pixels, const PUPPY::Vec2s &size, float amount, int kernelSize,
+                               const float kernel[]) const
+{
+    PUPPY::RGBA *dstPixels = new PUPPY::RGBA[size.x * size.y];
+
+    for (int y = 0; y < size.y; y++)
     {
-        gAppInterface->settings.get(&gPluginInterface, gPowerSettingHandle, &settingValue);
-        power = atof(settingValue.text);
-        if (power < 0.1f)
-            power = DEFAULT_POWER;
-    }
-    else
-        power = DEFAULT_POWER;
-
-    if (gAmountSettingHandle != nullptr)
-    {
-        gAppInterface->settings.get(&gPluginInterface, gAmountSettingHandle, &settingValue);
-        amount = atof(settingValue.text);
-        if (amount < 0.01f)
-            amount = DEFAULT_AMOUNT;
-    }
-    else
-        amount = DEFAULT_AMOUNT;
-}
-
-static PRGBA *unsharp(PRGBA *pixels, int width, int height, float amount, int kernelSize, const float kernel[])
-{
-    PRGBA *dstPixels = new PRGBA[width * height];
-
-    for (int y = 0; y < height; y++)
-    {
-        for (int x = 0; x < width; x++)
+        for (int x = 0; x < size.x; x++)
         {
             LGL::Color sumColor(0.0f, 0.0f, 0.0f);
 
@@ -206,32 +211,32 @@ static PRGBA *unsharp(PRGBA *pixels, int width, int height, float amount, int ke
                     if (ky < 0)
                         ky = 0;
 
-                    if (kx >= width)
-                        kx = width - 1;
+                    if (kx >= size.x)
+                        kx = size.x - 1;
 
-                    if (ky >= height)
-                        ky = height - 1;
+                    if (ky >= size.y)
+                        ky = size.y - 1;
 
-                    LGL::Color color = toLGLColor(pixels[width * ky + kx]);
+                    LGL::Color color = toLGLColor(pixels[size.x * ky + kx]);
                     float coeff = kernel[iKernRow * kernelSize + iKernCol];
 
                     sumColor += color * coeff;
                 }
             }
 
-            LGL::Color originalColor = toLGLColor(pixels[width * y + x]);
-            LGL::Color blurredColor  = sumColor.applyAlpha((float)pixels[width * y + x].a / EXTERNAL_RGB_BASE);
+            LGL::Color originalColor = toLGLColor(pixels[size.x * y + x]);
+            LGL::Color blurredColor  = sumColor.applyAlpha((float)pixels[size.x * y + x].a / EXTERNAL_RGB_BASE);
 
             LGL::Color finalColor = (originalColor - (blurredColor - originalColor) * amount).norm();
 
-            dstPixels[width * y + x] = toPluginColor(finalColor);
+            dstPixels[size.x * y + x] = toPluginColor(finalColor);
         }
     }
 
     return dstPixels;
 }
 
-static void calcGaussianKernel(int kernelRadius, float sigma, float kernel[])
+void Unsharp::calcGaussianKernel(int kernelRadius, float sigma, float kernel[]) const
 {
     int kernelSize = 1 + kernelRadius * 2;
 
@@ -253,13 +258,34 @@ static void calcGaussianKernel(int kernelRadius, float sigma, float kernel[])
     }
 }
 
-static float gaussian(float x, float y, float sigma)
+float Unsharp::gaussian(float x, float y, float sigma) const
 {
     float pow = -(x * x + y * y) / (2.0f * sigma * sigma);
     return expf(pow) / (2.0f * M_PI * sigma * sigma);
 }
 
-static LGL::Color toLGLColor(const PRGBA &color)
+void Unsharp::getSettings(float &power, float &amount) const
+{
+    if (gWidgets.powerTextBox != nullptr)
+    {
+        power = atof(gWidgets.powerTextBox->get_text().data());
+        if (power < 0.1f)
+            power = DEFAULT_POWER;
+    }
+    else
+        power = DEFAULT_POWER;
+
+    if (gWidgets.amountTextBox != nullptr)
+    {
+        amount = atof(gWidgets.amountTextBox->get_text().data());
+        if (amount < 0.1f)
+            amount = DEFAULT_AMOUNT;
+    }
+    else
+        amount = DEFAULT_AMOUNT;
+}
+
+LGL::Color Unsharp::toLGLColor(const PUPPY::RGBA &color) const
 {
     return LGL::Color((float)color.r / EXTERNAL_RGB_BASE,
                       (float)color.g / EXTERNAL_RGB_BASE,
@@ -267,10 +293,10 @@ static LGL::Color toLGLColor(const PRGBA &color)
                       (float)color.a / EXTERNAL_RGB_BASE);
 }
 
-static PRGBA toPluginColor(const LGL::Color &color)
+PUPPY::RGBA Unsharp::toPluginColor(const LGL::Color &color) const
 {
-    return PRGBA(color.r * EXTERNAL_RGB_BASE,
-                 color.g * EXTERNAL_RGB_BASE,
-                 color.b * EXTERNAL_RGB_BASE,
-                 color.a * EXTERNAL_RGB_BASE);
+    return PUPPY::RGBA(color.r * EXTERNAL_RGB_BASE,
+                       color.g * EXTERNAL_RGB_BASE,
+                       color.b * EXTERNAL_RGB_BASE,
+                       color.a * EXTERNAL_RGB_BASE);
 }

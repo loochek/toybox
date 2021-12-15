@@ -1,18 +1,32 @@
 #include "../RenderTarget.hpp"
 #include "PluginWindow.hpp"
+#include "../../../BaseGUI/BaseButton.hpp"
+#include "../../../BaseGUILogic/Window/WindowHideDelegate.hpp"
+#include "../../../EditorLogic/PaintController.hpp"
 
-PluginWindowIntl::PluginWindowIntl(const IntRect &contentRect, PluginWindowImpl *impl, Widget *parent) :
-    Window(contentRect, parent), mImpl(impl)
+PluginWindowIntl::PluginWindowIntl(const IntRect &contentRect, PluginWindowImpl *impl,
+                                   PaintController *controller, Widget *parent) :
+    Window(contentRect, parent), mImpl(impl), mController(controller)
 {
+    mCloseButtonDelegate = new WindowHideDelegate(this);
+    mCloseButton->setDelegate(mCloseButtonDelegate);
+    mController->onPluginWindowCreate(this);
+}
+
+void PluginWindowIntl::onDestroyThis()
+{
+    mController->onPluginWindowDestroy(this);
 }
 
 PluginWindowIntl::~PluginWindowIntl()
 {
+    delete mCloseButtonDelegate;
     delete mImpl;
 }
 
-PluginWindowImpl::PluginWindowImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 
-    PluginWidgetImpl(body, false, parent)
+PluginWindowImpl::PluginWindowImpl(const char *name, const PUPPY::WBody &body, PaintController *controller,
+                                   PUPPY::Widget *parent) : 
+    PluginWidgetImpl(body, false, parent), mController(controller)
 {
     ::Widget *parentWidget = nullptr;
     if (parent != nullptr)
@@ -21,7 +35,9 @@ PluginWindowImpl::PluginWindowImpl(const PUPPY::WBody &body, PUPPY::Widget *pare
         parentWidget = parentImpl->getWidget();
     }
 
-    mWidget = new PluginWindowIntl(fromPluginRect(body), this, parentWidget);
+    mWidget = new PluginWindowIntl(fromPluginRect(body), this, controller, parentWidget);
+    set_name(name);
+
     if (parent != nullptr)
         parent->add_child(this);
 }
@@ -54,6 +70,7 @@ void PluginWindowImpl::set_body(const PUPPY::WBody &body_)
 bool PluginWindowImpl::set_name(const char *name)
 {
     static_cast<::Window*>(mWidget)->setTitle(name);
+    mController->onPluginWindowTitleChanged(static_cast<PluginWindowIntl*>(mWidget));
     return true;
 }
 

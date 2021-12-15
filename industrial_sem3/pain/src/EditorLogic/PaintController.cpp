@@ -3,7 +3,6 @@
 #include <filesystem>
 #include "PaintController.hpp"
 #include "../Utils/Logger.hpp"
-#include "../Editor/PluginManager.hpp"
 #include "../BaseGUI/Label.hpp"
 #include "../BaseGUI/ButtonBar.hpp"
 #include "../EditorWidgets/PaintMainWindow.hpp"
@@ -17,7 +16,8 @@
 #include "../EditorWidgets/PluginPicker.hpp"
 #include "../EditorWidgets/SplineWindow.hpp"
 #include "../EditorWidgets/ImageOpenWindow.hpp"
-//#include "../EditorWidgets/PluginConfigWindow.hpp"
+#include "../Editor/PluginManager.hpp"
+#include "../Editor/AppInterface/Widgets/PluginWindow.hpp"
 
 const int MAX_FILE_NAME_SIZE = 256;
 
@@ -163,17 +163,24 @@ void PaintController::openImageOpenWindow()
     mRoot->addChild(mImageOpenWindow);
 }
 
-// PluginConfigWindow *PaintController::createPluginSettingsWindow(Plugin *plugin)
-// {
-//     PluginConfigWindow *configWindow = new PluginConfigWindow(PLUGIN_CONFIG_INIT_POS, this, plugin, mRoot);
-//     configWindow->scheduleForDisable();
-//     mRoot->addChild(configWindow);
+void PaintController::onPluginWindowCreate(PluginWindowIntl *window)
+{
+    window->scheduleForDisable();
+    mRoot->addChild(window);
 
-//     const BaseButton *menuButton = mRoot->mMenuBar->addButton(plugin->getInfo()->name, this,
-//                                                               (uint64_t)configWindow);
+    mMenuBarPluginButtons[window] = mRoot->mMenuBar->addButton(window->getTitle(), this, (uint64_t)window);
+}
 
-//     return configWindow;
-// }
+void PaintController::onPluginWindowTitleChanged(PluginWindowIntl *window)
+{
+    mRoot->mMenuBar->renameButton(mMenuBarPluginButtons[window], window->getTitle());
+}
+
+void PaintController::onPluginWindowDestroy(PluginWindowIntl *window)
+{
+    mRoot->mMenuBar->deleteButton(mMenuBarPluginButtons[window]);
+    mMenuBarPluginButtons.erase(window);
+}
 
 void PaintController::onCanvasClose(PaintWindow *paintWindow)
 {
@@ -333,16 +340,16 @@ void PaintController::onClick(uint64_t userData)
 
     Widget *widget = (Widget*)userData;
 
-    // PluginConfigWindow *configWindow = dynamic_cast<PluginConfigWindow*>(widget);
-    // if (configWindow != nullptr)
-    // {
-    //     if (configWindow->isEnabled())
-    //         mRoot->popUp(configWindow);
-    //     else
-    //         configWindow->scheduleForEnable();
+    PluginWindowIntl *pluginWindow = dynamic_cast<PluginWindowIntl*>(widget);
+    if (pluginWindow != nullptr)
+    {
+        if (pluginWindow->isEnabled())
+            mRoot->popUp(pluginWindow);
+        else
+            pluginWindow->scheduleForEnable();
 
-    //     return;
-    // }
+        return;
+    }
 
     PaintWindow *paintWindow = dynamic_cast<PaintWindow*>(widget);
     if (paintWindow != nullptr)

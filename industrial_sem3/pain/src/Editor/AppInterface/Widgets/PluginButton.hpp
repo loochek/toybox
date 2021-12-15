@@ -15,7 +15,7 @@ class PluginButtonImpl;
 class PluginButtonIntl : public Button
 {
 public:
-    PluginButtonIntl(const IntRect &contentRect, PluginButtonImpl *impl, Widget *parent = nullptr);
+    PluginButtonIntl(const IntRect &widgetRect, PluginButtonImpl *impl, Widget *parent = nullptr);
     ~PluginButtonIntl();
 
     PluginButtonImpl *getImpl() { return mImpl; };

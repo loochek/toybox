@@ -7,6 +7,8 @@
 #include "PluginWidget.hpp"
 
 class PluginWindowImpl;
+class WindowHideDelegate;
+class PaintController;
 
 /**
  * Special window which holds wrapper structure
@@ -14,20 +16,28 @@ class PluginWindowImpl;
 class PluginWindowIntl : public Window
 {
 public:
-    PluginWindowIntl(const IntRect &contentRect, PluginWindowImpl *impl, Widget *parent = nullptr);
+    PluginWindowIntl(const IntRect &contentRect, PluginWindowImpl *impl, PaintController *mController,
+                     Widget *parent = nullptr);
     ~PluginWindowIntl();
 
     PluginWindowImpl *getImpl() { return mImpl; };
 
 protected:
-    PluginWindowImpl *mImpl;
+    virtual void onDestroyThis() override;
+
+protected:
+    PluginWindowImpl   *mImpl;
+    WindowHideDelegate *mCloseButtonDelegate;
+
+    PaintController *mController;
 };
 
 class PluginWindowImpl : public PluginWidgetImpl, public PUPPY::Window
 {
 public:
     PluginWindowImpl() = delete;
-    PluginWindowImpl(const PUPPY::WBody &body, PUPPY::Widget *parent = nullptr);
+    PluginWindowImpl(const char *name, const PUPPY::WBody &body, PaintController *controller,
+                     PUPPY::Widget *parent = nullptr);
 
     virtual bool add_child(PUPPY::Widget *child) override;
     virtual PUPPY::WBody get_body() override;
@@ -45,6 +55,8 @@ public:
 protected:
     HandlerType mShowHandler;
     HandlerType mHideHandler;
+
+    PaintController *mController;
 };
 
 #endif

@@ -30,6 +30,16 @@ const BaseButton *ButtonBar::addButton(const char *text, ButtonDelegate *delegat
     return button;
 }
 
+void ButtonBar::renameButton(const BaseButton *button, const char *text)
+{
+    Vec2i textBounds = LGL::RenderTarget::calculateTextBounds(text);
+    int newButtonWidth = textBounds.x + BUTTON_SPACING * 2;
+
+    ((Button*)button)->resize(Vec2i(newButtonWidth, MENU_BAR_HEIGHT));
+    ((Button*)button)->setLabel(text);
+    rearrangeButtons();
+}
+
 void ButtonBar::deleteButton(const BaseButton *button)
 {
     ((Widget*)button)->scheduleForDeletion();

@@ -15,7 +15,7 @@ class PluginColorPickerImpl;
 class PluginColorPickerIntl : public Pallete
 {
 public:
-    PluginColorPickerIntl(const Vec2i &position, PluginColorPickerImpl *impl, Widget *parent = nullptr);
+    PluginColorPickerIntl(const IntRect &widgetRect, PluginColorPickerImpl *impl, Widget *parent = nullptr);
     ~PluginColorPickerIntl();
 
     PluginColorPickerImpl *getImpl() { return mImpl; };

@@ -7,37 +7,43 @@
 
 using LGL::Color;
 
-const Vec2i Pallete::PALLETE_SIZE(260, 260);
+const int SPACE_SIZE = 10;
+const int KEY_COLOR_PICKER_WIDTH = 30;
+const int COLOR_PREVIEW_SIZE = 30;
 
-const IntRect KEY_COLOR_PICKER_RECT  = IntRect(Vec2i(220, 10), Vec2i(30, 200));
-const IntRect MAIN_COLOR_PICKER_RECT = IntRect(Vec2i(10, 10), Vec2i(200, 200));
-const IntRect CURR_COLOR_RECT        = IntRect(Vec2i(220, 220), Vec2i(30, 30));
-
-const Vec2i OPACITY_SLIDER_POS  = Vec2i(10, 234);
-const int   OPACITY_SLIDER_SIZE = 200;
-
-const Vec2i OPACITY_LABEL_POS = Vec2i(10, 220);
-
-Pallete::Pallete(const Vec2i &position, Widget *parent) :
-    Widget(IntRect(position, PALLETE_SIZE), parent), mDelegate(nullptr)
+Pallete::Pallete(const IntRect &widgetRect, Widget *parent) :
+    Widget(widgetRect, parent), mDelegate(nullptr)
 {
+    // Calculate rects of child widgets
+
+    Vec2i mainColorPickerSize = widgetRect.size - Vec2i(3 * SPACE_SIZE + KEY_COLOR_PICKER_WIDTH,
+                                                        3 * SPACE_SIZE + COLOR_PREVIEW_SIZE);
+
+    Vec2i keyColorPickerSize = Vec2i(KEY_COLOR_PICKER_WIDTH, mainColorPickerSize.y);
+    Vec2i keyColorPickerPos  = Vec2i(2 * SPACE_SIZE + mainColorPickerSize.x, SPACE_SIZE);
+
+    mColorPreviewPos = widgetRect.size - Vec2i(SPACE_SIZE + COLOR_PREVIEW_SIZE,
+                                               SPACE_SIZE + COLOR_PREVIEW_SIZE);
+
+    Vec2i sliderPos = Vec2i(SPACE_SIZE, widgetRect.size.y - SPACE_SIZE - Slider::SLIDER_HEIGHT);
+
     mController = new PalleteController(this);
-    
-    mKeyColorPicker = new KeyColorPicker(KEY_COLOR_PICKER_RECT, this);
+
+    mKeyColorPicker = new KeyColorPicker(IntRect(keyColorPickerPos, keyColorPickerSize), this);
     mKeyColorPicker->setDelegate(mController);
     mKeyColorPicker->setUserData((int)ColorPickerType::Key);
     addChild(mKeyColorPicker);
 
-    mMainColorPicker = new MainColorPicker(MAIN_COLOR_PICKER_RECT, this);
+    mMainColorPicker = new MainColorPicker(IntRect(Vec2i(SPACE_SIZE, SPACE_SIZE), mainColorPickerSize), this);
     mMainColorPicker->setDelegate(mController);
     mMainColorPicker->setUserData((int)ColorPickerType::Main);
     addChild(mMainColorPicker);
 
-    mOpacityLabel = new Label(OPACITY_LABEL_POS, this);
+    mOpacityLabel = new Label(sliderPos - Vec2i(0, SPACE_SIZE), this);
     mOpacityLabel->setText("Opacity: 100%");
     addChild(mOpacityLabel);
 
-    mOpacitySlider = new Slider(OPACITY_SLIDER_POS, OPACITY_SLIDER_SIZE, this);
+    mOpacitySlider = new Slider(sliderPos, mainColorPickerSize.x, this);
     mOpacitySlider->setDelegate(mController);
     mOpacitySlider->setMaxValue(EXTERNAL_RGB_BASE);
     mOpacitySlider->setValue(EXTERNAL_RGB_BASE);
@@ -56,5 +62,5 @@ LGL::Color Pallete::getColor()
 
 void Pallete::onRedrawThis()
 {
-    mTexture.drawRect(CURR_COLOR_RECT, getColor());
+    mTexture.drawRect(IntRect(mColorPreviewPos, Vec2i(COLOR_PREVIEW_SIZE, COLOR_PREVIEW_SIZE)), getColor());
 }

@@ -53,7 +53,7 @@ void PluginWidgetImpl::set_body(const PUPPY::WBody &body_)
 
 PUPPY::Widget *PluginWidgetImpl::get_parent() const
 {
-    return dynamic_cast<PluginWidgetIntl*>(mWidget->getParent())->getImpl();
+    return static_cast<PluginWidgetIntl*>(mWidget->getParent())->getImpl();
 }
 
 void PluginWidgetImpl::set_parent(PUPPY::Widget *parent_)

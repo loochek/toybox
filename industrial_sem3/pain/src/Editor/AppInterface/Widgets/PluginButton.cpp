@@ -4,8 +4,8 @@
 
 const PUPPY::Vec2f DEFAULT_SIZE(100, 50);
 
-PluginButtonIntl::PluginButtonIntl(const IntRect &contentRect, PluginButtonImpl *impl, Widget *parent) :
-    Button(contentRect, parent), mImpl(impl)
+PluginButtonIntl::PluginButtonIntl(const IntRect &widgetRect, PluginButtonImpl *impl, Widget *parent) :
+    Button(widgetRect, parent), mImpl(impl)
 {
     mDelegate = new PButtonDelegate(this);
     setDelegate(mDelegate);
