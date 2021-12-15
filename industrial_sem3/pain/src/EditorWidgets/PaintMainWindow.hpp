@@ -11,6 +11,7 @@ class PaintMainWindow : public WindowManager
 public:
     PaintMainWindow() = delete;
     PaintMainWindow(const IntRect &widgetRect, Widget *parent = nullptr);
+    ~PaintMainWindow();
 
 protected:
     virtual void onRedrawThis() override;

@@ -1,5 +1,6 @@
 #include <cstring>
 #include <cassert>
+#include <filesystem>
 #include "PaintController.hpp"
 #include "../Utils/Logger.hpp"
 #include "../Editor/PluginManager.hpp"
@@ -29,21 +30,6 @@ const Vec2i   TOOL_PICKER_INIT_POS    = Vec2i(500, 300);
 const Vec2i   EFFECT_PICKER_INIT_POS  = Vec2i(700, 300);
 const Vec2i   PLUGIN_CONFIG_INIT_POS  = Vec2i(200, 200);
 
-const char *pluginPreloadList[] = {
-    "./loochek_brush.so",
-    "./loochek_eraser.so",
-    "./loochek_fill.so",
-    "./loochek_negative.so",
-    "./loochek_blur.so",
-    "./loochek_unsharp.so",
-    "./kctf_rainbow_stamp.so",
-    "./kctf_sharpy.so",
-    "./jules_dt.so",
-    "./jules_chromakey.so",
-    "./mystery_plugin.so",
-    "./jakmobius_mul33.so"
-};
-
 PaintController::PaintController(PaintMainWindow *root) : 
     mRoot(root), mPallete(nullptr), mSizePicker(nullptr), mToolPicker(nullptr), mEffectPicker(nullptr),
     mImageOpenWindow(nullptr), mCurrToolSize(2.0f), mCurrTool(nullptr), mActivePaintWindow(nullptr)
@@ -61,6 +47,8 @@ PaintController::PaintController(PaintMainWindow *root) :
 
 PaintController::~PaintController()
 {
+    PluginManager::getInstance()->deinit();
+    
     for (auto iter = mWindowsFileNames.begin(); iter != mWindowsFileNames.end(); iter++)
         delete[] iter->second;
 }
@@ -386,15 +374,18 @@ void PaintController::loadPlugins()
     PluginManager *pluginMgr = PluginManager::getInstance();
     pluginMgr->init(this);
 
-    for (int i = 0; i < sizeof(pluginPreloadList) / sizeof(pluginPreloadList[0]); i++)
+    for (const auto &entry : std::filesystem::directory_iterator(std::filesystem::current_path()))
     {
-        try
+        if (entry.path().extension() == ".so")
         {
-            pluginMgr->loadPlugin(pluginPreloadList[i]);
-        }
-        catch (const std::exception& error)
-        {
-            Logger::log(LogLevel::Warning, "%s\n", error.what());
+            try
+            {
+                pluginMgr->loadPlugin(entry.path().c_str());
+            }
+            catch (const std::exception& error)
+            {
+                Logger::log(LogLevel::Warning, "%s\n", error.what());
+            }
         }
     }
 }

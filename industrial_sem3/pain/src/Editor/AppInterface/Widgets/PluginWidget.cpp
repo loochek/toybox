@@ -8,6 +8,11 @@ PluginWidgetIntl::PluginWidgetIntl(const IntRect &widgetRect, PluginWidgetImpl *
 {
 }
 
+PluginWidgetIntl::~PluginWidgetIntl()
+{
+    delete mImpl;
+}
+
 PluginWidgetImpl::PluginWidgetImpl(const PUPPY::WBody &body, bool spawn, PUPPY::Widget *parent)
 {
     if (spawn)

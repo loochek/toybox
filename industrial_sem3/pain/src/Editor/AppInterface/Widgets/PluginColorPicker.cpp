@@ -12,6 +12,7 @@ PluginColorPickerIntl::PluginColorPickerIntl(const Vec2i &position, PluginColorP
 PluginColorPickerIntl::~PluginColorPickerIntl()
 {
     delete mDelegate;
+    delete mImpl;
 }
 
 PluginColorPickerImpl::PluginColorPickerImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 

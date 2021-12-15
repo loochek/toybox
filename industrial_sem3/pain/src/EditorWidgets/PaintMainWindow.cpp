@@ -23,6 +23,11 @@ PaintMainWindow::PaintMainWindow(const IntRect &widgetRect, Widget *parent) :
     mPaintController = new PaintController(this);
 }
 
+PaintMainWindow::~PaintMainWindow()
+{
+    delete mPaintController;
+}
+
 void PaintMainWindow::onRedrawThis()
 {
     mTexture.drawTexture(*mWallpaperTexture, Vec2i());

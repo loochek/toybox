@@ -14,6 +14,7 @@ class PluginWidgetIntl : public Widget
 {
 public:
     PluginWidgetIntl(const IntRect &widgetRect, PluginWidgetImpl *impl, Widget *parent = nullptr);
+    ~PluginWidgetIntl();
 
     PluginWidgetImpl *getImpl() { return mImpl; };
 

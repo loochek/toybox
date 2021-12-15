@@ -15,6 +15,7 @@ class PluginWindowIntl : public Window
 {
 public:
     PluginWindowIntl(const IntRect &contentRect, PluginWindowImpl *impl, Widget *parent = nullptr);
+    ~PluginWindowIntl();
 
     PluginWindowImpl *getImpl() { return mImpl; };
 
@@ -27,6 +28,10 @@ class PluginWindowImpl : public PluginWidgetImpl, public PUPPY::Window
 public:
     PluginWindowImpl() = delete;
     PluginWindowImpl(const PUPPY::WBody &body, PUPPY::Widget *parent = nullptr);
+
+    virtual bool add_child(PUPPY::Widget *child) override;
+    virtual PUPPY::WBody get_body() override;
+    virtual void set_body(const PUPPY::WBody &body_) override;
 
     virtual void set_show_handler(HandlerType &handler_) { mShowHandler = handler_; };
     virtual HandlerType &get_show_handler() override { return mShowHandler; };

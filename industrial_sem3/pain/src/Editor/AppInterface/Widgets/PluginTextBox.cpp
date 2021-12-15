@@ -12,6 +12,7 @@ PluginTextBoxIntl::PluginTextBoxIntl(const Vec2i &textBoxPos, int textBoxSize, P
 PluginTextBoxIntl::~PluginTextBoxIntl()
 {
     delete mDelegate;
+    delete mImpl;
 }
 
 PluginTextBoxImpl::PluginTextBoxImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 

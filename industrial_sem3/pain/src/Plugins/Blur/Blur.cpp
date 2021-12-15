@@ -1,181 +1,187 @@
 #include "../../Editor/EditorPluginAPI/plugin_std.hpp"
 #include "../../LGL/Color.hpp"
 
+class Blur : public PUPPY::PluginInterface
+{
+public:
+    Blur() : PUPPY::PluginInterface() {};
+
+    virtual bool ext_enable(const char *name) const override;
+
+    virtual void *ext_get_func(const char *extension, const char *func) const override;
+
+    virtual void *ext_get_interface(const char *extension, const char *name) const override;
+
+    virtual const PUPPY::PluginInfo *get_info() const override;
+    virtual PUPPY::Status init(const PUPPY::AppInterface* appInterface) const override;
+    virtual PUPPY::Status deinit() const override;
+    virtual void dump() const override;
+
+    virtual void on_tick(double dt) const override;
+
+    virtual void effect_apply() const override;
+
+    virtual void tool_on_press(const PUPPY::Vec2f &position) const override;
+    virtual void tool_on_release(const PUPPY::Vec2f &position) const override;
+    virtual void tool_on_move(const PUPPY::Vec2f &from, const PUPPY::Vec2f &to) const override;
+
+    virtual void show_settings() const override;
+
+private:
+    PUPPY::RGBA *applyKernel(PUPPY::RGBA *pixels, const PUPPY::Vec2s &size, int kernelSize,
+                             const float kernel[]) const;
+    void calcGaussianKernel(int kernelRadius, float sigma, float kernel[]) const;
+    float gaussian(float x, float y, float sigma) const;
+    void getSettings(float &power) const;
+    LGL::Color toLGLColor(const PUPPY::RGBA &color) const;
+    PUPPY::RGBA toPluginColor(const LGL::Color &color) const;
+};
+
+//===================================================================
+
+const PUPPY::AppInterface* gAppInterface = nullptr;
+
+struct {
+    PUPPY::Window    *window;
+    PUPPY::TextField *powerTextBox;
+} gWidgets;
+
+const PUPPY::WBody WINDOW_BODY(PUPPY::Vec2f(400, 400), PUPPY::Vec2f(200, 50));
+const PUPPY::WBody POWER_TEXT_BOX_BODY(PUPPY::Vec2f(10, 10), PUPPY::Vec2f(30, 20));
+
 const float DEFAULT_POWER = 0.7f;
 
-static PPluginStatus init(const PAppInterface* appInterface);
-static PPluginStatus deinit();
+//===================================================================
 
-static void dump();
-static void onUpdate(double elapsedTime);
-static void onSettingsUpdate();
+const Blur gPluginInterface;
 
-static const PPluginInfo  *getInfo();
-static PPreviewLayerPolicy getFlushPolicy();
-
-static void apply();
-
-static bool enableExtension(const char *name);
-static void *getExtensionFunc(const char *extension, const char *func);
-
-static void getSettings(float &power);
-static void calcGaussianKernel(int kernelRadius, float sigma, float kernel[]);
-static PRGBA *applyKernel(PRGBA *pixels, int width, int height, int kernelSize, const float kernel[]);
-static float gaussian(float x, float y, float sigma);
-static LGL::Color toLGLColor(const PRGBA &color);
-static PRGBA toPluginColor(const LGL::Color &color);
-
-const PPluginInterface gPluginInterface =
+const PUPPY::PluginInfo gPluginInfo =
 {
-    0, // std_version
-    0, // reserved
-    
-    enableExtension,
-    getExtensionFunc,
+    PUPPY::STD_VERSION,     // std_version
+    0,                      // reserved
 
-    // general
-    getInfo,
-    init,
-    deinit,
-    dump,
-    onUpdate,
-    onSettingsUpdate,
-    getFlushPolicy,
-
-    // effect
-    apply,
-
-    // tool
-    nullptr,
-    nullptr,
-    nullptr
-};
-
-const PPluginInfo gPluginInfo =
-{
-    0, // std_version
-    0, // reserved
-
-    &gPluginInterface,
+    &gPluginInterface,      // plugin interface
 
     "Gauss blur",
-    "1.0",
+    "2.0",
     "loochek",
     "Simple blur effect",
+
+    nullptr,                // icon
     
-    PPT_EFFECT
+    PUPPY::PluginType::EFFECT
 };
 
-
-const PAppInterface *gAppInterface = nullptr;
-void *gPowerSettingHandle = nullptr;
-
-
-extern "C" const PPluginInterface *get_plugin_interface()
+extern "C" const PUPPY::PluginInterface *get_plugin_interface()
 {
     return &gPluginInterface;
 }
 
-static PPluginStatus init(const PAppInterface* appInterface)
+//===================================================================
+
+bool Blur::ext_enable(const char *name) const
 {
-    gAppInterface = appInterface;
-
-    if (gAppInterface->general.feature_level & PFL_SETTINGS_SUPPORT)
-    {
-        appInterface->general.log("[Blur] Settings support is present");
-        appInterface->settings.create_surface(&gPluginInterface, 100, 100);
-        gPowerSettingHandle = appInterface->settings.add(&gPluginInterface, PST_TEXT_LINE, "Power");
-    }
-    else
-        appInterface->general.log("[Blur] Settings support is NOT present!");
-
-    appInterface->general.log("[Blur] Succesful initialization!");
-    return PPS_OK; 
+    return false;
 }
 
-static PPluginStatus deinit()
+void *Blur::ext_get_func(const char *extension, const char *func) const
 {
-    return PPS_OK;
+    return nullptr;
 }
 
-static void dump()
+void *Blur::ext_get_interface(const char *extension, const char *name)  const
 {
+    return nullptr;
 }
 
-static const PPluginInfo *getInfo()
+const PUPPY::PluginInfo *Blur::get_info() const
 {
     return &gPluginInfo;
 }
 
-static void onUpdate(double elapsedTime)
+PUPPY::Status Blur::init(const PUPPY::AppInterface* appInterface) const
+{
+    gAppInterface = appInterface;
+
+    if (appInterface->factory.widget)
+    {
+        const PUPPY::WidgetFactory *factory = appInterface->factory.widget;
+
+        gWidgets.window       = factory->window("Gaussian blur", WINDOW_BODY);
+        gWidgets.powerTextBox = factory->text_field(POWER_TEXT_BOX_BODY, gWidgets.window);
+    }
+
+    appInterface->log("Blur: succesful initialization!");
+    return PUPPY::Status::OK;
+}
+
+PUPPY::Status Blur::deinit() const
+{
+    if (gWidgets.window) {
+        gWidgets.window->set_to_delete();
+    }
+
+    return PUPPY::Status::OK;
+}
+
+void Blur::dump() const
 {
 }
 
-static void onSettingsUpdate()
+void Blur::on_tick(double dt) const
 {
 }
 
-static PPreviewLayerPolicy getFlushPolicy()
+void Blur::effect_apply() const
 {
-    return PPLP_BLEND;
-}
+    PUPPY::RenderTarget *activeLayer = gAppInterface->get_target();
+    PUPPY::Vec2s layerSize(activeLayer->get_size());
 
-static void apply()
-{
-    PRenderMode render_mode = { PPBM_COPY, PPDP_ACTIVE, nullptr };
-
-    size_t layerWidth = 0, layerHeight = 0;
-    gAppInterface->target.get_size(&layerWidth, &layerHeight);
+    PUPPY::RGBA *pixels = activeLayer->get_pixels();
 
     float power = 0;
     getSettings(power);
     int kernelRadius = ceil(2 * power);
 
-    PRGBA *pixels = gAppInterface->target.get_pixels();
-
     int kernelSize = 1 + 2 * kernelRadius;
     float *kernel = new float[kernelSize * kernelSize];
     calcGaussianKernel(kernelRadius, power, kernel);
     
-    PRGBA *dstPixels = applyKernel(pixels, layerWidth, layerHeight, kernelSize, kernel);
+    PUPPY::RGBA *dstPixels = applyKernel(pixels, layerSize, kernelSize, kernel);
 
-    gAppInterface->render.pixels(PVec2f(0, 0), dstPixels, layerWidth, layerHeight, &render_mode);
-    gAppInterface->general.release_pixels(pixels);
+    PUPPY::RenderMode mode(PUPPY::BlendMode::COPY);
+    activeLayer->render_pixels(PUPPY::Vec2f(0, 0), layerSize, dstPixels, mode);
+    
+    delete[] pixels;
     delete[] dstPixels;
     delete[] kernel;
+    delete activeLayer;
 }
 
-static bool enableExtension(const char *name)
+void Blur::tool_on_press(const PUPPY::Vec2f &position) const
 {
-    return false;
 }
 
-static void *getExtensionFunc(const char *extension, const char *func)
+void Blur::tool_on_release(const PUPPY::Vec2f &position) const
 {
-    return nullptr;
 }
 
-static void getSettings(float &power)
+void Blur::tool_on_move(const PUPPY::Vec2f &from, const PUPPY::Vec2f &to) const
 {
-    PTextFieldSetting settingValue;
-    if (gPowerSettingHandle != nullptr)
+}
+
+void Blur::show_settings() const
+{
+}
+
+PUPPY::RGBA *Blur::applyKernel(PUPPY::RGBA *pixels, const PUPPY::Vec2s &size, int kernelSize,
+                               const float kernel[]) const
+{
+    PUPPY::RGBA *dstPixels = new PUPPY::RGBA[size.x * size.y];
+
+    for (int y = 0; y < size.y; y++)
     {
-        gAppInterface->settings.get(&gPluginInterface, gPowerSettingHandle, &settingValue);
-        power = atof(settingValue.text);
-        if (power < 0.1f)
-            power = DEFAULT_POWER;
-    }
-    else
-        power = DEFAULT_POWER;
-}
-
-static PRGBA *applyKernel(PRGBA *pixels, int width, int height, int kernelSize, const float kernel[])
-{
-    PRGBA *dstPixels = new PRGBA[width * height];
-
-    for (int y = 0; y < height; y++)
-    {
-        for (int x = 0; x < width; x++)
+        for (int x = 0; x < size.x; x++)
         {
             LGL::Color sumColor(0.0f, 0.0f, 0.0f);
 
@@ -192,28 +198,28 @@ static PRGBA *applyKernel(PRGBA *pixels, int width, int height, int kernelSize, 
                     if (ky < 0)
                         ky = 0;
 
-                    if (kx >= width)
-                        kx = width - 1;
+                    if (kx >= size.x)
+                        kx = size.x - 1;
 
-                    if (ky >= height)
-                        ky = height - 1;
+                    if (ky >= size.y)
+                        ky = size.y - 1;
 
-                    LGL::Color color = toLGLColor(pixels[width * ky + kx]);
+                    LGL::Color color = toLGLColor(pixels[size.x * ky + kx]);
                     float coeff = kernel[iKernRow * kernelSize + iKernCol];
 
                     sumColor += color * coeff;
                 }
             }
 
-            dstPixels[width * y + x] = toPluginColor(sumColor);
-            dstPixels[width * y + x].a = pixels[width * y + x].a;
+            dstPixels[size.x * y + x] = toPluginColor(sumColor);
+            dstPixels[size.x * y + x].a = pixels[size.x * y + x].a;
         }
     }
 
     return dstPixels;
 }
 
-static void calcGaussianKernel(int kernelRadius, float sigma, float kernel[])
+void Blur::calcGaussianKernel(int kernelRadius, float sigma, float kernel[]) const
 {
     int kernelSize = 1 + kernelRadius * 2;
 
@@ -235,13 +241,25 @@ static void calcGaussianKernel(int kernelRadius, float sigma, float kernel[])
     }
 }
 
-static float gaussian(float x, float y, float sigma)
+float Blur::gaussian(float x, float y, float sigma) const
 {
     float pow = -(x * x + y * y) / (2.0f * sigma * sigma);
     return expf(pow) / (2.0f * M_PI * sigma * sigma);
 }
 
-static LGL::Color toLGLColor(const PRGBA &color)
+void Blur::getSettings(float &power) const
+{
+    if (gWidgets.powerTextBox != nullptr)
+    {
+        power = atof(gWidgets.powerTextBox->get_text().data());
+        if (power < 0.1f)
+            power = DEFAULT_POWER;
+    }
+    else
+        power = DEFAULT_POWER;
+}
+
+LGL::Color Blur::toLGLColor(const PUPPY::RGBA &color) const
 {
     return LGL::Color((float)color.r / EXTERNAL_RGB_BASE,
                       (float)color.g / EXTERNAL_RGB_BASE,
@@ -249,10 +267,10 @@ static LGL::Color toLGLColor(const PRGBA &color)
                       (float)color.a / EXTERNAL_RGB_BASE);
 }
 
-static PRGBA toPluginColor(const LGL::Color &color)
+PUPPY::RGBA Blur::toPluginColor(const LGL::Color &color) const
 {
-    return PRGBA(color.r * EXTERNAL_RGB_BASE,
-                 color.g * EXTERNAL_RGB_BASE,
-                 color.b * EXTERNAL_RGB_BASE,
-                 color.a * EXTERNAL_RGB_BASE);
+    return PUPPY::RGBA(color.r * EXTERNAL_RGB_BASE,
+                       color.g * EXTERNAL_RGB_BASE,
+                       color.b * EXTERNAL_RGB_BASE,
+                       color.a * EXTERNAL_RGB_BASE);
 }

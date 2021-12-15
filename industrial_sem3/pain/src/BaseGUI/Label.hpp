@@ -25,6 +25,11 @@ public:
      */
     void setText(const char *text);
 
+    /**
+     * \return Current text of the label
+     */
+    const char *getText() { return mText; };
+
 protected:
     virtual void onRedrawThis() override;
 

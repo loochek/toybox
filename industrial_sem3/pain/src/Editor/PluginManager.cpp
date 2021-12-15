@@ -11,32 +11,32 @@
 
 typedef const PUPPY::PluginInterface* (*PIFunc)();
 
-PluginManager::PluginManager() : mAppInterface(nullptr) {}
+PluginManager::PluginManager() : mAppInterface(nullptr), mInitedOnce(false) {}
+
+void PluginManager::init(PaintController *controller)
+{
+    assert(!mInitedOnce);
+
+    mAppInterface = new AppInterfaceImpl(controller);
+    mInitedOnce = true;
+}
 
 PluginManager::~PluginManager()
 {
+    // Late libraries unloading
+
     for (int i = 0; i < mPlugins.size(); i++)
     {
         const PUPPY::PluginInterface *plugin = mPlugins[i];
-
-        PUPPY::Status status = plugin->deinit();
-        if (status != PUPPY::Status::OK)
-            Logger::log(LogLevel::Warning, "Unable to deinit plugin %s", plugin->get_info()->name);
 
         if (dlclose(mLibraryHandles[i]) != 0)
             Logger::log(LogLevel::Warning, "Unable to close plugin %s", dlerror());
     }
 }
 
-void PluginManager::init(PaintController *controller)
-{
-    mAppInterface = new AppInterfaceImpl(controller);
-    mInited = true;
-}
-
 void PluginManager::loadPlugin(const char *fileName)
 {
-    assert(mInited);
+    assert(mInitedOnce);
 
     void *libraryHandle = dlopen(fileName, RTLD_NOW);
     if (libraryHandle == nullptr)
@@ -67,6 +67,22 @@ void PluginManager::loadPlugin(const char *fileName)
     //sCurrInitPlugin = nullptr;
     mPlugins.push_back(pluginInterface);
     mLibraryHandles.push_back(libraryHandle);
+}
+
+void PluginManager::deinit()
+{
+    // Note than deinitialization of plugins is separated from unloading plugins libraries
+
+    for (int i = 0; i < mPlugins.size(); i++)
+    {
+        const PUPPY::PluginInterface *plugin = mPlugins[i];
+
+        PUPPY::Status status = plugin->deinit();
+        if (status != PUPPY::Status::OK)
+            Logger::log(LogLevel::Warning, "Unable to deinit plugin %s", plugin->get_info()->name);
+    }
+
+    delete mAppInterface;
 }
 
 Plugin *PluginManager::getPlugin(int idx)

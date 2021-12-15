@@ -45,8 +45,14 @@ add_library(loochek_fill SHARED ${PAIN_FILL_SOURCES})
 aux_source_directory(src/Plugins/Negative PAIN_NEGATIVE_SOURCES)
 add_library(loochek_negative SHARED ${PAIN_NEGATIVE_SOURCES})
 
-# aux_source_directory(src/Plugins/Blur PAIN_BLUR_SOURCES)
-# add_library(loochek_blur SHARED ${PAIN_BLUR_SOURCES})
+set(KCTF_SHARPY_SOURCES src/Plugins/KCTF/sharpy.cpp)
+add_library(kctf_sharpy SHARED ${KCTF_SHARPY_SOURCES})
+
+set(KCTF_RAINBOW_SOURCES src/Plugins/KCTF/rainbow_stamp.cpp)
+add_library(kctf_rainbow_stamp SHARED ${KCTF_RAINBOW_SOURCES})
+
+aux_source_directory(src/Plugins/Blur PAIN_BLUR_SOURCES)
+add_library(loochek_blur SHARED ${PAIN_BLUR_SOURCES})
 
 # aux_source_directory(src/Plugins/UnsharpMask PAIN_UNSHARP_SOURCES)
 # add_library(loochek_unsharp SHARED ${PAIN_UNSHARP_SOURCES})

@@ -18,6 +18,7 @@ AppInterfaceImpl::AppInterfaceImpl(PaintController *controller) : mController(co
 AppInterfaceImpl::~AppInterfaceImpl()
 {
     delete factory.target;
+    delete factory.widget;
 }
 
 bool AppInterfaceImpl::ext_enable(const char *name) const

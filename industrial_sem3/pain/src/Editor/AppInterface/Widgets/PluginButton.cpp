@@ -14,6 +14,7 @@ PluginButtonIntl::PluginButtonIntl(const IntRect &contentRect, PluginButtonImpl 
 PluginButtonIntl::~PluginButtonIntl()
 {
     delete mDelegate;
+    delete mImpl;
 }
 
 PluginButtonImpl::PluginButtonImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 

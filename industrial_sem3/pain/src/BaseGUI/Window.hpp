@@ -22,6 +22,11 @@ public:
     void setTitle(const char *title);
 
     /**
+     * \return Window header title
+     */
+    const char *getTitle();
+
+    /**
      * Resize which depends on content size
      * 
      * \param newContentSize New content size

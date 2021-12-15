@@ -12,6 +12,7 @@ PluginSliderIntl::PluginSliderIntl(const Vec2i &sliderPos, int sliderSize, Plugi
 PluginSliderIntl::~PluginSliderIntl()
 {
     delete mDelegate;
+    delete mImpl;
 }
 
 PluginSliderImpl::PluginSliderImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) :

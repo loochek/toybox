@@ -76,50 +76,17 @@ const PUPPY::PluginInfo *Brush::get_info() const
     return &gPluginInfo;
 }
 
-struct {
-    PUPPY::Window *window;
-    PUPPY::TextField *field;
-    PUPPY::Slider *slider;
-    PUPPY::ColorPicker *picker;
-    PUPPY::Button *button;
-} r_settings;
+// struct {
+//     PUPPY::Window *window;
+//     PUPPY::TextField *field;
+//     PUPPY::Slider *slider;
+//     PUPPY::ColorPicker *picker;
+//     PUPPY::Button *button;
+// } r_settings;
 
 PUPPY::Status Brush::init(const PUPPY::AppInterface* appInterface) const
 {
     gAppInterface = appInterface;
-
-    r_settings.window = appInterface->factory.widget->window("SHRPY", {{100, 100}, {200, 320}});
-    r_settings.field = appInterface->factory.widget->text_field({{50, 5}, {100, 30}}, r_settings.window);
-    r_settings.slider = appInterface->factory.widget->slider(PUPPY::Slider::Type::X, {{20, 40}, {160, 20}}, r_settings.window);
-    r_settings.picker = appInterface->factory.widget->color_picker({{0, 70}, {200, 200}}, r_settings.window);
-    
-    r_settings.button = appInterface->factory.widget->button({{75, 275}, {50, 30}}, r_settings.window);
-
-    auto bl = appInterface->factory.widget->button({{10, 275}, {50, 30}}, r_settings.window);
-    auto br = appInterface->factory.widget->button({{140, 275}, {50, 30}}, r_settings.window);
-
-    auto size = fmax(1, r_settings.button->get_body().size.y - 5);
-    r_settings.button->set_caption("KCTF", size);
-    r_settings.button->set_handler([](){gAppInterface->log("praise the ABOBA");});
-
-    r_settings.field->set_text("30");
-    r_settings.slider->set_fraction(0.30);
-
-    br->set_caption("<<<", size);
-    bl->set_caption(">>>", size);
-
-    // PUPPY::Window *window = appInterface->factory.widget->window("ABOBA", { { 200, 200 }, { 200, 200 } }, nullptr);
-    // window->set_name("ABOBA");
-
-    // PUPPY::Button *button = appInterface->factory.widget->button({{ 40, 40 }, { 100, 100 }}, window);
-    // button->set_handler([appInterface]()
-    // {
-    //     appInterface->log("ABOBA pressed");
-    // });
-    // window->add_child(button);
-
-    // window->add_child(appInterface->factory.widget->slider(PUPPY::Slider::Type::X, {{ 40, 150 }, { 100, 100}}, window));
-
     appInterface->log("Brush: succesful initialization!");
     return PUPPY::Status::OK;
 }
