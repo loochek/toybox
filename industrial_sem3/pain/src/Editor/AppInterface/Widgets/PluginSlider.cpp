@@ -15,17 +15,13 @@ PluginSliderIntl::~PluginSliderIntl()
     delete mImpl;
 }
 
-PluginSliderImpl::PluginSliderImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) :
-    PluginWidgetImpl(body, false, parent)
-{
-    ::Widget *parentWidget = nullptr;
-    if (parent != nullptr)
-    {
-        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
-        parentWidget = parentImpl->getWidget();
-    }
+EVENTS_FWD(PluginSliderIntl, Slider)
 
-    ::Slider *slider = new PluginSliderIntl(fromPluginVec(body.position), body.size.x, this, parentWidget);
+PluginSliderImpl::PluginSliderImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) :
+    PluginWidgetImpl(body, parent, false)
+{
+    ::Slider *slider = new PluginSliderIntl(fromPluginVec(body.position), body.size.x, this,
+                                            translateParent(parent));
     slider->setMaxValue(SLIDER_PREC);
     mWidget = slider;
 

@@ -41,8 +41,7 @@ PUPPY::ColorPicker *WidgetFactoryImpl::color_picker(const PUPPY::WBody &body, PU
 
 PUPPY::Label *WidgetFactoryImpl::label(const PUPPY::Vec2f &pos, const char *text, PUPPY::Widget *parent) const
 {
-    return nullptr;
-    //return new PluginLabelImpl(pos, text, parent);
+    return new PluginLabelImpl(pos, text, parent);
 }
 
 PUPPY::Window *WidgetFactoryImpl::window(const char *name, const PUPPY::WBody &body, PUPPY::Widget *parent) const
@@ -52,5 +51,5 @@ PUPPY::Window *WidgetFactoryImpl::window(const char *name, const PUPPY::WBody &b
 
 PUPPY::Widget *WidgetFactoryImpl::abstract(const PUPPY::WBody &body, PUPPY::Widget *parent) const
 {
-    return new PluginWidgetImpl(body, true, parent);
+    return new PluginWidgetImpl(body, parent, true);
 }

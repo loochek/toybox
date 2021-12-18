@@ -21,6 +21,9 @@ public:
     PluginSliderImpl *getImpl() { return mImpl; };
 
 protected:
+    EVENTS_FWD_HEADER()
+
+protected:
     PluginSliderImpl *mImpl;
     PSliderDelegate  *mDelegate;
 };

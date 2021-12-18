@@ -16,17 +16,12 @@ PluginColorPickerIntl::~PluginColorPickerIntl()
     delete mImpl;
 }
 
-PluginColorPickerImpl::PluginColorPickerImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 
-    PluginWidgetImpl(body, false, parent)
-{
-    ::Widget *parentWidget = nullptr;
-    if (parent != nullptr)
-    {
-        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
-        parentWidget = parentImpl->getWidget();
-    }
+EVENTS_FWD(PluginColorPickerIntl, Pallete)
 
-    mWidget = new PluginColorPickerIntl(fromPluginRect(body), this, parentWidget);
+PluginColorPickerImpl::PluginColorPickerImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 
+    PluginWidgetImpl(body, parent, false)
+{
+    mWidget = new PluginColorPickerIntl(fromPluginRect(body), this, translateParent(parent));
     if (parent != nullptr)
         parent->add_child(this);
 }

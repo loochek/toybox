@@ -47,11 +47,11 @@ struct {
     PUPPY::TextField *amountTextBox;
 } gWidgets;
 
-const PUPPY::WBody WINDOW_BODY(PUPPY::Vec2f(400, 400), PUPPY::Vec2f(200, 50));
-const PUPPY::WBody POWER_TEXT_BOX_BODY (PUPPY::Vec2f(40, 10), PUPPY::Vec2f(30, 20));
-const PUPPY::WBody AMOUNT_TEXT_BOX_BODY(PUPPY::Vec2f(40, 40), PUPPY::Vec2f(30, 20));
-const PUPPY::Vec2f POWER_LABEL_POS(10, 10);
-const PUPPY::Vec2f AMOUNT_LABEL_POS(10, 40);
+const PUPPY::WBody WINDOW_BODY(PUPPY::Vec2f(400, 400), PUPPY::Vec2f(160, 70));
+const PUPPY::WBody POWER_TEXT_BOX_BODY (PUPPY::Vec2f(120, 10), PUPPY::Vec2f(30, 20));
+const PUPPY::WBody AMOUNT_TEXT_BOX_BODY(PUPPY::Vec2f(120, 40), PUPPY::Vec2f(30, 20));
+const PUPPY::Vec2f POWER_LABEL_POS(10, 15);
+const PUPPY::Vec2f AMOUNT_LABEL_POS(10, 45);
 
 const float DEFAULT_POWER  = 1.3;
 const float DEFAULT_AMOUNT = 0.8;

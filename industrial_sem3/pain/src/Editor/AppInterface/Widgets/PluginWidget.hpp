@@ -4,6 +4,7 @@
 #include "../PluginTypesProxy.hpp"
 #include "../../../BaseGUI/Widget.hpp"
 #include "../../EditorPluginAPI/lib_std/widgets/collection.h"
+#include "EventsFwd.inc"
 
 class PluginWidgetImpl;
 
@@ -19,6 +20,9 @@ public:
     PluginWidgetImpl *getImpl() { return mImpl; };
 
 protected:
+    EVENTS_FWD_HEADER()
+
+protected:
     PluginWidgetImpl *mImpl;
 };
 
@@ -29,7 +33,9 @@ class PluginWidgetImpl : virtual public PUPPY::Widget
 {
 public:
     PluginWidgetImpl() = delete;
-    PluginWidgetImpl(const PUPPY::WBody &body, bool spawn, PUPPY::Widget *parent = nullptr);
+    PluginWidgetImpl(const PUPPY::WBody &body, PUPPY::Widget *parent = nullptr, bool create = false);
+    // Limited wrapper for non-special widgets
+    PluginWidgetImpl(::Widget *widget);
 
     ::Widget *getWidget() { return mWidget; };
 
@@ -39,8 +45,8 @@ public:
     virtual PUPPY::WBody get_body() override;
     virtual void set_body(const PUPPY::WBody &body_) override;
 
-    virtual PUPPY::Widget *get_parent() const override;
-    virtual void set_parent(PUPPY::Widget *parent_) override;
+    virtual PUPPY::Widget *get_parent() const override { return mParent; };
+    virtual void set_parent(PUPPY::Widget *parent_) override { mParent = parent_; };
 
     virtual PUPPY::RenderTarget *get_texture() override;
     virtual void set_texture(PUPPY::RenderTarget *texture_) override;
@@ -74,7 +80,11 @@ public:
     virtual void set_base_color(const PUPPY::RGBA &color) override;
 
 protected:
-    ::Widget *mWidget;
+    static ::Widget *translateParent(PUPPY::Widget *parent);
+
+protected:
+    ::Widget      *mWidget;
+    PUPPY::Widget *mParent;
 
     friend class WidgetFactoryImpl;
 };

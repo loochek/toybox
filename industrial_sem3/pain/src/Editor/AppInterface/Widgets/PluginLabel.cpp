@@ -2,6 +2,8 @@
 #include "../RenderTarget.hpp"
 #include "PluginLabel.hpp"
 
+const int LABEL_HEIGHT_OFFS = 5;
+
 PluginLabelIntl::PluginLabelIntl(const Vec2i &textAxis, PluginLabelImpl *impl, Widget *parent) :
     Label(textAxis, parent), mImpl(impl)
 {
@@ -12,17 +14,13 @@ PluginLabelIntl::~PluginLabelIntl()
     delete mImpl;
 }
 
-PluginLabelImpl::PluginLabelImpl(const PUPPY::Vec2f &pos, const char *text, PUPPY::Widget *parent) :
-    PluginWidgetImpl(PUPPY::WBody(), false, parent)
-{
-    ::Widget *parentWidget = nullptr;
-    if (parent != nullptr)
-    {
-        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
-        parentWidget = parentImpl->getWidget();
-    }
+EVENTS_FWD(PluginLabelIntl, Label)
 
-    ::Label *label = new PluginLabelIntl(fromPluginVec(pos), this, parentWidget);
+PluginLabelImpl::PluginLabelImpl(const PUPPY::Vec2f &pos, const char *text, PUPPY::Widget *parent) :
+    PluginWidgetImpl(PUPPY::WBody(), parent, false)
+{
+    ::Label *label = new PluginLabelIntl(fromPluginVec(pos) + Vec2i(0, LABEL_HEIGHT_OFFS), this,
+                                         translateParent(parent));
     label->setText(text);
     mWidget = label;
 

@@ -24,18 +24,13 @@ PluginWindowIntl::~PluginWindowIntl()
     delete mImpl;
 }
 
+EVENTS_FWD(PluginWindowIntl, Window)
+
 PluginWindowImpl::PluginWindowImpl(const char *name, const PUPPY::WBody &body, PaintController *controller,
                                    PUPPY::Widget *parent) : 
-    PluginWidgetImpl(body, false, parent), mController(controller)
+    PluginWidgetImpl(body, parent, false), mController(controller)
 {
-    ::Widget *parentWidget = nullptr;
-    if (parent != nullptr)
-    {
-        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
-        parentWidget = parentImpl->getWidget();
-    }
-
-    mWidget = new PluginWindowIntl(fromPluginRect(body), this, controller, parentWidget);
+    mWidget = new PluginWindowIntl(fromPluginRect(body), this, controller, translateParent(parent));
     set_name(name);
 
     if (parent != nullptr)

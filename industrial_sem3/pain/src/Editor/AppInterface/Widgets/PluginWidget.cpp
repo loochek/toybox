@@ -1,3 +1,4 @@
+#include <cassert>
 #include "../../../Utils/Logger.hpp"
 #include "../../../BaseGUI/Label.hpp"
 #include "../RenderTarget.hpp"
@@ -13,21 +14,21 @@ PluginWidgetIntl::~PluginWidgetIntl()
     delete mImpl;
 }
 
-PluginWidgetImpl::PluginWidgetImpl(const PUPPY::WBody &body, bool spawn, PUPPY::Widget *parent)
-{
-    if (spawn)
-    {
-        ::Widget *parentWidget = nullptr;
-        if (parent != nullptr)
-        {
-            PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
-            parentWidget = parentImpl->mWidget;
-        }
+EVENTS_FWD(PluginWidgetIntl, Widget)
 
-        mWidget = new PluginWidgetIntl(fromPluginRect(body), this, parentWidget);
+PluginWidgetImpl::PluginWidgetImpl(const PUPPY::WBody &body, PUPPY::Widget *parent, bool create) :
+    mParent(parent)
+{
+    if (create)
+    {
+        mWidget = new PluginWidgetIntl(fromPluginRect(body), this, translateParent(parent));
         if (parent != nullptr)
             parent->add_child(this);
     }
+}
+
+PluginWidgetImpl::PluginWidgetImpl(::Widget *widget) : mWidget(widget), mParent(nullptr)
+{
 }
 
 void PluginWidgetImpl::set_position(const PUPPY::Vec2f &position_)
@@ -49,16 +50,6 @@ void PluginWidgetImpl::set_body(const PUPPY::WBody &body_)
 {
     mWidget->resize(fromPluginVec(body_.size));
     mWidget->setPosition(fromPluginVec(body_.position));
-}
-
-PUPPY::Widget *PluginWidgetImpl::get_parent() const
-{
-    return static_cast<PluginWidgetIntl*>(mWidget->getParent())->getImpl();
-}
-
-void PluginWidgetImpl::set_parent(PUPPY::Widget *parent_)
-{
-    mWidget->setParent(dynamic_cast<PluginWidgetImpl*>(parent_)->mWidget);
 }
 
 PUPPY::RenderTarget *PluginWidgetImpl::get_texture()
@@ -135,4 +126,15 @@ void PluginWidgetImpl::set_caption(const char *text, size_t font_size, const PUP
 
 void PluginWidgetImpl::set_base_color(const PUPPY::RGBA &color)
 {
+}
+
+::Widget *PluginWidgetImpl::translateParent(PUPPY::Widget *parent)
+{
+    if (parent != nullptr)
+    {
+        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
+        return parentImpl->getWidget();
+    }
+
+    return nullptr;
 }

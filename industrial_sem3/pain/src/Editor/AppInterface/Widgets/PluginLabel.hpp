@@ -17,6 +17,9 @@ public:
     PluginLabelImpl *getImpl() { return mImpl; };
 
 protected:
+    EVENTS_FWD_HEADER()
+
+protected:
     PluginLabelImpl *mImpl;
 };
 
@@ -28,9 +31,6 @@ public:
 
     virtual std::string_view get_text() const override;
     virtual void set_text(std::string_view text) override;
-
-protected:
-    ::Widget *mWidget;
 };
 
 #endif

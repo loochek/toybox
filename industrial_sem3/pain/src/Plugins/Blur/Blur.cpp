@@ -46,8 +46,9 @@ struct {
     PUPPY::TextField *powerTextBox;
 } gWidgets;
 
-const PUPPY::WBody WINDOW_BODY(PUPPY::Vec2f(400, 400), PUPPY::Vec2f(200, 50));
-const PUPPY::WBody POWER_TEXT_BOX_BODY(PUPPY::Vec2f(10, 10), PUPPY::Vec2f(30, 20));
+const PUPPY::WBody WINDOW_BODY(PUPPY::Vec2f(400, 400), PUPPY::Vec2f(160, 40));
+const PUPPY::WBody POWER_TEXT_BOX_BODY(PUPPY::Vec2f(120, 10), PUPPY::Vec2f(30, 20));
+const PUPPY::Vec2f POWER_LABEL_POS(10, 15);
 
 const float DEFAULT_POWER = 0.7f;
 
@@ -109,6 +110,8 @@ PUPPY::Status Blur::init(const PUPPY::AppInterface* appInterface) const
 
         gWidgets.window       = factory->window("Gaussian blur", WINDOW_BODY);
         gWidgets.powerTextBox = factory->text_field(POWER_TEXT_BOX_BODY, gWidgets.window);
+
+        factory->label(POWER_LABEL_POS, "Power:", gWidgets.window);
     }
 
     appInterface->log("Blur: succesful initialization!");

@@ -15,21 +15,15 @@ PluginTextBoxIntl::~PluginTextBoxIntl()
     delete mImpl;
 }
 
-PluginTextBoxImpl::PluginTextBoxImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 
-    PluginWidgetImpl(body, false, parent)
-{
-    ::Widget *parentWidget = nullptr;
-    if (parent != nullptr)
-    {
-        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
-        parentWidget = parentImpl->getWidget();
-    }
+EVENTS_FWD(PluginTextBoxIntl, TextBox)
 
-    mWidget = new PluginTextBoxIntl(fromPluginVec(body.position), body.size.x, this, parentWidget);
+PluginTextBoxImpl::PluginTextBoxImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 
+    PluginWidgetImpl(body, parent, false)
+{
+    mWidget = new PluginTextBoxIntl(fromPluginVec(body.position), body.size.x, this, translateParent(parent));
     if (parent != nullptr)
         parent->add_child(this);
 }
-
 
 std::string_view PluginTextBoxImpl::get_text() const
 {

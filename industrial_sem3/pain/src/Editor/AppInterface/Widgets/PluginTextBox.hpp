@@ -21,6 +21,9 @@ public:
     PluginTextBoxImpl *getImpl() { return mImpl; };
 
 protected:
+    EVENTS_FWD_HEADER()
+
+protected:
     PluginTextBoxImpl *mImpl;
     PTextBoxDelegate  *mDelegate;
 };

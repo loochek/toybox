@@ -21,6 +21,9 @@ public:
     PluginColorPickerImpl *getImpl() { return mImpl; };
 
 protected:
+    EVENTS_FWD_HEADER()
+
+protected:
     PluginColorPickerImpl *mImpl;
     PColorPickerDelegate  *mDelegate;
 };

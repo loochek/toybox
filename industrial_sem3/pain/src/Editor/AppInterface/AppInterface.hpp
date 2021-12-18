@@ -29,7 +29,7 @@ public:
     virtual PUPPY::RenderTarget *get_preview() const override;
     virtual void                 flush_preview() const override;
 
-    virtual const std::vector<PUPPY::WBody> &get_windows() const override;
+    virtual const std::vector<PUPPY::WBody> get_windows() const override;
     virtual PUPPY::Widget *get_root_widget() const override;
 
 private:
@@ -37,9 +37,9 @@ private:
 
 private:
     PaintController *mController;
-    friend class PluginManager;
+    PUPPY::Widget *mRootWrap;
 
-    std::vector<PUPPY::WBody> mDummy;
+    friend class PluginManager;
 };
 
 #endif

@@ -27,6 +27,11 @@ public:
     void addChild(Widget *child);
 
     /**
+     * \return Children list
+     */
+    const std::list<Widget*> &getChildren() { return mChildren; };
+
+    /**
      * \return Widget rect
      */
     IntRect getRect() const { return mRect; };

@@ -21,6 +21,9 @@ public:
     PluginButtonImpl *getImpl() { return mImpl; };
 
 protected:
+    EVENTS_FWD_HEADER()
+
+protected:
     PluginButtonImpl *mImpl;
     PButtonDelegate  *mDelegate;
 };

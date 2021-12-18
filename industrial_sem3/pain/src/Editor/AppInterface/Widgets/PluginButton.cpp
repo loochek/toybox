@@ -17,32 +17,20 @@ PluginButtonIntl::~PluginButtonIntl()
     delete mImpl;
 }
 
-PluginButtonImpl::PluginButtonImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 
-    PluginWidgetImpl(body, false, parent)
-{
-    ::Widget *parentWidget = nullptr;
-    if (parent != nullptr)
-    {
-        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
-        parentWidget = parentImpl->getWidget();
-    }
+EVENTS_FWD(PluginButtonIntl, Button)
 
-    mWidget = new PluginButtonIntl(fromPluginRect(body), this, parentWidget);
+PluginButtonImpl::PluginButtonImpl(const PUPPY::WBody &body, PUPPY::Widget *parent) : 
+    PluginWidgetImpl(body, parent, false)
+{
+    mWidget = new PluginButtonIntl(fromPluginRect(body), this, translateParent(parent));
     if (parent != nullptr)
         parent->add_child(this);
 }
 
 PluginButtonImpl::PluginButtonImpl(const PUPPY::WBody &body, const char *label, PUPPY::Widget *parent) : 
-    PluginWidgetImpl(body, false, parent)
+    PluginWidgetImpl(body, parent, false)
 {
-    ::Widget *parentWidget = nullptr;
-    if (parent != nullptr)
-    {
-        PluginWidgetImpl *parentImpl = dynamic_cast<PluginWidgetImpl*>(parent);
-        parentWidget = parentImpl->getWidget();
-    }
-
-    ::Button *button = new PluginButtonIntl(fromPluginRect(body), this, parentWidget);
+    ::Button *button = new PluginButtonIntl(fromPluginRect(body), this, translateParent(parent));
     button->setLabel(label);
     mWidget = button;
 }

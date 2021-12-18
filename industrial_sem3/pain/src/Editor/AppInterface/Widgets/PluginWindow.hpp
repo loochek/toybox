@@ -25,6 +25,8 @@ public:
 protected:
     virtual void onDestroyThis() override;
 
+    EVENTS_FWD_HEADER()
+
 protected:
     PluginWindowImpl   *mImpl;
     WindowHideDelegate *mCloseButtonDelegate;

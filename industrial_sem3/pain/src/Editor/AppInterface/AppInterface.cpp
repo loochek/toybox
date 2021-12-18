@@ -1,6 +1,8 @@
 #include "../../Utils/Logger.hpp"
 #include "../../EditorLogic/PaintController.hpp"
+#include "../../EditorWidgets/PaintMainWindow.hpp"
 #include "../Canvas.hpp"
+#include "Widgets/PluginWidget.hpp"
 #include "PluginTypesProxy.hpp"
 #include "RenderTarget.hpp"
 #include "WidgetFactory.hpp"
@@ -13,12 +15,15 @@ AppInterfaceImpl::AppInterfaceImpl(PaintController *controller) : mController(co
     factory.target = new RenderTargetFactoryImpl();
     factory.widget = new WidgetFactoryImpl(controller);
     factory.shader = nullptr;
+
+    mRootWrap = new PluginWidgetImpl(mController->getRoot());
 }
 
 AppInterfaceImpl::~AppInterfaceImpl()
 {
     delete factory.target;
     delete factory.widget;
+    delete mRootWrap;
 }
 
 bool AppInterfaceImpl::ext_enable(const char *name) const
@@ -96,12 +101,16 @@ void AppInterfaceImpl::flush_preview() const
     mController->getActiveCanvas()->flushPreview();
 }
 
-const std::vector<PUPPY::WBody> &AppInterfaceImpl::get_windows() const
+const std::vector<PUPPY::WBody> AppInterfaceImpl::get_windows() const
 {
-    return mDummy;
+    std::vector<PUPPY::WBody> bodies;
+    for (Widget *child : mController->getRoot()->getChildren())
+        bodies.push_back(toPluginRect(child->getRect()));
+        
+    return bodies;
 }
 
 PUPPY::Widget *AppInterfaceImpl::get_root_widget() const
 {
-    return nullptr;
+    return mRootWrap;
 }
