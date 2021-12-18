@@ -1,4 +1,5 @@
 #include "../../Utils/Logger.hpp"
+#include "../../BaseGUI/Window.hpp"
 #include "../../EditorLogic/PaintController.hpp"
 #include "../../EditorWidgets/PaintMainWindow.hpp"
 #include "../Canvas.hpp"
@@ -105,7 +106,10 @@ const std::vector<PUPPY::WBody> AppInterfaceImpl::get_windows() const
 {
     std::vector<PUPPY::WBody> bodies;
     for (Widget *child : mController->getRoot()->getChildren())
-        bodies.push_back(toPluginRect(child->getRect()));
+    {
+        if (dynamic_cast<Window*>(child) != nullptr && child->isEnabled())
+            bodies.push_back(toPluginRect(child->getRect()));
+    }
         
     return bodies;
 }

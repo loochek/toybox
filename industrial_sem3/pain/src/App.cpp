@@ -1,6 +1,7 @@
 #include "App.hpp"
 #include "TextureManager.hpp"
 #include "EditorWidgets/PaintMainWindow.hpp"
+#include "Editor/PluginManager.hpp"
 
 #ifdef NDEBUG
 const float FULLSCREEN = true;
@@ -30,6 +31,8 @@ App::~App()
 void App::run()
 {
     bool shouldClose = false;
+
+    PluginManager *pluginMgr = PluginManager::getInstance();
 
     while (!shouldClose)
     {
@@ -64,6 +67,7 @@ void App::run()
         //printf("FPS: %f\n", 1 / elapsedTime);
 
         mGuiManager->update(elapsedTime);
+        pluginMgr->pluginsUpdate(elapsedTime);
 
         // Draw
 

@@ -2,7 +2,8 @@
 #include "Logic/PTextBoxDelegate.hpp"
 #include "PluginTextBox.hpp"
 
-PluginTextBoxIntl::PluginTextBoxIntl(const Vec2i &textBoxPos, int textBoxSize, PluginTextBoxImpl *impl, Widget *parent) :
+PluginTextBoxIntl::PluginTextBoxIntl(const Vec2i &textBoxPos, int textBoxSize, PUPPY::TextField *impl,
+    Widget *parent) :
     TextBox(textBoxPos, textBoxSize, parent), mImpl(impl)
 {
     mDelegate = new PTextBoxDelegate(this);

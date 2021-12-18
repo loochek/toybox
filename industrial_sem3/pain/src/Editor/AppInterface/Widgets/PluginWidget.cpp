@@ -4,7 +4,7 @@
 #include "../RenderTarget.hpp"
 #include "PluginWidget.hpp"
 
-PluginWidgetIntl::PluginWidgetIntl(const IntRect &widgetRect, PluginWidgetImpl *impl, Widget *parent) :
+PluginWidgetIntl::PluginWidgetIntl(const IntRect &widgetRect, PUPPY::Widget *impl, Widget *parent) :
     Widget(widgetRect, parent), mImpl(impl)
 {
 }
@@ -17,7 +17,7 @@ PluginWidgetIntl::~PluginWidgetIntl()
 EVENTS_FWD(PluginWidgetIntl, Widget)
 
 PluginWidgetImpl::PluginWidgetImpl(const PUPPY::WBody &body, PUPPY::Widget *parent, bool create) :
-    mParent(parent)
+    mParent(parent), mTexture(nullptr)
 {
     if (create)
     {
@@ -27,7 +27,7 @@ PluginWidgetImpl::PluginWidgetImpl(const PUPPY::WBody &body, PUPPY::Widget *pare
     }
 }
 
-PluginWidgetImpl::PluginWidgetImpl(::Widget *widget) : mWidget(widget), mParent(nullptr)
+PluginWidgetImpl::PluginWidgetImpl(::Widget *widget) : mWidget(widget), mParent(nullptr), mTexture(nullptr)
 {
 }
 
@@ -52,15 +52,6 @@ void PluginWidgetImpl::set_body(const PUPPY::WBody &body_)
     mWidget->setPosition(fromPluginVec(body_.position));
 }
 
-PUPPY::RenderTarget *PluginWidgetImpl::get_texture()
-{
-    return new RenderTargetImpl(mWidget->getTexture(), true);
-}
-
-void PluginWidgetImpl::set_texture(PUPPY::RenderTarget *texture_)
-{
-}
-
 bool PluginWidgetImpl::is_active()
 {
     return mWidget->isEnabled();
@@ -74,7 +65,14 @@ bool PluginWidgetImpl::is_inside(const PUPPY::Vec2f &pos)
 bool PluginWidgetImpl::add_child(PUPPY::Widget *child)
 {
     PluginWidgetImpl *childImpl = dynamic_cast<PluginWidgetImpl*>(child);
-    mWidget->addChild(childImpl->mWidget);
+    if (childImpl == nullptr)
+    {
+        PluginWidgetIntl *newIntl = new PluginWidgetIntl(fromPluginRect(child->get_body()), child, nullptr);
+        mWidget->addChild(newIntl);
+    }
+    else
+        mWidget->addChild(childImpl->mWidget);
+
     return true;
 }
 
@@ -137,4 +135,10 @@ void PluginWidgetImpl::set_base_color(const PUPPY::RGBA &color)
     }
 
     return nullptr;
+}
+
+bool PluginWidgetImpl::add_child(PluginWidgetImpl *child)
+{
+    mWidget->addChild(child->mWidget);
+    return true;
 }

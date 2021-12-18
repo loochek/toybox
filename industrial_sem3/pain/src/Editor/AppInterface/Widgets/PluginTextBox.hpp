@@ -15,16 +15,16 @@ class PluginTextBoxImpl;
 class PluginTextBoxIntl : public TextBox
 {
 public:
-    PluginTextBoxIntl(const Vec2i &textBoxPos, int textBoxSize, PluginTextBoxImpl *impl, Widget *parent = nullptr);
+    PluginTextBoxIntl(const Vec2i &textBoxPos, int textBoxSize, PUPPY::TextField *impl, Widget *parent = nullptr);
     ~PluginTextBoxIntl();
 
-    PluginTextBoxImpl *getImpl() { return mImpl; };
+    PUPPY::TextField *getImpl() { return mImpl; };
 
 protected:
     EVENTS_FWD_HEADER()
 
 protected:
-    PluginTextBoxImpl *mImpl;
+    PUPPY::TextField *mImpl;
     PTextBoxDelegate  *mDelegate;
 };
 

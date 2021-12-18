@@ -15,16 +15,16 @@ class PluginButtonImpl;
 class PluginButtonIntl : public Button
 {
 public:
-    PluginButtonIntl(const IntRect &widgetRect, PluginButtonImpl *impl, Widget *parent = nullptr);
+    PluginButtonIntl(const IntRect &widgetRect, PUPPY::Button *impl, Widget *parent = nullptr);
     ~PluginButtonIntl();
 
-    PluginButtonImpl *getImpl() { return mImpl; };
+    PUPPY::Button *getImpl() { return mImpl; };
 
 protected:
     EVENTS_FWD_HEADER()
 
 protected:
-    PluginButtonImpl *mImpl;
+    PUPPY::Button *mImpl;
     PButtonDelegate  *mDelegate;
 };
 

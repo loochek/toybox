@@ -24,6 +24,8 @@ public:
     Plugin *getPlugin(int idx);
     int getPluginsCount() { return mPlugins.size(); };
 
+    void pluginsUpdate(float elapsedTime);
+
     static PluginManager *getInstance();
 
 private:

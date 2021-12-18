@@ -15,6 +15,12 @@
         event.force = true; \
         mImpl->on_render(event); \
         BASECLASSNAME::onRedrawThis(); \
+        PUPPY::RenderTarget *rt = mImpl->get_texture(); \
+        if (rt != nullptr) \
+        { \
+            LGL::RenderTexture *texture = static_cast<RenderTargetImpl*>(rt)->getTexture(); \
+            mTexture.drawRenderTexture(*texture, Vec2i()); \
+        } \
     } \
     \
     void CLASSNAME::onUpdateThis(float elapsedTime) \

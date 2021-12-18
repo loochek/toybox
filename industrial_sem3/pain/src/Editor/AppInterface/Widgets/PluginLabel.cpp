@@ -4,7 +4,7 @@
 
 const int LABEL_HEIGHT_OFFS = 5;
 
-PluginLabelIntl::PluginLabelIntl(const Vec2i &textAxis, PluginLabelImpl *impl, Widget *parent) :
+PluginLabelIntl::PluginLabelIntl(const Vec2i &textAxis, PUPPY::Label *impl, Widget *parent) :
     Label(textAxis, parent), mImpl(impl)
 {
 }

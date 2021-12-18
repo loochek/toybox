@@ -11,16 +11,16 @@ class PluginLabelImpl;
 class PluginLabelIntl : public Label
 {
 public:
-    PluginLabelIntl(const Vec2i &textAxis, PluginLabelImpl *impl, Widget *parent = nullptr);
+    PluginLabelIntl(const Vec2i &textAxis, PUPPY::Label *impl, Widget *parent = nullptr);
     ~PluginLabelIntl();
 
-    PluginLabelImpl *getImpl() { return mImpl; };
+    PUPPY::Label *getImpl() { return mImpl; };
 
 protected:
     EVENTS_FWD_HEADER()
 
 protected:
-    PluginLabelImpl *mImpl;
+    PUPPY::Label *mImpl;
 };
 
 class PluginLabelImpl : public PluginWidgetImpl, public PUPPY::Label

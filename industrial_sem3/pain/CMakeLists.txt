@@ -57,8 +57,8 @@ add_library(kctf_sharpy SHARED ${KCTF_SHARPY_SOURCES})
 set(KCTF_RAINBOW_SOURCES src/Plugins/KCTF/rainbow_stamp.cpp)
 add_library(kctf_rainbow_stamp SHARED ${KCTF_RAINBOW_SOURCES})
 
-# set(KCTF_WALKER_SOURCES src/Plugins/KCTF/window_walker.cpp)
-# add_library(kctf_window_walker SHARED ${KCTF_WALKER_SOURCES})
+set(KCTF_WALKER_SOURCES src/Plugins/KCTF/window_walker.cpp)
+add_library(kctf_window_walker SHARED ${KCTF_WALKER_SOURCES})
 
 find_package(SFML COMPONENTS graphics window)
 if (SFML_FOUND)

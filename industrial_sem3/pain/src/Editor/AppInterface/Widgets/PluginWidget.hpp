@@ -14,16 +14,16 @@ class PluginWidgetImpl;
 class PluginWidgetIntl : public Widget
 {
 public:
-    PluginWidgetIntl(const IntRect &widgetRect, PluginWidgetImpl *impl, Widget *parent = nullptr);
+    PluginWidgetIntl(const IntRect &widgetRect, PUPPY::Widget *impl, Widget *parent = nullptr);
     ~PluginWidgetIntl();
 
-    PluginWidgetImpl *getImpl() { return mImpl; };
+    PUPPY::Widget *getImpl() { return mImpl; };
 
 protected:
     EVENTS_FWD_HEADER()
 
 protected:
-    PluginWidgetImpl *mImpl;
+    PUPPY::Widget *mImpl;
 };
 
 /**
@@ -34,7 +34,7 @@ class PluginWidgetImpl : virtual public PUPPY::Widget
 public:
     PluginWidgetImpl() = delete;
     PluginWidgetImpl(const PUPPY::WBody &body, PUPPY::Widget *parent = nullptr, bool create = false);
-    // Limited wrapper for non-special widgets
+    // Limited wrapper for non-special widget
     PluginWidgetImpl(::Widget *widget);
 
     ::Widget *getWidget() { return mWidget; };
@@ -48,8 +48,8 @@ public:
     virtual PUPPY::Widget *get_parent() const override { return mParent; };
     virtual void set_parent(PUPPY::Widget *parent_) override { mParent = parent_; };
 
-    virtual PUPPY::RenderTarget *get_texture() override;
-    virtual void set_texture(PUPPY::RenderTarget *texture_) override;
+    virtual PUPPY::RenderTarget *get_texture() override { return mTexture; };
+    virtual void set_texture(PUPPY::RenderTarget *texture_) override { mTexture = texture_; };
 
     virtual bool is_active() override;
     virtual bool is_inside(const PUPPY::Vec2f &pos) override;
@@ -83,10 +83,12 @@ public:
 
 protected:
     static ::Widget *translateParent(PUPPY::Widget *parent);
+    bool add_child(PluginWidgetImpl *child);
 
 protected:
-    ::Widget      *mWidget;
-    PUPPY::Widget *mParent;
+    ::Widget            *mWidget;
+    PUPPY::Widget       *mParent;
+    PUPPY::RenderTarget *mTexture;
 
     friend class WidgetFactoryImpl;
 };

@@ -16,11 +16,11 @@ class PaintController;
 class PluginWindowIntl : public Window
 {
 public:
-    PluginWindowIntl(const IntRect &contentRect, PluginWindowImpl *impl, PaintController *mController,
+    PluginWindowIntl(const IntRect &contentRect, PUPPY::Window *impl, PaintController *mController,
                      Widget *parent = nullptr);
     ~PluginWindowIntl();
 
-    PluginWindowImpl *getImpl() { return mImpl; };
+    PUPPY::Window *getImpl() { return mImpl; };
 
 protected:
     virtual void onDestroyThis() override;
@@ -28,7 +28,7 @@ protected:
     EVENTS_FWD_HEADER()
 
 protected:
-    PluginWindowImpl   *mImpl;
+    PUPPY::Window *mImpl;
     WindowHideDelegate *mCloseButtonDelegate;
 
     PaintController *mController;

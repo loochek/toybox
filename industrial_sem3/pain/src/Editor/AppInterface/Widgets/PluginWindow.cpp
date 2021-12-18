@@ -4,7 +4,7 @@
 #include "../../../BaseGUILogic/Window/WindowHideDelegate.hpp"
 #include "../../../EditorLogic/PaintController.hpp"
 
-PluginWindowIntl::PluginWindowIntl(const IntRect &contentRect, PluginWindowImpl *impl,
+PluginWindowIntl::PluginWindowIntl(const IntRect &contentRect, PUPPY::Window *impl,
                                    PaintController *controller, Widget *parent) :
     Window(contentRect, parent), mImpl(impl), mController(controller)
 {

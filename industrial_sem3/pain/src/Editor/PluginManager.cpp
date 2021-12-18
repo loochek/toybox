@@ -92,6 +92,12 @@ Plugin *PluginManager::getPlugin(int idx)
     return mPlugins[idx];
 }
 
+void PluginManager::pluginsUpdate(float elapsedTime)
+{
+    for (int i = 0; i < mPlugins.size(); i++)
+        mPlugins[i]->on_tick(elapsedTime);
+}
+
 PluginManager *PluginManager::getInstance()
 {
     static PluginManager instance;

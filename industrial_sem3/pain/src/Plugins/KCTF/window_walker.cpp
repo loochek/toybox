@@ -134,7 +134,7 @@ struct ViewBody {
     {}
 
     bool operator==(const ViewBody &other) const {
-        return pos == other.pos && size == other.size;
+        return fabs((pos - other.pos).len()) < 0.1 && fabs((size - other.size).len()) < 0.1;
     }
 };
 
@@ -226,8 +226,10 @@ struct World : public Tickable {
     void update_windows() {
         auto bodies = APPI->get_windows();
         windows.clear();
+        // printf("windows:\n");
         for (size_t i = 0; i < bodies.size(); ++i) {
             windows.push_back(bodies[i]);
+            // printf("  %f %f %f %f\n", windows.back().pos.x, windows.back().pos.y, windows.back().size.x, windows.back().size.y);
         }
     }
 
@@ -416,6 +418,13 @@ public:
 
     bool choose_target(bool force = false) {
         const auto &windows = WORLD.windows;
+        if (!windows.size())
+        {
+            set_rand_target_pos();
+            return true;
+        }
+
+        APPI->log("cur target %f %f %f %f", target.pos.x, target.pos.y, target.size.x, target.size.y);
 
         for (const auto &window : windows) {
             if (target == window && !force) {
@@ -431,6 +440,7 @@ public:
         target_pos.y -= unit_body.size.y;
 
         choose_position_on_target();
+        APPI->log("target %f %f %f %f idx %d", target.pos.x, target.pos.y, target.size.x, target.size.y, idx);
 
         return true;
     }
@@ -439,6 +449,8 @@ public:
         Vec2f vel = (target_pos - unit_body.pos).normal() * speed;
         Vec2f new_pos = unit_body.pos + vel * dt;
         set_position(PUPPY::Vec2f(new_pos.x, new_pos.y));
+
+        APPI->log("vel %f %f", vel.x, vel.y);
     }
 
     bool is_near_target(bool widened = false) {
@@ -448,6 +460,7 @@ public:
     }
 
     void set_rand_target_pos() {
+        fixed_tpos = true;
         float x = (float) randdouble(0, WORLD.root->get_body().size.x - unit_body.size.x);
         float y = (float) randdouble(0, WORLD.root->get_body().size.y - unit_body.size.y);
         target_pos = {x, y};
@@ -577,8 +590,12 @@ PUPPY::Status MyPluginInterface::init(const PUPPY::AppInterface *app_interface) 
     WORLD.root = APPI->get_root_widget();
 
 
-    auto ufo = new UFO({{500, 100}, 64}, WORLD.root);
-    WORLD.add(ufo);
+    for (int i = 0; i < 5; i++)
+    {
+        auto ufo = new UFO({{500, 100}, 64}, WORLD.root);
+        WORLD.add(ufo);
+    }
+    
 
     APPI->log("[plugin](%s) inited", PINFO.name);
     return PUPPY::OK;

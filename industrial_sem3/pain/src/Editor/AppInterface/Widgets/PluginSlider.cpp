@@ -2,7 +2,7 @@
 #include "Logic/PSliderDelegate.hpp"
 #include "PluginSlider.hpp"
 
-PluginSliderIntl::PluginSliderIntl(const Vec2i &sliderPos, int sliderSize, PluginSliderImpl *impl, Widget *parent) :
+PluginSliderIntl::PluginSliderIntl(const Vec2i &sliderPos, int sliderSize, PUPPY::Slider *impl, Widget *parent) :
     Slider(sliderPos, sliderSize, parent), mImpl(impl)
 {
     mDelegate = new PSliderDelegate(this);

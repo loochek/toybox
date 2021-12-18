@@ -15,16 +15,16 @@ class PluginSliderImpl;
 class PluginSliderIntl : public Slider
 {
 public:
-    PluginSliderIntl(const Vec2i &sliderPos, int sliderSize, PluginSliderImpl *impl, Widget *parent = nullptr);
+    PluginSliderIntl(const Vec2i &sliderPos, int sliderSize, PUPPY::Slider *impl, Widget *parent = nullptr);
     ~PluginSliderIntl();
 
-    PluginSliderImpl *getImpl() { return mImpl; };
+    PUPPY::Slider *getImpl() { return mImpl; };
 
 protected:
     EVENTS_FWD_HEADER()
 
 protected:
-    PluginSliderImpl *mImpl;
+    PUPPY::Slider *mImpl;
     PSliderDelegate  *mDelegate;
 };
 

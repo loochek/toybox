@@ -2,7 +2,7 @@
 #include "Logic/PColorPickerDelegate.hpp"
 #include "PluginColorPicker.hpp"
 
-PluginColorPickerIntl::PluginColorPickerIntl(const IntRect &widgetRect, PluginColorPickerImpl *impl,
+PluginColorPickerIntl::PluginColorPickerIntl(const IntRect &widgetRect, PUPPY::ColorPicker *impl,
                                              Widget *parent) :
     Pallete(widgetRect, parent), mImpl(impl)
 {

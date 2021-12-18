@@ -15,16 +15,16 @@ class PluginColorPickerImpl;
 class PluginColorPickerIntl : public Pallete
 {
 public:
-    PluginColorPickerIntl(const IntRect &widgetRect, PluginColorPickerImpl *impl, Widget *parent = nullptr);
+    PluginColorPickerIntl(const IntRect &widgetRect, PUPPY::ColorPicker *impl, Widget *parent = nullptr);
     ~PluginColorPickerIntl();
 
-    PluginColorPickerImpl *getImpl() { return mImpl; };
+    PUPPY::ColorPicker *getImpl() { return mImpl; };
 
 protected:
     EVENTS_FWD_HEADER()
 
 protected:
-    PluginColorPickerImpl *mImpl;
+    PUPPY::ColorPicker *mImpl;
     PColorPickerDelegate  *mDelegate;
 };
 
