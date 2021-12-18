@@ -79,6 +79,8 @@ public:
     virtual void set_caption(const char *text, size_t font_size, const PUPPY::Vec2f *pos = nullptr) override;
     virtual void set_base_color(const PUPPY::RGBA &color) override;
 
+    virtual void *get_extra_data(void *arg) override { return nullptr; };
+
 protected:
     static ::Widget *translateParent(PUPPY::Widget *parent);
 
