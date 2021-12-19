@@ -34,7 +34,7 @@ const PUPPY::AppInterface* gAppInterface = nullptr;
 
 const Eraser gPluginInterface;
 
-const PUPPY::PluginInfo gPluginInfo =
+PUPPY::PluginInfo gPluginInfo =
 {
     PUPPY::STD_VERSION,           // std_version
     0,                      // reserved
@@ -79,12 +79,17 @@ const PUPPY::PluginInfo *Eraser::get_info() const
 PUPPY::Status Eraser::init(const PUPPY::AppInterface* appInterface, const std::filesystem::path& path)
 {
     gAppInterface = appInterface;
+
+    std::filesystem::path iconPath(path / "loochek/eraser.png");
+    gPluginInfo.icon = appInterface->factory.target->from_file(iconPath.c_str());
+
     appInterface->log("Eraser: succesful initialization!");
     return PUPPY::Status::OK;
 }
 
 PUPPY::Status Eraser::deinit()
 {
+    delete gPluginInfo.icon;
     return PUPPY::Status::OK;
 }
 

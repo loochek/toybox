@@ -1,9 +1,9 @@
 #include <cassert>
 #include "PluginPicker.hpp"
-#include "../BaseGUI/Button.hpp"
+#include "PluginChooseButton.hpp"
 #include "../EditorLogic/PluginPicker/PluginPickerController.hpp"
 
-const Vec2i ONE_BUTTON_SIZE = Vec2i(120, 60);
+const Vec2i ONE_BUTTON_SIZE = Vec2i(120, 80);
 
 const Vec2i PluginPicker::PICKER_INIT_SIZE = ONE_BUTTON_SIZE;
 
@@ -21,8 +21,9 @@ void PluginPicker::addPlugin(Plugin *plugin)
     resize(Vec2i(ONE_BUTTON_SIZE.x, ONE_BUTTON_SIZE.y * mButtonsCount));
     mParent->resize(mRect.size);
 
-    Button *pluginButton = new Button(IntRect(Vec2i(0, ONE_BUTTON_SIZE.y * mPlugins.size()), ONE_BUTTON_SIZE), this);
-    pluginButton->setLabel(plugin->get_info()->name);
+    IntRect pluginButtonRect(Vec2i(0, ONE_BUTTON_SIZE.y * mPlugins.size()), ONE_BUTTON_SIZE);
+    Button *pluginButton = new PluginChooseButton(pluginButtonRect, plugin, this);
+
     pluginButton->setDelegate(mController);
     pluginButton->setUserData(mPlugins.size());
     addChild(pluginButton);

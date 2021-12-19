@@ -17,7 +17,7 @@ public:
      * 
      * \param label Label text
      */
-    void setLabel(const char *label);
+    virtual void setLabel(const char *label);
     
 protected:
     AnimatedButton() = delete;

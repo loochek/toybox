@@ -1,4 +1,5 @@
 #include "../TextureManager.hpp"
+#include "Label.hpp"
 #include "PrettyButton.hpp"
 
 const int PrettyButton::BUTTON_HEIGHT = 22;
@@ -40,6 +41,13 @@ void PrettyButton::onRedrawThis()
         mTexture.drawTexture(*mBodyHoveredTexture, bodyPos , bodyRect   , opacity);
         mTexture.drawTexture(*mRightHoveredTexture, rightPos, defaultRect, opacity);
     }    
+}
+
+void PrettyButton::setLabel(const char *text)
+{
+    AnimatedButton::setLabel(text);
+    // Center label
+    mLabel->setPosition(Vec2i(mRect.size.x / 2 - mLabel->getRect().size.x / 2, mLabel->getRect().position.y));
 }
 
 void PrettyButton::getTextures()

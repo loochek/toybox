@@ -37,7 +37,7 @@ const PUPPY::AppInterface* gAppInterface = nullptr;
 
 const Fill gPluginInterface;
 
-const PUPPY::PluginInfo gPluginInfo =
+PUPPY::PluginInfo gPluginInfo =
 {
     PUPPY::STD_VERSION,           // std_version
     0,                      // reserved
@@ -84,12 +84,17 @@ const PUPPY::PluginInfo *Fill::get_info() const
 PUPPY::Status Fill::init(const PUPPY::AppInterface* appInterface, const std::filesystem::path& path)
 {
     gAppInterface = appInterface;
+
+    std::filesystem::path iconPath(path / "loochek/fill.png");
+    gPluginInfo.icon = appInterface->factory.target->from_file(iconPath.c_str());
+
     appInterface->log("Fill: succesful initialization!");
     return PUPPY::Status::OK;
 }
 
 PUPPY::Status Fill::deinit()
 {
+    delete gPluginInfo.icon;
     return PUPPY::Status::OK;
 }
 

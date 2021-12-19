@@ -40,7 +40,7 @@ public:
 
     virtual void apply_shader(const PUPPY::Shader *shader) override;
 
-    LGL::RenderTexture *getTexture() { return mTarget; };
+    LGL::RenderTexture *getTexture() const { return mTarget; };
 
 private:
     void handleBlendMode(const PUPPY::RenderMode &mode);

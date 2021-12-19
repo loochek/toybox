@@ -166,6 +166,5 @@ PUPPY::RenderTarget *RenderTargetFactoryImpl::from_file(const char *path) const
     LGL::RenderTexture *rt = new LGL::RenderTexture(texture.getSize());
     rt->drawTexture(texture, Vec2f());
     
-    RenderTargetImpl *target = new RenderTargetImpl(rt);
-    return target;
+    return new RenderTargetImpl(rt);
 }

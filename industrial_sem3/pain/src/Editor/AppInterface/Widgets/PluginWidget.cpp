@@ -1,6 +1,7 @@
 #include <cassert>
 #include "../../../Utils/Logger.hpp"
 #include "../../../BaseGUI/Label.hpp"
+#include "../../../EditorWidgets/PaintMainWindow.hpp"
 #include "../RenderTarget.hpp"
 #include "PluginWidget.hpp"
 
@@ -105,6 +106,9 @@ void PluginWidgetImpl::show()
 
 void PluginWidgetImpl::focus()
 {
+    PaintMainWindow *probablyRoot = dynamic_cast<PaintMainWindow*>(mWidget->getParent());
+    if (probablyRoot != nullptr)
+        probablyRoot->popUp(mWidget);
 }
 
 void PluginWidgetImpl::set_caption(const char *text, size_t font_size, const PUPPY::Vec2f *pos)

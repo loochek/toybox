@@ -19,8 +19,6 @@ void AnimatedButton::setLabel(const char *label)
     }
     
     mLabel->setText(label);
-    // Center label
-    mLabel->setPosition(Vec2i(mRect.size.x / 2 - mLabel->getRect().size.x / 2, mLabel->getRect().position.y));
 }
 
 void AnimatedButton::onUpdateThis(float elapsedTime)

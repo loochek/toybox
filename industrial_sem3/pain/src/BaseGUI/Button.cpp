@@ -1,3 +1,4 @@
+#include "Label.hpp"
 #include "Button.hpp"
 
 Button::Button(const IntRect &widgetRect, Widget *parent,
@@ -18,4 +19,11 @@ void Button::onRedrawThis()
 
         mTexture.drawRect(IntRect(Vec2i(), mRect.size), currColor);
     }
+}
+
+void Button::setLabel(const char *text)
+{
+    AnimatedButton::setLabel(text);
+    // Center label
+    mLabel->setPosition(Vec2i(mRect.size.x / 2 - mLabel->getRect().size.x / 2, mLabel->getRect().position.y));
 }

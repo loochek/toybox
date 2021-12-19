@@ -15,6 +15,14 @@ public:
 
     virtual ~PrettyButton() {};
 
+    /**
+     * Sets a label for the button. 
+     * No label will drawn if null pointer is passed
+     * 
+     * \param label Label text
+     */
+    virtual void setLabel(const char *label);
+
 protected:
     virtual void onRedrawThis() override;
 
