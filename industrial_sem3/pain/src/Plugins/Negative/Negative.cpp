@@ -12,8 +12,8 @@ public:
     virtual void *ext_get_interface(const char *extension, const char *name) const override;
 
     virtual const PUPPY::PluginInfo *get_info() const override;
-    virtual PUPPY::Status init(const PUPPY::AppInterface* appInterface) const override;
-    virtual PUPPY::Status deinit() const override;
+    virtual PUPPY::Status init(const PUPPY::AppInterface*, const std::filesystem::path& path) override;
+    virtual PUPPY::Status deinit() override;
     virtual void dump()const override;
 
     virtual void on_tick(double dt) const override;
@@ -73,14 +73,14 @@ const PUPPY::PluginInfo *Negative::get_info() const
     return &gPluginInfo;
 }
 
-PUPPY::Status Negative::init(const PUPPY::AppInterface* appInterface) const
+PUPPY::Status Negative::init(const PUPPY::AppInterface* appInterface, const std::filesystem::path& path)
 {
     gAppInterface = appInterface;
     appInterface->log("Negative: succesful initialization!");
     return PUPPY::Status::OK;
 }
 
-PUPPY::Status Negative::deinit() const
+PUPPY::Status Negative::deinit()
 {
     return PUPPY::Status::OK;
 }

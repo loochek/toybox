@@ -42,7 +42,9 @@ PaintController::PaintController(PaintMainWindow *root) :
     root->mMenuBar->addButton("Effect picker", this, (int)MenuAction::OpenEffectPicker);
     root->mMenuBar->addButton("Spline"       , this, (int)MenuAction::OpenSplineWindow);
 
-    loadPlugins();
+    PluginManager *pluginMgr = PluginManager::getInstance();
+    pluginMgr->init(this);
+    pluginMgr->loadPlugins();
 }
 
 PaintController::~PaintController()
@@ -56,24 +58,18 @@ PaintController::~PaintController()
 void PaintController::createCanvas()
 {
     PaintWindow *paintWindow = createCanvasGeneric();
-
-    mWindowsFileNames[paintWindow] = new char[MAX_FILE_NAME_SIZE + 1]();
-    snprintf(mWindowsFileNames[paintWindow], MAX_FILE_NAME_SIZE, "Untitled %u.png", rand());
-    updateTitle(paintWindow, mWindowsFileNames[paintWindow]);
-
-    const BaseButton *taskBarButton = mRoot->mTaskBar->addButton(mWindowsFileNames[paintWindow], this,
-                                                                 (int64_t)paintWindow);
-    mTaskBarButtons[paintWindow] = taskBarButton;
+    makeUntitledCanvas(paintWindow);
 }
 
 bool PaintController::openFile(const char *fileName)
 {
     PaintWindow *paintWindow = createCanvasGeneric();
 
-    /// TODO: Fix unsucessful opening
-
     if (!paintWindow->getCanvasWidget()->getCanvas().loadFromFile(fileName))
+    {
+        makeUntitledCanvas(paintWindow);
         return false;
+    }
 
     Vec2i imageSize = paintWindow->getCanvasWidget()->getCanvas().getSize();
     paintWindow->getCanvasWidget()->resize(imageSize);
@@ -86,64 +82,59 @@ bool PaintController::openFile(const char *fileName)
     const BaseButton *taskBarButton = mRoot->mTaskBar->addButton(mWindowsFileNames[paintWindow], this,
                                                                  (int64_t)paintWindow);
     mTaskBarButtons[paintWindow] = taskBarButton;
-
     return true;
 }
 
 void PaintController::openPallete()
 {
-    if (mPallete != nullptr)
+    if (mPallete == nullptr)
     {
-        mRoot->popUp(mPallete);
-        return;
+        mPallete = new PalleteWindow(COLOR_PICKER_INIT_POS, this, mRoot);
+        mPallete->getPallete()->setDelegate(this);
+
+        mRoot->addChild(mPallete);
     }
 
-    mPallete = new PalleteWindow(COLOR_PICKER_INIT_POS, this, mRoot);
-    mPallete->getPallete()->setDelegate(this);
-
-    mRoot->addChild(mPallete);
+    mRoot->popUp(mPallete);
 }
 
 void PaintController::openSizePicker()
 {
-    if (mSizePicker != nullptr)
+    if (mSizePicker == nullptr)
     {
-        mRoot->popUp(mSizePicker);
-        return;
+        mSizePicker = new SizePickerWindow(SIZE_PICKER_INIT_POS, this, mRoot);
+        mSizePicker->getSizePicker()->setDelegate(this);
+
+        mRoot->addChild(mSizePicker);
     }
 
-    mSizePicker = new SizePickerWindow(SIZE_PICKER_INIT_POS, this, mRoot);
-    mSizePicker->getSizePicker()->setDelegate(this);
-
-    mRoot->addChild(mSizePicker);
+    mRoot->popUp(mPallete);
 }
 
 void PaintController::openToolPicker()
 {
-    if (mToolPicker != nullptr)
+    if (mToolPicker == nullptr)
     {
-        mRoot->popUp(mToolPicker);
-        return;
+        mToolPicker = new PluginPickerWindow(TOOL_PICKER_INIT_POS, this, PUPPY::PluginType::TOOL, mRoot);
+        mToolPicker->getPluginPicker()->setDelegate(this);
+
+        mRoot->addChild(mToolPicker);
     }
 
-    mToolPicker = new PluginPickerWindow(TOOL_PICKER_INIT_POS, this, PUPPY::PluginType::TOOL, mRoot);
-    mToolPicker->getPluginPicker()->setDelegate(this);
-
-    mRoot->addChild(mToolPicker);
+    mRoot->popUp(mPallete);
 }
 
 void PaintController::openEffectPicker()
 {
-    if (mEffectPicker != nullptr)
+    if (mEffectPicker == nullptr)
     {
-        mRoot->popUp(mEffectPicker);
-        return;
+        mEffectPicker = new PluginPickerWindow(EFFECT_PICKER_INIT_POS, this, PUPPY::PluginType::EFFECT, mRoot);
+        mEffectPicker->getPluginPicker()->setDelegate(this);
+
+        mRoot->addChild(mEffectPicker);
     }
 
-    mEffectPicker = new PluginPickerWindow(EFFECT_PICKER_INIT_POS, this, PUPPY::PluginType::EFFECT, mRoot);
-    mEffectPicker->getPluginPicker()->setDelegate(this);
-
-    mRoot->addChild(mEffectPicker);
+    mRoot->popUp(mEffectPicker);
 }
 
 void PaintController::openSplineWindow()
@@ -153,14 +144,13 @@ void PaintController::openSplineWindow()
 
 void PaintController::openImageOpenWindow()
 {
-    if (mImageOpenWindow != nullptr)
+    if (mImageOpenWindow == nullptr)
     {
-        mRoot->popUp(mImageOpenWindow);
-        return;
+        mImageOpenWindow = new ImageOpenWindow(IMAGE_OPEN_INIT_POS, this, mRoot);
+        mRoot->addChild(mImageOpenWindow);
     }
 
-    mImageOpenWindow = new ImageOpenWindow(IMAGE_OPEN_INIT_POS, this, mRoot);
-    mRoot->addChild(mImageOpenWindow);
+    mRoot->popUp(mImageOpenWindow);
 }
 
 void PaintController::onPluginWindowCreate(PluginWindowIntl *window)
@@ -343,11 +333,10 @@ void PaintController::onClick(uint64_t userData)
     PluginWindowIntl *pluginWindow = dynamic_cast<PluginWindowIntl*>(widget);
     if (pluginWindow != nullptr)
     {
-        if (pluginWindow->isEnabled())
-            mRoot->popUp(pluginWindow);
-        else
+        if (!pluginWindow->isEnabled())
             pluginWindow->scheduleForEnable();
 
+        mRoot->popUp(pluginWindow);
         return;
     }
 
@@ -376,27 +365,6 @@ void PaintController::updateTitle(PaintWindow *window, const char *newTitle)
     window->setTitle(title);
 }
 
-void PaintController::loadPlugins()
-{
-    PluginManager *pluginMgr = PluginManager::getInstance();
-    pluginMgr->init(this);
-
-    for (const auto &entry : std::filesystem::directory_iterator(std::filesystem::current_path()))
-    {
-        if (entry.path().extension() == ".so")
-        {
-            try
-            {
-                pluginMgr->loadPlugin(entry.path().c_str());
-            }
-            catch (const std::exception& error)
-            {
-                Logger::log(LogLevel::Warning, "%s\n", error.what());
-            }
-        }
-    }
-}
-
 PaintWindow *PaintController::createCanvasGeneric()
 {
     PaintWindow *paintWindow = new PaintWindow(CANVAS_INIT_RECT, this, mRoot);
@@ -407,4 +375,15 @@ PaintWindow *PaintController::createCanvasGeneric()
     mPaintWindows.insert(paintWindow);
     mRoot->addChild(paintWindow);
     return paintWindow;
+}
+
+void PaintController::makeUntitledCanvas(PaintWindow *paintWindow)
+{
+    mWindowsFileNames[paintWindow] = new char[MAX_FILE_NAME_SIZE + 1]();
+    snprintf(mWindowsFileNames[paintWindow], MAX_FILE_NAME_SIZE, "Untitled %u.png", rand());
+    updateTitle(paintWindow, mWindowsFileNames[paintWindow]);
+
+    const BaseButton *taskBarButton = mRoot->mTaskBar->addButton(mWindowsFileNames[paintWindow], this,
+                                                                 (int64_t)paintWindow);
+    mTaskBarButtons[paintWindow] = taskBarButton;
 }

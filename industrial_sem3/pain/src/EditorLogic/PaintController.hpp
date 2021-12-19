@@ -90,8 +90,8 @@ public:
 
 private:
     void updateTitle(PaintWindow *window, const char *newTitle);
-    void loadPlugins();
     PaintWindow *createCanvasGeneric();
+    void makeUntitledCanvas(PaintWindow *paintWindow);
 
 private:
     PaintMainWindow    *mRoot;

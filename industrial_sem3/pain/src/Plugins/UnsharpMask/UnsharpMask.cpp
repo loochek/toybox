@@ -13,8 +13,8 @@ public:
     virtual void *ext_get_interface(const char *extension, const char *name) const override;
 
     virtual const PUPPY::PluginInfo *get_info() const override;
-    virtual PUPPY::Status init(const PUPPY::AppInterface* appInterface) const override;
-    virtual PUPPY::Status deinit() const override;
+    virtual PUPPY::Status init(const PUPPY::AppInterface*, const std::filesystem::path& path) override;
+    virtual PUPPY::Status deinit() override;
     virtual void dump() const override;
 
     virtual void on_tick(double dt) const override;
@@ -104,7 +104,7 @@ const PUPPY::PluginInfo *Unsharp::get_info() const
     return &gPluginInfo;
 }
 
-PUPPY::Status Unsharp::init(const PUPPY::AppInterface* appInterface) const
+PUPPY::Status Unsharp::init(const PUPPY::AppInterface* appInterface, const std::filesystem::path& path)
 {
     gAppInterface = appInterface;
 
@@ -127,7 +127,7 @@ PUPPY::Status Unsharp::init(const PUPPY::AppInterface* appInterface) const
     return PUPPY::Status::OK;
 }
 
-PUPPY::Status Unsharp::deinit() const
+PUPPY::Status Unsharp::deinit()
 {
     if (gWidgets.window) {
         gWidgets.window->set_to_delete();

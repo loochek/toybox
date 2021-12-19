@@ -2,10 +2,11 @@
 #define PLUGIN_MANAGER_HPP
 
 #include <vector>
+#include <filesystem>
 #include "../LGL/LGL.hpp"
 #include "EditorPluginAPI/plugin_std.hpp"
 
-typedef const PUPPY::PluginInterface Plugin;
+typedef PUPPY::PluginInterface Plugin;
 
 class Canvas;
 class PaintController;
@@ -18,8 +19,11 @@ class PluginManager
 {
 public:
     void init(PaintController *controller);
-    void loadPlugin(const char *fileName);
     void deinit();
+
+    void loadPlugin(const std::filesystem::path &fileName);
+    /// Searches for plugins and tries to load them
+    void loadPlugins();
 
     Plugin *getPlugin(int idx);
     int getPluginsCount() { return mPlugins.size(); };
@@ -35,6 +39,8 @@ private:
 private:
     std::vector<Plugin*> mPlugins;
     std::vector<void*> mLibraryHandles;
+
+    std::filesystem::path mPluginsFolder;
 
     bool mInitedOnce;
     AppInterfaceImpl *mAppInterface;

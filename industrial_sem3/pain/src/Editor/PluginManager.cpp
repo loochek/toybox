@@ -9,17 +9,10 @@
 #include "AppInterface/AppInterface.hpp"
 #include "PluginManager.hpp"
 
-typedef const PUPPY::PluginInterface* (*PIFunc)();
+const char *SHARED_LIBRARY_EXT = ".so";
+const char *PLUGINS_FOLDER     = "./plugins";
 
 PluginManager::PluginManager() : mAppInterface(nullptr), mInitedOnce(false) {}
-
-void PluginManager::init(PaintController *controller)
-{
-    assert(!mInitedOnce);
-
-    mAppInterface = new AppInterfaceImpl(controller);
-    mInitedOnce = true;
-}
 
 PluginManager::~PluginManager()
 {
@@ -34,39 +27,14 @@ PluginManager::~PluginManager()
     }
 }
 
-void PluginManager::loadPlugin(const char *fileName)
+void PluginManager::init(PaintController *controller)
 {
-    assert(mInitedOnce);
+    assert(!mInitedOnce);
 
-    void *libraryHandle = dlopen(fileName, RTLD_NOW);
-    if (libraryHandle == nullptr)
-        throw FormattedError("Unable to load plugin %s", dlerror());
+    mPluginsFolder = std::filesystem::path(PLUGINS_FOLDER);
 
-    PIFunc getPluginInterface = (PIFunc)dlsym(libraryHandle, PUPPY::GET_INTERFACE_FUNC);
-    if (getPluginInterface == nullptr)
-    {
-        FormattedError error("Unable to load %s from %s", PUPPY::GET_INTERFACE_FUNC, dlerror());
-        dlclose(libraryHandle);
-        //sCurrInitPlugin = nullptr;
-        throw error;
-    }
-
-    Plugin *pluginInterface = getPluginInterface();
-
-    //sCurrInitPlugin = this;
-
-    PUPPY::Status status = pluginInterface->init(mAppInterface);
-    if (status != PUPPY::Status::OK)
-    {
-        FormattedError error("Plugin %s initialization failed", fileName);
-        dlclose(libraryHandle);
-        //sCurrInitPlugin = nullptr;
-        throw error;
-    }
-
-    //sCurrInitPlugin = nullptr;
-    mPlugins.push_back(pluginInterface);
-    mLibraryHandles.push_back(libraryHandle);
+    mAppInterface = new AppInterfaceImpl(controller);
+    mInitedOnce = true;
 }
 
 void PluginManager::deinit()
@@ -75,7 +43,7 @@ void PluginManager::deinit()
 
     for (int i = 0; i < mPlugins.size(); i++)
     {
-        const PUPPY::PluginInterface *plugin = mPlugins[i];
+        Plugin *plugin = mPlugins[i];
 
         PUPPY::Status status = plugin->deinit();
         if (status != PUPPY::Status::OK)
@@ -83,6 +51,56 @@ void PluginManager::deinit()
     }
 
     delete mAppInterface;
+}
+
+void PluginManager::loadPlugin(const std::filesystem::path &fileName)
+{
+    assert(mInitedOnce);
+
+    void *libraryHandle = dlopen(fileName.c_str(), RTLD_NOW);
+    if (libraryHandle == nullptr)
+        throw FormattedError("Unable to load plugin %s", dlerror());
+
+    PUPPY::PluginGetInterfaceType getPluginInterface =
+        (PUPPY::PluginGetInterfaceType)dlsym(libraryHandle, PUPPY::GET_INTERFACE_FUNC);
+
+    if (getPluginInterface == nullptr)
+    {
+        FormattedError error("Unable to load %s from %s", PUPPY::GET_INTERFACE_FUNC, dlerror());
+        dlclose(libraryHandle);
+        throw error;
+    }
+
+    Plugin *pluginInterface = getPluginInterface();
+
+    PUPPY::Status status = pluginInterface->init(mAppInterface, mPluginsFolder);
+    if (status != PUPPY::Status::OK)
+    {
+        FormattedError error("Plugin %s initialization failed", fileName);
+        dlclose(libraryHandle);
+        throw error;
+    }
+
+    mPlugins.push_back(pluginInterface);
+    mLibraryHandles.push_back(libraryHandle);
+}
+
+void PluginManager::loadPlugins()
+{
+    for (const auto &entry : std::filesystem::directory_iterator(mPluginsFolder))
+    {
+        if (entry.path().extension() == SHARED_LIBRARY_EXT)
+        {
+            try
+            {
+                loadPlugin(entry.path());
+            }
+            catch (const std::exception& error)
+            {
+                Logger::log(LogLevel::Warning, "%s\n", error.what());
+            }
+        }
+    }
 }
 
 Plugin *PluginManager::getPlugin(int idx)

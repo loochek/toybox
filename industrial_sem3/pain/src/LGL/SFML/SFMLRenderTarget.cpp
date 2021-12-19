@@ -6,7 +6,7 @@
 static const float ARROW_WIDTH  = 7.0f;
 static const float ARROW_HEIGHT = 10.0f;
 
-const char *FONT_FILE_NAME = "Segoe UI.ttf";
+const char *FONT_FILE_NAME = "resources/Segoe UI.ttf";
 
 namespace LGL
 {
