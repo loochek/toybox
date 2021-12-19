@@ -3,11 +3,13 @@
 #include "../Editor/AppInterface/PluginTypesProxy.hpp"
 #include "PluginChooseButton.hpp"
 
+const LGL::Color BUTTON_COLOR(0.94f, 0.94f, 0.94f);
+
 const int LABEL_HEIGHT_OFFSET = 20;
 const int ICON_HEIGHT_OFFSET  = 10;
 
 PluginChooseButton::PluginChooseButton(const IntRect &widgetRect, Plugin *plugin, Widget *parent) :
-    Button(widgetRect, parent), mPlugin(plugin)
+    Button(widgetRect, parent, BUTTON_COLOR), mPlugin(plugin)
 {
     mDefaultIconTexture = TextureManager::getInstance()->getTexture("default_plugin");
     if (mDefaultIconTexture == nullptr)

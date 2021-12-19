@@ -14,7 +14,7 @@ class Button : public AnimatedButton
 public:
     Button() = delete;
     Button(const IntRect &widgetRect, Widget *parent = nullptr,
-           const LGL::Color &idleColor    = LGL::Color(0.94f, 0.94f, 0.94f),
+           const LGL::Color &idleColor    = LGL::Color(0.0f, 1.0f, 1.0f),
            const LGL::Color &hoveredColor = LGL::Color(0.94f, 0.77f, 0.41f),
            const LGL::Color &pressedColor = LGL::Color(1.0f, 0.68f, 0.0f));
 
