@@ -37,13 +37,15 @@ private:
     ~PluginManager();
 
 private:
-    std::vector<Plugin*> mPlugins;
+    PaintController *mController;
+
+    std::vector<AppInterfaceImpl*> mAppInterfaces;
     std::vector<void*> mLibraryHandles;
+    std::vector<Plugin*> mPlugins;
 
     std::filesystem::path mPluginsFolder;
 
     bool mInitedOnce;
-    AppInterfaceImpl *mAppInterface;
 };
 
 #endif

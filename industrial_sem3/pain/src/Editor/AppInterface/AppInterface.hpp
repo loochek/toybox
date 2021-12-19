@@ -33,11 +33,12 @@ public:
     virtual PUPPY::Widget *get_root_widget() const override;
 
 private:
-    AppInterfaceImpl(PaintController *controller);
+    AppInterfaceImpl(Plugin *plugin, PaintController *controller);
 
 private:
     PaintController *mController;
     PUPPY::Widget *mRootWrap;
+    Plugin *mPlugin;
 
     friend class PluginManager;
 };

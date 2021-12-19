@@ -9,6 +9,7 @@
 #include "SizePicker/SizeChangedDelegate.hpp"
 #include "PluginPicker/PluginChangedDelegate.hpp"
 #include "../BaseGUILogic/BaseButton/ButtonDelegate.hpp"
+#include "../Editor/Extensions/ExtensionManager.hpp"
 
 enum class MenuAction
 {
@@ -31,6 +32,7 @@ class PluginConfigWindow;
 class BaseButton;
 class ImageOpenWindow;
 class PluginWindowIntl;
+class ExtensionManager;
 
 /**
  * App logic controller
@@ -75,6 +77,7 @@ public:
     Canvas    *getActiveCanvas();
 
     Widget *getRoot();
+    ExtensionManager *getExtMgr() { return &mExtMgr; }
 
     // Size picker callback
     virtual void onSizeChange(float newPenSize, uint64_t userData) override;
@@ -113,6 +116,8 @@ private:
 
     LGL::Color mCurrColor;
     float      mCurrToolSize;
+
+    ExtensionManager mExtMgr;
 };
 
 #endif

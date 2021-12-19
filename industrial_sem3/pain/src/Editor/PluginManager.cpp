@@ -12,7 +12,7 @@
 const char *SHARED_LIBRARY_EXT = ".so";
 const char *PLUGINS_FOLDER     = "./plugins";
 
-PluginManager::PluginManager() : mAppInterface(nullptr), mInitedOnce(false) {}
+PluginManager::PluginManager() : mInitedOnce(false) {}
 
 PluginManager::~PluginManager()
 {
@@ -31,9 +31,8 @@ void PluginManager::init(PaintController *controller)
 {
     assert(!mInitedOnce);
 
+    mController = controller;
     mPluginsFolder = std::filesystem::path(PLUGINS_FOLDER);
-
-    mAppInterface = new AppInterfaceImpl(controller);
     mInitedOnce = true;
 }
 
@@ -48,9 +47,9 @@ void PluginManager::deinit()
         PUPPY::Status status = plugin->deinit();
         if (status != PUPPY::Status::OK)
             Logger::log(LogLevel::Warning, "Unable to deinit plugin %s", plugin->get_info()->name);
-    }
 
-    delete mAppInterface;
+        delete mAppInterfaces[i];
+    }
 }
 
 void PluginManager::loadPlugin(const std::filesystem::path &fileName)
@@ -72,17 +71,20 @@ void PluginManager::loadPlugin(const std::filesystem::path &fileName)
     }
 
     Plugin *pluginInterface = getPluginInterface();
+    AppInterfaceImpl *appInterface = new AppInterfaceImpl(pluginInterface, mController);
 
-    PUPPY::Status status = pluginInterface->init(mAppInterface, mPluginsFolder);
+    PUPPY::Status status = pluginInterface->init(appInterface, mPluginsFolder);
     if (status != PUPPY::Status::OK)
     {
         FormattedError error("Plugin %s initialization failed", fileName);
         dlclose(libraryHandle);
+        delete appInterface;
         throw error;
     }
 
     mPlugins.push_back(pluginInterface);
     mLibraryHandles.push_back(libraryHandle);
+    mAppInterfaces.push_back(appInterface);
 }
 
 void PluginManager::loadPlugins()

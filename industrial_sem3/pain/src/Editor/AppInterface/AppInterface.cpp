@@ -8,8 +8,10 @@
 #include "RenderTarget.hpp"
 #include "WidgetFactory.hpp"
 #include "AppInterface.hpp"
+#include "../Extensions/ExtensionManager.hpp"
 
-AppInterfaceImpl::AppInterfaceImpl(PaintController *controller) : mController(controller)
+AppInterfaceImpl::AppInterfaceImpl(Plugin *plugin, PaintController *controller) :
+    mPlugin(plugin), mController(controller)
 {
     std_version = PUPPY::STD_VERSION;
 
@@ -29,24 +31,22 @@ AppInterfaceImpl::~AppInterfaceImpl()
 
 bool AppInterfaceImpl::ext_enable(const char *name) const
 {
-    // Ignore extensions now
-    return false;
+    return mController->getExtMgr()->isExtensionPresent(name);
 }
 
 void *AppInterfaceImpl::ext_get_func(const char *extension, const char *func) const
 {
-    Logger::log(LogLevel::Warning, "Some plugin tried to access extensions, but it's not supported");
-    return nullptr;
+    return mController->getExtMgr()->getFunc(extension, func);
 }
 
 void *AppInterfaceImpl::ext_get_interface(const char *extension, const char *name) const
 {
-    Logger::log(LogLevel::Warning, "Some plugin tried to access extensions, but it's not supported");
-    return nullptr;
+    return mController->getExtMgr()->getInterface(extension, name);
 }
 
 void AppInterfaceImpl::ext_register_as(const char *extension) const
 {
+    mController->getExtMgr()->registerExtension(extension, mPlugin);
 }
 
 void AppInterfaceImpl::log(const char *fmt, ...) const
