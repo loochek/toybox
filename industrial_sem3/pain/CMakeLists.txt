@@ -53,9 +53,6 @@ add_library(loochek_blur SHARED ${PAIN_BLUR_SOURCES})
 aux_source_directory(src/Plugins/UnsharpMask PAIN_UNSHARP_SOURCES)
 add_library(loochek_unsharp SHARED ${PAIN_UNSHARP_SOURCES})
 
-aux_source_directory(src/Plugins/WindowTest PAIN_TEST_SOURCES)
-add_library(loochek_test SHARED ${PAIN_TEST_SOURCES})
-
 # aux_source_directory(src/Plugins/SplineTest PAIN_SPLINE_SOURCES)
 # add_library(loochek_spline SHARED ${PAIN_SPLINE_SOURCES})
 
