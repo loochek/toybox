@@ -53,8 +53,9 @@ add_library(loochek_blur SHARED ${PAIN_BLUR_SOURCES})
 aux_source_directory(src/Plugins/UnsharpMask PAIN_UNSHARP_SOURCES)
 add_library(loochek_unsharp SHARED ${PAIN_UNSHARP_SOURCES})
 
-# aux_source_directory(src/Plugins/SplineTest PAIN_SPLINE_SOURCES)
-# add_library(loochek_spline SHARED ${PAIN_SPLINE_SOURCES})
+aux_source_directory(src/Plugins/GB PAIN_GB_SOURCES)
+aux_source_directory(src/Plugins/GB/core PAIN_GB_SOURCES)
+add_library(loochek_gb SHARED ${PAIN_GB_SOURCES})
 
 find_package(SFML COMPONENTS graphics window)
 if (SFML_FOUND)
