@@ -20,6 +20,8 @@ aux_source_directory(src/BaseGUILogic/BaseButton SORTING_SOURCES)
 aux_source_directory(src/BaseGUILogic/Slider SORTING_SOURCES)
 aux_source_directory(src/BaseGUILogic/Window SORTING_SOURCES)
 aux_source_directory(src/SortingWidgets SORTING_SOURCES)
+aux_source_directory(src/SortingLogic SORTING_SOURCES)
+aux_source_directory(src/SortingLogic/AnalysisWindow SORTING_SOURCES)
 aux_source_directory(src/Math SORTING_SOURCES)
 aux_source_directory(src/LGL SORTING_SOURCES)
 

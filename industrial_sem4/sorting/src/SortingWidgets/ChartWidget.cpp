@@ -1,18 +1,20 @@
 #include "ChartWidget.hpp"
 
+const int TOP_LIMIT_OFFS = 10;
+
 const int START_X_OFFS = 10;
 const int START_Y_OFFS = 10;
 
 const float AXIS_THICKNESS        = 1.0f;
-const float CHART_POINT_THICKNESS = 3.0f;
-const float CHART_LINE_THICKNESS  = 2.0f;
+const float CHART_POINT_THICKNESS = 1.0f;
+const float CHART_LINE_THICKNESS  = 1.0f;
 
 ChartWidget::ChartWidget(const IntRect &widgetRect, Widget *parent) :
     Widget(widgetRect, parent)
 {
 }
 
-void ChartWidget::addChart(const Chart *chart, const LGL::Color &color)
+void ChartWidget::addChart(const BaseChart *chart, const LGL::Color &color)
 {
     mCharts.push_back(chart);
     mColors[chart] = color;
@@ -30,7 +32,7 @@ void ChartWidget::onRedrawThis()
 
     // Determine max value
     int maxValue = -1;
-    for (const Chart *chart : mCharts)
+    for (const BaseChart *chart : mCharts)
     {
         int valuesCount = chart->getValuesCount();
 
@@ -39,12 +41,12 @@ void ChartWidget::onRedrawThis()
     }
 
     int chartWidth  = mRect.size.x - START_X_OFFS;
-    int chartHeight = mRect.size.y - START_Y_OFFS;
+    int chartHeight = mRect.size.y - START_Y_OFFS - TOP_LIMIT_OFFS;
 
     float valueStep = (float)chartHeight / maxValue;
 
     // Draw each chart
-    for (const Chart *chart : mCharts)
+    for (const BaseChart *chart : mCharts)
     {
         int valuesCount = chart->getValuesCount();
         float paramStep = (float)chartWidth / (valuesCount - 1);
@@ -54,7 +56,7 @@ void ChartWidget::onRedrawThis()
         for (int i = 0; i < valuesCount; i++)
         {
             float pointWidth  = START_X_OFFS + paramStep * i;
-            float pointHeight = chartHeight - START_Y_OFFS - valueStep * (*chart)[i];
+            float pointHeight = mRect.size.y - START_Y_OFFS - valueStep * (*chart)[i];
             Vec2f currPoint(pointWidth, pointHeight);
 
             mTexture.drawCircle(currPoint, CHART_POINT_THICKNESS, mColors[chart]);

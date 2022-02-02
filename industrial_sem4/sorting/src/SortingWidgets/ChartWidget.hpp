@@ -3,21 +3,22 @@
 
 #include <vector>
 #include "../BaseGUI/Widget.hpp"
-#include "../Utils/Chart.hpp"
+#include "../Utils/BaseChart.hpp"
 
 class ChartWidget : public Widget
 {
 public:
+    ChartWidget() = delete;
     ChartWidget(const IntRect &widgetRect, Widget *parent = nullptr);
 
-    void addChart(const Chart *chart, const LGL::Color &color = LGL::Color::Black);
+    void addChart(const BaseChart *chart, const LGL::Color &color = LGL::Color::Black);
 
 protected:
     virtual void onRedrawThis() override;
 
 protected:
-    std::vector<const Chart*> mCharts;
-    std::map<const Chart*, LGL::Color> mColors;
+    std::vector<const BaseChart*> mCharts;
+    std::map<const BaseChart*, LGL::Color> mColors;
 };
 
 #endif

@@ -1,8 +1,10 @@
 #include "App.hpp"
 #include "TextureManager.hpp"
-#include "BaseGUI/PrettyButton.hpp"
 #include "BaseGUI/WindowManager.hpp"
-#include "SortingWidgets/ChartWidget.hpp"
+#include "SortingWidgets/AnalysisWindow.hpp"
+#include "Sorting/SortObject.hpp"
+
+const Vec2i ANALYSIS_WINDOW_POS(200, 200);
 
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;
@@ -17,18 +19,7 @@ App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "amogus", false)
     WindowManager *root = new WindowManager(IntRect(Vec2i(), Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT)), nullptr);
     mGuiManager = new GUIManager(mWindow, root);
 
-    chart1.addValue(2);
-    chart1.addValue(1);
-    chart1.addValue(3);
-    chart2.addValue(3);
-    chart2.addValue(1);
-    chart2.addValue(2);
-
-    ChartWidget *chart = new ChartWidget(IntRect(Vec2i(100, 100), Vec2i(300, 150)));
-    root->addChild(chart);
-
-    chart->addChart(&chart1, LGL::Color::Red);
-    chart->addChart(&chart2, LGL::Color::Magenta);
+    root->addChild(new AnalysisWindow(ANALYSIS_WINDOW_POS, root));
 }
 
 App::~App()
@@ -76,7 +67,7 @@ void App::run()
 
         // Draw
 
-        mWindow.clear();
+        mWindow.clear(LGL::Color::Magenta);
         mGuiManager->draw();
         mWindow.display();
     }
