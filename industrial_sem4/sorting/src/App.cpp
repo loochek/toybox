@@ -66,7 +66,7 @@ void App::run()
 
         // Draw
 
-        mWindow.clear(LGL::Color::Magenta);
+        mWindow.clear(LGL::Color(0.8f, 0.8f, 0.2f));
         mGuiManager->draw();
         mWindow.display();
     }

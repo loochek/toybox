@@ -27,11 +27,13 @@ void ChartWidget::redrawCharts()
 {
     mChartTexture.clear();
 
-    // Determine max value
+    // Determine max param and value
+    int maxParam = -1;
     int maxValue = -1;
     for (const BaseChart *chart : mCharts)
     {
         int valuesCount = chart->getValuesCount();
+        maxParam = std::max(maxParam, valuesCount);
 
         for (int i = 0; i < valuesCount; i++)
             maxValue = std::max(maxValue, (*chart)[i]);
@@ -40,13 +42,13 @@ void ChartWidget::redrawCharts()
     int chartWidth  = mRect.size.x - START_X_OFFS;
     int chartHeight = mRect.size.y - START_Y_OFFS - TOP_LIMIT_OFFS;
 
+    float paramStep = (float)chartWidth / (maxParam - 1);
     float valueStep = (float)chartHeight / maxValue;
 
     // Draw each chart
     for (const BaseChart *chart : mCharts)
     {
         int valuesCount = chart->getValuesCount();
-        float paramStep = (float)chartWidth / (valuesCount - 1);
 
         Vec2f prevPoint(-1, -1);
 
