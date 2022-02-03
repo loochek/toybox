@@ -2,7 +2,6 @@
 #include "TextureManager.hpp"
 #include "BaseGUI/WindowManager.hpp"
 #include "SortingWidgets/AnalysisWindow.hpp"
-#include "Sorting/SortObject.hpp"
 
 const Vec2i ANALYSIS_WINDOW_POS(200, 200);
 

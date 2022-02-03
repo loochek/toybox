@@ -16,6 +16,7 @@ public:
 
 protected:
     ChartWidget *mCompChart;
+    ChartWidget *mAssnChart;
     
     AnalysisWindowController *mController;
     friend class AnalysisWindowController;

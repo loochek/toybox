@@ -11,7 +11,16 @@ public:
     ChartWidget() = delete;
     ChartWidget(const IntRect &widgetRect, Widget *parent = nullptr);
 
-    void addChart(const BaseChart *chart, const LGL::Color &color = LGL::Color::Black);
+    /**
+     * Adds chart to the widget with specified color and redraw all charts.
+     * If given chart already present, only changes the color
+     */
+    void putChart(const BaseChart *chart, const LGL::Color &color = LGL::Color::Black);
+
+    /**
+     * Redraw all charts
+     */
+    void redrawCharts();
 
 protected:
     virtual void onRedrawThis() override;
@@ -19,6 +28,8 @@ protected:
 protected:
     std::vector<const BaseChart*> mCharts;
     std::map<const BaseChart*, LGL::Color> mColors;
+
+    LGL::RenderTexture mChartTexture;
 };
 
 #endif

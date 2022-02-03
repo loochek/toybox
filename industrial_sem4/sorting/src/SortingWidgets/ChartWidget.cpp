@@ -10,25 +10,22 @@ const float CHART_POINT_THICKNESS = 1.0f;
 const float CHART_LINE_THICKNESS  = 1.0f;
 
 ChartWidget::ChartWidget(const IntRect &widgetRect, Widget *parent) :
-    Widget(widgetRect, parent)
+    Widget(widgetRect, parent), mChartTexture(widgetRect.size)
 {
 }
 
-void ChartWidget::addChart(const BaseChart *chart, const LGL::Color &color)
+void ChartWidget::putChart(const BaseChart *chart, const LGL::Color &color)
 {
-    mCharts.push_back(chart);
+    if (std::find(mCharts.begin(), mCharts.end(), chart) == mCharts.end())
+        mCharts.push_back(chart);
+
     mColors[chart] = color;
+    redrawCharts();
 }
 
-void ChartWidget::onRedrawThis()
+void ChartWidget::redrawCharts()
 {
-    mTexture.drawRect(IntRect(Vec2i(), mRect.size));
-
-    // Draw axis
-    mTexture.drawLine(Vec2i(START_X_OFFS, 0), Vec2i(START_X_OFFS, mRect.size.y),
-                      AXIS_THICKNESS, LGL::Color::Black);
-    mTexture.drawLine(Vec2i(0, mRect.size.y - START_Y_OFFS), Vec2i(mRect.size.x, mRect.size.y - START_Y_OFFS),
-                      AXIS_THICKNESS, LGL::Color::Black);
+    mChartTexture.clear();
 
     // Determine max value
     int maxValue = -1;
@@ -59,11 +56,25 @@ void ChartWidget::onRedrawThis()
             float pointHeight = mRect.size.y - START_Y_OFFS - valueStep * (*chart)[i];
             Vec2f currPoint(pointWidth, pointHeight);
 
-            mTexture.drawCircle(currPoint, CHART_POINT_THICKNESS, mColors[chart]);
+            mChartTexture.drawCircle(currPoint, CHART_POINT_THICKNESS, mColors[chart]);
             if (prevPoint.x >= 0)
-                mTexture.drawLine(prevPoint, currPoint, CHART_LINE_THICKNESS, mColors[chart]);
+                mChartTexture.drawLine(prevPoint, currPoint, CHART_LINE_THICKNESS, mColors[chart]);
                 
             prevPoint = currPoint;
         }
     }
+}
+
+void ChartWidget::onRedrawThis()
+{
+    mTexture.clear(LGL::Color::White);
+    
+    // Draw axis
+    mChartTexture.drawLine(Vec2i(START_X_OFFS, 0), Vec2i(START_X_OFFS, mRect.size.y),
+                      AXIS_THICKNESS, LGL::Color::Black);
+    mChartTexture.drawLine(Vec2i(0, mRect.size.y - START_Y_OFFS), Vec2i(mRect.size.x, mRect.size.y - START_Y_OFFS),
+                      AXIS_THICKNESS, LGL::Color::Black);
+
+    // Draw charts
+    mTexture.drawRenderTexture(mChartTexture, Vec2i());
 }

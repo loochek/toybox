@@ -1,26 +1,29 @@
-#ifndef SORT_OBJECT_HPP
-#define SORT_OBJECT_HPP
+#ifndef SORT_COUNT_OBJECT_HPP
+#define SORT_COUNT_OBJECT_HPP
 
-class SortObject
+/**
+ * Special object that counts assignments and comparisons
+ */
+class SortCountObject
 {
 public:
-    SortObject(int value, int &cmpCounter, int &assnCounter) :
+    SortCountObject(int value, int &cmpCounter, int &assnCounter) :
         mValue(value), mCmpCounter(cmpCounter), mAssnCounter(assnCounter) {}
 
-    SortObject(const SortObject &other) :
+    SortCountObject(const SortCountObject &other) :
         mCmpCounter(other.mCmpCounter), mAssnCounter(other.mAssnCounter), mValue(other.mValue)
     {
         mAssnCounter++;
     }
 
-    SortObject &operator=(const SortObject &other)
+    SortCountObject &operator=(const SortCountObject &other)
     {
         mValue = other.mValue;
         mAssnCounter++;
         return *this;
     }
 
-    bool operator<(const SortObject &other)
+    bool operator<(const SortCountObject &other) const
     {
         mCmpCounter++;
         return mValue < other.mValue;
