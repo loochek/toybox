@@ -1,6 +1,27 @@
 #ifndef SORT_ALGORITHMS_HPP
 #define SORT_ALGORITHMS_HPP
 
+#include "../LGL/Color.hpp"
+
+enum SortAlgorithm
+{
+    SORT_STD_SORT = 1,
+    SORT_STD_STABLE_SORT,
+    SORT_BUBBLE,
+    SORT_SELECTION,
+    SORT_QUICK,
+    SORT_ALGO_MAX
+};
+
+const LGL::Color SORT_ALGO_COLORS[SORT_ALGO_MAX] =
+{
+    LGL::Color(1.0f, 0.0f, 0.0f),
+    LGL::Color(0.8f, 0.7f, 0.0f),
+    LGL::Color(0.0f, 0.0f, 1.0f),
+    LGL::Color(0.0f, 1.0f, 1.0f),
+    LGL::Color(0.0f, 1.0f, 0.5f)
+};
+
 template<typename T>
 static int partition(T *data, int elemCnt);
 

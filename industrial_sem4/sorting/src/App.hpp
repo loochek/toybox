@@ -17,11 +17,12 @@ public:
     /// Runs app until exit
     void run();
 
+    // Force redraw
+    void redraw();
+
 private:
     LGL::RenderWindow mWindow;
     GUIManager       *mGuiManager;
-
-    Chart chart1, chart2;
 };
 
 #endif

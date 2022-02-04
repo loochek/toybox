@@ -14,25 +14,6 @@
 
 const int DEFAULT_MAX_ELEM_CNT = 1000;
 
-enum SortAlgorithm
-{
-    SORT_STD_SORT = 1,
-    SORT_STD_STABLE_SORT,
-    SORT_BUBBLE,
-    SORT_SELECTION,
-    SORT_QUICK,
-    SORT_ALGO_MAX
-};
-
-const LGL::Color CHARTS_COLORS[SORT_ALGO_MAX] =
-{
-    LGL::Color(1.0f, 0.0f, 0.0f),
-    LGL::Color(0.8f, 0.7f, 0.0f),
-    LGL::Color(0.0f, 0.0f, 1.0f),
-    LGL::Color(0.0f, 1.0f, 1.0f),
-    LGL::Color(0.0f, 1.0f, 0.5f)
-};
-
 class AnalysisWindowController : public ButtonDelegate, public TextBoxDelegate
 {
 public:
@@ -87,8 +68,8 @@ public:
             mAssnCharts[algoIdx].addValue(assnCounter);
         }
 
-        mWindow->mCompChart->putChart(&mCompCharts[algoIdx], CHARTS_COLORS[algoIdx]);
-        mWindow->mAssnChart->putChart(&mAssnCharts[algoIdx], CHARTS_COLORS[algoIdx]);
+        mWindow->mCompChart->putChart(&mCompCharts[algoIdx], SORT_ALGO_COLORS[algoIdx]);
+        mWindow->mAssnChart->putChart(&mAssnCharts[algoIdx], SORT_ALGO_COLORS[algoIdx]);
     }
 
     virtual void onTextChange(const char *newText, uint64_t userData) override

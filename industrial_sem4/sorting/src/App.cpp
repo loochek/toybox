@@ -2,8 +2,10 @@
 #include "TextureManager.hpp"
 #include "BaseGUI/WindowManager.hpp"
 #include "SortingWidgets/AnalysisWindow.hpp"
+#include "SortingWidgets/VisualSortWindow.hpp"
 
 const Vec2i ANALYSIS_WINDOW_POS(200, 200);
+const Vec2i VISUAL_SORT_WINDOW_POS(300, 300);
 
 const int WINDOW_WIDTH  = 1280;
 const int WINDOW_HEIGHT = 720;
@@ -19,6 +21,7 @@ App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "amogus", false)
     mGuiManager = new GUIManager(mWindow, root);
 
     root->addChild(new AnalysisWindow(ANALYSIS_WINDOW_POS, root));
+    root->addChild(new VisualSortWindow(VISUAL_SORT_WINDOW_POS, this, root));
 }
 
 App::~App()
@@ -65,9 +68,13 @@ void App::run()
         mGuiManager->update(elapsedTime);
 
         // Draw
-
-        mWindow.clear(LGL::Color(0.8f, 0.8f, 0.2f));
-        mGuiManager->draw();
-        mWindow.display();
+        redraw();
     }
+}
+
+void App::redraw()
+{
+    mWindow.clear(LGL::Color(0.8f, 0.8f, 0.2f));
+    mGuiManager->draw();
+    mWindow.display();
 }
