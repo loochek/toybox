@@ -1,16 +1,12 @@
-#include <vector>
-#include <algorithm>
-#include <random>
+#include <cassert>
 #include "CustomInt.hpp"
 
 int main()
 {
-    std::vector<CustomInt> arr(10);
+    CustomInt a = 1, b = 2, c = 3;
+    CustomInt aCopy = a, bCopy = b, cCopy = c;
+    
+    CustomInt sum = a + b + c;
 
-    for (int i = 0; i < 10; i++)
-        arr[i] = i;
-
-    std::mt19937 rand;
-    std::shuffle(arr.begin(), arr.end(), rand);
-    std::sort(arr.begin(), arr.end());
+    assert(sum > a && sum > b && sum > c);
 }
