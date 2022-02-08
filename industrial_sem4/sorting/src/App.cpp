@@ -21,7 +21,7 @@ App::App() : mWindow(Vec2i(WINDOW_WIDTH, WINDOW_HEIGHT), "amogus", false)
     mGuiManager = new GUIManager(mWindow, root);
 
     root->addChild(new AnalysisWindow(ANALYSIS_WINDOW_POS, root));
-    root->addChild(new VisualSortWindow(VISUAL_SORT_WINDOW_POS, this, root));
+    root->addChild(new VisualSortWindow(VISUAL_SORT_WINDOW_POS, root));
 }
 
 App::~App()
@@ -68,13 +68,8 @@ void App::run()
         mGuiManager->update(elapsedTime);
 
         // Draw
-        redraw();
+        mWindow.clear(LGL::Color(0.8f, 0.8f, 0.2f));
+        mGuiManager->draw();
+        mWindow.display();
     }
-}
-
-void App::redraw()
-{
-    mWindow.clear(LGL::Color(0.8f, 0.8f, 0.2f));
-    mGuiManager->draw();
-    mWindow.display();
 }

@@ -12,16 +12,13 @@ public:
     VisualSortWidget() = delete;
     VisualSortWidget(const IntRect &widgetRect, Widget *parent = nullptr);
 
-    void setArray(std::vector<VisualSortObject> *array) { mArray = array; };
-    void highlight(int idx1, int idx2) { mHighlighIdx1 = idx1; mHighlighIdx2 = idx2; };
+    void redraw(const std::vector<VisualSortObject> &array, int highlIdx1, int highlIdx2);
 
 protected:
     virtual void onRedrawThis() override;
 
 protected:
-    std::vector<VisualSortObject> *mArray;
-
-    int mHighlighIdx1, mHighlighIdx2;
+    LGL::RenderTexture mSortPicture;
 };
 
 #endif

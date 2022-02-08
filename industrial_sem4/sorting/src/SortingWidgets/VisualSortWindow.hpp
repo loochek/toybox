@@ -11,9 +11,12 @@ class VisualSortWindow : public Window
 {
 public:
     VisualSortWindow() = delete;
-    VisualSortWindow(const Vec2i &windowPos, App *app, Widget *parent = nullptr);
+    VisualSortWindow(const Vec2i &windowPos, Widget *parent = nullptr);
 
     virtual ~VisualSortWindow();
+
+protected:
+    virtual void onUpdateThis(float elapsedTime);
 
 protected:
     VisualSortWidget *mVisualSort;

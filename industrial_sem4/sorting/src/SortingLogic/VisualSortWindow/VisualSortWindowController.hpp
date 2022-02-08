@@ -4,6 +4,9 @@
 #include <vector>
 #include <random>
 #include <cassert>
+#include <thread>
+#include <mutex>
+#include <chrono>
 #include "../../BaseGUILogic/BaseButton/ButtonDelegate.hpp"
 #include "../../BaseGUILogic/TextBox/TextBoxDelegate.hpp"
 #include "../../SortingWidgets/VisualSortWindow.hpp"
@@ -17,23 +20,70 @@ class VisualSortWindowController : public ButtonDelegate, public TextBoxDelegate
 {
 public:
     VisualSortWindowController() = delete;
-    VisualSortWindowController(VisualSortWindow *window, App *app) :
-        mWindow(window), mApp(app), mElemCnt(DEFAULT_ELEM_CNT) {};
+    VisualSortWindowController(VisualSortWindow *window) : mWindow(window), mElemCnt(DEFAULT_ELEM_CNT),
+        mReady(false), mCancelPending(false), mRunning(false), mHighlIdx1(-1), mHighlIdx2(-1) {};
 
     virtual void onClick(uint64_t userData) override
     {
         assert(1 <= userData && userData < SORT_ALGO_MAX);
-        int algoIdx = userData - 1;
 
-        mWindow->mVisualSort->setArray(&mArray);
+        if (mRunning)
+        {
+            mCancelPending = true;
+            while (mRunning);
+        }
+
+        mReady = false;
+        mMutex.unlock();
+        mMutex.lock();
+
+        std::thread sortThread(&VisualSortWindowController::sortStarter, std::ref(*this),
+                               (SortAlgorithm)userData, mElemCnt);
+        sortThread.detach();
+    }
+
+    virtual void onTextChange(const char *newText, uint64_t userData) override
+    {
+        mElemCnt = atoi(newText);
+    }
+
+    void update()
+    {
+        if (mReady)
+        {
+            mWindow->mVisualSort->redraw(mArray, mHighlIdx1, mHighlIdx2);
+            mReady = false;
+            mMutex.unlock();
+        }
+    }
+
+private:
+    void sortStarter(SortAlgorithm algo, int elemCnt)
+    {
+        mRunning = true;
+
+        try
+        {
+            sortRoutine(algo, elemCnt);
+        }
+        catch (SortInterruptException) {}
+
+        mCancelPending = false;
+        mRunning = false;
+    }
+
+    void sortRoutine(SortAlgorithm algo, int elemCnt)
+    {
+        VisualSortData data = { mArray.data(), elemCnt, mMutex, mReady, mCancelPending, mHighlIdx1, mHighlIdx2 };
 
         mArray.clear();
-        for (int i = 0; i < mElemCnt; i++)
-            mArray.push_back(VisualSortObject(i + 1, i, mWindow->mVisualSort, mArray.data(), mElemCnt, mApp));
+        mArray.reserve(elemCnt);
+        for (int i = 0; i < elemCnt; i++)
+            mArray.push_back(VisualSortObject(i + 1, i, data));
 
         std::shuffle(mArray.begin(), mArray.end(), std::default_random_engine());
 
-        switch (userData)
+        switch (algo)
         {
         case SORT_STD_SORT:
             std::sort(mArray.begin(), mArray.end());
@@ -56,20 +106,20 @@ public:
             break;
         }
 
-        mWindow->mVisualSort->highlight(-1, -1);
-    }
-
-    virtual void onTextChange(const char *newText, uint64_t userData) override
-    {
-        mElemCnt = atoi(newText);
+        mHighlIdx1 = -1, mHighlIdx2 = -1;
+        mReady = true;
+        mMutex.lock();
     }
 
 protected:
     VisualSortWindow *mWindow;
-    App *mApp;
 
     std::vector<VisualSortObject> mArray;
     int mElemCnt;
+    int mHighlIdx1, mHighlIdx2;
+
+    std::mutex mMutex;
+    bool mReady, mCancelPending, mRunning;
 };
 
 #endif

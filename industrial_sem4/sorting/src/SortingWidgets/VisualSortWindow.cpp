@@ -19,11 +19,11 @@ const Vec2i TEXT_BOX_LABEL_POS(18, 330);
 const Vec2i TEXT_BOX_POS(130, 320);
 const int TEXT_BOX_SIZE = 100;
 
-VisualSortWindow::VisualSortWindow(const Vec2i &windowPos, App *app, Widget *parent) :
+VisualSortWindow::VisualSortWindow(const Vec2i &windowPos, Widget *parent) :
     Window(IntRect(windowPos, WINDOW_SIZE), parent)
 {
     setTitle("Visual sorting");
-    mController = new VisualSortWindowController(this, app);
+    mController = new VisualSortWindowController(this);
 
     mVisualSort = new VisualSortWidget(VUSIAL_SORT_RECT, this);
     addChild(mVisualSort);
@@ -80,4 +80,9 @@ VisualSortWindow::VisualSortWindow(const Vec2i &windowPos, App *app, Widget *par
 VisualSortWindow::~VisualSortWindow()
 {
     delete mController;
+}
+
+void VisualSortWindow::onUpdateThis(float elapsedTime)
+{
+    mController->update();
 }

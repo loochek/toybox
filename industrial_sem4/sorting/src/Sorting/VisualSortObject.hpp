@@ -1,31 +1,46 @@
 #ifndef VISUAL_SORT_OBJECT_HPP
 #define VISUAL_SORT_OBJECT_HPP
 
-#include "../App.hpp"
-#include "../SortingWidgets/VisualSortWidget.hpp"
+#include <mutex>
+
+class VisualSortObject;
+
+struct VisualSortData
+{
+    VisualSortObject *array;
+    int arrSize;
+    std::mutex &mutex;
+    bool &ready;
+    bool &cancelPending;
+    int &highlIdx1;
+    int &highlIdx2;
+};
+
+class SortInterruptException : public std::exception {};
 
 class VisualSortObject
 {
 public:
-    VisualSortObject(int value, int idx, VisualSortWidget *widget, VisualSortObject *array, int arrSize, App *app) :
-        mValue(value), mIdx(idx), mWidget(widget), mArray(array), mArrSize(arrSize), mApp(app){}
-
-    // VisualSortObject(const VisualSortObject &other) : mValue(other.mValue), mIdx(other.mIdx),
-    //     mWidget(other.mWidget), mArray(other.mArray), mArrSize(other.mArrSize), mApp(other.mApp) {}
+    VisualSortObject(int value, int idx, const VisualSortData data) : mValue(value), mIdx(idx), mData(data) {}
 
     VisualSortObject &operator=(const VisualSortObject &other)
     {
+        checkCancel();
+
         mValue = other.mValue;
         if (isThisInArray())
-            mApp->redraw();
+            yield();
         
         return *this;
     }
 
     bool operator<(const VisualSortObject &other) const
     {
-        mWidget->highlight(mIdx, other.mIdx);
-        mApp->redraw();
+        checkCancel();
+
+        mData.highlIdx1 = mIdx;
+        mData.highlIdx2 = other.mIdx;
+        yield();
     
         return mValue < other.mValue;
     }
@@ -35,17 +50,27 @@ public:
 protected:
     bool isThisInArray() const
     {
-        return (this - mArray) < mArrSize;
+        return (this - mData.array) < mData.arrSize;
+    }
+
+    /// Wait main thread to redraw sorting picture
+    void yield() const
+    {
+        mData.ready = true;
+        mData.mutex.lock();
+    }
+
+    void checkCancel() const
+    {
+        if (mData.cancelPending)
+        {
+            throw SortInterruptException();
+        }
     }
 
 protected:
     int mValue, mIdx;
-
-    VisualSortObject *mArray;
-    int mArrSize;
-
-    VisualSortWidget *mWidget;
-    App *mApp;
+    const VisualSortData mData;
 };
 
 #endif
