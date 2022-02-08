@@ -74,10 +74,11 @@ private:
 
     void sortRoutine(SortAlgorithm algo, int elemCnt)
     {
-        VisualSortData data = { mArray.data(), elemCnt, mMutex, mReady, mCancelPending, mHighlIdx1, mHighlIdx2 };
-
         mArray.clear();
         mArray.reserve(elemCnt);
+        
+        VisualSortData data = { mArray.data(), elemCnt, mMutex, mReady, mCancelPending, mHighlIdx1, mHighlIdx2 };
+        
         for (int i = 0; i < elemCnt; i++)
             mArray.push_back(VisualSortObject(i + 1, i, data));
 
