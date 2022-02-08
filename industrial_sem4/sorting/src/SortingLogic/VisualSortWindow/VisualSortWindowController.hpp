@@ -6,7 +6,6 @@
 #include <cassert>
 #include <thread>
 #include <mutex>
-#include <chrono>
 #include "../../BaseGUILogic/BaseButton/ButtonDelegate.hpp"
 #include "../../BaseGUILogic/TextBox/TextBoxDelegate.hpp"
 #include "../../SortingWidgets/VisualSortWindow.hpp"
@@ -30,7 +29,8 @@ public:
         if (mRunning)
         {
             mCancelPending = true;
-            while (mRunning);
+            while (mRunning)
+                mMutex.unlock();
         }
 
         mReady = false;
