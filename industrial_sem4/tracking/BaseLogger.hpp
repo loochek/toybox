@@ -21,6 +21,7 @@ public:
 
     virtual void copyCtor(const TrackedInt &obj, const TrackedInt &parent) = 0;
 
+    virtual void simpleAssignment(const TrackedInt &obj, const TrackedInt &parent) = 0;
     virtual void assignment(const TrackedInt &obj, const TrackedInt &parent, const std::string &oper) = 0;
 
 public:

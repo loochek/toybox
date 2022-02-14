@@ -59,7 +59,7 @@ public:
     TrackedInt &operator=(const TrackedInt &other)
     {
         mValue = other.mValue;
-        BaseLogger::sLoggerInUse->assignment(*this, other, "");
+        BaseLogger::sLoggerInUse->simpleAssignment(*this, other);
         return *this;
     }
 
@@ -127,6 +127,7 @@ protected:
     static int sObjIndexCount;
 
     friend class ConsoleLogger;
+    friend class HtmlLogger;
 };
 
 #define INT(name, value) TrackedInt name(value, #name)

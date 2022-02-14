@@ -1,6 +1,6 @@
 #include <cassert>
 #include "TrackedInt.hpp"
-#include "ConsoleLogger.hpp"
+#include "HtmlLogger.hpp"
 
 void binSearch()
 {
@@ -55,9 +55,8 @@ TrackedInt testRef(TrackedInt &a, TrackedInt &b, TrackedInt &c)
     return a * (b - c);
 }
 
-int main()
+void testEntry()
 {
-    BaseLogger::sLoggerInUse = &ConsoleLogger::getInstance();
     FUNC_ENTRY;
 
     //binSearch();
@@ -66,6 +65,17 @@ int main()
     // INT(res2, testRef(a, b, c));
 
     recursive(2);
+}
 
+int main()
+{
+    HtmlLogger &logger = HtmlLogger::getInstance();
+    logger.start("log.html");
+    
+    BaseLogger::sLoggerInUse = &HtmlLogger::getInstance();
+    
+    testEntry();
+
+    logger.finish();
     return 0;
 }

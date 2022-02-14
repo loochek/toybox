@@ -53,10 +53,18 @@ public:
             parent.mName.c_str(), parent.mObjIndex, &parent);
     }
 
+    virtual void simpleAssignment(const TrackedInt &obj, const TrackedInt &parent) override
+    {
+        CL_PADDED_PRINTF("[Assign] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
+            obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
+            parent.mName.c_str(), parent.mObjIndex, &parent);
+    }
+
     virtual void assignment(const TrackedInt &obj, const TrackedInt &parent, const std::string &oper) override
     {
-        CL_PADDED_PRINTF("[Assign] \"%s\" (%d|%p) <--(%d)-- %s= \"%s\" (%d|%p)\n",
-            obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue, oper.c_str(),
+        CL_PADDED_PRINTF("[Assign] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p) %s \"%s\" (%d|%p)\n",
+            obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
+            obj.mName.c_str(), obj.mObjIndex, &obj, oper.c_str(),
             parent.mName.c_str(), parent.mObjIndex, &parent);
     }
 
