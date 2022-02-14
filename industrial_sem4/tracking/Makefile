@@ -2,7 +2,7 @@ CXX=clang++
 CXXFLAGS=-O0
 
 CXX_FILES = main.cpp TrackedInt.cpp BaseLogger.cpp
-HEADERS = FunctionCallHandler.hpp ConsoleLogger.hpp HtmlLogger.hpp BaseLogger.hpp TrackedInt.hpp
+HEADERS = FunctionCallHandler.hpp ConsoleLogger.hpp HtmlLogger.hpp DotLogger.hpp BaseLogger.hpp TrackedInt.hpp 
 
 trackedint: $(CXX_FILES) $(HEADERS)
 	$(CXX) $(CXXFLAGS) -o trackedint $(CXX_FILES)
@@ -13,4 +13,4 @@ trackedint-noelide: $(CXX_FILES) $(HEADERS)
 noelide: trackedint-noelide
 
 clean:
-	rm -f trackedint trackedint-noelide log.html
+	rm -f trackedint trackedint-noelide log.html log.dot log.png

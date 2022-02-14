@@ -1,6 +1,8 @@
 #include <cassert>
 #include "TrackedInt.hpp"
 #include "HtmlLogger.hpp"
+#include "ConsoleLogger.hpp"
+#include "DotLogger.hpp"
 
 void binSearch()
 {
@@ -21,26 +23,14 @@ void binSearch()
     }
 }
 
-void recursive(TrackedInt depth)
+TrackedInt fib(TrackedInt num)
 {
     FUNC_ENTRY;
 
-    if (depth <= 0)
-        return;
+    if (num <= 2)
+        return 1;
 
-    INT(a, 1);
-    INT(b, 2);
-    INT(c, 3);
-    INT(sum, a + b + c);
-    INTCOPY(aCopy, a);
-    INTCOPY(bCopy, b);
-    INTCOPY(cCopy, c);
-
-    aCopy = a;
-    bCopy = 5;
-    cCopy -= 3;
-
-    recursive(depth - 1);
+    return fib(num - 2) + fib(num - 1);
 }
 
 TrackedInt test(TrackedInt a, TrackedInt b, TrackedInt c)
@@ -64,15 +54,18 @@ void testEntry()
     // INT(res1, test(a, b, c));
     // INT(res2, testRef(a, b, c));
 
-    recursive(2);
+    INT(result, 0);
+    result = fib(4);
+
+    INT(a, result);
 }
 
 int main()
 {
-    HtmlLogger &logger = HtmlLogger::getInstance();
-    logger.start("log.html");
+    DotLogger &logger = DotLogger::getInstance();
+    logger.start();
     
-    BaseLogger::sLoggerInUse = &HtmlLogger::getInstance();
+    BaseLogger::sLoggerInUse = &DotLogger::getInstance();
     
     testEntry();
 

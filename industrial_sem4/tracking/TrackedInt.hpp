@@ -128,9 +128,9 @@ protected:
 
     friend class ConsoleLogger;
     friend class HtmlLogger;
+    friend class DotLogger;
 };
 
 #define INT(name, value) TrackedInt name(value, #name)
-#define INTCOPY(dst, src) TrackedInt dst(src, #dst)
 
 #endif
