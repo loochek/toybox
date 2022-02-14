@@ -1,7 +1,7 @@
 CXX=clang++
 CXXFLAGS=-O0
 
-CXX_FILES = main.cpp FunctionCallHandler.cpp TrackedInt.cpp
+CXX_FILES = main.cpp TrackedInt.cpp BaseLogger.cpp
 
 trackedint: main.cpp
 	$(CXX) $(CXXFLAGS) -o trackedint $(CXX_FILES)
@@ -11,9 +11,9 @@ trackedint-noelide: main.cpp
 
 noelide: trackedint-noelide
 
-main.cpp: FunctionCallHandler.cpp TrackedInt.cpp
-FunctionCallHandler.cpp: FunctionCallHandler.hpp
+main.cpp: FunctionCallHandler.hpp TrackedInt.cpp BaseLogger.cpp ConsoleLogger.hpp
 TrackedInt.cpp: TrackedInt.hpp
+BaseLogger.cpp: BaseLogger.hpp
 
 clean:
 	rm -f trackedint trackedint-noelide

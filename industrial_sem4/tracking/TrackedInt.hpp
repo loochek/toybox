@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include "FunctionCallHandler.hpp"
+#include "BaseLogger.hpp"
 
 #define TRACKEDINT_UNARY_OPERATOR(OPER, DISP) \
     const TrackedInt operator OPER() const \
@@ -24,8 +25,7 @@
     TrackedInt &operator OPER##=(const TrackedInt &other) \
     { \
         mValue OPER##= other.mValue; \
-        PADDED_PRINTF("[Assign] \"%s\" (%p) <--(%d)-- " DISP "= \"%s\" (%p)\n", \
-                      mName.c_str(), this, mValue, other.mName.c_str(), &other); \
+        BaseLogger::sLoggerInUse->assignment(*this, other, DISP); \
         return *this; \
     }
 
@@ -44,31 +44,22 @@ public:
         mName(name)
     {
         genTempName(mName);
-        PADDED_PRINTF("[New] \"%s\" (%p) <---- %d\n", mName.c_str(), this, mValue);
+        BaseLogger::sLoggerInUse->simpleCtor(*this);
     }
 
     TrackedInt(const TrackedInt &other, const std::string &name = "") :
         mValue(other.mValue),
         mObjIndex(sObjIndexCount++),
         mName(name)
-    {        
+    {
         genTempName(mName);
-        PADDED_PRINTF("[\033[0;31mCOPY\033[0m] \"%s\" (%p) <--(%d)-- \"%s\" (%p)\n",
-                      mName.c_str(), this, mValue, other.mName.c_str(), &other);
+        BaseLogger::sLoggerInUse->copyCtor(*this, other);
     }
 
     TrackedInt &operator=(const TrackedInt &other)
     {
         mValue = other.mValue;
-        PADDED_PRINTF("[Assign] \"%s\" (%p) <--(%d)-- \"%s\" (%p)\n",
-                      mName.c_str(), this, mValue, other.mName.c_str(), &other);
-        return *this;
-    }
-
-    TrackedInt &operator=(const int val)
-    {
-        mValue = val;
-        PADDED_PRINTF("[Assign] \"%s\" (%p) <---- %d", mName.c_str(), this, mValue);
+        BaseLogger::sLoggerInUse->assignment(*this, other, "");
         return *this;
     }
 
@@ -107,18 +98,15 @@ protected:
         mObjIndex(sObjIndexCount++)
     {
         genTempName(mName);
-        PADDED_PRINTF("[New] \"%s\" (%p) <--(%d)-- %s\"%s\" (%p)\n",
-                      mName.c_str(), this, mValue, oper.c_str(), parent.mName.c_str(), &parent);
+        BaseLogger::sLoggerInUse->parentPresentCtor(*this, parent, oper);
     }
 
-    TrackedInt(int value, const std::string &oper, const TrackedInt &leftParent, const TrackedInt &rightParent) :
+    TrackedInt(int value, const std::string &oper, const TrackedInt &parent1, const TrackedInt &parent2) :
         mValue(value),
         mObjIndex(sObjIndexCount++)
     {
         genTempName(mName);
-        PADDED_PRINTF("[New] \"%s\" (%p) <--(%d)-- \"%s\" (%p) %s \"%s\" (%p)\n",
-                      mName.c_str(), this, mValue, leftParent.mName.c_str(), &leftParent, oper.c_str(),
-                      rightParent.mName.c_str(), &rightParent);
+        BaseLogger::sLoggerInUse->parentsPresentCtor(*this, parent1, parent2, oper);
     }
 
     void genTempName(std::string &name)
@@ -137,6 +125,8 @@ protected:
 
     std::string mName;
     static int sObjIndexCount;
+
+    friend class ConsoleLogger;
 };
 
 #define INT(name, value) TrackedInt name(value, #name)

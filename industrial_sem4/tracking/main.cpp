@@ -1,5 +1,6 @@
 #include <cassert>
 #include "TrackedInt.hpp"
+#include "ConsoleLogger.hpp"
 
 void binSearch()
 {
@@ -20,25 +21,51 @@ void binSearch()
     }
 }
 
-// TrackedInt test(, TrackedInt c)
-// {
-//     FUNC_ENTRY;
-//     return a + b + c;
-// }
+void recursive(TrackedInt depth)
+{
+    FUNC_ENTRY;
 
-// TrackedInt testRef(TrackedInt &a, TrackedInt &b, TrackedInt &c)
-// {
-//     FUNC_ENTRY;
-//     return a * (b - c);
-// }
+    if (depth <= 0)
+        return;
+
+    INT(a, 1);
+    INT(b, 2);
+    INT(c, 3);
+    INT(sum, a + b + c);
+    INTCOPY(aCopy, a);
+    INTCOPY(bCopy, b);
+    INTCOPY(cCopy, c);
+
+    aCopy = a;
+    bCopy = 5;
+    cCopy -= 3;
+
+    recursive(depth - 1);
+}
+
+TrackedInt test(TrackedInt a, TrackedInt b, TrackedInt c)
+{
+    FUNC_ENTRY;
+    return a + b + c;
+}
+
+TrackedInt testRef(TrackedInt &a, TrackedInt &b, TrackedInt &c)
+{
+    FUNC_ENTRY;
+    return a * (b - c);
+}
 
 int main()
 {
+    BaseLogger::sLoggerInUse = &ConsoleLogger::getInstance();
     FUNC_ENTRY;
-    binSearch();
+
+    //binSearch();
 
     // INT(res1, test(a, b, c));
     // INT(res2, testRef(a, b, c));
+
+    recursive(2);
 
     return 0;
 }
