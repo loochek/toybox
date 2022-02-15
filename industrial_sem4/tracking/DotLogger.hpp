@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include "BaseLogger.hpp"
 
-const int HISTORY_ID_STEP = 10000;
+const int OPER_ID_START = 1 << 30;
 
 class DotLogger : public BaseLogger
 {
@@ -14,141 +14,129 @@ public:
     virtual ~DotLogger() {}
 
     virtual void functionEnter(const std::string &prettyName) override
-    {        
-        // fprintf(mDotFile, "subgraph cluster_ {\n");
-        // fprintf(mDotFile, "label=\"%s\"\n", prettyName.c_str());
+    {
+        assert(mDotNodesFile && mDotEdgesFile);
+
+        fprintf(mDotNodesFile, "subgraph cluster_%d {\n", mClusterCounter++);
+        fprintf(mDotNodesFile, "label=\"%s\"\n", prettyName.c_str());
     }
 
     virtual void functionLeave() override
     {
-        //fprintf(mDotFile, "}\n");
+        assert(mDotNodesFile && mDotEdgesFile);
+
+        fprintf(mDotNodesFile, "}\n");
     }
 
     virtual void simpleCtor(const TrackedInt &obj) override
     {
-        if (!mDotFile)
-            return;
+        assert(mDotNodesFile && mDotEdgesFile);
 
-        fprintf(mDotFile, "obj%d [shape=record, label=\"\\\"%s\\\" | addr: %p | { val: %d | idx: %d }\"]\n",
-            obj.mObjIndex, obj.mName.c_str(), &obj, obj.mValue, obj.mObjIndex);
-
-        fprintf(mDotFile, "obj%d -> obj%d [weight=100, style=invis]\n", mLastObj, obj.mObjIndex);
+        logNewObject(obj);
+        logExecFlow(obj.mObjIndex);
 
         mAssnHistory[obj.mObjIndex] = obj.mObjIndex;
-        mLastObj = obj.mObjIndex;
     }
 
     virtual void parentPresentCtor(const TrackedInt &obj, const TrackedInt &parent,
                                    const std::string &oper) override
     {
-        if (!mDotFile)
-            return;
+        assert(mDotNodesFile && mDotEdgesFile);
 
-        fprintf(mDotFile, "obj%d [shape=record, label=\"\\\"%s\\\" | addr: %p | { val: %d | idx: %d }\"]\n",
-            obj.mObjIndex, obj.mName.c_str(), &obj, obj.mValue, obj.mObjIndex);
+        logNewObject(obj);
+        int operId = logOper(oper);
 
-        fprintf(mDotFile, "oper%d [shape=ellipse, label=\"%s]\n", mOperCount, oper.c_str());
+        logEdge(mAssnHistory[parent.mObjIndex], operId);
+        logEdge(operId, obj.mObjIndex);
 
-        fprintf(mDotFile, "obj%d -> oper%d\n", mAssnHistory[parent.mObjIndex], mOperCount);
-        fprintf(mDotFile, "oper%d -> obj%d\n", mOperCount, obj.mObjIndex);
-
-        fprintf(mDotFile, "obj%d -> oper%d [weight=100, style=invis]\n", mLastObj, mOperCount);
-        fprintf(mDotFile, "oper%d -> obj%d [weight=100, style=invis]\n", mOperCount, obj.mObjIndex);
+        logExecFlow(operId);
+        logExecFlow(obj.mObjIndex);
 
         mAssnHistory[obj.mObjIndex] = obj.mObjIndex;
-        mOperCount++;
-        mLastObj = obj.mObjIndex;
     }
 
     virtual void parentsPresentCtor(const TrackedInt &obj, const TrackedInt &parent1, const TrackedInt &parent2,
                                     const std::string &oper) override
     {
-        if (!mDotFile)
-            return;
+        assert(mDotNodesFile && mDotEdgesFile);
 
-        fprintf(mDotFile, "obj%d [shape=record, label=\"\\\"%s\\\" | addr: %p | { val: %d | idx: %d }\"]\n",
-            obj.mObjIndex, obj.mName.c_str(), &obj, obj.mValue, obj.mObjIndex);
+        logNewObject(obj);
+        int operId = logOper(oper);
 
-        fprintf(mDotFile, "oper%d [shape=ellipse, label=\"%s\"]\n", mOperCount, oper.c_str());
+        logEdge(mAssnHistory[parent1.mObjIndex], operId);
+        logEdge(mAssnHistory[parent2.mObjIndex], operId);
+        logEdge(operId, obj.mObjIndex);
 
-        fprintf(mDotFile, "obj%d -> oper%d\n", mAssnHistory[parent1.mObjIndex], mOperCount);
-        fprintf(mDotFile, "obj%d -> oper%d\n", mAssnHistory[parent2.mObjIndex], mOperCount);
-        fprintf(mDotFile, "oper%d -> obj%d\n", mOperCount, obj.mObjIndex);
-
-        fprintf(mDotFile, "obj%d -> oper%d [weight=100, style=invis]\n", mLastObj, mOperCount);
-        fprintf(mDotFile, "oper%d -> obj%d [weight=100, style=invis]\n", mOperCount, obj.mObjIndex);
+        logExecFlow(operId);
+        logExecFlow(obj.mObjIndex);
 
         mAssnHistory[obj.mObjIndex] = obj.mObjIndex;
-        mOperCount++;
-        mLastObj = obj.mObjIndex;
     }
 
     virtual void copyCtor(const TrackedInt &obj, const TrackedInt &parent) override
     {
-        if (!mDotFile)
-            return;
-
-        fprintf(mDotFile, "obj%d [shape=record, label=\"\\\"%s\\\" | addr: %p | { val: %d | idx: %d }\"]\n",
-            obj.mObjIndex, obj.mName.c_str(), &obj, obj.mValue, obj.mObjIndex);
+        assert(mDotNodesFile && mDotEdgesFile);
             
-        fprintf(mDotFile, "obj%d -> obj%d\n", mAssnHistory[parent.mObjIndex], obj.mObjIndex);
-        fprintf(mDotFile, "obj%d -> obj%d [weight=100, style=invis]\n", mLastObj, obj.mObjIndex);
+        logNewObject(obj);
+        logEdge(mAssnHistory[parent.mObjIndex], obj.mObjIndex, "red");
+        logExecFlow(obj.mObjIndex);
 
         mAssnHistory[obj.mObjIndex] = obj.mObjIndex;
-        mLastObj = obj.mObjIndex;
     }
 
     virtual void simpleAssignment(const TrackedInt &obj, const TrackedInt &parent) override
     {
-        if (!mDotFile)
-            return;
+        assert(mDotNodesFile && mDotEdgesFile);
 
-        int assnNodeId = mAssnHistory[obj.mObjIndex] + HISTORY_ID_STEP;
+        int operId = logAssnOper("\\\"" + obj.mName + "\\\" = \\\"" + parent.mName + "\\\"", obj.mValue);
 
-        fprintf(mDotFile, "obj%d [shape=ellipse, label=\"\\\"%s\\\" = \\\"%s\\\"\"]\n",
-            assnNodeId, obj.mName.c_str(), parent.mName.c_str());
+        logEdge(mAssnHistory[obj.mObjIndex], operId);
+        logEdge(mAssnHistory[parent.mObjIndex], operId);
 
-        fprintf(mDotFile, "obj%d -> obj%d\n", obj.mObjIndex, assnNodeId);
-        fprintf(mDotFile, "obj%d -> obj%d\n", parent.mObjIndex, assnNodeId);
+        logExecFlow(operId);
 
-        fprintf(mDotFile, "obj%d -> obj%d [weight=100, style=invis]\n", mLastObj, assnNodeId);
-
-        mAssnHistory[obj.mObjIndex] = assnNodeId;
-        mLastObj = assnNodeId;
+        mAssnHistory[obj.mObjIndex] = operId;
     }
 
     virtual void assignment(const TrackedInt &obj, const TrackedInt &parent, const std::string &oper) override
     {
-        if (!mDotFile)
-            return;
+        assert(mDotNodesFile && mDotEdgesFile);
 
-        int assnNodeId = mAssnHistory[obj.mObjIndex] + HISTORY_ID_STEP;
+        int operId = logAssnOper("\\\"" + obj.mName + "\\\" " + oper +  "= \\\"" + parent.mName + "\\\"", obj.mValue);
 
-        fprintf(mDotFile, "obj%d [shape=ellipse, label=\"\\\"%s\\\" %s= \\\"%s\\\"\"]\n",
-            assnNodeId, obj.mName.c_str(), oper.c_str(), parent.mName.c_str());
+        logEdge(mAssnHistory[obj.mObjIndex], operId);
+        logEdge(mAssnHistory[parent.mObjIndex], operId);
 
-        fprintf(mDotFile, "obj%d -> obj%d\n", obj.mObjIndex, assnNodeId);
-        fprintf(mDotFile, "obj%d -> obj%d\n", parent.mObjIndex, assnNodeId);
+        logExecFlow(operId);
 
-        fprintf(mDotFile, "obj%d -> obj%d [weight=100, style=invis]\n", mLastObj, assnNodeId);
-
-        mAssnHistory[obj.mObjIndex] = assnNodeId;
-        mLastObj = assnNodeId;
+        mAssnHistory[obj.mObjIndex] = operId;
     }
 
     void start()
     {
-        mDotFile = fopen("log.dot", "w");
-        if (!mDotFile) throw std::runtime_error("Unable to open log file");
+        mDotNodesFile = fopen("log.dotpart1", "w");
+        if (!mDotNodesFile)
+            throw std::runtime_error("Unable to open log file");
 
-        fprintf(mDotFile, "digraph {\n");
+        mDotEdgesFile = fopen("log.dotpart2", "w");
+        if (!mDotEdgesFile)
+        {
+            fclose(mDotNodesFile);
+            throw std::runtime_error("Unable to open log file");
+        }
+
+        fprintf(mDotNodesFile, "digraph {\n");
+        fprintf(mDotNodesFile, "nodesep=0.5\n");
     }
 
     void finish()
     {
-        fprintf(mDotFile, "}\n");
-        fclose(mDotFile);
+        fprintf(mDotEdgesFile, "}\n");
 
+        fclose(mDotNodesFile);
+        fclose(mDotEdgesFile);
+
+        system("cat log.dotpart1 log.dotpart2 > log.dot");
         system("dot -Tpng -o log.png log.dot");
     }
 
@@ -159,17 +147,50 @@ public:
     }
 
 protected:
-    DotLogger() : mDotFile(nullptr), mOperCount(0), mLastObj(0) {}
+    DotLogger() : mDotNodesFile(nullptr), mDotEdgesFile(nullptr),
+        mOperCounter(OPER_ID_START), mClusterCounter(0), mLastNodeIdx(0) {}
 
     DotLogger(const DotLogger&) = delete;
     DotLogger& operator=(const DotLogger&) = delete;
 
-protected:
-    int mOperCount;
-    FILE *mDotFile;
+    void logNewObject(const TrackedInt &obj)
+    {
+        fprintf(mDotNodesFile, "%d [shape=record, label=\"\\\"%s\\\" | addr: %p | { val: %d | idx: %d }\"]\n",
+            obj.mObjIndex, obj.mName.c_str(), &obj, obj.mValue, obj.mObjIndex);
+    }
 
+    void logEdge(int from, int to, const std::string &color = "black")
+    {
+        fprintf(mDotEdgesFile, "%d -> %d [color=%s]\n", from, to, color.c_str());
+    }
+
+    int logOper(const std::string &label)
+    {
+        fprintf(mDotNodesFile, "%d [shape=ellipse, label=\"%s\"]\n", mOperCounter, label.c_str());
+        return mOperCounter++;
+    }
+
+    int logAssnOper(const std::string &label, int newVal)
+    {
+        fprintf(mDotNodesFile, "%d [shape=record, label=\"%s | new val: %d\"]\n",
+            mOperCounter, label.c_str(), newVal);
+        return mOperCounter++;
+    }
+
+    void logExecFlow(int currNodeIdx)
+    {
+        fprintf(mDotEdgesFile, "%d -> %d [weight=10, style=dotted, arrowhead=none, color=blue]\n",
+            mLastNodeIdx, currNodeIdx);
+
+        mLastNodeIdx = currNodeIdx;
+    }
+
+protected:
+    int mOperCounter, mClusterCounter;
+    FILE *mDotNodesFile, *mDotEdgesFile;
+    
     std::unordered_map<int, int> mAssnHistory;
-    int mLastObj;
+    int mLastNodeIdx;
     
     static const int NEST_PAD = 4;
 };

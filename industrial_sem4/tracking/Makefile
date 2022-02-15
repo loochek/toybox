@@ -13,4 +13,4 @@ trackedint-noelide: $(CXX_FILES) $(HEADERS)
 noelide: trackedint-noelide
 
 clean:
-	rm -f trackedint trackedint-noelide log.html log.dot log.png
+	rm -f trackedint trackedint-noelide log.*
