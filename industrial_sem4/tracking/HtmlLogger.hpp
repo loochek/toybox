@@ -15,27 +15,25 @@ public:
 
     virtual void functionEnter(const std::string &prettyName) override
     {
-        if (mLogFile)
-        {
-            HL_PADDED_PRINTF("%s\n", prettyName.c_str());
-            HL_PADDED_PRINT("{\n");
-        }
+        assert(mLogFile);
+
+        HL_PADDED_PRINTF("%s\n", prettyName.c_str());
+        HL_PADDED_PRINT("{\n");
         
         mCurrDepth++;
     }
 
     virtual void functionLeave() override
     {
-        mCurrDepth--;
+        assert(mLogFile);
 
-        if (mLogFile)
-            HL_PADDED_PRINT("}\n");
+        mCurrDepth--;
+        HL_PADDED_PRINT("}\n");
     }
 
     virtual void simpleCtor(const TrackedInt &obj) override
     {
-        if (!mLogFile)
-            return;
+        assert(mLogFile);
 
         HL_PADDED_PRINTF("[New] \"%s\" (%d|%p) <-- %d\n", obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue);
     }
@@ -43,8 +41,7 @@ public:
     virtual void parentPresentCtor(const TrackedInt &obj, const TrackedInt &parent,
                                    const std::string &oper) override
     {
-        if (!mLogFile)
-            return;
+        assert(mLogFile);
 
         HL_PADDED_PRINTF("[New] \"%s\" (%d|%p) <--(%d)-- %s\"%s\" (%d|%p)\n", 
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue, oper.c_str(),
@@ -54,8 +51,7 @@ public:
     virtual void parentsPresentCtor(const TrackedInt &obj, const TrackedInt &parent1, const TrackedInt &parent2,
                                     const std::string &oper) override
     {
-        if (!mLogFile)
-            return;
+        assert(mLogFile);
 
         HL_PADDED_PRINTF("[New] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p) %s \"%s\" (%d|%p)\n",
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
@@ -65,8 +61,7 @@ public:
 
     virtual void copyCtor(const TrackedInt &obj, const TrackedInt &parent) override
     {
-        if (!mLogFile)
-            return;
+        assert(mLogFile);
 
         HL_PADDED_PRINTF("[<font color=#FF0000>COPY</font>] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
@@ -75,8 +70,7 @@ public:
 
     virtual void simpleAssignment(const TrackedInt &obj, const TrackedInt &parent) override
     {
-        if (!mLogFile)
-            return;
+        assert(mLogFile);
 
         HL_PADDED_PRINTF("[Assign] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
@@ -85,8 +79,7 @@ public:
 
     virtual void assignment(const TrackedInt &obj, const TrackedInt &parent, const std::string &oper) override
     {
-        if (!mLogFile)
-            return;
+        assert(mLogFile);
 
         HL_PADDED_PRINTF("[Assign] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p) %s \"%s\" (%d|%p)\n",
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
