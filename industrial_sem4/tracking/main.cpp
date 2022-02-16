@@ -45,18 +45,19 @@ void testEntry()
     FUNC_ENTRY;
 
     INT(a, 10);
+
     INT(b, 20);
     INT(c, 30);
 
     INT(sum1, test(a, b, c));
     INT(sum2, testRef(a, b, c));
 
-    INT(aCopy, a);
-    INT(bCopy, b);
-    INT(cCopy, c);
+    a = 1;
+    b = 2;
+    c = 3;
 
-    INT(sum3, test2(aCopy, bCopy, cCopy));
-    INT(sum4, testRef2(aCopy, bCopy, cCopy));
+    INT(sum3, test2(a, b, c));
+    INT(sum4, testRef2(a, b, c));
 }
 
 int main()
@@ -67,7 +68,7 @@ int main()
     htmlLogger.start("log.html");
     
     BaseLogger::sLoggerInUse = &DotLogger::getInstance();
-    //BaseLogger::sLoggerInUse = &HtmlLogger::getInstance();
+    // BaseLogger::sLoggerInUse = &HtmlLogger::getInstance();
     // BaseLogger::sLoggerInUse = &ConsoleLogger::getInstance();
     
     testEntry();

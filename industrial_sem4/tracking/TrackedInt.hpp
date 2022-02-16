@@ -56,10 +56,24 @@ public:
         BaseLogger::sLoggerInUse->copyCtor(*this, other);
     }
 
-    TrackedInt &operator=(const TrackedInt &other)
+    TrackedInt(TrackedInt &&other, const std::string &name = "") :
+        mValue(other.mValue),
+        mObjIndex(sObjIndexCount++),
+        mName(name)
+    {
+        genTempName(mName);
+        BaseLogger::sLoggerInUse->moveCtor(*this, other);
+    }
+
+    ~TrackedInt()
+    {
+        BaseLogger::sLoggerInUse->dtor(*this);
+    }
+
+    TrackedInt &operator=(TrackedInt &&other)
     {
         mValue = other.mValue;
-        BaseLogger::sLoggerInUse->simpleAssignment(*this, other);
+        BaseLogger::sLoggerInUse->moveAssignment(*this, other);
         return *this;
     }
 

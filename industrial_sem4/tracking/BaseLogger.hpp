@@ -19,9 +19,13 @@ public:
     virtual void parentsPresentCtor(const TrackedInt &obj, const TrackedInt &parent1, const TrackedInt &parent2,
                                     const std::string &oper) = 0;
 
-    virtual void copyCtor(const TrackedInt &obj, const TrackedInt &parent) = 0;
+    virtual void dtor(const TrackedInt &obj) = 0;
 
-    virtual void simpleAssignment(const TrackedInt &obj, const TrackedInt &parent) = 0;
+    virtual void copyCtor(const TrackedInt &obj, const TrackedInt &parent) = 0;
+    virtual void moveCtor(const TrackedInt &obj, const TrackedInt &parent) = 0;
+
+    virtual void copyAssignment(const TrackedInt &obj, const TrackedInt &parent) = 0;
+    virtual void moveAssignment(const TrackedInt &obj, const TrackedInt &parent) = 0;
     virtual void assignment(const TrackedInt &obj, const TrackedInt &parent, const std::string &oper) = 0;
 
 public:

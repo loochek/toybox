@@ -46,6 +46,11 @@ public:
             parent2.mName.c_str(), parent2.mObjIndex, &parent2);
     }
 
+    virtual void dtor(const TrackedInt &obj) override
+    {
+        CL_PADDED_PRINTF("[EOL] \"%s\" (%d|%p)\n", obj.mName.c_str(), obj.mObjIndex, &obj);
+    }
+
     virtual void copyCtor(const TrackedInt &obj, const TrackedInt &parent) override
     {
         CL_PADDED_PRINTF("[\033[0;31mCOPY\033[0m] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
@@ -53,9 +58,23 @@ public:
             parent.mName.c_str(), parent.mObjIndex, &parent);
     }
 
-    virtual void simpleAssignment(const TrackedInt &obj, const TrackedInt &parent) override
+    virtual void moveCtor(const TrackedInt &obj, const TrackedInt &parent) override
+    {
+        CL_PADDED_PRINTF("[\033[0;31mMove\033[0m] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
+            obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
+            parent.mName.c_str(), parent.mObjIndex, &parent);
+    }
+
+    virtual void copyAssignment(const TrackedInt &obj, const TrackedInt &parent) override
     {
         CL_PADDED_PRINTF("[Assign] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
+            obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
+            parent.mName.c_str(), parent.mObjIndex, &parent);
+    }
+
+    virtual void moveAssignment(const TrackedInt &obj, const TrackedInt &parent) override
+    {
+        CL_PADDED_PRINTF("[\033[0;31mMove=\033[0m] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
             parent.mName.c_str(), parent.mObjIndex, &parent);
     }
