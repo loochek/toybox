@@ -8,14 +8,14 @@
 #include "BaseLogger.hpp"
 
 #define TRACKEDINT_UNARY_OPERATOR(OPER, DISP) \
-    const TrackedInt operator OPER() const \
+    TrackedInt operator OPER() const \
     { \
         FUNC_ENTRY; \
         return TrackedInt(OPER mValue, DISP, *this); \
     }
 
 #define TRACKEDINT_BINARY_OPERATOR(OPER, DISP) \
-    const TrackedInt operator OPER(const TrackedInt &other) const \
+    TrackedInt operator OPER(const TrackedInt &other) const \
     { \
         FUNC_ENTRY; \
         return TrackedInt(mValue OPER other.mValue, DISP, *this, other); \
