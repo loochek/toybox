@@ -86,7 +86,7 @@ public:
     {
         assert(mLogFile);
 
-        HL_PADDED_PRINTF("[Assign] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
+        HL_PADDED_PRINTF("[<font color=#00FF00>Copy=</font>] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
             parent.mName.c_str(), parent.mObjIndex, &parent);
     }
@@ -108,16 +108,24 @@ public:
             parent.mName.c_str(), parent.mObjIndex, &parent);
     }
 
-    void start(const std::string &fileName)
+    virtual void start() override
     {
-        mLogFile = fopen(fileName.c_str(), "w");
+        TrackedInt::sCopyCount = 0;
+        TrackedInt::sTmpObjectsCount = 0;
+        
+        mLogFile = fopen("log.html", "w");
         if (!mLogFile) throw std::runtime_error("Unable to open log file");
 
         fprintf(mLogFile, "<pre>\n");
     }
 
-    void finish()
+    virtual void finish() override
     {
+        if (!mLogFile)
+            return;
+
+        fprintf(mLogFile, "Total: %d tmp object, %d copies\n", TrackedInt::sTmpObjectsCount, TrackedInt::sCopyCount);
+
         fprintf(mLogFile, "</pre>\n");
         fclose(mLogFile);
     }

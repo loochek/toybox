@@ -43,26 +43,8 @@ public:
         mObjIndex(sObjIndexCount++),
         mName(name)
     {
-        genTempName(mName);
+        handleTemp(mName);
         BaseLogger::sLoggerInUse->simpleCtor(*this);
-    }
-
-    TrackedInt(const TrackedInt &other, const std::string &name = "") :
-        mValue(other.mValue),
-        mObjIndex(sObjIndexCount++),
-        mName(name)
-    {
-        genTempName(mName);
-        BaseLogger::sLoggerInUse->copyCtor(*this, other);
-    }
-
-    TrackedInt(TrackedInt &&other, const std::string &name = "") :
-        mValue(other.mValue),
-        mObjIndex(sObjIndexCount++),
-        mName(name)
-    {
-        genTempName(mName);
-        BaseLogger::sLoggerInUse->moveCtor(*this, other);
     }
 
     ~TrackedInt()
@@ -70,12 +52,41 @@ public:
         BaseLogger::sLoggerInUse->dtor(*this);
     }
 
+    TrackedInt(const TrackedInt &other, const std::string &name = "") :
+        mValue(other.mValue),
+        mObjIndex(sObjIndexCount++),
+        mName(name)
+    {
+        handleTemp(mName);
+        BaseLogger::sLoggerInUse->copyCtor(*this, other);
+        sCopyCount++;
+    }
+
+    TrackedInt &operator=(const TrackedInt &other)
+    {
+        mValue = other.mValue;
+        BaseLogger::sLoggerInUse->copyAssignment(*this, other);
+        sCopyCount++;
+        return *this;
+    }
+
+#ifndef TRACKING_DISABLE_MOVE
+    TrackedInt(TrackedInt &&other, const std::string &name = "") :
+        mValue(other.mValue),
+        mObjIndex(sObjIndexCount++),
+        mName(name)
+    {
+        handleTemp(mName);
+        BaseLogger::sLoggerInUse->moveCtor(*this, other);
+    }
+    
     TrackedInt &operator=(TrackedInt &&other)
     {
         mValue = other.mValue;
         BaseLogger::sLoggerInUse->moveAssignment(*this, other);
         return *this;
     }
+#endif
 
     TRACKEDINT_BINARY_OPERATOR(+, "+")
     TRACKEDINT_BINARY_OPERATOR(-, "-")
@@ -111,7 +122,7 @@ protected:
         mValue(value),
         mObjIndex(sObjIndexCount++)
     {
-        genTempName(mName);
+        handleTemp(mName);
         BaseLogger::sLoggerInUse->parentPresentCtor(*this, parent, oper);
     }
 
@@ -119,15 +130,16 @@ protected:
         mValue(value),
         mObjIndex(sObjIndexCount++)
     {
-        genTempName(mName);
+        handleTemp(mName);
         BaseLogger::sLoggerInUse->parentsPresentCtor(*this, parent1, parent2, oper);
     }
 
-    void genTempName(std::string &name)
+    void handleTemp(std::string &name)
     {
         if (name != "")
             return;
 
+        sTmpObjectsCount++;
         std::ostringstream stream;
         stream << "temp object " << mObjIndex;
         name = stream.str();
@@ -139,6 +151,9 @@ protected:
 
     std::string mName;
     static int sObjIndexCount;
+
+    static int sTmpObjectsCount;
+    static int sCopyCount;
 
     friend class ConsoleLogger;
     friend class HtmlLogger;

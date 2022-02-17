@@ -153,8 +153,15 @@ public:
         mAssnHistory[obj.mObjIndex] = operId;
     }
 
-    void start()
+    virtual void start() override
     {
+        mOperCounter = OPER_ID_START;
+        mClusterCounter = 0;
+        mLastNodeIdx = 0;
+
+        TrackedInt::sCopyCount = 0;
+        TrackedInt::sTmpObjectsCount = 0;
+
         mDotNodesFile = fopen("log.dotpart1", "w");
         if (!mDotNodesFile)
             throw std::runtime_error("Unable to open log file");
@@ -163,15 +170,19 @@ public:
         if (!mDotEdgesFile)
         {
             fclose(mDotNodesFile);
+            mDotNodesFile = nullptr;
             throw std::runtime_error("Unable to open log file");
         }
 
         fprintf(mDotNodesFile, "digraph {\n");
-        fprintf(mDotNodesFile, "nodesep=0.5\n");
+        fprintf(mDotNodesFile, "nodesep=1\n");
     }
 
-    void finish()
+    virtual void finish() override
     {
+        if (!(mDotNodesFile && mDotEdgesFile))
+            return;
+        
         fprintf(mDotEdgesFile, "}\n");
 
         fclose(mDotNodesFile);
@@ -196,7 +207,15 @@ protected:
 
     void logNewObject(const TrackedInt &obj)
     {
-        fprintf(mDotNodesFile, "%d [shape=record, label=\"\\\"%s\\\" | addr: %p | { val: %d | idx: %d }\"]\n",
+        fprintf(mDotNodesFile, "%d [shape=none, label=<\n"
+            "<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n"
+            "<TR>\n"
+            "<TD ROWSPAN=\"3\">\"%s\"</TD>\n"
+            "<TD ROWSPAN=\"3\">addr: %p</TD>\n"
+            "</TR>\n"
+            "<TR><TD>val: %d</TD></TR>\n"
+            "<TR><TD>idx: %d</TD></TR>\n"
+            "</TABLE>>]\n",
             obj.mObjIndex, obj.mName.c_str(), &obj, obj.mValue, obj.mObjIndex);
     }
 
@@ -213,14 +232,20 @@ protected:
 
     int logAssnOper(const std::string &label, int newVal)
     {
-        fprintf(mDotNodesFile, "%d [shape=record, label=\"%s | new val: %d\"]\n",
+        fprintf(mDotNodesFile, "%d [shape=none, label=<\n"
+            "<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n"
+            "<TR>\n"
+            "<TD>%s</TD>\n"
+            "<TD>new val: %d</TD>\n"
+            "</TR>\n"
+            "</TABLE>>]\n",
             mOperCounter, label.c_str(), newVal);
         return mOperCounter++;
     }
 
     void logExecFlow(int currNodeIdx)
     {
-        fprintf(mDotEdgesFile, "%d -> %d [weight=10, style=dotted, arrowhead=none, color=blue]\n",
+        fprintf(mDotEdgesFile, "%d -> %d [style=dotted, arrowhead=none, color=blue]\n",
             mLastNodeIdx, currNodeIdx);
 
         mLastNodeIdx = currNodeIdx;
@@ -228,7 +253,8 @@ protected:
 
     int logDtor(const TrackedInt &obj)
     {
-        fprintf(mDotEdgesFile, "%d [label=\"EOL: %s\"]\n", mOperCounter, obj.mName.c_str());
+        fprintf(mDotEdgesFile, "%d [shape=ellipse, label=\"EOL: \\\"%s\\\" (addr: %p idx: %d)\"]\n",
+            mOperCounter, obj.mName.c_str(), &obj, obj.mObjIndex);
         return mOperCounter++;
     }
 

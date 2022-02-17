@@ -28,6 +28,9 @@ public:
     virtual void moveAssignment(const TrackedInt &obj, const TrackedInt &parent) = 0;
     virtual void assignment(const TrackedInt &obj, const TrackedInt &parent, const std::string &oper) = 0;
 
+    virtual void start() = 0;
+    virtual void finish() = 0;
+
 public:
     static BaseLogger *sLoggerInUse;
 };

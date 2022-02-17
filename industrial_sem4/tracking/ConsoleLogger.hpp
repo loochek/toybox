@@ -60,21 +60,21 @@ public:
 
     virtual void moveCtor(const TrackedInt &obj, const TrackedInt &parent) override
     {
-        CL_PADDED_PRINTF("[\033[0;31mMove\033[0m] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
+        CL_PADDED_PRINTF("[\033[0;32mMove\033[0m] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
             parent.mName.c_str(), parent.mObjIndex, &parent);
     }
 
     virtual void copyAssignment(const TrackedInt &obj, const TrackedInt &parent) override
     {
-        CL_PADDED_PRINTF("[Assign] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
+        CL_PADDED_PRINTF("[\033[0;31mCOPY=\033[0m] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
             parent.mName.c_str(), parent.mObjIndex, &parent);
     }
 
     virtual void moveAssignment(const TrackedInt &obj, const TrackedInt &parent) override
     {
-        CL_PADDED_PRINTF("[\033[0;31mMove=\033[0m] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
+        CL_PADDED_PRINTF("[\033[0;32mMove=\033[0m] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
             parent.mName.c_str(), parent.mObjIndex, &parent);
     }
@@ -85,6 +85,17 @@ public:
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
             obj.mName.c_str(), obj.mObjIndex, &obj, oper.c_str(),
             parent.mName.c_str(), parent.mObjIndex, &parent);
+    }
+
+    virtual void start() override
+    {
+        TrackedInt::sCopyCount = 0;
+        TrackedInt::sTmpObjectsCount = 0;
+    }
+
+    virtual void finish() override
+    {
+        printf("Total: %d tmp object, %d copies\n", TrackedInt::sTmpObjectsCount, TrackedInt::sCopyCount);
     }
 
     static ConsoleLogger &getInstance()
