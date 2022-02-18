@@ -86,7 +86,7 @@ public:
     {
         assert(mLogFile);
 
-        HL_PADDED_PRINTF("[<font color=#00FF00>Copy=</font>] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
+        HL_PADDED_PRINTF("[<font color=#FF0000>Copy=</font>] \"%s\" (%d|%p) <--(%d)-- \"%s\" (%d|%p)\n",
             obj.mName.c_str(), obj.mObjIndex, &obj, obj.mValue,
             parent.mName.c_str(), parent.mObjIndex, &parent);
     }
