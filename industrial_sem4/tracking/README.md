@@ -403,3 +403,7 @@ Despite that there a lot of additional temporary objects, they are moved instead
 ## Conslusion
 
 Due to the tool, we managed to optimize unnecessary copying of temporary objects. We also discovered behaviour of the compilier with disabled "copy elision" optimizations.
+
+I would also like to note that the tool has a graphics mode. There is a graphical log of the first example:
+
+![](images/log.png)
