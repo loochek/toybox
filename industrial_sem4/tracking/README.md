@@ -115,7 +115,8 @@ Total: 15 tmp object, 9 copies
 
 The tool tries to show variable names that it knows about. However, each object has a unique number that allows to distinguish between temporary objects, as well as objects with the same name due to nested function calls. The object address is also displayed along with the unique number.
 
-Let's return to our program. We can see that temporary objects are destructed shortly after copying. It is not a problem in our case because copying of TrackedInt is cheap, but copying of objects like std::string can be expensive. In our program there are unnecessary copying during expressions like `a = 1` or `res3 = (a - b) * c` - temporary object corresponding to evaluated `(a - b) * c` value is copied into `res3` and destructed immediately after this. In fact, the situation can be even worse - the compiler optimizes many temporary objects as part of optimizations which called "copy elision". Let's ask the compiler to disable these optimizations and look to the tool's output:
+Let's return to our program. We can see that temporary objects are destructed shortly after copying. It is not a problem in our case because copying of TrackedInt is cheap, but copying of objects like std::string can be expensive. In our program there are unnecessary copying during expressions like `a = 1` or `res3 = (a - b) * c` - 
+in the last example temporary object corresponding to evaluated `(a - b) * c` value is copied into `res3` and destructed immediately after this. In fact, the situation can be even worse - the compiler optimizes many temporary objects as part of optimizations which called "copy elision". Let's ask the compiler to disable these optimizations and look to the tool's output:
 <pre>
 void testEntry()
 {
