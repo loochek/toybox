@@ -6,8 +6,9 @@
 #include <unordered_map>
 #include "BaseLogger.hpp"
 
-const char *DOT_RED = "red";
-const char *DOT_GREEN = "chartreuse4";
+const char *DOT_COPY_COLOR     = "red";
+const char *DOT_MOVE_COLOR    = "chartreuse4";
+const char *DOT_LIFETIME_COLOR = "darkslategray";
 
 const int GRAY_STEP = 40;
 const int OPER_ID_START = 1 << 30;
@@ -85,8 +86,8 @@ public:
 
     virtual void dtor(const TrackedInt &obj) override
     {
-        // int operId = logDtor(obj);
-        // logExecFlow(operId);
+        int operId = logDtor(obj);
+        logExecFlow(operId);
     }
 
     virtual void copyCtor(const TrackedInt &obj, const TrackedInt &parent) override
@@ -94,7 +95,7 @@ public:
         assert(mDotNodesFile && mDotEdgesFile);
             
         logNewObject(obj);
-        logEdge(mAssnHistory[parent.mObjIndex], obj.mObjIndex, DOT_RED);
+        logEdge(mAssnHistory[parent.mObjIndex], obj.mObjIndex, DOT_COPY_COLOR);
         logExecFlow(obj.mObjIndex);
 
         mAssnHistory[obj.mObjIndex] = obj.mObjIndex;
@@ -105,7 +106,7 @@ public:
         assert(mDotNodesFile && mDotEdgesFile);
             
         logNewObject(obj);
-        logEdge(mAssnHistory[parent.mObjIndex], obj.mObjIndex, DOT_GREEN);
+        logEdge(mAssnHistory[parent.mObjIndex], obj.mObjIndex, DOT_MOVE_COLOR);
         logExecFlow(obj.mObjIndex);
 
         mAssnHistory[obj.mObjIndex] = obj.mObjIndex;
@@ -115,10 +116,10 @@ public:
     {
         assert(mDotNodesFile && mDotEdgesFile);
 
-        int operId = logAssnOper("\\\"" + obj.mName + "\\\" = \\\"" + parent.mName + "\\\"", obj.mValue);
+        int operId = logAssnOper("\"" + obj.mName + "\" = \"" + parent.mName + "\"", obj.mValue);
 
         logEdge(mAssnHistory[obj.mObjIndex], operId);
-        logEdge(mAssnHistory[parent.mObjIndex], operId, DOT_RED);
+        logEdge(mAssnHistory[parent.mObjIndex], operId, DOT_COPY_COLOR);
 
         logExecFlow(operId);
 
@@ -129,10 +130,10 @@ public:
     {
         assert(mDotNodesFile && mDotEdgesFile);
 
-        int operId = logAssnOper("\\\"" + obj.mName + "\\\" = \\\"" + parent.mName + "\\\"", obj.mValue);
+        int operId = logAssnOper("\"" + obj.mName + "\" = \"" + parent.mName + "\"", obj.mValue);
 
         logEdge(mAssnHistory[obj.mObjIndex], operId);
-        logEdge(mAssnHistory[parent.mObjIndex], operId, DOT_GREEN);
+        logEdge(mAssnHistory[parent.mObjIndex], operId, DOT_MOVE_COLOR);
 
         logExecFlow(operId);
 
@@ -143,7 +144,7 @@ public:
     {
         assert(mDotNodesFile && mDotEdgesFile);
 
-        int operId = logAssnOper("\\\"" + obj.mName + "\\\" " + oper +  "= \\\"" + parent.mName + "\\\"", obj.mValue);
+        int operId = logAssnOper("\"" + obj.mName + "\" " + oper +  "= \"" + parent.mName + "\"", obj.mValue);
 
         logEdge(mAssnHistory[obj.mObjIndex], operId);
         logEdge(mAssnHistory[parent.mObjIndex], operId);
@@ -245,7 +246,7 @@ protected:
 
     void logExecFlow(int currNodeIdx)
     {
-        fprintf(mDotEdgesFile, "%d -> %d [style=dotted, arrowhead=none, color=blue]\n",
+        fprintf(mDotEdgesFile, "%d -> %d [weight=10, style=dashed, arrowhead=none, color=blue]\n",
             mLastNodeIdx, currNodeIdx);
 
         mLastNodeIdx = currNodeIdx;
@@ -253,8 +254,12 @@ protected:
 
     int logDtor(const TrackedInt &obj)
     {
-        fprintf(mDotEdgesFile, "%d [shape=ellipse, label=\"EOL: \\\"%s\\\" (addr: %p idx: %d)\"]\n",
-            mOperCounter, obj.mName.c_str(), &obj, obj.mObjIndex);
+        fprintf(mDotNodesFile, "%d [shape=ellipse, label=\"EOL: \\\"%s\\\"\"]\n",
+            mOperCounter, obj.mName.c_str());
+
+        fprintf(mDotEdgesFile, "%d -> %d [style=dotted, arrowhead=none, color=%s]\n",
+            obj.mObjIndex, mOperCounter, DOT_LIFETIME_COLOR);
+
         return mOperCounter++;
     }
 
