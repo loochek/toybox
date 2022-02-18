@@ -407,3 +407,5 @@ Due to the tool, we managed to optimize unnecessary copying of temporary objects
 I would also like to note that the tool has a graphics mode. There is a graphical log of the first example:
 
 ![](images/log.png)
+
+Red arrows means copying, green ones means moving. Dotted lines shows lifetime of the object. Blue dashed line represents execution flow of the program.
