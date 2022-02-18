@@ -397,7 +397,7 @@ void testEntry()
 Total: 26 tmp object, 3 copies
 </pre>
 
-All additional temporary objects are moved instead of copying!
+Despite that there a lot of additional temporary objects, they are moved instead of copying!
 
 ## Conslusion
 
