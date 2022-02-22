@@ -7,8 +7,9 @@
 #include "BaseLogger.hpp"
 
 const char *DOT_COPY_COLOR     = "red";
-const char *DOT_MOVE_COLOR    = "chartreuse4";
-const char *DOT_LIFETIME_COLOR = "darkslategray";
+const char *DOT_MOVE_COLOR     = "chartreuse4";
+const char *DOT_EXECFLOW_COLOR = "blue";
+const char *DOT_LIFETIME_COLOR = "indianred4";
 
 const int GRAY_STEP = 40;
 const int OPER_ID_START = 1 << 30;
@@ -158,7 +159,7 @@ public:
     {
         mOperCounter = OPER_ID_START;
         mClusterCounter = 0;
-        mLastNodeIdx = 0;
+        mLastNodeIdx = -1;
 
         TrackedInt::sCopyCount = 0;
         TrackedInt::sTmpObjectsCount = 0;
@@ -176,7 +177,7 @@ public:
         }
 
         fprintf(mDotNodesFile, "digraph {\n");
-        fprintf(mDotNodesFile, "nodesep=1\n");
+        //fprintf(mDotNodesFile, "nodesep=1\n");
     }
 
     virtual void finish() override
@@ -184,6 +185,7 @@ public:
         if (!(mDotNodesFile && mDotEdgesFile))
             return;
         
+        logLegend();
         fprintf(mDotEdgesFile, "}\n");
 
         fclose(mDotNodesFile);
@@ -201,7 +203,7 @@ public:
 
 protected:
     DotLogger() : mDotNodesFile(nullptr), mDotEdgesFile(nullptr),
-        mCurrDepth(0), mOperCounter(OPER_ID_START), mClusterCounter(0), mLastNodeIdx(0) {}
+        mCurrDepth(0), mOperCounter(OPER_ID_START), mClusterCounter(0), mLastNodeIdx(-1) {}
 
     DotLogger(const DotLogger&) = delete;
     DotLogger& operator=(const DotLogger&) = delete;
@@ -246,8 +248,11 @@ protected:
 
     void logExecFlow(int currNodeIdx)
     {
-        fprintf(mDotEdgesFile, "%d -> %d [weight=10, style=dashed, arrowhead=none, color=blue]\n",
-            mLastNodeIdx, currNodeIdx);
+        if (mLastNodeIdx != -1)
+        {
+            fprintf(mDotEdgesFile, "%d -> %d [weight=10, style=dashed, arrowhead=none, color=%s]\n",
+                mLastNodeIdx, currNodeIdx, DOT_EXECFLOW_COLOR);
+        }
 
         mLastNodeIdx = currNodeIdx;
     }
@@ -257,10 +262,43 @@ protected:
         fprintf(mDotNodesFile, "%d [shape=ellipse, label=\"EOL: \\\"%s\\\"\"]\n",
             mOperCounter, obj.mName.c_str());
 
-        fprintf(mDotEdgesFile, "%d -> %d [style=dotted, arrowhead=none, color=%s]\n",
+        fprintf(mDotEdgesFile, "%d -> %d [style=dashed, arrowhead=none, color=%s]\n",
             obj.mObjIndex, mOperCounter, DOT_LIFETIME_COLOR);
 
         return mOperCounter++;
+    }
+
+    void logLegend()
+    {
+        fprintf(mDotEdgesFile,
+            "subgraph cluster_edge\n"
+            "{\n"
+            "node [shape=plaintext]\n"
+            "label=\"Legend\";\n"
+            "{\n"
+            "rank=same\n"
+            "key1 [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n"
+            "<tr><td align=\"right\" port=\"e1\">Operands/result</td></tr>\n"
+            "<tr><td align=\"right\" port=\"e2\">Copy</td></tr>\n"
+            "<tr><td align=\"right\" port=\"e3\">Move</td></tr>\n"
+            "<tr><td align=\"right\" port=\"e4\">Execution flow</td></tr>\n"
+            "<tr><td align=\"right\" port=\"e5\">Lifecycle</td></tr>\n"
+            "</table>>]\n"
+            "key2 [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n"
+            "<tr><td port=\"e1\">&nbsp;</td></tr>\n"
+            "<tr><td port=\"e2\">&nbsp;</td></tr>\n"
+            "<tr><td port=\"e3\">&nbsp;</td></tr>\n"
+            "<tr><td port=\"e4\">&nbsp;</td></tr>\n"
+            "<tr><td port=\"e5\">&nbsp;</td></tr>\n"
+            "</table>>]\n"
+            "}\n"
+            "key1:e1:e -> key2:e1:w\n"
+            "key1:e2:e -> key2:e2:w [color=%s]\n"
+            "key1:e3:e -> key2:e3:w [color=%s]\n"
+            "key1:e4:e -> key2:e4:w [style=dashed, arrowhead=none, color=%s]\n"
+            "key1:e5:e -> key2:e5:w [style=dashed, arrowhead=none, color=%s]\n"
+            "}\n",
+            DOT_COPY_COLOR, DOT_MOVE_COLOR, DOT_EXECFLOW_COLOR, DOT_LIFETIME_COLOR);
     }
 
 protected:
