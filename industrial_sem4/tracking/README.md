@@ -58,7 +58,7 @@ The tool tries to show variable names that it knows about. However, each object 
 
 Also let's take a look to the graphical variant:
 
-<img src="images/simple.png" width="400">
+![](images/simple.png)
 
 Rectangle node represents object, circle node is the operator and ellipse nodes represent the end of object's life. Nodes are ordered by program's execution flow. Copying, moving and objects relationship are represented with different edges.
 
