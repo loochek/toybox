@@ -57,7 +57,9 @@ It's quite straighforward. `[New]` means that a new object is created and initia
 The tool tries to show variable names that it knows about. However, each object has a unique number that allows to distinguish between temporary objects, as well as objects with the same name due to nested function calls. The unique number is displayed along with the name of the object and its address.
 
 Also let's take a look to the graphical variant:
-![](images/simple.png)
+
+![](images/simple.png =400x)
+
 Rectangle node represents object, circle node is the operator and ellipse nodes represent the end of object's life. Nodes are ordered by program's execution flow. Copying, moving and objects relationship are represented with different edges.
 
 Let's understand what is going on in the test program. First, the "a" variable is created. Then, temporary objects corresponding to the function call arguments are created to be passed to the function. In the function, the passed objects are used to evaluate the expression, during which a temporary object 4 is created and destroyed after evaluation. After that, the result is returned to the caller and all temporary objects are destroyed. At the end, "c" is created as the copy of "a".
