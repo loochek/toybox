@@ -464,7 +464,7 @@ Despite that there a lot of additional temporary objects, they are moved instead
 
 Due to the tool, we managed to optimize unnecessary copying of temporary objects. We also discovered behaviour of the compilier with disabled "copy elision" optimizations. Let's summarize the results:
 
-                      | Without move             | With move               |
---------------------- | ------------------------ | ----------------------- |
-Copy elision disabled | 🔴26 tmp objs, 20 copies | 🟡26 tmp objs, 3 copies |
-Copy elision enabled  | 🟠15 tmp objs, 9 copies  | 🟢15 tmp objs, 3 copies |
+|                       | Without move             | With move               |
+| --------------------- | ------------------------ | ----------------------- |
+| Copy elision disabled | 🔴26 tmp objs, 20 copies | 🟡26 tmp objs, 3 copies |
+| Copy elision enabled  | 🟠15 tmp objs, 9 copies  | 🟢15 tmp objs, 3 copies |
