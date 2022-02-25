@@ -175,8 +175,7 @@ void testEntry()
 Total: 15 tmp object, 9 copies
 </pre>
 
-Let's return to our program. We can see that temporary objects are destructed shortly after copying. It is not a problem in our case because copying of TrackedInt is cheap, but copying of objects like std::string can be expensive. In our program there are unnecessary copying during expressions like `a = 1` or `res3 = (a - b) * c` - 
-in the last example temporary object corresponding to evaluated `(a - b) * c` value is copied into `res3` and destructed immediately after this. In fact, the situation can be even worse - the compiler optimizes many temporary objects as part of optimizations which called "copy elision". Let's ask the compiler to disable these optimizations and look to the tool's output:
+Let's return to our program. We can see that temporary objects are destructed shortly after copying. It is not a problem in our case because copying of TrackedInt is cheap, but copying of objects like std::string can be expensive. For example, there are unnecessary copying during expression `a = 1` - `temp object 9`, which represents temporary value `1` is destroyed immediately after it's copying into `a`. Another example is `res3 = (a - b) * c` - `temp object 20`, which corresponds with evaluated `(a - b) * c` value is copied into `res3` and destructed immediately after this. In fact, the situation can be even worse - the compiler optimizes many temporary objects as part of optimizations which called "copy elision". Let's ask the compiler to disable these optimizations and look to the tool's output:
 <pre>
 void testEntry()
 {
@@ -276,7 +275,7 @@ void testEntry()
 Total: 26 tmp object, 20 copies
 </pre>
 
-Some additional temporary objects are created of lack of Return Value Optimization - compiler creates additional object during statements like `return TrackedInt(..)`. Also, passing temporary object to the function by value isn't optimized - there are additional unnecessary copy of temporary object.
+Some additional temporary objects are created of lack of Return Value Optimization - compiler creates additional object during statements like `return TrackedInt(..)` - for example, temporary objects 6, 8 and 9 are destroyed at the end of the functions, and additional unnecessary new objects are used to pass return value to the caller. Also, passing temporary object to the function by value isn't optimized - for example, temporary objects 1, 3 and 5 are additional unnecessary copies of temporary objects 0, 2 and 4 during the call of `test` function.
 
 Now let's look to the tool's output when TrackedInt have move constructor and move assignment operator:
 <pre>
