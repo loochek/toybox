@@ -274,7 +274,7 @@ protected:
             "subgraph cluster_edge\n"
             "{\n"
             "node [shape=plaintext]\n"
-            "label=\"Legend\";\n"
+            "label=\"Total: %d tmp objects, %d copies\"\n"
             "{\n"
             "rank=same\n"
             "key1 [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n"
@@ -298,6 +298,7 @@ protected:
             "key1:e4:e -> key2:e4:w [style=dashed, arrowhead=none, color=%s]\n"
             "key1:e5:e -> key2:e5:w [style=dashed, arrowhead=none, color=%s]\n"
             "}\n",
+            TrackedInt::sTmpObjectsCount, TrackedInt::sCopyCount,
             DOT_COPY_COLOR, DOT_MOVE_COLOR, DOT_EXECFLOW_COLOR, DOT_LIFETIME_COLOR);
     }
 

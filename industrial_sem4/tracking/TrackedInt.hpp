@@ -49,7 +49,9 @@ public:
 
     ~TrackedInt()
     {
+#ifndef LOG_DISABLE_DTORS
         BaseLogger::sLoggerInUse->dtor(*this);
+#endif
     }
 
     TrackedInt(const TrackedInt &other, const std::string &name = "") :
