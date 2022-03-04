@@ -7,6 +7,7 @@ In the previous article, we managed to optimize unnecessary copying of temporary
 ```c++
 TrackedInt square(TrackedInt arg)
 {
+    FUNC_ENTRY;
     return arg * arg;
 }
 
@@ -36,7 +37,7 @@ typename std::remove_reference<T>::type &&move(T &&arg)
 }
 ```
 
-Due to template type deduction rules and reference collapsing, it can be passed with both lvalues and rvalues. `std::remove_reference` is a special class that - suddenly - removes reference from type T.
+Due to template type deduction rules and reference collapsing, it can be passed with both lvalues and rvalues.
 
 So, previous example can be written like this
 ```c++
@@ -55,7 +56,9 @@ Just like we want - object is moved instead of copying.
 
 ## std::forward
 
-Sometimes we want to pass value to inner function - and so that rvalue is moved and lvalue is copied. For example, let's look at a function which creates the class instance with some given argument. In order to pass both lvalues and rvalues, we use an universal reference.
+Sometimes we want to pass the value to inner function - and so that rvalue is moved and lvalue is copied. There are the sample program which contains `createDynamic` function which creates the class instance with some given argument.
+
+In order to pass both lvalues and rvalues, we use an universal reference. There are three attempts to implement argument forwarding:
 
 ```c++
 template<typename T, typename Arg>
@@ -68,16 +71,12 @@ T *createDynamic(Arg &&arg)
     // case 3
     return new T(std::forward<Arg>(arg));
 }
-```
 
-There are a test program:
-
-```c++
 void testEntry()
 {
-    INT(lval, 10);
+    INT(lvalue, 10);
 
-    TrackedInt *lvalue_copy = createDynamic<TrackedInt>(lval);
+    TrackedInt *lvalue_copy = createDynamic<TrackedInt>(lvalue);
     TrackedInt *rvalue_copy = createDynamic<TrackedInt>(TrackedInt(10));
 }
 ```
@@ -86,13 +85,15 @@ void testEntry()
 | ------------------------------  | --------------------------------------- | ------------------------------- |
 | ![](../images/without_forward.png) | ![](../images/move_instead_forward.png) | ![](../images/with_forward.png) |
 
-Case 1 doesn't work as intented. Rvalue is not perfectly forwarded - it's copied inside `createDynamic`. This is because `arg` is lvalue - despite it's type.
+Thanks to the tool, we can in practice make sure that:
 
-Maybe use `move` (case 2)? It's a bad idea - lvalue which passed to `createDynamic` will be forcely moved in this case.
+- Case 1 doesn't work as intented. Rvalue is not perfectly forwarded - it's copied inside `createDynamic`. This is because `arg` is lvalue - despite it's type.
 
-Notice that we have `Arg` template parameter - it unfolds to `T` if rvalue is passed and to `T&` if lvalue is passed. So, we want to get a function, which would get an argument of type `A` and return `A&&` in the first case and `A&` in the second. It is what `std::forward` does in case 3. With forward, the test program works as intented - rvalue is moved, lvalue is moved:
+- Maybe use `move` (case 2)? It's a bad idea - lvalue which passed to `createDynamic` will be unexpectedly moved in this case.
 
-`std::forward`'s implementation looks something like this:
+- Notice that we have `Arg` template parameter - it unfolds to `T` if rvalue is passed and to `T&` if lvalue is passed. So, we want to get a function, which would get an argument of type `A` and return different type depending on what type does `Arg` unfolds to - `A&&` in the first case and `A&` in the second. It is what `std::forward` does in case 3 - note that `Arg` is used as template parameter. In case 3, the test program works as intented - rvalue is moved and lvalue is copied.
+
+`std::forward` implementation looks something like this:
 
 ```c++
 template<typename T>
@@ -102,4 +103,11 @@ T&& forward(T &arg)
 }
 ```
 
-The main point is `T&` as argument. In any case, argument is unfolded to `A&`. Cast type and return value type are unfolded like this - wheh `T` is `A` (it's true when rvalue is passed), `T&&` is `A&&`, and when `T` is `A&` (it's true when lvalue is passed), `T&&` is `A&&`. Anything works as we want.
+The main point is `T&` as argument. In any case, argument's `T&` is unfolded to `A&`. Cast type and return value type are unfolded like this - wheh `T` is `A` (it's true when rvalue is passed), `T&&` is `A&&`, and when `T` is `A&` (it's true when lvalue is passed), `T&&` is `A&` due to reference collapsing rules. So, we get the expected behavior.
+
+## Conclusion
+
+- We figured out how we can tell the compiler that we no longer need an object and it can be moved instead of copying.
+- We also dealt with the problem of a perfect forwarding.
+
+Over the course of two articles, we figured out what semantic ideas in modern C ++ allow us to get rid of the problem of unnecessary copies. Thus, we are getting closer to the "zero cost C++".

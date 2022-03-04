@@ -1,36 +1,71 @@
+//#define TRACKING_DISABLE_MOVE
+#define LOG_DISABLE_DTORS
+
 #include <cassert>
 #include <cstring>
-#define TRACKING_DISABLE_MOVE
 #include "TrackedInt.hpp"
 #include "HtmlLogger.hpp"
 #include "ConsoleLogger.hpp"
 #include "DotLogger.hpp"
 
-TrackedInt test(TrackedInt a, TrackedInt b, TrackedInt c)
+template<typename T>
+struct remove_reference
 {
-    FUNC_ENTRY;
-    return a + b + c;
+    typedef T type;
+};
+
+template<typename T>
+struct remove_reference<T&>
+{
+    typedef T type;
+};
+
+template<typename T>
+struct remove_reference<T&&>
+{
+    typedef T type;
+};
+
+template<typename T>
+typename remove_reference<T>::type &&move(T &&arg)
+{
+    return static_cast<typename remove_reference<T>::type&&>(arg);
 }
 
-void testEntry()
+template<typename T>
+T&& forward(T &arg)
+{
+    return static_cast<T&&>(arg);
+}
+
+template<typename T, typename Arg>
+T *createDynamic(Arg &&arg)
+{
+    return new T(std::forward<Arg>(arg));
+}
+
+TrackedInt square(TrackedInt arg)
 {
     FUNC_ENTRY;
-
-    INT(res1, test(TrackedInt(10), TrackedInt(20), TrackedInt(30)));
-
-    INT(a, 0);
-    INT(b, 0);
-    INT(c, 0);
-
-    a = 1;
-    b = 2;
-    c = 3;
-
-    INT(res2, test(a, b, c));
-
-    INT(res3, 0);
-    res3 = (a - b) * c;
+    return arg * arg;
 }
+
+// void testEntry()
+// {
+//     INT(a, 10);
+//     INT(result, square(std::move(a)));
+//     // a is not used anymore
+// }
+
+// void testEntry()
+// {
+//     FUNC_ENTRY;
+
+//     INT(lval, 10);
+
+//     TrackedInt *lvalue_copy = createDynamic<TrackedInt>(lval);
+//     TrackedInt *rvalue_copy = createDynamic<TrackedInt>(TrackedInt(10));
+// }
 
 int main(int argc, char *argv[])
 {       
