@@ -47,21 +47,26 @@ INT(result, square(std::move(a)));
 
 Let's make sure the move works:
 
-| Without move                 | With move                 |
-| ---------------------------  | ------------------------  |
+| Without move                    | With move                    |
+| ------------------------------  | ---------------------------- |
 | ![](../images/without_move.png) | ![](../images/with_move.png) |
 
 Just like we want - object is moved instead of copying.
 
 ## std::forward
 
-Sometimes we want to pass value to inner function - and so that rvalue is moved and lvalue is copied. For example, let's look at a function which creates the class instance with some given argument. In order to pass both lvalues and rvalues, we use an universal reference:
+Sometimes we want to pass value to inner function - and so that rvalue is moved and lvalue is copied. For example, let's look at a function which creates the class instance with some given argument. In order to pass both lvalues and rvalues, we use an universal reference.
 
 ```c++
 template<typename T, typename Arg>
 T *createDynamic(Arg &&arg)
 {
+    // case 1
     return new T(arg);
+    // case 2
+    return new T(std::move(arg));
+    // case 3
+    return new T(std::forward<Arg>(arg));
 }
 ```
 
@@ -77,26 +82,15 @@ void testEntry()
 }
 ```
 
-And... It doesn't work as intented. Rvalue is not perfectly forwarded - it's copied inside `createDynamic`:
-![](../images/without_forward.png)
+| Without anything                | Move                                    | Forward                         |
+| ------------------------------  | --------------------------------------- | ------------------------------- |
+| ![](../images/without_move.png) | ![](../images/move_instead_forward.png) | ![](../images/with_forward.png) |
 
-This is because `arg` is lvalue - despite it's type. Maybe use `move`? It's a bad idea - lvalue which passed to `createDynamic` will be forcely moved in this case:
+Case 1 doesn't work as intented. Rvalue is not perfectly forwarded - it's copied inside `createDynamic`. This is because `arg` is lvalue - despite it's type.
 
-![](../images/move_instead_forward.png)
+Maybe use `move` (case 2)? It's a bad idea - lvalue which passed to `createDynamic` will be forcely moved in this case.
 
-Notice that we have `Arg` template parameter - it unfolds to `T` if rvalue is passed and to `T&` if lvalue is passed. So, we want to get a function, which would get an argument of type `A` and return `A&&` in the first case and `A&` in the second. It is what `std::forward` does:
-
-```c++
-template<typename T, typename Arg>
-T *createDynamic(Arg &&arg)
-{
-    return new T(std::forward<Arg>(arg));
-}
-```
-
-Now the test program works as intented - rvalue is moved, lvalue is moved:
-
-![](../images/with_forward.png)
+Notice that we have `Arg` template parameter - it unfolds to `T` if rvalue is passed and to `T&` if lvalue is passed. So, we want to get a function, which would get an argument of type `A` and return `A&&` in the first case and `A&` in the second. It is what `std::forward` does in case 3. With forward, the test program works as intented - rvalue is moved, lvalue is moved:
 
 `std::forward`'s implementation looks something like this:
 
