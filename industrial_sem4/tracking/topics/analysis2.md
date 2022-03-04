@@ -84,7 +84,7 @@ void testEntry()
 
 | Without anything                | Move                                    | Forward                         |
 | ------------------------------  | --------------------------------------- | ------------------------------- |
-| ![](../images/without_move.png) | ![](../images/move_instead_forward.png) | ![](../images/with_forward.png) |
+| ![](../images/without_forward.png) | ![](../images/move_instead_forward.png) | ![](../images/with_forward.png) |
 
 Case 1 doesn't work as intented. Rvalue is not perfectly forwarded - it's copied inside `createDynamic`. This is because `arg` is lvalue - despite it's type.
 
