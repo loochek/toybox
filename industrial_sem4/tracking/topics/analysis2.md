@@ -49,7 +49,7 @@ Let's make sure the move works:
 
 | Without move                 | With move                 |
 | ---------------------------  | ------------------------  |
-| ![](images/without_move.png) | ![](images/with_move.png) |
+| ![](../images/without_move.png) | ![](../images/with_move.png) |
 
 Just like we want - object is moved instead of copying.
 
@@ -78,11 +78,11 @@ void testEntry()
 ```
 
 And... It doesn't work as intented. Rvalue is not perfectly forwarded - it's copied inside `createDynamic`:
-![](images/without_forward.png)
+![](../images/without_forward.png)
 
 This is because `arg` is lvalue - despite it's type. Maybe use `move`? It's a bad idea - lvalue which passed to `createDynamic` will be forcely moved in this case:
 
-![](images/move_instead_forward.png)
+![](../images/move_instead_forward.png)
 
 Notice that we have `Arg` template parameter - it unfolds to `T` if rvalue is passed and to `T&` if lvalue is passed. So, we want to get a function, which would get an argument of type `A` and return `A&&` in the first case and `A&` in the second. It is what `std::forward` does:
 
@@ -96,7 +96,7 @@ T *createDynamic(Arg &&arg)
 
 Now the test program works as intented - rvalue is moved, lvalue is moved:
 
-![](images/with_forward.png)
+![](../images/with_forward.png)
 
 `std::forward`'s implementation looks something like this:
 
