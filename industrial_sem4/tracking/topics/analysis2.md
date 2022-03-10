@@ -1,6 +1,6 @@
 # Move semantics - advanced
 
-In this article, I'm going to look at the less trivial aspects of move semantics. As an introduction, I recommend reading (this)[https://habr.com/ru/post/322132] article. In this article, I describe in detail only those moments which I had difficulties with.
+In this article, I'm going to look at the less trivial aspects of move semantics. As an introduction, I recommend reading [this](https://habr.com/ru/post/322132) article. In this article, I describe in detail only those moments which I had difficulties with.
 
 ## std::move
 
