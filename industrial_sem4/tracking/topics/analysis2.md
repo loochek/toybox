@@ -1,5 +1,7 @@
 # Move semantics - advanced
 
+In this article, I'm going to look at the less trivial aspects of move semantics. As an introduction, I recommend reading (this)[https://habr.com/ru/post/322132] article. In this article, I describe in detail only those moments which I had difficulties with.
+
 ## std::move
 
 In the previous article, we managed to optimize unnecessary copying of temporary objects. But there are situations when we, as programmers, see that same can be done with with non-temporary objects:
@@ -37,9 +39,14 @@ typename std::remove_reference<T>::type &&move(T &&arg)
 }
 ```
 
-Due to template type deduction rules and reference collapsing, it can be passed with both lvalues and rvalues.
+Here comes a special entity of the C++ called *universal reference*. It occurs when writing `T&&` for an **deducted** type in a template, so universal references can be lvalue or rvalue references depending on some conditions. This behavior is due to the following points:
+- When `T&&` used as template function argument, the type `T` is deducted to `A` or `A&`, depending on which object is passed to the function - rvalue or lvalue correspondingly.
+- Applying the first point, double references can occur in templates. *Reference collapsing* rule deals with it - in case of double reference, `&` is always wins. For example, `&& &` goes to `&`, and only `&& &&` goes to `&&`.
 
-So, previous example can be written like this
+In case of `move`, `T&& arg` is the universal reference - `T` unfolds to `T` if rvalue is passed or `T&` if lvalue is passed. So, due to reference collapsing, initial expression goes to `T&& arg` and `T& arg` correspondingly. `std::remove_reference` helps to get the raw type of `T` in any unfold case to create an rvalue reference type and cast argument to them.
+
+So, all this magic is to simplify the code and allow to pass both lvalue and rvalue. With `move`, previous example can be written like this:
+
 ```c++
 INT(a, 10);
 INT(result, square(std::move(a)));
@@ -56,7 +63,7 @@ Just like we want - object is moved instead of copying.
 
 ## std::forward
 
-Sometimes we want to pass the value to inner function - and so that rvalue is moved and lvalue is copied. There are the sample program which contains `createDynamic` function which creates the class instance with some given argument.
+Sometimes we want to pass the value to inner function - and so that rvalue is moved and lvalue is copied. This situation occurs, for example, in some wrappers like `make_unique`, where you need to pass arguments to the wrapper to construct an object inside. There are the sample program which contains `createDynamic` function which creates the class instance with some given argument.
 
 In order to pass both lvalues and rvalues, we use an universal reference. There are three attempts to implement argument forwarding:
 
@@ -91,7 +98,7 @@ Thanks to the tool, we can in practice make sure that:
 
 - Maybe use `move` (case 2)? It's a bad idea - lvalue which passed to `createDynamic` will be unexpectedly moved in this case.
 
-- Notice that we have `Arg` template parameter - it unfolds to `T` if rvalue is passed and to `T&` if lvalue is passed. So, we want to get a function, which would get an argument of type `A` and return different type depending on what type does `Arg` unfolds to - `A&&` in the first case and `A&` in the second. It is what `std::forward` does in case 3 - note that `Arg` is used as template parameter. In case 3, the test program works as intented - rvalue is moved and lvalue is copied.
+- Remember that we have `Arg` template parameter - it unfolds to `T` if rvalue is passed and to `T&` if lvalue is passed. So, we want to get a function, which would get an argument of type `A` and return different type depending on what type does `Arg` unfolds to - `A&&` in the first case and `A&` in the second. It is what `std::forward` does in case 3 - note that `Arg` is used as template parameter. In case 3, the test program works as intented - rvalue is moved and lvalue is copied.
 
 `std::forward` implementation looks something like this:
 
@@ -103,7 +110,7 @@ T&& forward(T &arg)
 }
 ```
 
-The main point is `T&` as argument. In any case, argument's `T&` is unfolded to `A&`. Cast type and return value type are unfolded like this - wheh `T` is `A` (it's true when rvalue is passed), `T&&` is `A&&`, and when `T` is `A&` (it's true when lvalue is passed), `T&&` is `A&` due to reference collapsing rules. So, we get the expected behavior.
+There is just reference collapsing and nothing more. `T& arg` is unfolded to `A& arg` in any case. When `T` is `A`, `T&&` goes to `A&&`, and when `T` is `A&`, `T&&` goes to `A&`. So, we get the expected behavior.
 
 ## Conclusion
 
