@@ -17,7 +17,7 @@ void testEntry()
 {
     INT(a, 10);
     INT(result, square(a));
-    // a is not used anymore
+    // a not used anymore
 }
 ```
 
@@ -26,7 +26,6 @@ Of course, compiler can't move `a` automatically - we must tell the compiler tha
 ```c++
 INT(a, 10);
 INT(result, static_cast<TrackedInt&&>(square(a)));
-// a is can't be used anymore
 ```
 
 C++ standart library offers us `std::move` - special function that casts anything to rvalue reference. It's implementation looks something like this:
@@ -50,7 +49,6 @@ So, all this magic is to simplify the code and allow to pass both lvalue and rva
 ```c++
 INT(a, 10);
 INT(result, square(std::move(a)));
-// a is can't be used anymore
 ```
 
 Let's make sure the move works:
@@ -59,7 +57,18 @@ Let's make sure the move works:
 | ------------------------------  | ---------------------------- |
 | ![](../images/without_move.png) | ![](../images/with_move.png) |
 
-Just like we want - object is moved instead of copying.
+Just like we want - object is moved instead of copying. 
+
+*Important:* note than moved object is empty or even invalidated after moving, so usually it shouldn't be used anymore. We can verify this by printing the value of the our variable before and after the move:
+
+```c++
+INT(a, 10);
+std::cout << a << std::endl;
+INT(result, square(std::move(a)));
+std::cout << a << std::endl;
+```
+
+In the second case, `a`'s value is zero. In this example, this is an artificial behavior of the `TrackedInt`, but, for example, if a `std::vector` is moved, it becomes an empty vector.
 
 ## std::forward
 

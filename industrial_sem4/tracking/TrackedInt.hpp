@@ -74,10 +74,11 @@ public:
 
 #ifndef TRACKING_DISABLE_MOVE
     TrackedInt(TrackedInt &&other, const std::string &name = "") :
-        mValue(other.mValue),
         mObjIndex(sObjIndexCount++),
         mName(name)
     {
+        mValue = other.mValue;
+        other.mValue = 0; // Just to demonstrate
         handleTemp(mName);
         BaseLogger::sLoggerInUse->moveCtor(*this, other);
     }
@@ -85,6 +86,7 @@ public:
     TrackedInt &operator=(TrackedInt &&other)
     {
         mValue = other.mValue;
+        other.mValue = 0; // Just to demonstrate
         BaseLogger::sLoggerInUse->moveAssignment(*this, other);
         return *this;
     }
@@ -118,6 +120,11 @@ public:
     TRACKEDINT_COMP_OPERATOR(<=)
     TRACKEDINT_COMP_OPERATOR(>=)
     TRACKEDINT_COMP_OPERATOR(!=)
+
+    operator int()
+    {
+        return mValue;
+    }
 
 protected:
     TrackedInt(int value, const std::string &oper, const TrackedInt &parent) :
