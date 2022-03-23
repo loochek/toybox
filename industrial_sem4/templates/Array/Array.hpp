@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include "StaticStorage.hpp"
 #include "DynamicStorage.hpp"
+#include "ChunkedStorage.hpp"
 
 template
 <

@@ -2,9 +2,12 @@
 #include <cassert>
 #include "Array.hpp"
 
+#define TestStorage DynamicStorage
+//#define TestStorage ChunkedStorage
+
 void test1()
 {
-    Array<Array<int, StaticStorage, 10>> arr;
+    Array<Array<int, StaticStorage, 10>, TestStorage> arr;
 
     for (int i = 0; i < 100; i++)
     {
@@ -23,7 +26,7 @@ void test1()
 
     //--------------------------------------------------------
 
-    const Array<Array<int, StaticStorage, 10>> copy = arr;
+    const Array<Array<int, StaticStorage, 10>, TestStorage> copy = arr;
     assert(copy.Size() == 100);
 
     for (int i = 0; i < 100; i++)
@@ -34,7 +37,7 @@ void test1()
 
     //--------------------------------------------------------
 
-    const Array<Array<int, StaticStorage, 10>> move = std::move(arr);
+    const Array<Array<int, StaticStorage, 10>, TestStorage> move = std::move(arr);
     assert(move.Size() == 100);
     assert(arr.Size() == 0);
 
@@ -44,8 +47,8 @@ void test1()
             assert(move.At(i).At(j) == i + j);
     }
 
-    Array<Array<int, StaticStorage, 10>> copy2 = move;
-    Array<Array<int, StaticStorage, 10>> copy3 = move;
+    Array<Array<int, StaticStorage, 10>, TestStorage> copy2 = move;
+    Array<Array<int, StaticStorage, 10>, TestStorage> copy3 = move;
     assert(copy2.Size() == 100);
     assert(copy3.Size() == 100);
 
@@ -83,7 +86,7 @@ void test1()
 
 void test2()
 {
-    Array<Array<int>> arr(100);
+    Array<Array<int, TestStorage>, TestStorage> arr(100);
     assert(arr.Size() == 100);
 
     for (int i = 0; i < 100; i++)
@@ -108,7 +111,7 @@ void test2()
 
 void test3()
 {
-    Array<Array<int, StaticStorage, 10>> arr;
+    Array<Array<int, StaticStorage, 10>, TestStorage> arr;
 
     for (int i = 0; i < 100; i++)
     {
@@ -126,7 +129,7 @@ void test3()
 
 void test4()
 {
-    Array<int> arr(4096);
+    Array<int, TestStorage> arr(4096);
 
     for (int j = 0; j < 128; j++)
     {
@@ -147,7 +150,7 @@ void test4()
 
 void test5()
 {
-    Array<bool> arr(100);
+    Array<bool, TestStorage> arr(100);
     assert(arr.Size() == 100);
     
     for (int i = 0; i < 100; i++)
@@ -168,13 +171,13 @@ void test5()
 
 void test6()
 {
-    const Array<int> arr = {1, 2, 3, 4, 5};
+    const Array<int, TestStorage> arr = {1, 2, 3, 4, 5};
     assert(arr.Size() == 5);
 
     for (int i = 0; i < 5; i++)
         assert(arr.At(i) == i + 1);
 
-    Array<int> arr2 = arr;
+    Array<int, TestStorage> arr2 = arr;
     assert(arr2.Size() == 5);
 
     for (int i = 0; i < 5; i++)
@@ -191,13 +194,13 @@ void test6()
 
 void test7()
 {
-    const Array<bool> arr = {0, 1, 0, 1, 0};
+    const Array<bool, TestStorage> arr = {0, 1, 0, 1, 0};
     assert(arr.Size() == 5);
 
     for (int i = 0; i < 5; i++)
         assert(arr.At(i) == i % 2);
 
-    Array<bool> arr2 = arr;
+    Array<bool, TestStorage> arr2 = arr;
     assert(arr2.Size() == 5);
 
     for (int i = 0; i < 5; i++)

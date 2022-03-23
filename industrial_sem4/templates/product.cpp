@@ -10,47 +10,40 @@ public:
         static_assert(sizeof...(values) == N, "MathVec wrong initialization size");
     }
 
-public:
+    const int operator*(const MathVec<N> &other) const
+    {
+        return DotHelper<N, N-1>::dot(*this, other);
+    }
+
+    const int operator[](size_t index) const
+    {
+        return coords[index];
+    }
+
+private:
     int coords[N];
-};
 
-// template<int N>
-// int scalarProduct(const MathVec<N> &a, const MathVec<N> &b)
-// {
-//     return 
-// }
-
-// template<typename... T>
-// int scalarProduct(int a, int b, const T&... other)
-// {
-//     return a * b + scalarProduct(other...);
-// }
-
-template<int N, int M>
-class lol
-{
-public:
-    static int scalarProduct2Int(const MathVec<N> &a, const MathVec<N> &b)
+private:
+    template<int N1, int COORD>
+    class DotHelper
     {
-        return a.coords[M] * b.coords[M] + lol<N, M-1>::scalarProduct2Int(a, b);
-    }
-};
+    public:
+        static int dot(const MathVec<N1> &a, const MathVec<N1> &b)
+        {
+            return a[COORD] * b[COORD] + DotHelper<N1, COORD-1>::dot(a, b);
+        }
+    };
 
-template<int N>
-class lol<N, 0>
-{
-public:
-    static int scalarProduct2Int(const MathVec<N> &a, const MathVec<N> &b)
+    template<int N1>
+    class DotHelper<N1, 0>
     {
-        return a.coords[0] * b.coords[0];
-    }
+    public:
+        static int dot(const MathVec<N1> &a, const MathVec<N1> &b)
+        {
+            return a[0] * b[0];
+        }
+    };
 };
-
-template<int N>
-int scalarProduct2(const MathVec<N> &a, const MathVec<N> &b)
-{
-    return lol<N, N-1>::scalarProduct2Int(a, b);
-}
 
 int main()
 {
@@ -60,5 +53,5 @@ int main()
     MathVec<3> a(1, 2, 3);
     MathVec<3> b(x, y, z);
 
-    printf("%d\n", scalarProduct2(a, b));
+    printf("%d\n", a * b);
 }

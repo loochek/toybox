@@ -5,11 +5,11 @@
 #include <cassert>
 #include <stdexcept>
 
-const size_t MINIMAL_CAPACITY = 16;
-
-template<typename T, size_t N>
+template<typename T, size_t N = 0>
 class DynamicStorage
 {
+    static constexpr size_t MINIMAL_CAPACITY = 16;
+    
 public:
     DynamicStorage() :
         data_(nullptr), size_(0), capacity_(0)
@@ -50,6 +50,9 @@ public:
             data_[i].~T();
 
         free(data_);
+        data_ = nullptr;
+        size_ = 0;
+        capacity_ = 0;
     }
 
     DynamicStorage &operator=(const DynamicStorage &other)
@@ -159,7 +162,7 @@ private:
     {
         assert((new_capacity != 0) && !(new_capacity & (new_capacity - 1)));
         assert(new_capacity >= size_);
-        new_capacity = std::max(new_capacity, MINIMAL_CAPACITY);
+        new_capacity = std::max(new_capacity, size_t(MINIMAL_CAPACITY));
 
         T* new_data = (T*)calloc(new_capacity, sizeof(T));
         if (new_data == nullptr)
