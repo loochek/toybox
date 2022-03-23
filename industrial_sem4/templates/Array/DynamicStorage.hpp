@@ -59,6 +59,7 @@ public:
         for (ssize_t i = 0; i < other.size_; i++)
             new (&data_[i]) T(other.data_[i]);
 
+        size_ = other.size_;
         return *this;
     }
 
@@ -78,7 +79,7 @@ public:
 
     T& Access(size_t index)
     {
-        return const_cast<T&>(static_cast<const DynamicStorage*>(this)->operator[](index));
+        return const_cast<T&>(static_cast<const DynamicStorage*>(this)->Access(index));
     }
 
     const T& Access(size_t index) const
