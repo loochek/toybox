@@ -2,12 +2,48 @@
 #include <cassert>
 #include "Array.hpp"
 
+class ComplexInt
+{
+public:
+    ComplexInt() : ComplexInt(0) {}
+    ComplexInt(int value) : value_(value), dummy_(malloc(1024)) {}
+    ComplexInt(const ComplexInt &other) : ComplexInt(other.value_) {}
+
+    operator int() const
+    {
+        return value_;
+    }
+
+    ComplexInt &operator=(int value)
+    {
+        value_ = value;
+        return *this;
+    }
+
+    ComplexInt &operator=(const ComplexInt &other)
+    {
+        value_ = other.value_;
+        return *this;
+    }
+
+    ~ComplexInt()
+    {
+        free(dummy_);
+    }
+
+private:
+    int value_;
+    void *dummy_;
+};
+
 #define TestStorage DynamicStorage
 //#define TestStorage ChunkedStorage
 
+using TestType = ComplexInt;
+
 void test1()
 {
-    Array<Array<int, StaticStorage, 10>, TestStorage> arr;
+    Array<Array<TestType, StaticStorage, 10>, TestStorage> arr;
 
     for (int i = 0; i < 100; i++)
     {
@@ -26,7 +62,7 @@ void test1()
 
     //--------------------------------------------------------
 
-    const Array<Array<int, StaticStorage, 10>, TestStorage> copy = arr;
+    const Array<Array<TestType, StaticStorage, 10>, TestStorage> copy = arr;
     assert(copy.Size() == 100);
 
     for (int i = 0; i < 100; i++)
@@ -37,7 +73,7 @@ void test1()
 
     //--------------------------------------------------------
 
-    const Array<Array<int, StaticStorage, 10>, TestStorage> move = std::move(arr);
+    const Array<Array<TestType, StaticStorage, 10>, TestStorage> move = std::move(arr);
     assert(move.Size() == 100);
     assert(arr.Size() == 0);
 
@@ -47,8 +83,8 @@ void test1()
             assert(move.At(i).At(j) == i + j);
     }
 
-    Array<Array<int, StaticStorage, 10>, TestStorage> copy2 = move;
-    Array<Array<int, StaticStorage, 10>, TestStorage> copy3 = move;
+    Array<Array<TestType, StaticStorage, 10>, TestStorage> copy2 = move;
+    Array<Array<TestType, StaticStorage, 10>, TestStorage> copy3 = move;
     assert(copy2.Size() == 100);
     assert(copy3.Size() == 100);
 
@@ -86,7 +122,7 @@ void test1()
 
 void test2()
 {
-    Array<Array<int, TestStorage>, TestStorage> arr(100);
+    Array<Array<TestType, TestStorage>, TestStorage> arr(100);
     assert(arr.Size() == 100);
 
     for (int i = 0; i < 100; i++)
@@ -111,7 +147,7 @@ void test2()
 
 void test3()
 {
-    Array<Array<int, StaticStorage, 10>, TestStorage> arr;
+    Array<Array<TestType, StaticStorage, 10>, TestStorage> arr;
 
     for (int i = 0; i < 100; i++)
     {
@@ -129,7 +165,7 @@ void test3()
 
 void test4()
 {
-    Array<int, TestStorage> arr(4096);
+    Array<TestType, TestStorage> arr(4096);
 
     for (int j = 0; j < 128; j++)
     {
@@ -171,13 +207,13 @@ void test5()
 
 void test6()
 {
-    const Array<int, TestStorage> arr = {1, 2, 3, 4, 5};
+    const Array<TestType, TestStorage> arr = {1, 2, 3, 4, 5};
     assert(arr.Size() == 5);
 
     for (int i = 0; i < 5; i++)
         assert(arr.At(i) == i + 1);
 
-    Array<int, TestStorage> arr2 = arr;
+    Array<TestType, TestStorage> arr2 = arr;
     assert(arr2.Size() == 5);
 
     for (int i = 0; i < 5; i++)

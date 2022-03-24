@@ -83,6 +83,16 @@ public:
         return storage_.Access(index);
     }
 
+    T *Data()
+    {
+        return storage_.Data();
+    }
+
+    const T *Data() const
+    {
+        return storage_.Data();
+    }
+
     void PushBack(T elem)
     {
         storage_.ReserveBack() = std::move(elem);

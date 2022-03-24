@@ -91,6 +91,16 @@ public:
         return data_[index];
     }
 
+    T *Data()
+    {
+        return data_;
+    }
+
+    const T *Data() const
+    {
+        return data_;
+    }
+
     T& ReserveBack()
     {
         Reserve(size_ + 1);

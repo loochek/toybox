@@ -84,13 +84,13 @@ public:
     T& Access(size_t index)
     {
         assert(index < size_);
-        return static_cast<ChunkedStorage*>(this)->AccessIntl(index);
+        return AccessIntl(index);
     }
 
     const T& Access(size_t index) const
     {
         assert(index < size_);
-        return static_cast<const ChunkedStorage*>(this)->AccessIntl(index);
+        return AccessIntl(index);
     }
 
     T& ReserveBack()
@@ -160,9 +160,6 @@ private:
 
         if (chunks <= capacity_)
         {
-            for (ssize_t i = chunks * CHUNK_SIZE; i < size_; i++)
-                AccessIntl(i).~T();
-
             for (ssize_t ch = chunks; ch < capacity_; ch++)
                 free(chunks_.Access(ch));
 
