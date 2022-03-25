@@ -9,8 +9,8 @@
 template
 <
     typename T,
-    template<typename T_, size_t N_> class Storage = DynamicStorage,
-    size_t N = 0
+    template<typename T_, size_t SIZE_> class Storage = DynamicStorage,
+    size_t SIZE = 0
 >
 class Array
 {
@@ -140,15 +140,15 @@ public:
     }
 
 private:
-    Storage<T, N> storage_;
+    Storage<T, SIZE> storage_;
 };
 
 template
 <
-    template<typename T_, size_t N_> class Storage,
-    size_t N
+    template<typename T_, size_t SIZE_> class Storage,
+    size_t SIZE
 >
-class Array<bool, Storage, N>
+class Array<bool, Storage, SIZE>
 {
     class Reference;
     static constexpr size_t BITS = 8; // Bits count in uint8_t
@@ -202,42 +202,42 @@ public:
         return *this;
     }
 
-    Array<bool, Storage, N>::Reference operator[](size_t index)
+    Array<bool, Storage, SIZE>::Reference operator[](size_t index)
     {
         size_t bit_number = BITS - index % BITS - 1;
-        return Array<bool, Storage, N>::Reference(storage_.Access(index / BITS), bit_number);
+        return Array<bool, Storage, SIZE>::Reference(storage_.Access(index / BITS), bit_number);
     }
 
-    const Array<bool, Storage, N>::Reference operator[](size_t index) const
+    const Array<bool, Storage, SIZE>::Reference operator[](size_t index) const
     {
         size_t bit_number = BITS - index % BITS - 1;
-        return Array<bool, Storage, N>::Reference(const_cast<uint8_t&>(storage_.Access(index / BITS)), bit_number);
+        return Array<bool, Storage, SIZE>::Reference(const_cast<uint8_t&>(storage_.Access(index / BITS)), bit_number);
     }
 
-    Array<bool, Storage, N>::Reference Back()
+    Array<bool, Storage, SIZE>::Reference Back()
     {
-        return static_cast<Array*>(this)->operator[](bool_size_ - 1);
+        return operator[](bool_size_ - 1);
     }
 
-    const Array<bool, Storage, N>::Reference Back() const
+    const Array<bool, Storage, SIZE>::Reference Back() const
     {
-        return static_cast<const Array*>(this)->operator[](bool_size_ - 1);
+        return operator[](bool_size_ - 1);
     }
 
-    Array<bool, Storage, N>::Reference At(size_t index)
+    Array<bool, Storage, SIZE>::Reference At(size_t index)
     {
         if (index >= bool_size_)
             throw std::out_of_range("Array index out of range");
 
-        return static_cast<Array*>(this)->operator[](index);
+        return operator[](index);
     }
 
-    const Array<bool, Storage, N>::Reference At(size_t index) const
+    const Array<bool, Storage, SIZE>::Reference At(size_t index) const
     {
         if (index >= bool_size_)
             throw std::out_of_range("Array index out of range");
 
-        return static_cast<const Array*>(this)->operator[](index);
+        return operator[](index);
     }
 
     void PushBack(bool elem)
@@ -245,7 +245,7 @@ public:
         if (bool_size_ % BITS == 0)
             storage_.ReserveBack() = 0;
 
-        this->operator[](bool_size_++) = elem;
+        operator[](bool_size_++) = elem;
     }
 
     void EmplaceBack(bool elem)
@@ -324,7 +324,7 @@ private:
     }
 
 private:
-    Storage<uint8_t, CalculateSpace(N)> storage_;
+    Storage<uint8_t, CalculateSpace(SIZE)> storage_;
     size_t bool_size_;
 };
 

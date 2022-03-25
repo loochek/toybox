@@ -4,37 +4,37 @@
 #include <cstddef>
 #include <cassert>
 
-template<typename T, size_t N>
+template<typename T, size_t SIZE>
 class StaticStorage
 {
 public:
     StaticStorage() : data_((T*)buffer_)
     {
-        for (ssize_t i = 0; i < N; i++)
+        for (ssize_t i = 0; i < SIZE; i++)
             new (&data_[i]) T();
     }
 
     StaticStorage(const StaticStorage &other) : data_((T*)buffer_)
     {
-        for (ssize_t i = 0; i < N; i++)
+        for (ssize_t i = 0; i < SIZE; i++)
             new (&data_[i]) T(other.data_[i]);
     }
 
     StaticStorage(StaticStorage &&other) : data_((T*)buffer_)
     {
-        for (ssize_t i = 0; i < N; i++)
+        for (ssize_t i = 0; i < SIZE; i++)
             new (&data_[i]) T(std::move(other.data_[i]));
     }
 
     ~StaticStorage()
     {
-        for (ssize_t i = 0; i < N; i++)
+        for (ssize_t i = 0; i < SIZE; i++)
             data_[i].~T();
     }
 
     StaticStorage &operator=(const StaticStorage &other)
     {
-        for (ssize_t i = 0; i < N; i++)
+        for (ssize_t i = 0; i < SIZE; i++)
             data_[i] = other.data_[i];
 
         return *this;
@@ -42,7 +42,7 @@ public:
 
     StaticStorage &operator=(StaticStorage &&other)
     {
-        for (ssize_t i = 0; i < N; i++)
+        for (ssize_t i = 0; i < SIZE; i++)
             data_[i] = std::move(other.data_[i]);
 
         return *this;
@@ -55,7 +55,7 @@ public:
 
     const T& Access(size_t index) const
     {
-        assert(index < N);
+        assert(index < SIZE);
         return data_[index];
     }
 
@@ -71,12 +71,12 @@ public:
 
     const size_t Size() const
     {
-        return N;
+        return SIZE;
     }
 
 private:
     T *data_;
-    uint8_t buffer_[N * sizeof(T)];
+    uint8_t buffer_[SIZE * sizeof(T)];
 };
 
 #endif
