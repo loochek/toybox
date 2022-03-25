@@ -1,18 +1,18 @@
 #include <cstdio>
 
-template<int N>
+template<int DIM>
 class MathVec
 {
 public:
     template<typename... T>
     MathVec(T... values) : coords {values...}
     {
-        static_assert(sizeof...(values) == N, "MathVec wrong initialization size");
+        static_assert(sizeof...(values) == DIM, "MathVec wrong initialization size");
     }
 
-    const int operator*(const MathVec<N> &other) const
+    const int operator*(const MathVec<DIM> &other) const
     {
-        return DotHelper<N, N-1>::dot(*this, other);
+        return DotHelper<DIM, DIM-1>::dot(*this, other);
     }
 
     const int operator[](size_t index) const
@@ -21,24 +21,24 @@ public:
     }
 
 private:
-    int coords[N];
+    int coords[DIM];
 
 private:
-    template<int N1, int COORD>
+    template<int DIM_, int COORD>
     class DotHelper
     {
     public:
-        static int dot(const MathVec<N1> &a, const MathVec<N1> &b)
+        static int dot(const MathVec<DIM_> &a, const MathVec<DIM_> &b)
         {
-            return a[COORD] * b[COORD] + DotHelper<N1, COORD-1>::dot(a, b);
+            return a[COORD] * b[COORD] + DotHelper<DIM_, COORD-1>::dot(a, b);
         }
     };
 
-    template<int N1>
-    class DotHelper<N1, 0>
+    template<int DIM_>
+    class DotHelper<DIM_, 0>
     {
     public:
-        static int dot(const MathVec<N1> &a, const MathVec<N1> &b)
+        static int dot(const MathVec<DIM_> &a, const MathVec<DIM_> &b)
         {
             return a[0] * b[0];
         }
