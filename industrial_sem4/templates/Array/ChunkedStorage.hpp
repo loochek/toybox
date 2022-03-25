@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cassert>
 #include <stdexcept>
+#include <new>
 #include "DynamicStorage.hpp"
 
 template<typename T, size_t SIZE = 0>
@@ -51,7 +52,7 @@ public:
             AccessIntl(i).~T();
 
         for (ssize_t i = 0; i < capacity_; i++)
-            free(chunks_.Access(i));
+            ::operator delete(chunks_.Access(i));
 
         size_ = 0;
         capacity_ = 0;
@@ -161,7 +162,7 @@ private:
         if (chunks <= capacity_)
         {
             for (ssize_t ch = chunks; ch < capacity_; ch++)
-                free(chunks_.Access(ch));
+                ::operator delete(chunks_.Access(ch));
 
             chunks_.Resize(capacity_);
         }
@@ -170,7 +171,7 @@ private:
             chunks_.Resize(chunks);
             for (ssize_t ch = capacity_; ch < chunks; ch++)
             {
-                T *chunk = (T*)calloc(CHUNK_SIZE, sizeof(T));;
+                T *chunk = (T*)::operator new(CHUNK_SIZE * sizeof(T));
                 if (chunk == nullptr)
                     throw std::bad_alloc();
 

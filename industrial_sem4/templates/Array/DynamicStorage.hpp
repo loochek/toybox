@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cassert>
 #include <stdexcept>
+#include <new>
 
 template<typename T, size_t SIZE = 0>
 class DynamicStorage
@@ -49,7 +50,7 @@ public:
         for (size_t i = 0; i < size_; i++)
             data_[i].~T();
 
-        free(data_);
+        ::operator delete(data_);
         data_ = nullptr;
         size_ = 0;
         capacity_ = 0;
@@ -174,7 +175,8 @@ private:
         assert(new_capacity >= size_);
         new_capacity = std::max(new_capacity, size_t(MINIMAL_CAPACITY));
 
-        T* new_data = (T*)calloc(new_capacity, sizeof(T));
+        
+        T* new_data = (T*)::operator new(new_capacity * sizeof(T));
         if (new_data == nullptr)
             throw std::bad_alloc();
 
@@ -185,7 +187,7 @@ private:
         }
 
         if (data_ != nullptr)
-            free(data_);
+            ::operator delete(data_);
 
         data_ = new_data;
         capacity_ = new_capacity;
