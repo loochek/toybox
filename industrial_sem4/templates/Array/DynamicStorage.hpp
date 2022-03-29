@@ -177,8 +177,6 @@ private:
 
         
         T* new_data = (T*)::operator new(new_capacity * sizeof(T));
-        if (new_data == nullptr)
-            throw std::bad_alloc();
 
         for (ssize_t i = 0; i < size_; i++)
         {

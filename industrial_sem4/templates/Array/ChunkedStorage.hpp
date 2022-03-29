@@ -172,9 +172,6 @@ private:
             for (ssize_t ch = capacity_; ch < chunks; ch++)
             {
                 T *chunk = (T*)::operator new(CHUNK_SIZE * sizeof(T));
-                if (chunk == nullptr)
-                    throw std::bad_alloc();
-
                 chunks_.Access(ch) = chunk;
             }
         }
