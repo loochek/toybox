@@ -10,20 +10,58 @@ class StaticStorage
 public:
     StaticStorage() : data_((T*)buffer_)
     {
-        for (ssize_t i = 0; i < SIZE; i++)
-            new (&data_[i]) T();
+        ssize_t i = 0;
+
+        try
+        {
+            for (; i < SIZE; i++)
+                new (&data_[i]) T();
+        }
+        catch (...)
+        {
+            for (i--; i >= 0; i--)
+                data_[i].~T();
+
+            throw;
+        }
     }
 
     StaticStorage(const StaticStorage &other) : data_((T*)buffer_)
     {
-        for (ssize_t i = 0; i < SIZE; i++)
-            new (&data_[i]) T(other.data_[i]);
+        ssize_t i = 0;
+
+        try
+        {
+            for (; i < SIZE; i++)
+                new (&data_[i]) T(other.data_[i]);
+        }
+        catch (...)
+        {
+            for (i--; i >= 0; i--)
+                data_[i].~T();
+
+            throw;
+        }
     }
 
     StaticStorage(StaticStorage &&other) : data_((T*)buffer_)
     {
-        for (ssize_t i = 0; i < SIZE; i++)
-            new (&data_[i]) T(std::move(other.data_[i]));
+        ssize_t i = 0;
+
+        try
+        {
+            for (; i < SIZE; i++)
+                new (&data_[i]) T(std::move_if_noexcept(other.data_[i]));
+        }
+        catch (...)
+        {
+            // Not reachable if T's move constructor is noexcept
+
+            for (i--; i >= 0; i--)
+                data_[i].~T();
+
+            throw;
+        }
     }
 
     ~StaticStorage()
@@ -34,42 +72,70 @@ public:
 
     StaticStorage &operator=(const StaticStorage &other)
     {
-        for (ssize_t i = 0; i < SIZE; i++)
-            data_[i] = other.data_[i];
+        ssize_t i = 0;
+        ~StaticStorage();
+
+        try
+        {
+            for (; i < SIZE; i++)
+                new (&data_[i]) T(other.data_[i]);
+        }
+        catch (...)
+        {
+            for (i--; i >= 0; i--)
+                data_[i].~T();
+
+            throw;
+        }
 
         return *this;
     }
 
     StaticStorage &operator=(StaticStorage &&other)
     {
-        for (ssize_t i = 0; i < SIZE; i++)
-            data_[i] = std::move(other.data_[i]);
+        ssize_t i = 0;
+        ~StaticStorage();
 
+        try
+        {
+            for (; i < SIZE; i++)
+                new (&data_[i]) T(std::move_if_noexcept(other.data_[i]));
+        }
+        catch (...)
+        {
+            // Not reachable if T's move constructor is noexcept
+
+            for (i--; i >= 0; i--)
+                data_[i].~T();
+
+            throw;
+        }
+        
         return *this;
     }
 
-    T& Access(size_t index)
+    T& Access(size_t index) noexcept
     {
         return const_cast<T&>(static_cast<const StaticStorage*>(this)->Access(index));
     }
 
-    const T& Access(size_t index) const
+    const T& Access(size_t index) const noexcept
     {
         assert(index < SIZE);
         return data_[index];
     }
 
-    T *Data()
+    T *Data() noexcept
     {
         return data_;
     }
 
-    const T *Data() const
+    const T *Data() const noexcept
     {
         return data_;
     }
 
-    const size_t Size() const
+    const size_t Size() const noexcept
     {
         return SIZE;
     }

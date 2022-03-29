@@ -12,7 +12,7 @@ class DynamicStorage
     static constexpr size_t MINIMAL_CAPACITY = 16;
     
 public:
-    DynamicStorage() :
+    DynamicStorage() noexcept :
         data_(nullptr), size_(0), capacity_(0)
     {
     }
@@ -21,8 +21,21 @@ public:
         data_(nullptr), size_(0), capacity_(0)
     {
         Reserve(size);
-        for (ssize_t i = 0; i < size; i++)
-            new (&data_[i]) T();
+        ssize_t i = 0;
+        
+        try
+        {
+            for (; i < size; i++)
+                new (&data_[i]) T();
+        }
+        catch (...)
+        {
+            for (i--; i >= 0; i--)
+                data_[i].~T();
+
+            this->~DynamicStorage();
+            throw;
+        }
 
         size_ = size;
     }
@@ -31,13 +44,26 @@ public:
         data_(nullptr), size_(0), capacity_(0)
     {
         Reserve(other.size_);
-        for (ssize_t i = 0; i < other.size_; i++)
-            new (&data_[i]) T(other.data_[i]);
+        ssize_t i = 0;
+
+        try
+        {
+            for (; i < other.size_; i++)
+                new (&data_[i]) T(other.data_[i]);
+        }
+        catch (...)
+        {
+            for (i--; i >= 0; i--)
+                data_[i].~T();
+
+            this->~DynamicStorage();
+            throw;
+        }
 
         size_ = other.size_;
     }
 
-    DynamicStorage(DynamicStorage &&other) :
+    DynamicStorage(DynamicStorage &&other) noexcept :
         data_(other.data_), capacity_(other.capacity_), size_(other.size_)
     {
         other.data_ = nullptr;
@@ -60,14 +86,27 @@ public:
     {
         Clear();
         Reserve(other.size_);
-        for (ssize_t i = 0; i < other.size_; i++)
-            new (&data_[i]) T(other.data_[i]);
+
+        ssize_t i = 0;
+        try
+        {
+            for (; i < other.size_; i++)
+                new (&data_[i]) T(other.data_[i]);
+        }
+        catch (...)
+        {
+            for (i--; i >= 0; i--)
+                data_[i].~T();
+
+            this->~DynamicStorage();
+            throw;
+        }
 
         size_ = other.size_;
         return *this;
     }
 
-    DynamicStorage &operator=(DynamicStorage &&other)
+    DynamicStorage &operator=(DynamicStorage &&other) noexcept
     {
         this->~DynamicStorage();
         data_ = other.data_;
@@ -81,23 +120,23 @@ public:
         return *this;
     }
 
-    T& Access(size_t index)
+    T& Access(size_t index) noexcept
     {
         return const_cast<T&>(static_cast<const DynamicStorage*>(this)->Access(index));
     }
 
-    const T& Access(size_t index) const
+    const T& Access(size_t index) const noexcept
     {
         assert(index < size_);
         return data_[index];
     }
 
-    T *Data()
+    T *Data() noexcept
     {
         return data_;
     }
 
-    const T *Data() const
+    const T *Data() const noexcept
     {
         return data_;
     }
@@ -108,11 +147,17 @@ public:
         return data_[size_++];
     }
 
+    void ReserveRollback() noexcept
+    {
+        assert(size_ != 0);
+        size_--;
+    }
+
     void PopBack()
     {
         assert(size_ != 0);
         data_[--size_].~T();
-    }
+    }    
 
     void Clear()
     {
@@ -132,8 +177,19 @@ public:
         else
         {
             Reserve(new_size);
-            for (ssize_t i = size_; i < new_size; i++)
-                new (&data_[i]) T();
+            ssize_t i = size_;
+            try
+            {
+                for (; i < new_size; i++)
+                    new (&data_[i]) T();
+            }
+            catch (...)
+            {
+                for (i--; i >= size_; i--)
+                    data_[i].~T();
+
+                throw;
+            }
         }
 
         size_ = new_size;
@@ -163,7 +219,7 @@ public:
         SetCapacity(needed_capacity);
     }
 
-    const size_t Size() const
+    const size_t Size() const noexcept
     {
         return size_;
     }
@@ -175,15 +231,26 @@ private:
         assert(new_capacity >= size_);
         new_capacity = std::max(new_capacity, size_t(MINIMAL_CAPACITY));
 
-        
         T* new_data = (T*)::operator new(new_capacity * sizeof(T));
-
-        for (ssize_t i = 0; i < size_; i++)
+        ssize_t i = 0;
+        try
         {
-            new (&new_data[i]) T(std::move(data_[i]));
-            data_[i].~T();
+            for (; i < size_; i++)
+                new (&new_data[i]) T(std::move_if_noexcept(data_[i]));
+        }
+        catch (...)
+        {
+            // Not reachable if T's move constructor is noexcept
+            for (i--; i >= 0; i--)
+                new_data[i].~T();
+
+            ::operator delete(new_data);
+            throw;
         }
 
+        for (ssize_t i = 0; i < size_; i++)
+            data_[i].~T();
+        
         if (data_ != nullptr)
             ::operator delete(data_);
 

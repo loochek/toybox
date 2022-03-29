@@ -50,22 +50,22 @@ public:
         return *this;
     }
 
-    T& operator[](size_t index)
+    T& operator[](size_t index) noexcept
     {
         return const_cast<T&>(static_cast<const Array*>(this)->operator[](index));
     }
 
-    const T& operator[](size_t index) const
+    const T& operator[](size_t index) const noexcept
     {
         return storage_.Access(index);
     }
 
-    T& Back()
+    T& Back() noexcept
     {
         return const_cast<T&>(static_cast<const Array*>(this)->Back());
     }
 
-    const T& Back() const
+    const T& Back() const noexcept
     {
         return storage_.Access(storage_.Size() - 1);
     }
@@ -83,12 +83,12 @@ public:
         return storage_.Access(index);
     }
 
-    T *Data()
+    T *Data() noexcept
     {
         return storage_.Data();
     }
 
-    const T *Data() const
+    const T *Data() const noexcept
     {
         return storage_.Data();
     }
@@ -101,7 +101,16 @@ public:
     template<typename... Args>
     void EmplaceBack(Args... args)
     {
-        new (&storage_.ReserveBack()) T(std::forward<Args>(args)...);
+        T &place = storage_.ReserveBack();
+
+        try
+        {
+            new (&place) T(std::forward<Args>(args)...);
+        }
+        catch (...)
+        {
+            storage_.ReserveRollback();
+        }
     }
 
     void PopBack()
@@ -129,12 +138,12 @@ public:
         storage_.Shrink();
     }
 
-    const size_t Size() const
+    const size_t Size() const noexcept
     {
         return storage_.Size();
     }
 
-    const bool Empty() const
+    const bool Empty() const noexcept
     {
         return storage_.Size() == 0;
     }
@@ -154,28 +163,28 @@ class Array<bool, Storage, SIZE>
     static constexpr size_t BITS = 8; // Bits count in uint8_t
 
 public:
-    Array() : storage_() {}
+    Array() : storage_(), bool_size_(0) {}
     Array(size_t size) : storage_(CalculateSpace(size)), bool_size_(size) {}
 
     Array(const Array &other) = default;
 
-    Array(Array &&other)
+    Array(Array &&other) : bool_size_(0)
     {
         storage_ = std::move(other.storage_);
         bool_size_ = other.bool_size_;
         other.bool_size_ = 0;
     }
 
-    Array(const std::initializer_list<bool> &list)
+    Array(const std::initializer_list<bool> &list) : bool_size_(0)
     {
         storage_.Reserve(CalculateSpace(list.size()));
-        bool_size_ = 0;
         for (bool elem : list)
             PushBack(elem);
     }
 
     Array& operator=(const Array &other)
     {
+        bool_size_ = 0;
         storage_ = other.storage_;
         bool_size_ = other.bool_size_;
 
@@ -184,6 +193,7 @@ public:
 
     Array& operator=(Array &&other)
     {
+        bool_size_ = 0;
         storage_ = std::move(other.storage_);
         bool_size_ = other.bool_size_;
         other.bool_size_ = 0;
@@ -193,33 +203,33 @@ public:
 
     Array& operator=(const std::initializer_list<bool> &list)
     {
+        bool_size_ = 0;
         storage_.Clear();
         storage_.Reserve(CalculateSpace(list.size()));
-        bool_size_ = 0;
         for (bool elem : list)
             PushBack(elem);
 
         return *this;
     }
 
-    Array<bool, Storage, SIZE>::Reference operator[](size_t index)
+    Array<bool, Storage, SIZE>::Reference operator[](size_t index) noexcept
     {
         size_t bit_number = BITS - index % BITS - 1;
         return Array<bool, Storage, SIZE>::Reference(storage_.Access(index / BITS), bit_number);
     }
 
-    const Array<bool, Storage, SIZE>::Reference operator[](size_t index) const
+    const Array<bool, Storage, SIZE>::Reference operator[](size_t index) const noexcept
     {
         size_t bit_number = BITS - index % BITS - 1;
         return Array<bool, Storage, SIZE>::Reference(const_cast<uint8_t&>(storage_.Access(index / BITS)), bit_number);
     }
 
-    Array<bool, Storage, SIZE>::Reference Back()
+    Array<bool, Storage, SIZE>::Reference Back() noexcept
     {
         return operator[](bool_size_ - 1);
     }
 
-    const Array<bool, Storage, SIZE>::Reference Back() const
+    const Array<bool, Storage, SIZE>::Reference Back() const noexcept
     {
         return operator[](bool_size_ - 1);
     }
@@ -253,14 +263,14 @@ public:
         PushBack(elem);
     }
 
-    void PopBack()
+    void PopBack() noexcept
     {
         bool_size_--;
         if (bool_size_ % BITS == 0)
             storage_.PopBack();
     }
 
-    void Clear()
+    void Clear() noexcept
     {
         bool_size_ = 0;
         storage_.Clear();
@@ -282,12 +292,12 @@ public:
         storage_.Shrink();
     }
 
-    const size_t Size() const
+    const size_t Size() const noexcept
     {
         return bool_size_;
     }
 
-    const bool Empty() const
+    const bool Empty() const noexcept
     {
         return storage_.Size() == 0;
     }
@@ -296,19 +306,19 @@ private:
     class Reference
     {
     public:
-        operator bool() const
+        operator bool() const noexcept
         {
             return (byte_ >> bit_) & 0x1;
         }
 
-        Reference& operator=(bool value)
+        Reference& operator=(bool value) noexcept
         {
             byte_ &= ~(1 << bit_);
             byte_ |= (1 << bit_) * value;
             return *this;
         }
 
-        Reference(uint8_t &byte, const uint8_t bit) :
+        Reference(uint8_t &byte, const uint8_t bit) noexcept:
             byte_(byte), bit_(bit)
         {
             assert(0 <= bit && bit < BITS);
