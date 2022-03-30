@@ -107,7 +107,7 @@ public:
         return *this;
     }
 
-    ChunkedStorage &operator=(ChunkedStorage &&other)
+    ChunkedStorage &operator=(ChunkedStorage &&other) noexcept
     {
         this->~ChunkedStorage();
         chunks_ = std::move(other.chunks_);

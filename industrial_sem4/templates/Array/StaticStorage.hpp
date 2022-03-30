@@ -44,7 +44,7 @@ public:
         }
     }
 
-    StaticStorage(StaticStorage &&other) : data_((T*)buffer_)
+    StaticStorage(StaticStorage &&other) noexcept(std::is_nothrow_move_constructible_v<T>) : data_((T*)buffer_)
     {
         ssize_t i = 0;
 
@@ -73,7 +73,7 @@ public:
     StaticStorage &operator=(const StaticStorage &other)
     {
         ssize_t i = 0;
-        ~StaticStorage();
+        this->~StaticStorage();
 
         try
         {
@@ -91,10 +91,10 @@ public:
         return *this;
     }
 
-    StaticStorage &operator=(StaticStorage &&other)
+    StaticStorage &operator=(StaticStorage &&other) noexcept(std::is_nothrow_move_constructible_v<T>)
     {
         ssize_t i = 0;
-        ~StaticStorage();
+        this->~StaticStorage();
 
         try
         {

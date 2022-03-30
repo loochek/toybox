@@ -2,6 +2,7 @@
 #define ARRAY_HPP
 
 #include <initializer_list>
+#include <type_traits>
 #include "StaticStorage.hpp"
 #include "DynamicStorage.hpp"
 #include "ChunkedStorage.hpp"
@@ -26,7 +27,7 @@ public:
     }
 
     Array(const Array &other) = default;
-    Array(Array &&other) = default;
+    Array(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<T, SIZE>>) = default;
 
     Array& operator=(const Array &other)
     {
@@ -34,7 +35,7 @@ public:
         return *this;
     }
 
-    Array& operator=(Array &&other)
+    Array& operator=(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<T, SIZE>>)
     {
         storage_ = std::move(other.storage_);
         return *this;
@@ -168,7 +169,7 @@ public:
 
     Array(const Array &other) = default;
 
-    Array(Array &&other) : bool_size_(0)
+    Array(Array &&other) noexcept : bool_size_(0)
     {
         storage_ = std::move(other.storage_);
         bool_size_ = other.bool_size_;
@@ -191,7 +192,7 @@ public:
         return *this;
     }
 
-    Array& operator=(Array &&other)
+    Array& operator=(Array &&other) noexcept
     {
         bool_size_ = 0;
         storage_ = std::move(other.storage_);

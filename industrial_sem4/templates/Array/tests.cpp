@@ -6,8 +6,21 @@ class ComplexInt
 {
 public:
     ComplexInt() : ComplexInt(0) {}
-    ComplexInt(int value) : value_(value), dummy_(malloc(1024)) {}
-    ComplexInt(const ComplexInt &other) : ComplexInt(other.value_) {}
+    ComplexInt(int value) : value_(value), dummy_(malloc(1024)), throw_(false) {}
+
+    ComplexInt(const ComplexInt &other) : ComplexInt(other.value_)
+    {
+        if (other.throw_)
+            throw std::runtime_error("lol");
+
+        // std::cout << "copy" << std::endl;
+    }
+
+    // ComplexInt(ComplexInt &&other) : value_(other.value_), dummy_(malloc(1024))
+    // {
+    //     other.value_ = 0;
+    //     std::cout << "move" << std::endl;
+    // }
 
     operator int() const
     {
@@ -23,21 +36,44 @@ public:
     ComplexInt &operator=(const ComplexInt &other)
     {
         value_ = other.value_;
+        if (other.throw_)
+            throw std::runtime_error("lol");         
+
+        // std::cout << "copy assignment" << std::endl;
+
         return *this;
     }
+
+    // ComplexInt &operator=(ComplexInt &&other)
+    // {
+    //     dummy_ = malloc(1024);
+
+    //     value_ = other.value_;
+    //     other.value_ = 0;
+
+    //     if (other.throw_)
+    //         throw std::runtime_error("lol");         
+
+    //     std::cout << "move assignment" << std::endl;
+
+    //     return *this;
+    // }
 
     ~ComplexInt()
     {
         free(dummy_);
     }
 
+public:
+    bool throw_;
+
 private:
     int value_;
     void *dummy_;
 };
 
-#define TestStorage DynamicStorage
-//#define TestStorage ChunkedStorage
+//#define TestStorage DynamicStorage
+#define TestStorage ChunkedStorage
 
 using TestType = ComplexInt;
 
@@ -251,6 +287,17 @@ void test7()
     assert(arr2.Size() == 0);
 }
 
+// void test8()
+// {
+//     Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> arr;
+//     for (int i = 0; i < 10; i++)
+//     {
+//         arr[i][0] = i % 2;
+//     }
+
+//     Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> move = std::move(arr);
+// }
+
 int main()
 {
     test1();
@@ -260,6 +307,7 @@ int main()
     test5();
     test6();
     test7();
+    // test8();
 
     std::cout << "All tests passed (ﾉ^_^)ﾉ\n";
 }
