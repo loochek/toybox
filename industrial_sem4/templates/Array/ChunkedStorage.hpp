@@ -86,6 +86,9 @@ public:
 
     ChunkedStorage &operator=(const ChunkedStorage &other)
     {
+        if (this == &other)
+            return *this;
+
         Clear();
         Reserve(other.size_);
         ssize_t i = 0;
@@ -109,6 +112,9 @@ public:
 
     ChunkedStorage &operator=(ChunkedStorage &&other) noexcept
     {
+        if (this == &other)
+            return *this;
+            
         this->~ChunkedStorage();
         chunks_ = std::move(other.chunks_);
         capacity_ = other.capacity_;

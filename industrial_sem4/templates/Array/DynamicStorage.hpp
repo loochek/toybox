@@ -84,6 +84,9 @@ public:
 
     DynamicStorage &operator=(const DynamicStorage &other)
     {
+        if (this == &other)
+            return *this;
+
         Clear();
         Reserve(other.size_);
 
@@ -108,6 +111,9 @@ public:
 
     DynamicStorage &operator=(DynamicStorage &&other) noexcept
     {
+        if (this == &other)
+            return *this;
+            
         this->~DynamicStorage();
         data_ = other.data_;
         capacity_ = other.capacity_;

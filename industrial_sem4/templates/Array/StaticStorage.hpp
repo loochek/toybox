@@ -73,6 +73,9 @@ public:
 
     StaticStorage &operator=(const StaticStorage &other)
     {
+        if (this == &other)
+            return *this;
+
         ssize_t i = 0;
         this->~StaticStorage();
 
@@ -94,6 +97,9 @@ public:
 
     StaticStorage &operator=(StaticStorage &&other) noexcept(std::is_nothrow_move_constructible_v<T>)
     {
+        if (this == &other)
+            return *this;
+
         ssize_t i = 0;
         this->~StaticStorage();
 
