@@ -185,6 +185,9 @@ public:
 
     Array& operator=(const Array &other)
     {
+        if (this == &other)
+            return *this;
+
         bool_size_ = 0;
         storage_ = other.storage_;
         bool_size_ = other.bool_size_;
@@ -194,6 +197,9 @@ public:
 
     Array& operator=(Array &&other) noexcept
     {
+        if (this == &other)
+            return *this;
+        
         bool_size_ = 0;
         storage_ = std::move(other.storage_);
         bool_size_ = other.bool_size_;
