@@ -44,7 +44,8 @@ public:
         }
     }
 
-    StaticStorage(StaticStorage &&other) noexcept(std::is_nothrow_move_constructible_v<T>) : data_((T*)buffer_)
+    StaticStorage(StaticStorage &&other) noexcept(std::is_nothrow_move_constructible_v<T>) :
+        data_((T*)buffer_)
     {
         ssize_t i = 0;
 
@@ -114,28 +115,28 @@ public:
         return *this;
     }
 
-    T& Access(size_t index) noexcept
+    inline T& Access(size_t index) noexcept
     {
         return const_cast<T&>(static_cast<const StaticStorage*>(this)->Access(index));
     }
 
-    const T& Access(size_t index) const noexcept
+    inline const T& Access(size_t index) const noexcept
     {
         assert(index < SIZE);
         return data_[index];
     }
 
-    T *Data() noexcept
+    inline T *Data() noexcept
     {
         return data_;
     }
 
-    const T *Data() const noexcept
+    inline const T *Data() const noexcept
     {
         return data_;
     }
 
-    const size_t Size() const noexcept
+    inline const size_t Size() const noexcept
     {
         return SIZE;
     }

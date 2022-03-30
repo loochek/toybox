@@ -17,7 +17,7 @@ class Array
 {
 public:
     Array() : storage_() {}
-    Array(size_t size) : storage_(size) {}
+    explicit Array(size_t size) : storage_(size) {}
 
     Array(const std::initializer_list<T> &list)
     {
@@ -51,32 +51,32 @@ public:
         return *this;
     }
 
-    T& operator[](size_t index) noexcept
+    inline T& operator[](size_t index) noexcept
     {
         return const_cast<T&>(static_cast<const Array*>(this)->operator[](index));
     }
 
-    const T& operator[](size_t index) const noexcept
+    inline const T& operator[](size_t index) const noexcept
     {
         return storage_.Access(index);
     }
 
-    T& Back() noexcept
+    inline T& Back() noexcept
     {
         return const_cast<T&>(static_cast<const Array*>(this)->Back());
     }
 
-    const T& Back() const noexcept
+    inline const T& Back() const noexcept
     {
         return storage_.Access(storage_.Size() - 1);
     }
 
-    T& At(size_t index)
+    inline T& At(size_t index)
     {
         return const_cast<T&>(static_cast<const Array*>(this)->At(index));
     }
 
-    const T& At(size_t index) const
+    inline const T& At(size_t index) const
     {
         if (index >= storage_.Size())
             throw std::out_of_range("Array index out of range");
@@ -84,23 +84,23 @@ public:
         return storage_.Access(index);
     }
 
-    T *Data() noexcept
+    inline T *Data() noexcept
     {
         return storage_.Data();
     }
 
-    const T *Data() const noexcept
+    inline const T *Data() const noexcept
     {
         return storage_.Data();
     }
 
-    void PushBack(T elem)
+    inline void PushBack(T elem)
     {
         storage_.ReserveBack() = std::move(elem);
     }
 
     template<typename... Args>
-    void EmplaceBack(Args... args)
+    inline void EmplaceBack(Args... args)
     {
         T &place = storage_.ReserveBack();
 
@@ -114,37 +114,37 @@ public:
         }
     }
 
-    void PopBack()
+    inline void PopBack()
     {
         storage_.PopBack();
     }
 
-    void Clear()
+    inline void Clear()
     {
         storage_.Clear();
     }
 
-    void Resize(size_t new_size)
+    inline void Resize(size_t new_size)
     {
         storage_.Resize(new_size);
     }
 
-    void Reserve(size_t capacity)
+    inline void Reserve(size_t capacity)
     {
         storage_.Reserve(capacity);
     }
 
-    void Shrink()
+    inline void Shrink()
     {
         storage_.Shrink();
     }
 
-    const size_t Size() const noexcept
+    inline const size_t Size() const noexcept
     {
         return storage_.Size();
     }
 
-    const bool Empty() const noexcept
+    inline const bool Empty() const noexcept
     {
         return storage_.Size() == 0;
     }
@@ -165,7 +165,7 @@ class Array<bool, Storage, SIZE>
 
 public:
     Array() : storage_(), bool_size_(0) {}
-    Array(size_t size) : storage_(CalculateSpace(size)), bool_size_(size) {}
+    explicit Array(size_t size) : storage_(CalculateSpace(size)), bool_size_(size) {}
 
     Array(const Array &other) = default;
 
@@ -213,29 +213,29 @@ public:
         return *this;
     }
 
-    Array<bool, Storage, SIZE>::Reference operator[](size_t index) noexcept
+    inline Array<bool, Storage, SIZE>::Reference operator[](size_t index) noexcept
     {
         size_t bit_number = BITS - index % BITS - 1;
         return Array<bool, Storage, SIZE>::Reference(storage_.Access(index / BITS), bit_number);
     }
 
-    const Array<bool, Storage, SIZE>::Reference operator[](size_t index) const noexcept
+    inline const Array<bool, Storage, SIZE>::Reference operator[](size_t index) const noexcept
     {
         size_t bit_number = BITS - index % BITS - 1;
         return Array<bool, Storage, SIZE>::Reference(const_cast<uint8_t&>(storage_.Access(index / BITS)), bit_number);
     }
 
-    Array<bool, Storage, SIZE>::Reference Back() noexcept
+    inline Array<bool, Storage, SIZE>::Reference Back() noexcept
     {
         return operator[](bool_size_ - 1);
     }
 
-    const Array<bool, Storage, SIZE>::Reference Back() const noexcept
+    inline const Array<bool, Storage, SIZE>::Reference Back() const noexcept
     {
         return operator[](bool_size_ - 1);
     }
 
-    Array<bool, Storage, SIZE>::Reference At(size_t index)
+    inline Array<bool, Storage, SIZE>::Reference At(size_t index)
     {
         if (index >= bool_size_)
             throw std::out_of_range("Array index out of range");
@@ -243,7 +243,7 @@ public:
         return operator[](index);
     }
 
-    const Array<bool, Storage, SIZE>::Reference At(size_t index) const
+    inline const Array<bool, Storage, SIZE>::Reference At(size_t index) const
     {
         if (index >= bool_size_)
             throw std::out_of_range("Array index out of range");
@@ -251,7 +251,7 @@ public:
         return operator[](index);
     }
 
-    void PushBack(bool elem)
+    inline void PushBack(bool elem)
     {
         if (bool_size_ % BITS == 0)
             storage_.ReserveBack() = 0;
@@ -259,46 +259,46 @@ public:
         operator[](bool_size_++) = elem;
     }
 
-    void EmplaceBack(bool elem)
+    inline void EmplaceBack(bool elem)
     {
         PushBack(elem);
     }
 
-    void PopBack() noexcept
+    inline void PopBack() noexcept
     {
         bool_size_--;
         if (bool_size_ % BITS == 0)
             storage_.PopBack();
     }
 
-    void Clear() noexcept
+    inline void Clear() noexcept
     {
         bool_size_ = 0;
         storage_.Clear();
     }
 
-    void Resize(size_t new_size)
+    inline void Resize(size_t new_size)
     {
         bool_size_ = new_size;
         storage_.Resize(CalculateSpace(new_size));
     }
 
-    void Reserve(size_t capacity)
+    inline void Reserve(size_t capacity)
     {
         storage_.Reserve(CalculateSpace(capacity));
     }
 
-    void Shrink()
+    inline void Shrink()
     {
         storage_.Shrink();
     }
 
-    const size_t Size() const noexcept
+    inline const size_t Size() const noexcept
     {
         return bool_size_;
     }
 
-    const bool Empty() const noexcept
+    inline const bool Empty() const noexcept
     {
         return storage_.Size() == 0;
     }

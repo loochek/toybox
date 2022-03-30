@@ -19,7 +19,7 @@ public:
     {
     }
 
-    ChunkedStorage(size_t size) :
+    explicit ChunkedStorage(size_t size) :
         size_(0), capacity_(0)
     {
         Reserve(size);
@@ -120,31 +120,31 @@ public:
         return *this;
     }
 
-    T& Access(size_t index) noexcept
+    inline T& Access(size_t index) noexcept
     {
         assert(index < size_);
         return AccessIntl(index);
     }
 
-    const T& Access(size_t index) const noexcept
+    inline const T& Access(size_t index) const noexcept
     {
         assert(index < size_);
         return AccessIntl(index);
     }
 
-    T& ReserveBack()
+    inline T& ReserveBack()
     {
         Reserve(size_ + 1);
         return AccessIntl(size_++);
     }
     
-    void ReserveRollback() noexcept
+    inline void ReserveRollback() noexcept
     {
         assert(size_ != 0);
         size_--;
     }
 
-    void PopBack()
+    inline void PopBack()
     {
         assert(size_ != 0);
         AccessIntl(--size_).~T();
@@ -192,7 +192,7 @@ public:
         SetCapacity(needed_chunks);
     }
 
-    const size_t Size() const noexcept
+    inline const size_t Size() const noexcept
     {
         return size_;
     }
@@ -223,17 +223,17 @@ private:
         capacity_ = chunks;
     }
 
-    const T& AccessIntl(size_t index) const noexcept
+    inline const T& AccessIntl(size_t index) const noexcept
     {
         return chunks_.Access(index / CHUNK_SIZE)[index % CHUNK_SIZE];
     }
 
-    T& AccessIntl(size_t index) noexcept
+    inline T& AccessIntl(size_t index) noexcept
     {
         return const_cast<T&>(static_cast<const ChunkedStorage*>(this)->AccessIntl(index));
     }
 
-    static size_t SizeToChunks(size_t size) noexcept
+    constexpr static size_t SizeToChunks(size_t size) noexcept
     {
         size_t new_chunks = size / CHUNK_SIZE;
         if (new_chunks * CHUNK_SIZE < size)

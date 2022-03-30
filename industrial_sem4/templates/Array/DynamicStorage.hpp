@@ -17,7 +17,7 @@ public:
     {
     }
 
-    DynamicStorage(size_t size) :
+    explicit DynamicStorage(size_t size) :
         data_(nullptr), size_(0), capacity_(0)
     {
         Reserve(size);
@@ -120,40 +120,40 @@ public:
         return *this;
     }
 
-    T& Access(size_t index) noexcept
+    inline T& Access(size_t index) noexcept
     {
         return const_cast<T&>(static_cast<const DynamicStorage*>(this)->Access(index));
     }
 
-    const T& Access(size_t index) const noexcept
+    inline const T& Access(size_t index) const noexcept
     {
         assert(index < size_);
         return data_[index];
     }
 
-    T *Data() noexcept
+    inline T *Data() noexcept
     {
         return data_;
     }
 
-    const T *Data() const noexcept
+    inline const T *Data() const noexcept
     {
         return data_;
     }
 
-    T& ReserveBack()
+    inline T& ReserveBack()
     {
         Reserve(size_ + 1);
         return data_[size_++];
     }
 
-    void ReserveRollback() noexcept
+    inline void ReserveRollback() noexcept
     {
         assert(size_ != 0);
         size_--;
     }
 
-    void PopBack()
+    inline void PopBack()
     {
         assert(size_ != 0);
         data_[--size_].~T();
@@ -219,7 +219,7 @@ public:
         SetCapacity(needed_capacity);
     }
 
-    const size_t Size() const noexcept
+    inline const size_t Size() const noexcept
     {
         return size_;
     }
