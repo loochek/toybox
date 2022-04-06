@@ -100,7 +100,7 @@ public:
     }
 
     template<typename... Args>
-    inline void EmplaceBack(Args... args)
+    inline void EmplaceBack(Args&&... args)
     {
         T &place = storage_.ReserveBack();
 
