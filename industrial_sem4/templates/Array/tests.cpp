@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cassert>
+#include <vector>
+#include <algorithm>
 #include "Array.hpp"
 
 class ComplexInt
@@ -72,8 +74,8 @@ private:
     void *dummy_;
 };
 
-//#define TestStorage DynamicStorage
-#define TestStorage ChunkedStorage
+#define TestStorage DynamicStorage
+//#define TestStorage ChunkedStorage
 
 using TestType = ComplexInt;
 
@@ -298,6 +300,22 @@ void test7()
 //     Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> move = std::move(arr);
 // }
 
+void test9()
+{
+    Array<int> arr = {5, 4, 3, 2, 1, 6, 7, 8, 9, 10};
+    Array<int> arr_copy(8);
+
+    std::sort(arr.begin(), arr.end());
+    std::copy(arr.begin(), arr.begin() + 8, arr_copy.begin());
+
+    int i = 0;
+    for (auto &elem : arr_copy)
+    {
+        assert(elem == i + 1);
+        i++;
+    }
+}
+
 int main()
 {
     test1();
@@ -307,7 +325,8 @@ int main()
     test5();
     test6();
     test7();
-    // test8();
+    //test8();
+    test9();
 
     std::cout << "All tests passed (ﾉ^_^)ﾉ\n";
 }
