@@ -316,6 +316,28 @@ void test9()
     }
 }
 
+// void test10()
+// {
+//     Array<bool> arr = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+//     auto ref1 = *arr.begin();
+//     auto ref2 = *(arr.begin() + 1);
+//     std::swap(ref1, ref2);
+
+//     // auto ref1 = *arr.begin();
+//     // auto ref2 = *(arr.begin() + 1);
+//     // std::swap(ref1, ref2);
+//     //std::sort(arr.begin(), arr.end());
+//     for (bool elem : arr)
+//         std::cout << elem << ' ';
+
+//     // int i = 0;
+//     // for (auto &elem : arr_copy)
+//     // {
+//     //     assert(elem == i + 1);
+//     //     i++;
+//     // }
+// }
+
 int main()
 {
     test1();
@@ -327,6 +349,7 @@ int main()
     test7();
     //test8();
     test9();
+    //test10();
 
     std::cout << "All tests passed (ﾉ^_^)ﾉ\n";
 }

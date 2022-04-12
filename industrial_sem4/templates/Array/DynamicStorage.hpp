@@ -1,6 +1,7 @@
 #ifndef DYNAMIC_STORAGE_HPP
 #define DYNAMIC_STORAGE_HPP
 
+#include <type_traits>
 #include <cstddef>
 #include <cassert>
 #include <stdexcept>
@@ -12,6 +13,8 @@ class DynamicStorage
     static constexpr size_t MINIMAL_CAPACITY = 16;
     
 public:
+    using IsContiguous = std::true_type;   
+
     DynamicStorage() noexcept :
         data_(nullptr), size_(0), capacity_(0)
     {

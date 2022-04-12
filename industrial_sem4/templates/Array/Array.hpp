@@ -16,11 +16,10 @@ class ArrayIterator
 public:
     struct ArrayIteratorTag {};
 
-    using iterator_category = std::random_access_iterator_tag;
-    using difference_type   = std::ptrdiff_t;
-    using value_type        = T;
-    using pointer           = T*;
-    using reference         = T&;
+    using iterator_category = Array::IteratorCategory;
+    using difference_type   = Array::DifferenceType;
+    using value_type        = Array::ValueType;
+    using reference         = Array::Reference;
 
     ArrayIterator() = delete;
 
@@ -88,12 +87,13 @@ public:
         return ArrayIterator(array_, index_ - diff);
     }
 
-    T& operator*() const
+    reference operator*() const
     {
         return array_->operator[](index_);
     }
 
-    T* operator->() const
+    template<typename Array_ = Array>
+    typename Array_::Pointer operator->() const
     {
         return &array_->operator[](index_);
     }
@@ -151,11 +151,10 @@ class ArrayConstIterator
 public:
     struct ArrayIteratorTag {};
 
-    using iterator_category = std::random_access_iterator_tag;
-    using difference_type   = std::ptrdiff_t;
-    using value_type        = const T;
-    using pointer           = const T*;
-    using reference         = const T&;
+    using iterator_category = Array::IteratorCategory;
+    using difference_type   = Array::DifferenceType;
+    using value_type        = Array::ValueType;
+    using reference         = Array::Reference;
 
     ArrayConstIterator() = delete;
 
@@ -225,12 +224,13 @@ public:
         return ArrayConstIterator(array_, index_ - diff);
     }
 
-    const T& operator*() const
+    const reference operator*() const
     {
         return array_->operator[](index_);
     }
 
-    const T* operator->() const
+    template<typename Array_ = Array>
+    typename Array_::Pointer operator->() const
     {
         return &array_->operator[](index_);
     }
@@ -386,18 +386,26 @@ template
 class Array
 {
 public:
+    using IteratorCategory = std::conditional_t<Storage<T, SIZE>::IsContiguous::value,
+                                                std::random_access_iterator_tag, std::contiguous_iterator_tag>;
+    using DifferenceType   = std::ptrdiff_t;
+    using ValueType        = T;
+    using Pointer          = T*;
+    using Reference        = T&;
+    using ConstReference   = const T&;
+
     Array() : storage_() {}
     explicit Array(size_t size) : storage_(size) {}
 
-    Array(const std::initializer_list<T> &list)
+    Array(const std::initializer_list<ValueType> &list)
     {
         storage_.Reserve(list.size());
-        for (const T &elem : list)
-            new (&storage_.ReserveBack()) T(elem);
+        for (ConstReference elem : list)
+            new (&storage_.ReserveBack()) ValueType(elem);
     }
 
     Array(const Array &other) = default;
-    Array(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<T, SIZE>>) = default;
+    Array(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<ValueType, SIZE>>) = default;
 
     Array& operator=(const Array &other)
     {
@@ -405,48 +413,48 @@ public:
         return *this;
     }
 
-    Array& operator=(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<T, SIZE>>)
+    Array& operator=(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<ValueType, SIZE>>)
     {
         storage_ = std::move(other.storage_);
         return *this;
     }
 
-    Array& operator=(const std::initializer_list<T> &list)
+    Array& operator=(const std::initializer_list<ValueType> &list)
     {
         storage_.Clear();
         storage_.Reserve(list.size());
-        for (const T &elem : list)
-            new (&storage_.ReserveBack()) T(elem);
+        for (ConstReference elem : list)
+            new (&storage_.ReserveBack()) ValueType(elem);
 
         return *this;
     }
 
-    inline T& operator[](size_t index) noexcept
+    inline Reference operator[](size_t index) noexcept
     {
-        return const_cast<T&>(static_cast<const Array*>(this)->operator[](index));
+        return const_cast<Reference>(static_cast<const Array*>(this)->operator[](index));
     }
 
-    inline const T& operator[](size_t index) const noexcept
+    inline ConstReference operator[](size_t index) const noexcept
     {
         return storage_.Access(index);
     }
 
-    inline T& Back() noexcept
+    inline Reference Back() noexcept
     {
-        return const_cast<T&>(static_cast<const Array*>(this)->Back());
+        return const_cast<Reference>(static_cast<const Array*>(this)->Back());
     }
 
-    inline const T& Back() const noexcept
+    inline ConstReference Back() const noexcept
     {
         return storage_.Access(storage_.Size() - 1);
     }
 
-    inline T& At(size_t index)
+    inline Reference At(size_t index)
     {
-        return const_cast<T&>(static_cast<const Array*>(this)->At(index));
+        return const_cast<Reference>(static_cast<const Array*>(this)->At(index));
     }
 
-    inline const T& At(size_t index) const
+    inline ConstReference At(size_t index) const
     {
         if (index >= storage_.Size())
             throw std::out_of_range("Array index out of range");
@@ -454,17 +462,17 @@ public:
         return storage_.Access(index);
     }
 
-    inline T *Data() noexcept
+    inline Pointer Data() noexcept
     {
         return storage_.Data();
     }
 
-    inline const T *Data() const noexcept
+    inline const Pointer Data() const noexcept
     {
         return storage_.Data();
     }
 
-    inline void PushBack(T elem)
+    inline void PushBack(ValueType elem)
     {
         storage_.ReserveBack() = std::move(elem);
     }
@@ -472,11 +480,11 @@ public:
     template<typename... Args>
     inline void EmplaceBack(Args&&... args)
     {
-        T &place = storage_.ReserveBack();
+        ValueType &place = storage_.ReserveBack();
 
         try
         {
-            new (&place) T(std::forward<Args>(args)...);
+            new (&place) ValueType(std::forward<Args>(args)...);
         }
         catch (...)
         {
@@ -489,34 +497,34 @@ public:
         storage_.PopBack();
     }
 
-    inline ArrayIterator<Array, T> begin()
+    inline ArrayIterator<Array, ValueType> begin()
     {
-        return ArrayIterator<Array, T>(this, 0);
+        return ArrayIterator<Array, ValueType>(this, 0);
     }
 
-    inline ArrayConstIterator<Array, T> begin() const
+    inline ArrayConstIterator<Array, ValueType> begin() const
     {
         return cbegin();
     }
 
-    inline ArrayConstIterator<Array, T> cbegin() const
+    inline ArrayConstIterator<Array, ValueType> cbegin() const
     {
-        return ArrayConstIterator<Array, T>(this, 0);
+        return ArrayConstIterator<Array, ValueType>(this, 0);
     }
 
-    inline ArrayIterator<Array, T> end()
+    inline ArrayIterator<Array, ValueType> end()
     {
-        return ArrayIterator<Array, T>(this, Size());
+        return ArrayIterator<Array, ValueType>(this, Size());
     }
 
-    inline ArrayConstIterator<Array, T> end() const
+    inline ArrayConstIterator<Array, ValueType> end() const
     {
         return cend();
     }
 
-    inline ArrayConstIterator<Array, T> cend() const
+    inline ArrayConstIterator<Array, ValueType> cend() const
     {
-        return ArrayConstIterator<Array, T>(this, Size());
+        return ArrayConstIterator<Array, ValueType>(this, Size());
     }
 
     inline void Clear()
@@ -550,7 +558,7 @@ public:
     }
 
 private:
-    Storage<T, SIZE> storage_;
+    Storage<ValueType, SIZE> storage_;
 };
 
 template
@@ -560,10 +568,22 @@ template
 >
 class Array<bool, Storage, SIZE>
 {
-    class Reference;
+    class BoolReference;
     static constexpr size_t BITS = 8; // Bits count in uint8_t
 
+    static constexpr size_t CalculateSpace(size_t capacity)
+    {
+        return capacity / BITS + !!(capacity % BITS);
+    }
+
 public:
+    using IteratorCategory = std::conditional_t<Storage<uint8_t, CalculateSpace(SIZE)>::IsContiguous::value,
+                                                std::random_access_iterator_tag, std::contiguous_iterator_tag>;
+    using DifferenceType   = std::ptrdiff_t;
+    using ValueType        = bool;
+    using Reference        = BoolReference;
+    using ConstReference   = const BoolReference;
+
     Array() : storage_(), bool_size_(0) {}
     explicit Array(size_t size) : storage_(CalculateSpace(size)), bool_size_(size) {}
 
@@ -619,29 +639,29 @@ public:
         return *this;
     }
 
-    inline Reference operator[](size_t index) noexcept
+    inline BoolReference operator[](size_t index) noexcept
     {
         size_t bit_number = BITS - index % BITS - 1;
-        return Reference(storage_.Access(index / BITS), bit_number);
+        return BoolReference(storage_.Access(index / BITS), bit_number);
     }
 
-    inline const Reference operator[](size_t index) const noexcept
+    inline const BoolReference operator[](size_t index) const noexcept
     {
         size_t bit_number = BITS - index % BITS - 1;
-        return Reference(const_cast<uint8_t&>(storage_.Access(index / BITS)), bit_number);
+        return BoolReference(const_cast<uint8_t&>(storage_.Access(index / BITS)), bit_number);
     }
 
-    inline Reference Back() noexcept
+    inline BoolReference Back() noexcept
     {
         return operator[](bool_size_ - 1);
     }
 
-    inline const Reference Back() const noexcept
+    inline const BoolReference Back() const noexcept
     {
         return operator[](bool_size_ - 1);
     }
 
-    inline Reference At(size_t index)
+    inline BoolReference At(size_t index)
     {
         if (index >= bool_size_)
             throw std::out_of_range("Array index out of range");
@@ -649,7 +669,7 @@ public:
         return operator[](index);
     }
 
-    inline const Reference At(size_t index) const
+    inline const BoolReference At(size_t index) const
     {
         if (index >= bool_size_)
             throw std::out_of_range("Array index out of range");
@@ -675,6 +695,36 @@ public:
         bool_size_--;
         if (bool_size_ % BITS == 0)
             storage_.PopBack();
+    }
+
+    inline ArrayIterator<Array, BoolReference> begin()
+    {
+        return ArrayIterator<Array, BoolReference>(this, 0);
+    }
+
+    inline ArrayConstIterator<Array, BoolReference> begin() const
+    {
+        return cbegin();
+    }
+
+    inline ArrayConstIterator<Array, BoolReference> cbegin() const
+    {
+        return ArrayConstIterator<Array, BoolReference>(this, 0);
+    }
+
+    inline ArrayIterator<Array, BoolReference> end()
+    {
+        return ArrayIterator<Array, BoolReference>(this, Size());
+    }
+
+    inline ArrayConstIterator<Array, BoolReference> end() const
+    {
+        return cend();
+    }
+
+    inline ArrayConstIterator<Array, BoolReference> cend() const
+    {
+        return ArrayConstIterator<Array, BoolReference>(this, Size());
     }
 
     inline void Clear() noexcept
@@ -710,39 +760,56 @@ public:
     }
 
 private:
-    class Reference
+    class BoolReference
     {
     public:
-        operator bool() const noexcept
+        BoolReference(uint8_t &byte, uint8_t bit) noexcept:
+            byte_(byte), bit_(bit)
         {
-            return (byte_ >> bit_) & 0x1;
+            assert(0 <= bit && bit < BITS);
         }
 
-        Reference& operator=(bool value) noexcept
+        BoolReference(const BoolReference &other) noexcept : byte_(other.byte_), bit_(other.bit_) {}
+
+        BoolReference& operator=(bool value) noexcept
         {
             byte_ &= ~(1 << bit_);
             byte_ |= (1 << bit_) * value;
             return *this;
         }
 
-        Reference(uint8_t &byte, const uint8_t bit) noexcept:
-            byte_(byte), bit_(bit)
+        BoolReference& operator=(const BoolReference &other) noexcept
         {
-            assert(0 <= bit && bit < BITS);
+            operator=(bool(other));
+            return *this;
         }
 
-        uint8_t &byte_;
-        const uint8_t bit_;
-    };
+        operator bool() const noexcept
+        {
+            return (byte_ >> bit_) & 0x1;
+        }
 
-    static constexpr size_t CalculateSpace(size_t capacity)
-    {
-        return capacity / BITS + !!(capacity % BITS);
-    }
+    private:
+        uint8_t &byte_;
+        uint8_t bit_;
+    };
 
 private:
     Storage<uint8_t, CalculateSpace(SIZE)> storage_;
     size_t bool_size_;
 };
+
+// namespace std
+// {
+//     template
+//     <
+//         template<typename T_, size_t SIZE_> class Storage,
+//         size_t SIZE
+//     >
+//     void swap(typename Array<bool, Storage, SIZE>::BoolReference a, typename Array<bool, Storage, SIZE>::BoolReference b)
+//     {
+//         std::swap(a, b);
+//     }
+// }
 
 #endif

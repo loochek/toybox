@@ -1,6 +1,7 @@
 #ifndef CHUNKED_STORAGE_HPP
 #define CHUNKED_STORAGE_HPP
 
+#include <type_traits>
 #include <cstddef>
 #include <cassert>
 #include <stdexcept>
@@ -14,6 +15,8 @@ class ChunkedStorage
     static constexpr size_t MINIMAL_CAPACITY = 1; // in chunks
 
 public:
+    using IsContiguous = std::false_type;
+
     ChunkedStorage() noexcept :
         size_(0), capacity_(0)
     {
