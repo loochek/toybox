@@ -13,20 +13,28 @@ public:
     StaticStorage() = default;
     StaticStorage(const StaticStorage &other) = default;
 
-    template<typename T_ = T, std::enable_if_t<std::is_nothrow_move_constructible_v<T>>* = nullptr>
-    StaticStorage(StaticStorage &&other) noexcept = default;
+    template<typename T_ = T, std::enable_if_t<std::is_nothrow_move_constructible_v<T_>>* = nullptr>
+    StaticStorage(StaticStorage &&other) noexcept
+    {
+        for (ssize_t i = 0; i < SIZE; i++)
+            data_[i] = std::move(other.data_[i]);
+    }
 
-    template<typename T_ = T, std::enable_if_t<!std::is_nothrow_move_constructible_v<T>>* = nullptr>
+    template<typename T_ = T, std::enable_if_t<!std::is_nothrow_move_constructible_v<T_>>* = nullptr>
     StaticStorage(StaticStorage &&other) : StaticStorage(other) {}
 
     ~StaticStorage() = default;
 
     StaticStorage &operator=(const StaticStorage &other) = default;
 
-    template<typename T_ = T, std::enable_if_t<std::is_nothrow_move_constructible_v<T>>* = nullptr>
-    StaticStorage &operator=(StaticStorage &&other) noexcept = default;
+    template<typename T_ = T, std::enable_if_t<std::is_nothrow_move_constructible_v<T_>>* = nullptr>
+    StaticStorage &operator=(StaticStorage &&other) noexcept
+    {
+        for (ssize_t i = 0; i < SIZE; i++)
+            data_[i] = std::move(other.data_[i]);
+    }
 
-    template<typename T_ = T, std::enable_if_t<!std::is_nothrow_move_constructible_v<T>>* = nullptr>
+    template<typename T_ = T, std::enable_if_t<!std::is_nothrow_move_constructible_v<T_>>* = nullptr>
     StaticStorage &operator=(StaticStorage &&other)
     {
         return operator=(other);
