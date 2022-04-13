@@ -289,16 +289,16 @@ void test7()
     assert(arr2.Size() == 0);
 }
 
-// void test8()
-// {
-//     Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> arr;
-//     for (int i = 0; i < 10; i++)
-//     {
-//         arr[i][0] = i % 2;
-//     }
+void test8()
+{
+    Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> arr;
+    for (int i = 0; i < 10; i++)
+    {
+        arr[i][0] = i % 2;
+    }
 
-//     Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> move = std::move(arr);
-// }
+    Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> move = std::move(arr);
+}
 
 void test9()
 {
@@ -316,17 +316,29 @@ void test9()
     }
 }
 
-// void test10()
-// {
-//     Array<bool> arr = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
-//     auto ref1 = *arr.begin();
-//     auto ref2 = *(arr.begin() + 1);
-//     std::swap(ref1, ref2);
+void test10()
+{
+    const Array<int> arr = {1, 2, 3, 4, 5, 6, 7, 8, 10};
+    Array<int> arr_copy(8);
 
+    std::copy(arr.begin(), arr.begin() + 8, arr_copy.begin());
+
+    int i = 0;
+    for (auto &elem : arr_copy)
+    {
+        assert(elem == i + 1);
+        i++;
+    }
+}
+
+// void test11()
+// {
+//     Array<bool, DynamicStorage> arr = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
 //     // auto ref1 = *arr.begin();
 //     // auto ref2 = *(arr.begin() + 1);
-//     // std::swap(ref1, ref2);
-//     //std::sort(arr.begin(), arr.end());
+//     // std::swap(*arr.begin(), *arr.begin());
+
+//     std::sort(arr.begin(), arr.end());
 //     for (bool elem : arr)
 //         std::cout << elem << ' ';
 
@@ -336,6 +348,14 @@ void test9()
 //     //     assert(elem == i + 1);
 //     //     i++;
 //     // }
+// }
+
+
+// void test12()
+// {
+//     Array<std::thread, StaticStorage, 10> arr;
+
+//     Array<std::thread, StaticStorage, 10> arr2 = std::move(arr);
 // }
 
 int main()
@@ -349,7 +369,8 @@ int main()
     test7();
     //test8();
     test9();
-    //test10();
+    test10();
+    // test11();
 
     std::cout << "All tests passed (ﾉ^_^)ﾉ\n";
 }

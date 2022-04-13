@@ -20,6 +20,7 @@ public:
     using difference_type   = Array::DifferenceType;
     using value_type        = Array::ValueType;
     using reference         = Array::Reference;
+    using const_reference   = Array::ConstReference;
 
     ArrayIterator() = delete;
 
@@ -155,6 +156,7 @@ public:
     using difference_type   = Array::DifferenceType;
     using value_type        = Array::ValueType;
     using reference         = Array::Reference;
+    using const_reference   = Array::ConstReference;
 
     ArrayConstIterator() = delete;
 
@@ -224,13 +226,13 @@ public:
         return ArrayConstIterator(array_, index_ - diff);
     }
 
-    const reference operator*() const
+    const_reference operator*() const
     {
         return array_->operator[](index_);
     }
 
     template<typename Array_ = Array>
-    typename Array_::Pointer operator->() const
+    typename Array_::ConstPointer operator->() const
     {
         return &array_->operator[](index_);
     }
@@ -391,6 +393,7 @@ public:
     using DifferenceType   = std::ptrdiff_t;
     using ValueType        = T;
     using Pointer          = T*;
+    using ConstPointer     = const T*;
     using Reference        = T&;
     using ConstReference   = const T&;
 
@@ -568,7 +571,6 @@ template
 >
 class Array<bool, Storage, SIZE>
 {
-    class BoolReference;
     static constexpr size_t BITS = 8; // Bits count in uint8_t
 
     static constexpr size_t CalculateSpace(size_t capacity)
@@ -577,6 +579,8 @@ class Array<bool, Storage, SIZE>
     }
 
 public:
+    class BoolReference;
+
     using IteratorCategory = std::conditional_t<Storage<uint8_t, CalculateSpace(SIZE)>::IsContiguous::value,
                                                 std::random_access_iterator_tag, std::contiguous_iterator_tag>;
     using DifferenceType   = std::ptrdiff_t;
@@ -759,7 +763,7 @@ public:
         return storage_.Size() == 0;
     }
 
-private:
+public:
     class BoolReference
     {
     public:
@@ -770,6 +774,7 @@ private:
         }
 
         BoolReference(const BoolReference &other) noexcept : byte_(other.byte_), bit_(other.bit_) {}
+        BoolReference(BoolReference &&other) noexcept : byte_(other.byte_), bit_(other.bit_) {}
 
         BoolReference& operator=(bool value) noexcept
         {
@@ -801,12 +806,7 @@ private:
 
 // namespace std
 // {
-//     template
-//     <
-//         template<typename T_, size_t SIZE_> class Storage,
-//         size_t SIZE
-//     >
-//     void swap(typename Array<bool, Storage, SIZE>::BoolReference a, typename Array<bool, Storage, SIZE>::BoolReference b)
+//     void swap(typename Array<bool, DynamicStorage, 0>::BoolReference a, typename Array<bool, DynamicStorage, 0>::BoolReference b)
 //     {
 //         std::swap(a, b);
 //     }
