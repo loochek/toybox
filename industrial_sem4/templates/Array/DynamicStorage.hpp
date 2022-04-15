@@ -93,6 +93,8 @@ public:
             return *this;
 
         this->~DynamicStorage();
+        
+        alloc_ = std::move(other.alloc_);
         Reserve(other.size_);
 
         ssize_t i = 0;
