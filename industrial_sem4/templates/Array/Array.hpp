@@ -7,54 +7,49 @@
 #include "DynamicStorage.hpp"
 #include "ChunkedStorage.hpp"
 
-template<typename Array, typename T>
-class ArrayConstIterator;
-
-template<typename Array, typename T>
-class ArrayIterator
+template<typename Array, bool IsConst>
+class ArrayIteratorBase
 {
 public:
-    struct ArrayIteratorTag {};
-
     using iterator_category = Array::IteratorCategory;
     using difference_type   = Array::DifferenceType;
     using value_type        = Array::ValueType;
-    using reference         = Array::Reference;
-    using const_reference   = Array::ConstReference;
+    using reference         = std::conditional_t<IsConst, typename Array::ConstReference,
+                                                 typename Array::Reference>;
 
-    ArrayIterator() = delete;
+    ArrayIteratorBase() = delete;
 
     // Prefix
-    ArrayIterator operator++()
+    ArrayIteratorBase operator++()
     {
         operator+=(1);
         return *this;
     }
 
     // Postfix
-    ArrayIterator operator++(int dummy)
+    ArrayIteratorBase operator++(int dummy)
     {
-        ArrayIterator old_iter = *this;
+        ArrayIteratorBase old_iter = *this;
         operator+=(1);
         return old_iter;
     }
 
     // Prefix
-    ArrayIterator operator--()
+    ArrayIteratorBase operator--()
     {
         operator-=(1);
         return *this;
     }
 
     // Postfix
-    ArrayIterator operator--(int dummy)
+    ArrayIteratorBase operator--(int dummy)
     {
-        ArrayIterator old_iter = *this;
+        ArrayIteratorBase old_iter = *this;
         operator-=(1);
         return old_iter;
     }
 
-    ArrayIterator operator+=(difference_type diff)
+    ArrayIteratorBase operator+=(difference_type diff)
     {
         if (index_ + diff > array_->Size())
             throw std::out_of_range("Iterator out of range");
@@ -63,7 +58,7 @@ public:
         return *this;
     }
 
-    ArrayIterator operator-=(difference_type diff)
+    ArrayIteratorBase operator-=(difference_type diff)
     {
         if (index_ - diff < 0)
             throw std::out_of_range("Iterator out of range");
@@ -72,20 +67,20 @@ public:
         return *this;
     }
 
-    ArrayIterator operator+(difference_type diff) const
+    ArrayIteratorBase operator+(difference_type diff) const
     {
         if (index_ + diff > array_->Size())
             throw std::out_of_range("Iterator out of range");
 
-        return ArrayIterator(array_, index_ + diff);
+        return ArrayIteratorBase(array_, index_ + diff);
     }
 
-    ArrayIterator operator-(difference_type diff) const
+    ArrayIteratorBase operator-(difference_type diff) const
     {
         if (index_ - diff < 0)
             throw std::out_of_range("Iterator out of range");
 
-        return ArrayIterator(array_, index_ - diff);
+        return ArrayIteratorBase(array_, index_ - diff);
     }
 
     reference operator*() const
@@ -99,285 +94,76 @@ public:
         return &array_->operator[](index_);
     }
 
+    template<bool IsConst_>
+    ptrdiff_t operator-(const ArrayIteratorBase<Array, IsConst_> &other)
+    {
+        if (array_ != other.array_)
+            throw std::logic_error("Trying to substract iterators from different arrays");
+
+        return index_ - other.index_;
+    }
+
+    template<bool IsConst_>
+    bool operator==(const ArrayIteratorBase<Array, IsConst_> &other)
+    {
+        if (array_ != other.array_)
+            throw std::logic_error("Trying to compare iterators from different arrays");
+
+        return index_ == other.index_;
+    }
+
+    template<bool IsConst_>
+    bool operator!=(const ArrayIteratorBase<Array, IsConst_> &other)
+    {
+        return !(*this == other);
+    }
+
+    template<bool IsConst_>
+    bool operator<(const ArrayIteratorBase<Array, IsConst_> &other)
+    {
+        if (array_ != other.array_)
+            throw std::logic_error("Trying to compare iterators from different arrays");
+
+        return index_ < other.index_;
+    }
+
+    template<bool IsConst_>
+    bool operator<=(const ArrayIteratorBase<Array, IsConst_> &other)
+    {
+        if (index_ != other.index_)
+            throw std::logic_error("Trying to compare iterators from different arrays");
+
+        return index_ <= other.index_;
+    }
+
+    template<bool IsConst_>
+    bool operator>(const ArrayIteratorBase<Array, IsConst_> &other)
+    {
+        return !(*this <= other);
+    }
+
+    template<bool IsConst_>
+    bool operator>=(const ArrayIteratorBase<Array, IsConst_> &other)
+    {
+        return !(*this < other);
+    }
+
 private:
-    ArrayIterator(Array *array, size_t index) : array_(array), index_(index) {}
+    ArrayIteratorBase(Array *array, size_t index) : array_(array), index_(index) {}
+    ArrayIteratorBase(const Array *array, size_t index) : array_(const_cast<Array*>(array)), index_(index) {}
 
     friend Array;
-    friend class ArrayConstIterator<Array, T>;
-
-        template
-    <
-        typename ITER1,
-        typename ITER2,
-        typename ITER1::ArrayIteratorTag*,
-        typename ITER2::ArrayIteratorTag*
-    >
-    friend bool operator==(const ITER1 &a, const ITER2 &b);
-
-    template
-    <
-        typename ITER1,
-        typename ITER2,
-        typename ITER1::ArrayIteratorTag*,
-        typename ITER2::ArrayIteratorTag*
-    >
-    friend bool operator<(const ITER1 &a, const ITER2 &b);
-
-    template
-    <
-        typename ITER1,
-        typename ITER2,
-        typename ITER1::ArrayIteratorTag*,
-        typename ITER2::ArrayIteratorTag*
-    >
-    friend bool operator<=(const ITER1 &a, const ITER2 &b);
-
-    template
-    <
-        typename ITER1,
-        typename ITER2,
-        typename ITER1::ArrayIteratorTag*,
-        typename ITER2::ArrayIteratorTag*
-    >
-    friend ptrdiff_t operator-(const ITER1 &a, const ITER2 &b);
 
 private:
     Array *array_;
     size_t index_;
 };
 
-template<typename Array, typename T>
-class ArrayConstIterator
-{
-public:
-    struct ArrayIteratorTag {};
+template<typename Array>
+using ArrayIterator = ArrayIteratorBase<Array, false>;
 
-    using iterator_category = Array::IteratorCategory;
-    using difference_type   = Array::DifferenceType;
-    using value_type        = Array::ValueType;
-    using reference         = Array::Reference;
-    using const_reference   = Array::ConstReference;
-
-    ArrayConstIterator() = delete;
-
-    ArrayConstIterator(const ArrayIterator<Array, T> &iter) : array_(iter.array_), index_(iter.index_) {}
-
-    // Prefix
-    ArrayConstIterator operator++()
-    {
-        operator+=(1);
-        return *this;
-    }
-
-    // Postfix
-    ArrayConstIterator operator++(int dummy)
-    {
-        ArrayConstIterator old_iter = *this;
-        operator+=(1);
-        return old_iter;
-    }
-
-    // Prefix
-    ArrayConstIterator operator--()
-    {
-        operator-=(1);
-        return *this;
-    }
-
-    // Postfix
-    ArrayConstIterator operator--(int dummy)
-    {
-        ArrayConstIterator old_iter = *this;
-        operator-=(1);
-        return old_iter;
-    }
-
-    ArrayConstIterator operator+=(difference_type diff)
-    {
-        if (index_ + diff > array_->Size())
-            throw std::out_of_range("Iterator out of range");
-
-        index_ += diff;
-        return *this;
-    }
-
-    ArrayConstIterator operator-=(difference_type diff)
-    {
-        if (index_ - diff < 0)
-            throw std::out_of_range("Iterator out of range");
-
-        index_ -= diff;
-        return *this;
-    }
-
-    ArrayConstIterator operator+(difference_type diff) const
-    {
-        if (index_ + diff > array_->Size())
-            throw std::out_of_range("Iterator out of range");
-
-        return ArrayConstIterator(array_, index_ + diff);
-    }
-
-    ArrayConstIterator operator-(difference_type diff) const
-    {
-        if (index_ - diff < 0)
-            throw std::out_of_range("Iterator out of range");
-
-        return ArrayConstIterator(array_, index_ - diff);
-    }
-
-    const_reference operator*() const
-    {
-        return array_->operator[](index_);
-    }
-
-    template<typename Array_ = Array>
-    typename Array_::ConstPointer operator->() const
-    {
-        return &array_->operator[](index_);
-    }
-
-private:
-    ArrayConstIterator(const Array *array, size_t index) : array_(array), index_(index) {}
-
-    friend Array;
-
-    template
-    <
-        typename ITER1,
-        typename ITER2,
-        typename ITER1::ArrayIteratorTag*,
-        typename ITER2::ArrayIteratorTag*
-    >
-    friend bool operator==(const ITER1 &a, const ITER2 &b);
-
-    template
-    <
-        typename ITER1,
-        typename ITER2,
-        typename ITER1::ArrayIteratorTag*,
-        typename ITER2::ArrayIteratorTag*
-    >
-    friend bool operator<(const ITER1 &a, const ITER2 &b);
-
-    template
-    <
-        typename ITER1,
-        typename ITER2,
-        typename ITER1::ArrayIteratorTag*,
-        typename ITER2::ArrayIteratorTag*
-    >
-    friend bool operator<=(const ITER1 &a, const ITER2 &b);
-
-    template
-    <
-        typename ITER1,
-        typename ITER2,
-        typename ITER1::ArrayIteratorTag*,
-        typename ITER2::ArrayIteratorTag*
-    >
-    friend ptrdiff_t operator-(const ITER1 &a, const ITER2 &b);
-
-private:
-    const Array *array_;
-    size_t index_;
-};
-
-template
-<
-    typename ITER1,
-    typename ITER2,
-    typename ITER1::ArrayIteratorTag* = nullptr,
-    typename ITER2::ArrayIteratorTag* = nullptr
->
-ptrdiff_t operator-(const ITER1 &a, const ITER2 &b)
-{
-    if (a.array_ != b.array_)
-        throw std::logic_error("Trying to substract iterators from different arrays");
-
-    return a.index_ - b.index_;
-}
-
-template
-<
-    typename ITER1,
-    typename ITER2,
-    typename ITER1::ArrayIteratorTag* = nullptr,
-    typename ITER2::ArrayIteratorTag* = nullptr
->
-bool operator==(const ITER1 &a, const ITER2 &b)
-{
-    if (a.array_ != b.array_)
-        throw std::logic_error("Trying to compare iterators from different arrays");
-
-    return a.index_ == b.index_;
-}
-
-template
-<
-    typename ITER1,
-    typename ITER2,
-    typename ITER1::ArrayIteratorTag* = nullptr,
-    typename ITER2::ArrayIteratorTag* = nullptr
->
-bool operator!=(const ITER1 &a, const ITER2 &b)
-{
-    return !(a == b);
-}
-
-template
-<
-    typename ITER1,
-    typename ITER2,
-    typename ITER1::ArrayIteratorTag* = nullptr,
-    typename ITER2::ArrayIteratorTag* = nullptr
->
-bool operator<(const ITER1 &a, const ITER2 &b)
-{
-    if (a.array_ != b.array_)
-        throw std::logic_error("Trying to compare iterators from different arrays");
-
-    return a.index_ < b.index_;
-}
-
-template
-<
-    typename ITER1,
-    typename ITER2,
-    typename ITER1::ArrayIteratorTag* = nullptr,
-    typename ITER2::ArrayIteratorTag* = nullptr
->
-bool operator<=(const ITER1 &a, const ITER2 &b)
-{
-    if (a.array_ != b.array_)
-        throw std::logic_error("Trying to compare iterators from different arrays");
-
-    return a.index_ <= b.index_;
-}
-
-template
-<
-    typename ITER1,
-    typename ITER2,
-    typename ITER1::ArrayIteratorTag* = nullptr,
-    typename ITER2::ArrayIteratorTag* = nullptr
->
-bool operator>(const ITER1 &a, const ITER2 &b)
-{
-    return !(a <= b);
-}
-
-template
-<
-    typename ITER1,
-    typename ITER2,
-    typename ITER1::ArrayIteratorTag* = nullptr,
-    typename ITER2::ArrayIteratorTag* = nullptr
->
-bool operator>=(const ITER1 &a, const ITER2 &b)
-{
-    return !(a < b);
-}
+template<typename Array>
+using ArrayConstIterator = ArrayIteratorBase<Array, true>;
 
 template
 <
@@ -470,7 +256,7 @@ public:
         return storage_.Data();
     }
 
-    inline const Pointer Data() const noexcept
+    inline ConstPointer Data() const noexcept
     {
         return storage_.Data();
     }
@@ -500,34 +286,34 @@ public:
         storage_.PopBack();
     }
 
-    inline ArrayIterator<Array, ValueType> begin()
+    inline ArrayIterator<Array> begin()
     {
-        return ArrayIterator<Array, ValueType>(this, 0);
+        return ArrayIterator<Array>(this, 0);
     }
 
-    inline ArrayConstIterator<Array, ValueType> begin() const
+    inline ArrayConstIterator<Array> begin() const
     {
         return cbegin();
     }
 
-    inline ArrayConstIterator<Array, ValueType> cbegin() const
+    inline ArrayConstIterator<Array> cbegin() const
     {
-        return ArrayConstIterator<Array, ValueType>(this, 0);
+        return ArrayConstIterator<Array>(this, 0);
     }
 
-    inline ArrayIterator<Array, ValueType> end()
+    inline ArrayIterator<Array> end()
     {
-        return ArrayIterator<Array, ValueType>(this, Size());
+        return ArrayIterator<Array>(this, Size());
     }
 
-    inline ArrayConstIterator<Array, ValueType> end() const
+    inline ArrayConstIterator<Array> end() const
     {
         return cend();
     }
 
-    inline ArrayConstIterator<Array, ValueType> cend() const
+    inline ArrayConstIterator<Array> cend() const
     {
-        return ArrayConstIterator<Array, ValueType>(this, Size());
+        return ArrayConstIterator<Array>(this, Size());
     }
 
     inline void Clear()
@@ -701,34 +487,34 @@ public:
             storage_.PopBack();
     }
 
-    inline ArrayIterator<Array, BoolReference> begin()
+    inline ArrayIterator<Array> begin()
     {
-        return ArrayIterator<Array, BoolReference>(this, 0);
+        return ArrayIterator<Array>(this, 0);
     }
 
-    inline ArrayConstIterator<Array, BoolReference> begin() const
+    inline ArrayConstIterator<Array> begin() const
     {
         return cbegin();
     }
 
-    inline ArrayConstIterator<Array, BoolReference> cbegin() const
+    inline ArrayConstIterator<Array> cbegin() const
     {
-        return ArrayConstIterator<Array, BoolReference>(this, 0);
+        return ArrayConstIterator<Array>(this, 0);
     }
 
-    inline ArrayIterator<Array, BoolReference> end()
+    inline ArrayIterator<Array> end()
     {
-        return ArrayIterator<Array, BoolReference>(this, Size());
+        return ArrayIterator<Array>(this, Size());
     }
 
-    inline ArrayConstIterator<Array, BoolReference> end() const
+    inline ArrayConstIterator<Array> end() const
     {
         return cend();
     }
 
-    inline ArrayConstIterator<Array, BoolReference> cend() const
+    inline ArrayConstIterator<Array> cend() const
     {
-        return ArrayConstIterator<Array, BoolReference>(this, Size());
+        return ArrayConstIterator<Array>(this, Size());
     }
 
     inline void Clear() noexcept
@@ -808,7 +594,7 @@ private:
 // {
 //     void swap(typename Array<bool, DynamicStorage, 0>::BoolReference a, typename Array<bool, DynamicStorage, 0>::BoolReference b)
 //     {
-//         std::swap(a, b);
+//         // std::swap(a, b);
 //     }
 // }
 

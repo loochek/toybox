@@ -302,8 +302,8 @@ void test8()
 
 void test9()
 {
-    Array<int> arr = {5, 4, 3, 2, 1, 6, 7, 8, 9, 10};
-    Array<int> arr_copy(8);
+    Array<int, TestStorage> arr = {5, 4, 3, 2, 1, 6, 7, 8, 9, 10};
+    Array<int, TestStorage> arr_copy(8);
 
     std::sort(arr.begin(), arr.end());
     std::copy(arr.begin(), arr.begin() + 8, arr_copy.begin());
@@ -318,8 +318,8 @@ void test9()
 
 void test10()
 {
-    const Array<int> arr = {1, 2, 3, 4, 5, 6, 7, 8, 10};
-    Array<int> arr_copy(8);
+    const Array<int, TestStorage> arr = {1, 2, 3, 4, 5, 6, 7, 8, 10};
+    Array<int, TestStorage> arr_copy(8);
 
     std::copy(arr.begin(), arr.begin() + 8, arr_copy.begin());
 
@@ -331,32 +331,20 @@ void test10()
     }
 }
 
-// void test11()
-// {
-//     Array<bool, DynamicStorage> arr = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
-//     // auto ref1 = *arr.begin();
-//     // auto ref2 = *(arr.begin() + 1);
-//     // std::swap(*arr.begin(), *arr.begin());
+void test11()
+{
+    const Array<bool, TestStorage> arr = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+    Array<bool, TestStorage> arr_copy(8);
 
-//     std::sort(arr.begin(), arr.end());
-//     for (bool elem : arr)
-//         std::cout << elem << ' ';
+    std::copy(arr.begin(), arr.begin() + 8, arr_copy.begin());
 
-//     // int i = 0;
-//     // for (auto &elem : arr_copy)
-//     // {
-//     //     assert(elem == i + 1);
-//     //     i++;
-//     // }
-// }
-
-
-// void test12()
-// {
-//     Array<std::thread, StaticStorage, 10> arr;
-
-//     Array<std::thread, StaticStorage, 10> arr2 = std::move(arr);
-// }
+    int i = 1;
+    for (auto elem : arr_copy)
+    {
+        assert(elem == i % 2);
+        i++;
+    }
+}
 
 int main()
 {
@@ -370,7 +358,7 @@ int main()
     //test8();
     test9();
     test10();
-    // test11();
+    test11();
 
     std::cout << "All tests passed (ﾉ^_^)ﾉ\n";
 }
