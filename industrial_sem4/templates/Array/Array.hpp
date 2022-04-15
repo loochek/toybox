@@ -11,9 +11,9 @@ template<typename Array, bool IsConst>
 class ArrayIteratorBase
 {
 public:
-    using iterator_category = Array::IteratorCategory;
-    using difference_type   = Array::DifferenceType;
-    using value_type        = Array::ValueType;
+    using iterator_category = typename Array::IteratorCategory;
+    using difference_type   = typename Array::DifferenceType;
+    using value_type        = typename Array::ValueType;
     using reference         = std::conditional_t<IsConst, typename Array::ConstReference,
                                                  typename Array::Reference>;
 
@@ -367,9 +367,8 @@ class Array<bool, Storage, Allocator, StaticSize>
         return capacity / BITS + !!(capacity % BITS);
     }
 
-    class BoolReference;
-
 public:
+    class BoolReference;
 
     using IteratorCategory = std::conditional_t<Storage<uint8_t, Allocator, CalculateSpace(StaticSize)>::IsContiguous::value,
                                                 std::random_access_iterator_tag, std::contiguous_iterator_tag>;
@@ -553,7 +552,7 @@ public:
         return storage_.Size() == 0;
     }
 
-private:
+public:
     class BoolReference
     {
     public:
@@ -603,12 +602,11 @@ using DynamicArray = Array<T, DynamicStorage, Allocator, 0>;
 template<typename T, template<typename T_> class Allocator = std::allocator>
 using ChunkedArray = Array<T, ChunkedStorage, Allocator, 0>;
 
-// namespace std
-// {
-//     void swap(typename Array<bool, DynamicStorage, 0>::BoolReference a, typename Array<bool, DynamicStorage, 0>::BoolReference b)
-//     {
-//         // std::swap(a, b);
-//     }
-// }
+void swap(typename Array<bool, DynamicStorage, std::allocator, 0>::BoolReference a, typename Array<bool, DynamicStorage, std::allocator, 0>::BoolReference b)
+{
+    typename Array<bool, DynamicStorage, std::allocator, 0>::BoolReference tmp = a;
+    a = b;
+    b = tmp;
+}
 
 #endif

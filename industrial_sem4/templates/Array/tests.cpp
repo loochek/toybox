@@ -348,6 +348,19 @@ void test11()
     }
 }
 
+void test12()
+{
+    Array<bool, TestStorage> arr = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+    std::sort(arr.begin(), arr.end());
+
+    int i = 1;
+    for (auto elem : arr)
+    {
+        assert(elem == (i > 5));
+        i++;
+    }
+}
+
 int main()
 {
     test1();
@@ -361,6 +374,7 @@ int main()
     test9();
     test10();
     test11();
+    test12();
 
     std::cout << "All tests passed (ﾉ^_^)ﾉ\n";
 }
