@@ -20,7 +20,7 @@ public:
     ArrayIteratorBase() = delete;
 
     // Prefix
-    ArrayIteratorBase operator++()
+    ArrayIteratorBase& operator++()
     {
         operator+=(1);
         return *this;
@@ -35,7 +35,7 @@ public:
     }
 
     // Prefix
-    ArrayIteratorBase operator--()
+    ArrayIteratorBase& operator--()
     {
         operator-=(1);
         return *this;
@@ -49,7 +49,7 @@ public:
         return old_iter;
     }
 
-    ArrayIteratorBase operator+=(difference_type diff)
+    ArrayIteratorBase& operator+=(difference_type diff)
     {
         if (index_ + diff > array_->Size())
             throw std::out_of_range("Iterator out of range");
@@ -58,7 +58,7 @@ public:
         return *this;
     }
 
-    ArrayIteratorBase operator-=(difference_type diff)
+    ArrayIteratorBase& operator-=(difference_type diff)
     {
         if (index_ - diff < 0)
             throw std::out_of_range("Iterator out of range");
