@@ -8,11 +8,13 @@
 #include <new>
 #include "DynamicStorage.hpp"
 
-template<typename T, size_t Dummy = 0>
+template<typename T, template<typename T_> class Allocator, size_t Dummy = 0>
 class ChunkedStorage
 {
     static constexpr size_t CHUNK_SIZE = 1024;
     static constexpr size_t MINIMAL_CAPACITY = 1; // in chunks
+
+    using alloc = std::allocator_traits<Allocator<T>>;
 
 public:
     using IsContiguous = std::false_type;
@@ -81,7 +83,7 @@ public:
             AccessIntl(i).~T();
 
         for (ssize_t i = 0; i < capacity_; i++)
-            ::operator delete(chunks_.Access(i));
+            alloc::deallocate(chunks_.Access(i), CHUNK_SIZE);
 
         size_ = 0;
         capacity_ = 0;
@@ -215,7 +217,7 @@ private:
         if (chunks <= capacity_)
         {
             for (ssize_t ch = chunks; ch < capacity_; ch++)
-                ::operator delete(chunks_.Access(ch));
+                alloc::deallocate(chunks_.Access(ch), CHUNK_SIZE);
 
             chunks_.Resize(capacity_);
         }
@@ -224,7 +226,7 @@ private:
             chunks_.Resize(chunks);
             for (ssize_t ch = capacity_; ch < chunks; ch++)
             {
-                T *chunk = (T*)::operator new(CHUNK_SIZE * sizeof(T));
+                T *chunk = alloc::allocate(alloc_, CHUNK_SIZE);
                 chunks_.Access(ch) = chunk;
             }
         }
@@ -252,10 +254,12 @@ private:
     }
 
 private:
-    DynamicStorage<T*> chunks_;
+    DynamicStorage<T*, std::allocator> chunks_;
 
     size_t size_;     // in elements
     size_t capacity_; // in chunks
+
+    Allocator<T> alloc_;
 };
 
 #endif

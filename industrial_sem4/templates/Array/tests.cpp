@@ -4,6 +4,8 @@
 #include <algorithm>
 #include "Array.hpp"
 
+// TODO: adopt tests for new usings
+
 class ComplexInt
 {
 public:
@@ -81,7 +83,7 @@ using TestType = ComplexInt;
 
 void test1()
 {
-    Array<Array<TestType, StaticStorage, 10>, TestStorage> arr;
+    Array<StaticArray<TestType, 10>, TestStorage> arr;
 
     for (int i = 0; i < 100; i++)
     {
@@ -100,7 +102,7 @@ void test1()
 
     //--------------------------------------------------------
 
-    const Array<Array<TestType, StaticStorage, 10>, TestStorage> copy = arr;
+    const Array<StaticArray<TestType, 10>, TestStorage> copy = arr;
     assert(copy.Size() == 100);
 
     for (int i = 0; i < 100; i++)
@@ -111,7 +113,7 @@ void test1()
 
     //--------------------------------------------------------
 
-    const Array<Array<TestType, StaticStorage, 10>, TestStorage> move = std::move(arr);
+    const Array<StaticArray<TestType, 10>, TestStorage> move = std::move(arr);
     assert(move.Size() == 100);
     assert(arr.Size() == 0);
 
@@ -121,8 +123,8 @@ void test1()
             assert(move.At(i).At(j) == i + j);
     }
 
-    Array<Array<TestType, StaticStorage, 10>, TestStorage> copy2 = move;
-    Array<Array<TestType, StaticStorage, 10>, TestStorage> copy3 = move;
+    Array<StaticArray<TestType, 10>, TestStorage> copy2 = move;
+    Array<StaticArray<TestType, 10>, TestStorage> copy3 = move;
     assert(copy2.Size() == 100);
     assert(copy3.Size() == 100);
 
@@ -185,7 +187,7 @@ void test2()
 
 void test3()
 {
-    Array<Array<TestType, StaticStorage, 10>, TestStorage> arr;
+    Array<StaticArray<TestType, 10>, TestStorage> arr;
 
     for (int i = 0; i < 100; i++)
     {
@@ -289,16 +291,16 @@ void test7()
     assert(arr2.Size() == 0);
 }
 
-void test8()
-{
-    Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> arr;
-    for (int i = 0; i < 10; i++)
-    {
-        arr[i][0] = i % 2;
-    }
+// void test8()
+// {
+//     Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> arr;
+//     for (int i = 0; i < 10; i++)
+//     {
+//         arr[i][0] = i % 2;
+//     }
 
-    Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> move = std::move(arr);
-}
+//     Array<Array<ComplexInt, StaticStorage, 1>, StaticStorage, 10> move = std::move(arr);
+// }
 
 void test9()
 {

@@ -5,12 +5,14 @@
 #include <cstddef>
 #include <cassert>
 #include <stdexcept>
-#include <new>
+#include <memory>
 
-template<typename T, size_t Dummy = 0>
+template<typename T, template<typename T_> class Allocator, size_t Dummy = 0>
 class DynamicStorage
 {
     static constexpr size_t MINIMAL_CAPACITY = 16;
+
+    using alloc = std::allocator_traits<Allocator<T>>;
     
 public:
     using IsContiguous = std::true_type;   
@@ -79,7 +81,7 @@ public:
         for (size_t i = 0; i < size_; i++)
             data_[i].~T();
 
-        ::operator delete(data_);
+        alloc::deallocate(alloc_, data_, capacity_);
         data_ = nullptr;
         size_ = 0;
         capacity_ = 0;
@@ -240,7 +242,7 @@ private:
         assert(new_capacity >= size_);
         new_capacity = std::max(new_capacity, size_t(MINIMAL_CAPACITY));
 
-        T* new_data = (T*)::operator new(new_capacity * sizeof(T));
+        T* new_data = alloc::allocate(alloc_, new_capacity);
         ssize_t i = 0;
         try
         {
@@ -253,7 +255,7 @@ private:
             for (i--; i >= 0; i--)
                 new_data[i].~T();
 
-            ::operator delete(new_data);
+            alloc::deallocate(alloc_, new_data, new_capacity);
             throw;
         }
 
@@ -261,7 +263,7 @@ private:
             data_[i].~T();
         
         if (data_ != nullptr)
-            ::operator delete(data_);
+            alloc::deallocate(alloc_, data_, capacity_);
 
         data_ = new_data;
         capacity_ = new_capacity;
@@ -272,6 +274,8 @@ private:
 
     size_t size_;
     size_t capacity_;
+
+    Allocator<T> alloc_;
 };
 
 #endif

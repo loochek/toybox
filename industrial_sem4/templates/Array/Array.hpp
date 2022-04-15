@@ -153,6 +153,7 @@ private:
     ArrayIteratorBase(const Array *array, size_t index) : array_(const_cast<Array*>(array)), index_(index) {}
 
     friend Array;
+    friend ArrayIteratorBase<Array, !IsConst>;
 
 private:
     Array *array_;
@@ -168,13 +169,14 @@ using ArrayConstIterator = ArrayIteratorBase<Array, true>;
 template
 <
     typename T,
-    template<typename T_, size_t StaticSize_> class Storage = DynamicStorage,
+    template<typename T_, template<typename T__> class Allocator_, size_t StaticSize_> class Storage = DynamicStorage,
+    template<typename T_> class Allocator = std::allocator,
     size_t StaticSize = 0
 >
 class Array
 {
 public:
-    using IteratorCategory = std::conditional_t<Storage<T, StaticSize>::IsContiguous::value,
+    using IteratorCategory = std::conditional_t<Storage<T, Allocator, StaticSize>::IsContiguous::value,
                                                 std::random_access_iterator_tag, std::contiguous_iterator_tag>;
     using DifferenceType   = std::ptrdiff_t;
     using ValueType        = T;
@@ -194,7 +196,7 @@ public:
     }
 
     Array(const Array &other) = default;
-    Array(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<ValueType, StaticSize>>) = default;
+    Array(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<ValueType, Allocator, StaticSize>>) = default;
 
     Array& operator=(const Array &other)
     {
@@ -202,7 +204,7 @@ public:
         return *this;
     }
 
-    Array& operator=(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<ValueType, StaticSize>>)
+    Array& operator=(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<ValueType, Allocator, StaticSize>>)
     {
         storage_ = std::move(other.storage_);
         return *this;
@@ -347,15 +349,16 @@ public:
     }
 
 private:
-    Storage<ValueType, StaticSize> storage_;
+    Storage<ValueType, Allocator, StaticSize> storage_;
 };
 
 template
 <
-    template<typename T_, size_t StaticSize_> class Storage,
+    template<typename T_, template<typename T__> class Allocator_, size_t StaticSize_> class Storage,
+    template<typename T_> class Allocator,
     size_t StaticSize
 >
-class Array<bool, Storage, StaticSize>
+class Array<bool, Storage, Allocator, StaticSize>
 {
     static constexpr size_t BITS = 8; // Bits count in uint8_t
 
@@ -368,7 +371,7 @@ class Array<bool, Storage, StaticSize>
 
 public:
 
-    using IteratorCategory = std::conditional_t<Storage<uint8_t, CalculateSpace(StaticSize)>::IsContiguous::value,
+    using IteratorCategory = std::conditional_t<Storage<uint8_t, Allocator, CalculateSpace(StaticSize)>::IsContiguous::value,
                                                 std::random_access_iterator_tag, std::contiguous_iterator_tag>;
     using DifferenceType   = std::ptrdiff_t;
     using ValueType        = bool;
@@ -587,9 +590,18 @@ private:
     };
 
 private:
-    Storage<uint8_t, CalculateSpace(StaticSize)> storage_;
+    Storage<uint8_t, Allocator, CalculateSpace(StaticSize)> storage_;
     size_t bool_size_;
 };
+
+template<typename T, size_t Size>
+using StaticArray = Array<T, StaticStorage, std::allocator, Size>; // std::allocator is not used really
+
+template<typename T, template<typename T_> class Allocator = std::allocator>
+using DynamicArray = Array<T, DynamicStorage, Allocator, 0>;
+
+template<typename T, template<typename T_> class Allocator = std::allocator>
+using ChunkedArray = Array<T, ChunkedStorage, Allocator, 0>;
 
 // namespace std
 // {

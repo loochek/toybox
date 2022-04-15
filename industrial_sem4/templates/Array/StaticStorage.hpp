@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cassert>
 
-template<typename T, size_t StaticSize>
+template<typename T, template<typename T_> class Dummy, size_t StaticSize>
 class StaticStorage
 {
 public:
