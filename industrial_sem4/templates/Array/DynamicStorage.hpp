@@ -46,7 +46,7 @@ public:
     }
 
     DynamicStorage(const DynamicStorage &other) :
-        data_(nullptr), size_(0), capacity_(0)
+        data_(nullptr), size_(0), capacity_(0), alloc_(other.alloc_)
     {
         Reserve(other.size_);
         ssize_t i = 0;
@@ -69,7 +69,7 @@ public:
     }
 
     DynamicStorage(DynamicStorage &&other) noexcept :
-        data_(other.data_), capacity_(other.capacity_), size_(other.size_)
+        data_(other.data_), capacity_(other.capacity_), size_(other.size_), alloc_(std::move(other.alloc_))
     {
         other.data_ = nullptr;
         other.capacity_ = 0;
@@ -92,7 +92,7 @@ public:
         if (this == &other)
             return *this;
 
-        Clear();
+        this->~DynamicStorage();
         Reserve(other.size_);
 
         ssize_t i = 0;
@@ -123,6 +123,7 @@ public:
         data_ = other.data_;
         capacity_ = other.capacity_;
         size_ = other.size_;
+        alloc_ = std::move(other.alloc_);
 
         other.data_ = nullptr;
         other.capacity_ = 0;
