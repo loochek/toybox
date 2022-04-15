@@ -8,7 +8,7 @@
 #include <new>
 #include "DynamicStorage.hpp"
 
-template<typename T, size_t SIZE = 0>
+template<typename T, size_t Dummy = 0>
 class ChunkedStorage
 {
     static constexpr size_t CHUNK_SIZE = 1024;

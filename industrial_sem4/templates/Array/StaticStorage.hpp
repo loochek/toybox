@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cassert>
 
-template<typename T, size_t SIZE>
+template<typename T, size_t StaticSize>
 class StaticStorage
 {
 public:
@@ -16,7 +16,7 @@ public:
     template<typename T_ = T, std::enable_if_t<std::is_nothrow_move_constructible_v<T_>>* = nullptr>
     StaticStorage(StaticStorage &&other) noexcept
     {
-        for (ssize_t i = 0; i < SIZE; i++)
+        for (ssize_t i = 0; i < StaticSize; i++)
             data_[i] = std::move(other.data_[i]);
     }
 
@@ -30,7 +30,7 @@ public:
     template<typename T_ = T, std::enable_if_t<std::is_nothrow_move_constructible_v<T_>>* = nullptr>
     StaticStorage &operator=(StaticStorage &&other) noexcept
     {
-        for (ssize_t i = 0; i < SIZE; i++)
+        for (ssize_t i = 0; i < StaticSize; i++)
             data_[i] = std::move(other.data_[i]);
     }
 
@@ -47,7 +47,7 @@ public:
 
     inline const T& Access(size_t index) const noexcept
     {
-        assert(index < SIZE);
+        assert(index < StaticSize);
         return data_[index];
     }
 
@@ -63,11 +63,11 @@ public:
 
     inline const size_t Size() const noexcept
     {
-        return SIZE;
+        return StaticSize;
     }
 
 private:
-    T data_[SIZE];
+    T data_[StaticSize];
 };
 
 #endif

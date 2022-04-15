@@ -168,13 +168,13 @@ using ArrayConstIterator = ArrayIteratorBase<Array, true>;
 template
 <
     typename T,
-    template<typename T_, size_t SIZE_> class Storage = DynamicStorage,
-    size_t SIZE = 0
+    template<typename T_, size_t StaticSize_> class Storage = DynamicStorage,
+    size_t StaticSize = 0
 >
 class Array
 {
 public:
-    using IteratorCategory = std::conditional_t<Storage<T, SIZE>::IsContiguous::value,
+    using IteratorCategory = std::conditional_t<Storage<T, StaticSize>::IsContiguous::value,
                                                 std::random_access_iterator_tag, std::contiguous_iterator_tag>;
     using DifferenceType   = std::ptrdiff_t;
     using ValueType        = T;
@@ -194,7 +194,7 @@ public:
     }
 
     Array(const Array &other) = default;
-    Array(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<ValueType, SIZE>>) = default;
+    Array(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<ValueType, StaticSize>>) = default;
 
     Array& operator=(const Array &other)
     {
@@ -202,7 +202,7 @@ public:
         return *this;
     }
 
-    Array& operator=(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<ValueType, SIZE>>)
+    Array& operator=(Array &&other) noexcept(std::is_nothrow_move_constructible_v<Storage<ValueType, StaticSize>>)
     {
         storage_ = std::move(other.storage_);
         return *this;
@@ -347,15 +347,15 @@ public:
     }
 
 private:
-    Storage<ValueType, SIZE> storage_;
+    Storage<ValueType, StaticSize> storage_;
 };
 
 template
 <
-    template<typename T_, size_t SIZE_> class Storage,
-    size_t SIZE
+    template<typename T_, size_t StaticSize_> class Storage,
+    size_t StaticSize
 >
-class Array<bool, Storage, SIZE>
+class Array<bool, Storage, StaticSize>
 {
     static constexpr size_t BITS = 8; // Bits count in uint8_t
 
@@ -364,10 +364,11 @@ class Array<bool, Storage, SIZE>
         return capacity / BITS + !!(capacity % BITS);
     }
 
-public:
     class BoolReference;
 
-    using IteratorCategory = std::conditional_t<Storage<uint8_t, CalculateSpace(SIZE)>::IsContiguous::value,
+public:
+
+    using IteratorCategory = std::conditional_t<Storage<uint8_t, CalculateSpace(StaticSize)>::IsContiguous::value,
                                                 std::random_access_iterator_tag, std::contiguous_iterator_tag>;
     using DifferenceType   = std::ptrdiff_t;
     using ValueType        = bool;
@@ -549,7 +550,7 @@ public:
         return storage_.Size() == 0;
     }
 
-public:
+private:
     class BoolReference
     {
     public:
@@ -586,7 +587,7 @@ public:
     };
 
 private:
-    Storage<uint8_t, CalculateSpace(SIZE)> storage_;
+    Storage<uint8_t, CalculateSpace(StaticSize)> storage_;
     size_t bool_size_;
 };
 

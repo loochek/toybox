@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <new>
 
-template<typename T, size_t SIZE = 0>
+template<typename T, size_t Dummy = 0>
 class DynamicStorage
 {
     static constexpr size_t MINIMAL_CAPACITY = 16;
