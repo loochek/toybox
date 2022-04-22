@@ -1,7 +1,7 @@
-build: string_test
+build: string_tests
 
-string_test: test.cpp String.hpp StringBase.hpp StringView.hpp
-	clang++ -std=c++20 -g -o string_test -fsanitize=address test.cpp
+string_tests: tests.cpp String.hpp StringBase.hpp StringView.hpp
+	clang++ -std=c++20 -g -o string_tests -fsanitize=address tests.cpp
 
 clean:
-	rm -f string_test
+	rm -f string_tests

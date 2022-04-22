@@ -18,8 +18,8 @@ public:
     StringImpl& operator=(const char *str)
     {
         size_t size = strlen(str);
-        impl_->Reserve(size + 1);
-        strcpy(impl_->data_, str);
+        impl_->Reserve(size);
+        strcpy(impl_->Data(), str);
         impl_->size_ = size;
 
         return static_cast<StringImpl&>(*this);
@@ -27,12 +27,12 @@ public:
 
     CharType& Access(size_t index) noexcept
     {
-        return impl_->data_[index];
+        return impl_->Data()[index];
     }
 
     const CharType& Access(size_t index) const noexcept
     {
-        return impl_->data_[index];
+        return impl_->Data()[index];
     }
 
     CharType& operator[](size_t index)
@@ -53,13 +53,16 @@ public:
 
     void PushBack(CharType ch)
     {
-        impl_->Reserve(impl_->size_ + 2); // Null terminator
+        impl_->Reserve(impl_->size_ + 1);
         impl_->Data()[impl_->size_++] = ch;
     }
 
-    void PopBack() noexcept
+    void PopBack()
     {
-        impl_->data_[impl_->size_--] = 0;
+        if (impl_->size_ == 0)
+            throw std::logic_error("Trying to pop from empty string");
+
+        impl_->Data()[--impl_->size_] = 0;
     }
 
     void Clear() noexcept
@@ -69,7 +72,7 @@ public:
 
     const CharType* CStr() const noexcept
     {
-        return impl_->data_;
+        return impl_->Data();
     }
 
     size_t Size() const noexcept
@@ -82,13 +85,25 @@ private:
 };
 
 template<typename CharType, typename StorageProvider>
-CharType &Front(StringBase<CharType, StorageProvider> &str)
+const CharType& Front(const StringBase<CharType, StorageProvider> &str)
 {
     return str[0];
 }
 
 template<typename CharType, typename StorageProvider>
-CharType &Back(StringBase<CharType, StorageProvider> &str)
+CharType& Front(StringBase<CharType, StorageProvider> &str)
+{
+    return str[0];
+}
+
+template<typename CharType, typename StorageProvider>
+const CharType& Back(const StringBase<CharType, StorageProvider> &str)
+{
+    return str[str.Size() - 1];
+}
+
+template<typename CharType, typename StorageProvider>
+CharType& Back(StringBase<CharType, StorageProvider> &str)
 {
     return str[str.Size() - 1];
 }

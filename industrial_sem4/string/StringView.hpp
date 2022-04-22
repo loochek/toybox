@@ -13,12 +13,15 @@ class StringView : public StringBase<CharType, StringView<CharType>>
 public:
     using StringBase<CharType, StringView<CharType>>::operator=;
 
-    StringView(CharType* buffer, size_t size) noexcept : data_(buffer), size_(size - 1), capacity_(size)
+    StringView(CharType* buffer, size_t size) noexcept :
+        data_(buffer), size_(0), capacity_(size)
     {
         assert(size != 0);
+        memset(buffer, 0, sizeof(CharType) * size);
     }
 
-    explicit StringView(CharType* str) noexcept : data_(str), size_(strlen(str)), capacity_(size_ + 1) {}
+    explicit StringView(CharType* str) noexcept :
+        data_(str), size_(strlen(str)), capacity_(size_ + 1) {}
 
     StringView(const StringView &other) noexcept = default;
 
@@ -30,9 +33,19 @@ public:
     }
 
 private:
-    void Reserve(size_t desired_capacity)
+    CharType* Data() noexcept
     {
-        if (desired_capacity > capacity_)
+        return data_;
+    }
+
+    const CharType* Data() const noexcept
+    {
+        return data_;
+    }
+
+    void Reserve(size_t chars_count)
+    {
+        if (chars_count + 1 > capacity_) // Null terminator
             throw std::logic_error("StringView capacity exceeded");
     }
 
