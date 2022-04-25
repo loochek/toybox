@@ -8,10 +8,12 @@
 template<typename CharType = char>
 class StringView : public StringBase<CharType, StringView<CharType>>
 {
-    friend StringBase<CharType, StringView<CharType>>;
+    using Base = StringBase<CharType, StringView<CharType>>;
+    friend Base;
 
 public:
-    using StringBase<CharType, StringView<CharType>>::operator=;
+    using ChType = CharType;
+    using Base::operator=;
 
     StringView(CharType* buffer, size_t size) noexcept :
         data_(buffer), size_(0), capacity_(size)

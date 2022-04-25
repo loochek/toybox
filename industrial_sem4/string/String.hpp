@@ -1,7 +1,9 @@
 #ifndef STRING_HPP
 #define STRING_HPP
 
+#include <cassert>
 #include "StringBase.hpp"
+#include "StringView.hpp"
 
 template<typename CharType = char, template<typename T_> class Allocator = std::allocator>
 class String : public StringBase<CharType, String<CharType>>
@@ -16,6 +18,9 @@ class String : public StringBase<CharType, String<CharType>>
     static_assert(SSO_CAPACITY < MINIMAL_DYN_CAPACITY);
 
 public:
+    using Base::operator=;
+    using ChType = CharType;
+
     String() : data_(nullptr), size_(0), capacity_(0) {}
 
     String(size_t size) : String()
@@ -25,9 +30,9 @@ public:
 
     String(const String &other) : String()
     {
-        Reserve(other.size_);
-        memcpy(Data(), other.Data(), sizeof(CharType) * (other.size_ + 1));
-        size_ = other.size_;
+        Reserve(other.Size());
+        memcpy(Data(), other.CStr(), sizeof(CharType) * (other.Size() + 1));
+        size_ = other.Size();
     }
 
     String(String &&other) : data_(other.data_), size_(other.size_), capacity_(other.capacity_)
@@ -55,10 +60,10 @@ public:
     String& operator=(const String &other)
     {
         Base::Clear();
-        Reserve(other.size_);
-        memcpy(Data(), other.Data(), sizeof(CharType) * (other.size_ + 1));
+        Reserve(other.Size());
+        memcpy(Data(), other.CStr(), sizeof(CharType) * (other.Size() + 1));
 
-        size_ = other.size_;
+        size_ = other.Size();
         return *this;
     }
 
@@ -76,11 +81,15 @@ public:
         return *this;
     }
 
-    String& operator=(const char *str)
+    StringView<CharType> View()
     {
-        Base::operator=(str);
-        return *this;
+        return StringView<CharType>(Data());
     }
+
+    // const StringView<CharType> View() const
+    // {
+    //     return StringView<CharType>(Data());
+    // }
 
     void Reserve(size_t chars_count)
     {
