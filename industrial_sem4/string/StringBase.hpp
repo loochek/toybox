@@ -65,6 +65,13 @@ public:
     }
 
     template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
+    StringImpl& operator+=(const CharType ch)
+    {
+        PushBack(ch);
+        return static_cast<StringImpl&>(*this);
+    }
+
+    template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
     void PopBack()
     {
         if (impl_->ImplSize() == 0)

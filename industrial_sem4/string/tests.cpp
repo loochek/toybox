@@ -10,7 +10,7 @@ void test1()
     assert(strcmp(str.CStr(), "AMOGUS") == 0);
 
     str.PushBack('S');
-    str.PushBack('S');
+    str += 'S';
     assert(strcmp(str.CStr(), "AMOGUSSS") == 0);
 
     str.PopBack();
