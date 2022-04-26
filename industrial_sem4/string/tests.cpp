@@ -25,8 +25,8 @@ void test1()
     assert(strcmp(str_copy.CStr(), "AMOG") == 0);
 
     String str_copy2 = str;
-    StringView view2 = str_copy2.View();
-    view2[3] = 'A';
+    ConstStringView<char> view2 = str_copy2.View();
+    str_copy2[3] = 'A';
     assert(strcmp(str_copy2.CStr(), "AMOA") == 0);
     assert(strcmp(view2.CStr(), "AMOA") == 0);
 }
@@ -34,7 +34,7 @@ void test1()
 void test2()
 {
     char buffer[21];
-    StringView view(buffer, 21);
+    MutableStringView<char> view(buffer, 21);
 
     const char *str = "AMOGUSAMOGUSAMOGUSAM";
     for (int i = 0; i < 20; i++)
@@ -42,12 +42,11 @@ void test2()
 
     assert(strcmp(view.CStr(), "AMOGUSAMOGUSAMOGUSAM") == 0);
 
-    const StringView view_copy = view;
     Front(view) = 'Z';
-    assert(strcmp(view_copy.CStr(), "ZMOGUSAMOGUSAMOGUSAM") == 0);
+    assert(strcmp(view.CStr(), "ZMOGUSAMOGUSAMOGUSAM") == 0);
 
     buffer[0] = 'A';
-    assert(strcmp(view_copy.CStr(), "AMOGUSAMOGUSAMOGUSAM") == 0);
+    assert(strcmp(view.CStr(), "AMOGUSAMOGUSAMOGUSAM") == 0);
 }
 
 void test3()
@@ -55,7 +54,7 @@ void test3()
     String str = "AMOGUSAMOGUSAMOGUS";
 
     char buffer[21];
-    StringView view(buffer, 21);
+    MutableStringView<char> view(buffer, 21);
     view = str.CStr();
     
     std::sort(Begin(str), End(str));
@@ -64,6 +63,10 @@ void test3()
     assert(strcmp(view.CStr(), "AMOGUSAMOGUSAMOGUS") == 0);
     std::sort(Begin(view), End(view));
     assert(strcmp(view.CStr(), "AAAGGGMMMOOOSSSUUU") == 0);
+
+    const String str2 = "AAAGGGMMMOOOSSSUUU";
+    auto iter = std::find(Begin(str2), End(str2), 'U');
+    assert(iter - Begin(str2) == 15);
 }
 
 int main()

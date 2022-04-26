@@ -4,27 +4,32 @@
 #include <cstring>
 #include <type_traits>
 #include <stdexcept>
+#include "StringUtils.hpp"
 
-template<typename CharType, typename StringImpl>
+template<typename CharType, typename StringImpl, bool Mutable>
 class StringBase
 {
     static_assert(std::is_fundamental_v<CharType>, "CharType must be fundamental type");
 
 public:
+    using ChType = CharType;
+    
     StringBase() noexcept : impl_(static_cast<StringImpl*>(this)) {}
 
-    StringBase(const StringBase& /*other*/) : impl_(static_cast<StringImpl*>(this)) {}
+    StringBase(const StringBase& /*other*/) noexcept : impl_(static_cast<StringImpl*>(this)) {}
 
-    StringImpl& operator=(const char *str)
+    template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
+    StringImpl& operator=(const CharType *str)
     {
-        size_t size = strlen(str);
+        size_t size = StrLen(str);
         impl_->Reserve(size);
-        strcpy(impl_->Data(), str);
-        impl_->size_ = size;
+        memcpy(impl_->Data(), str, sizeof(CharType) * (size + 1));
+        impl_->ImplSize() = size;
 
         return static_cast<StringImpl&>(*this);
     }
 
+    template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
     CharType& Access(size_t index) noexcept
     {
         return impl_->Data()[index];
@@ -35,9 +40,10 @@ public:
         return impl_->Data()[index];
     }
 
+    template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
     CharType& operator[](size_t index)
     {
-        if (index >= impl_->size_)
+        if (index >= impl_->ImplSize())
             throw std::logic_error("String index out of range");
 
         return Access(index);
@@ -45,29 +51,33 @@ public:
 
     const CharType& operator[](size_t index) const
     {
-        if (index >= impl_->size_)
+        if (index >= impl_->ImplSize())
             throw std::logic_error("String index out of range");
 
         return Access(index);
     }
 
+    template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
     void PushBack(CharType ch)
     {
-        impl_->Reserve(impl_->size_ + 1);
-        impl_->Data()[impl_->size_++] = ch;
+        impl_->Reserve(impl_->ImplSize() + 1);
+        impl_->Data()[impl_->ImplSize()++] = ch;
     }
 
+    template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
     void PopBack()
     {
-        if (impl_->size_ == 0)
+        if (impl_->ImplSize() == 0)
             throw std::logic_error("Trying to pop from empty string");
 
-        impl_->Data()[--impl_->size_] = 0;
+        impl_->Data()[--impl_->ImplSize()] = 0;
     }
 
+    template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
     void Clear() noexcept
     {
-        impl_->size_ = 0;
+        memset(&impl_->Data(), 0, sizeof(CharType) * impl_->ImplSize());
+        impl_->ImplSize() = 0;
     }
 
     const CharType* CStr() const noexcept
@@ -77,7 +87,7 @@ public:
 
     size_t Size() const noexcept
     {
-        return impl_->size_;
+        return impl_->ImplSize();
     }
 
 private:
@@ -271,7 +281,7 @@ auto Begin(const String &str)
 template<typename String>
 auto CBegin(const String &str)
 {
-    return StringBaseIterator<String, true>(&str, str.Size());
+    return StringBaseIterator<String, true>(&str, 0);
 }
 
 template<typename String>

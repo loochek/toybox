@@ -6,9 +6,9 @@
 #include "StringView.hpp"
 
 template<typename CharType = char, template<typename T_> class Allocator = std::allocator>
-class String : public StringBase<CharType, String<CharType>>
+class String : public StringBase<CharType, String<CharType>, true>
 {
-    using Base = StringBase<CharType, String<CharType>>;
+    using Base = StringBase<CharType, String<CharType>, true>;
     friend Base;
 
     using alloc = std::allocator_traits<Allocator<CharType>>;
@@ -19,7 +19,6 @@ class String : public StringBase<CharType, String<CharType>>
 
 public:
     using Base::operator=;
-    using ChType = CharType;
 
     String() : data_(nullptr), size_(0), capacity_(0) {}
 
@@ -30,19 +29,20 @@ public:
 
     String(const String &other) : String()
     {
-        Reserve(other.Size());
-        memcpy(Data(), other.CStr(), sizeof(CharType) * (other.Size() + 1));
-        size_ = other.Size();
+        Reserve(other.size_);
+        memcpy(Data(), other.Data(), sizeof(CharType) * (other.size_ + 1));
+        size_ = other.size_;
     }
 
-    String(String &&other) : data_(other.data_), size_(other.size_), capacity_(other.capacity_)
+    String(String &&other) :
+        data_(other.data_), size_(other.size_), capacity_(other.capacity_), alloc_(std::move(other.alloc_))
     {
         other.data_ = nullptr;
         other.size_ = 0;
         other.capacity_ = 0;
     }
 
-    String(const char *str) : String()
+    String(const CharType *str) : String()
     {
         Base::operator=(str);
     }
@@ -59,37 +59,24 @@ public:
 
     String& operator=(const String &other)
     {
-        Base::Clear();
-        Reserve(other.Size());
-        memcpy(Data(), other.CStr(), sizeof(CharType) * (other.Size() + 1));
-
-        size_ = other.Size();
+        if (this != &other)
+            String(other).Swap(*this);
+        
         return *this;
     }
 
     String& operator=(String &&other)
     {
-        this->~String();
-        data_ = other.data_;
-        data_ = other.size_;
-        capacity_ = other.capacity_;
-
-        other.data_ = nullptr;
-        other.size_ = 0;
-        other.capacity_ = 0;
-
+        if (this != &other)
+            String(std::move(other)).Swap(*this);
+        
         return *this;
     }
 
-    StringView<CharType> View()
+    auto View() const noexcept
     {
-        return StringView<CharType>(Data());
+        return ConstStringView<CharType>(Data(), capacity_, size_);
     }
-
-    // const StringView<CharType> View() const
-    // {
-    //     return StringView<CharType>(Data());
-    // }
 
     void Reserve(size_t chars_count)
     {
@@ -116,15 +103,33 @@ public:
         SetCapacity(needed_capacity);
     }
 
+    void Swap(String &other)
+    {
+        std::swap(data_, other.data_);
+        std::swap(capacity_, other.capacity_);
+        std::swap(size_, other.size_);
+        std::swap(alloc_, other.alloc_);
+    }
+
 private:
     CharType* Data() noexcept
     {
-        return IsSSOInUse() ? sso_data_ : data_;
+        return const_cast<CharType*>(static_cast<const String*>(this)->Data());
     }
 
     const CharType* Data() const noexcept
     {
         return IsSSOInUse() ? sso_data_ : data_;
+    }
+
+    size_t& ImplSize() noexcept
+    {
+        return size_;
+    }
+
+    const size_t& ImplSize() const noexcept
+    {
+        return size_;
     }
 
     void SetCapacity(size_t new_capacity)

@@ -5,27 +5,39 @@
 #include <type_traits>
 #include "StringBase.hpp"
 
-template<typename CharType = char>
-class StringView : public StringBase<CharType, StringView<CharType>>
+template<bool Mutable, typename CharType = char>
+class StringView : public StringBase<CharType, StringView<Mutable, CharType>, Mutable>
 {
-    using Base = StringBase<CharType, StringView<CharType>>;
+    using Base = StringBase<CharType, StringView<Mutable, CharType>, Mutable>;
     friend Base;
 
 public:
-    using ChType = CharType;
     using Base::operator=;
 
-    StringView(CharType* buffer, size_t size) noexcept :
-        data_(buffer), size_(0), capacity_(size)
+    // New non-owning string
+    StringView(const CharType* buffer, size_t capacity) noexcept :
+        data_(const_cast<CharType*>(buffer)), size_(0), capacity_(capacity)
     {
-        assert(size != 0);
-        memset(buffer, 0, sizeof(CharType) * size);
+        assert(capacity != 0);
+        memset(data_, 0, sizeof(CharType) * capacity_);
     }
 
-    explicit StringView(CharType* str) noexcept :
-        data_(str), size_(strlen(str)), capacity_(size_ + 1) {}
+    // Initialize from existing string
+    StringView(const CharType* buffer, size_t capacity, size_t size) noexcept :
+        data_(const_cast<CharType*>(buffer)), size_(size), capacity_(capacity)
+    {
+        assert(capacity != 0);
+    }
 
-    StringView(const StringView &other) noexcept = default;
+    StringView(const StringView &other) noexcept = delete;
+
+    StringView(StringView &&other) :
+        data_(other.data_), size_(other.size_), capacity_(other.capacity_)
+    {
+        other.data_ = nullptr;
+        other.size_ = 0;
+        other.capacity_ = 0;
+    }
 
     ~StringView()
     {
@@ -34,7 +46,23 @@ public:
         capacity_ = 0;
     }
 
+    StringView& operator=(StringView &&other)
+    {
+        if (this != &other)
+            StringView(std::move(other)).Swap(*this);
+        
+        return *this;
+    }
+
+    void Swap(StringView &other)
+    {
+        std::swap(data_, other.data_);
+        std::swap(capacity_, other.capacity_);
+        std::swap(size_, other.size_);
+    }
+
 private:
+    template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
     CharType* Data() noexcept
     {
         return data_;
@@ -43,6 +71,17 @@ private:
     const CharType* Data() const noexcept
     {
         return data_;
+    }
+
+    template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
+    size_t& ImplSize() noexcept
+    {
+        return size_;
+    }
+
+    const size_t& ImplSize() const noexcept
+    {
+        return size_;
     }
 
     void Reserve(size_t chars_count)
@@ -57,5 +96,11 @@ private:
     size_t size_;
     size_t capacity_;
 };
+
+template<typename CharType = char>
+using MutableStringView = StringView<true, CharType>;
+
+template<typename CharType = char>
+using ConstStringView = StringView<false, CharType>;
 
 #endif
