@@ -26,9 +26,9 @@ void test1()
 
     String str_copy2 = str;
     ConstStringView<char> view2 = str_copy2.View();
+    assert(strcmp(view2.CStr(), "AMOG") == 0);
     str_copy2[3] = 'A';
     assert(strcmp(str_copy2.CStr(), "AMOA") == 0);
-    assert(strcmp(view2.CStr(), "AMOA") == 0);
 }
 
 void test2()

@@ -23,7 +23,7 @@ public:
     {
         size_t size = StrLen(str);
         impl_->Reserve(size);
-        memcpy(impl_->Data(), str, sizeof(CharType) * (size + 1));
+        memcpy(impl_->MutableData(), str, sizeof(CharType) * (size + 1));
         impl_->ImplSize() = size;
 
         return static_cast<StringImpl&>(*this);
@@ -32,12 +32,12 @@ public:
     template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
     CharType& Access(size_t index) noexcept
     {
-        return impl_->Data()[index];
+        return impl_->MutableData()[index];
     }
 
     const CharType& Access(size_t index) const noexcept
     {
-        return impl_->Data()[index];
+        return impl_->ConstData()[index];
     }
 
     template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
@@ -61,7 +61,7 @@ public:
     void PushBack(CharType ch)
     {
         impl_->Reserve(impl_->ImplSize() + 1);
-        impl_->Data()[impl_->ImplSize()++] = ch;
+        impl_->MutableData()[impl_->ImplSize()++] = ch;
     }
 
     template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
@@ -77,19 +77,19 @@ public:
         if (impl_->ImplSize() == 0)
             throw std::logic_error("Trying to pop from empty string");
 
-        impl_->Data()[--impl_->ImplSize()] = 0;
+        impl_->MutableData()[--impl_->ImplSize()] = 0;
     }
 
     template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
     void Clear() noexcept
     {
-        memset(&impl_->Data(), 0, sizeof(CharType) * impl_->ImplSize());
+        memset(&impl_->MutableData(), 0, sizeof(CharType) * impl_->ImplSize());
         impl_->ImplSize() = 0;
     }
 
     const CharType* CStr() const noexcept
     {
-        return impl_->Data();
+        return impl_->ConstData();
     }
 
     size_t Size() const noexcept

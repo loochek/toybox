@@ -63,12 +63,12 @@ public:
 
 private:
     template<bool Cond = Mutable, std::enable_if_t<Cond, int> = 0>
-    CharType* Data() noexcept
+    CharType* MutableData() noexcept
     {
         return data_;
     }
 
-    const CharType* Data() const noexcept
+    const CharType* ConstData() const noexcept
     {
         return data_;
     }
