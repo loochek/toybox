@@ -87,7 +87,7 @@ public:
         impl_->ImplSize() = 0;
     }
 
-    const CharType* CStr() const noexcept
+    const CharType* Data() const noexcept
     {
         return impl_->ConstData();
     }
