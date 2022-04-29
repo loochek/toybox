@@ -24,7 +24,7 @@ public:
 
     String() : buffer_(nullptr), sso_(true), size_(0) {}
 
-    String(size_t size) : String()
+    explicit String(size_t size) : String()
     {
         Reserve(size);
         size_ = size;
