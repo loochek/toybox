@@ -15,19 +15,19 @@ public:
     Function() noexcept : target_(nullptr) {}
 
     template<typename Functor>
-    Function(Functor func) : target_(new FunctorHolder<Functor>(func)) {}
+    Function(Functor&& func) : target_(new FunctorHolder<Functor>(std::forward<Functor>(func))) {}
 
     ~Function()
     {
         delete target_;
     }
 
-    RetType operator()(ArgsType... args) const 
+    RetType operator()(ArgsType&&... args) const 
     {
         if (target_ == nullptr)
             throw std::bad_function_call();
 
-        return target_->Call(args...);
+        return target_->Call(std::forward<ArgsType>(args)...);
     }
 
     Function(const Function& other) : target_(nullptr)
@@ -93,11 +93,11 @@ private:
     class FunctorHolder : public IFuncBase
     {
     public:
-        FunctorHolder(Functor func) : func_(func) {}
+        FunctorHolder(Functor func) : func_(std::move(func)) {}
 
         virtual RetType Call(ArgsType... args) const override
         {
-            return func_(args...);
+            return func_(std::forward<ArgsType>(args)...);
         }
 
         virtual IFuncBase* Copy() const override
@@ -117,10 +117,28 @@ private:
     IFuncBase* target_;
 };
 
+// Deduction for function pointers
 template<typename RetType, typename... ArgsType>
 Function(RetType (*)(ArgsType...)) -> Function<RetType(ArgsType...)>;
 
+// Deduction for functors
+
+template<typename DummyFuncType>
+struct DeductionHelper;
+
+#define DEDUCTION_HELPER(MODIFIERS) \
+template<typename RetType, typename Class, typename... ArgsType, bool NoExcept> \
+struct DeductionHelper<RetType (Class::*)(ArgsType...) MODIFIERS noexcept(NoExcept)> \
+{ \
+    using FuncType = RetType(ArgsType...); \
+};
+
+DEDUCTION_HELPER()
+DEDUCTION_HELPER(const)
+
+template<typename Functor>
+Function(Functor) -> Function<typename DeductionHelper<decltype(&Functor::operator())>::FuncType>;
+
 /// TODO: forward
-/// TODO: more deduction guidelines
 
 #endif

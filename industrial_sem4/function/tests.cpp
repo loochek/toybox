@@ -3,10 +3,11 @@
 
 int main()
 {
-    Function<void()> kek = []() {
+    Function kek = [](int a, int b) {
         std::cout << "kek\n";
+        return a + b;
     };
-    
-    kek();
+
+    std::cout << kek(1, 2) << std::endl;
     return 0;
 }
