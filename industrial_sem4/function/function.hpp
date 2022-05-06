@@ -15,7 +15,7 @@ public:
     Function() noexcept : target_(nullptr) {}
 
     template<typename Functor>
-    Function(Functor&& func) : target_(new FunctorHolder<Functor>(std::forward<Functor>(func))) {}
+    Function(Functor func) : target_(new FunctorHolder<Functor>(std::move(func))) {}
 
     ~Function()
     {
@@ -138,7 +138,5 @@ DEDUCTION_HELPER(const)
 
 template<typename Functor>
 Function(Functor) -> Function<typename DeductionHelper<decltype(&Functor::operator())>::FuncType>;
-
-/// TODO: forward
 
 #endif
