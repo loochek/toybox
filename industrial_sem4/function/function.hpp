@@ -177,21 +177,11 @@ private:
                 new (to.sfo_buf_) FunctorHolder(std::move(func_));
                 to.state_ = State::Small;
 
-                if (from.state_ == State::Small)
-                    this->~FunctorHolder();
-                else
-                    delete from.target_;
+                this->~FunctorHolder();
             }
             else
             {
-                if (from.state_ == State::Dynamic)
-                    to.target_ = from.target_;
-                else
-                {
-                    new (to.sfo_buf_) FunctorHolder(std::move(func_));
-                    delete from.target_;
-                }
-
+                to.target_ = from.target_;
                 to.state_ = State::Dynamic;
             }
 
