@@ -126,7 +126,7 @@ public:
 private:
     IFuncBase* GetTarget() noexcept
     {
-        return state_ == State::Small ? reinterpret_cast<IFuncBase*>(sfo_buf_) : target_;
+        return const_cast<IFuncBase*>(static_cast<const Function*>(this)->GetTarget());
     }
 
     const IFuncBase* GetTarget() const noexcept
