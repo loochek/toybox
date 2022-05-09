@@ -24,14 +24,19 @@ public:
 class TestFunctor
 {
 public:
-    TestFunctor() = default;
+    TestFunctor() : dummy_(malloc(1024)) {}
+    
+    ~TestFunctor()
+    {
+        free(dummy_);
+    }
 
-    TestFunctor(const TestFunctor& /*other*/)
+    TestFunctor(const TestFunctor& /*other*/) : TestFunctor()
     {
         std::cout << "TestFunctor copy\n";
     }
 
-    TestFunctor(TestFunctor&& /*other*/)
+    TestFunctor(TestFunctor&& /*other*/) : TestFunctor()
     {
         std::cout << "TestFunctor move\n";
     }
@@ -40,6 +45,10 @@ public:
     {
         return x;
     }
+
+private:
+    void* dummy_;
+    char dummy2[128]; // To disable SFO
 };
 
 int main()
