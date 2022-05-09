@@ -8,21 +8,27 @@
 template<typename DummyFuncType>
 class Function;
 
-template<typename RetType, typename... ArgsType>
-class Function<RetType(ArgsType...)>
+template<typename RetType, typename... ArgsType, bool NoExcept>
+class Function<RetType(ArgsType...) noexcept(NoExcept)>
 {
 public:
     Function() noexcept : target_(nullptr) {}
 
+    // For functors
     template<typename Functor>
     Function(Functor func) : target_(new FunctorHolder<Functor>(std::move(func))) {}
+
+    // For class methods
+    template<typename MFuncType, typename MClassType>
+    Function(MFuncType MClassType::*func) :
+        target_(new MethodHolder<MFuncType, MClassType, ArgsType...>(func)) {}
 
     ~Function()
     {
         delete target_;
     }
 
-    RetType operator()(ArgsType&&... args) const 
+    RetType operator()(ArgsType... args) const 
     {
         if (target_ == nullptr)
             throw std::bad_function_call();
@@ -114,27 +120,77 @@ private:
         Functor func_;
     };
 
+    template<typename MFuncType, typename MClassType, typename MClassAccessType, typename... MArgsType>
+    class MethodHolder : public IFuncBase
+    {
+    public:
+        using MPtrType = MFuncType MClassType::*;
+
+        static_assert(std::is_same_v<MFuncType, RetType(MArgsType...) noexcept(NoExcept)> ||
+                      std::is_same_v<MFuncType, RetType(MArgsType...) const noexcept(NoExcept)>,
+                      "Passed class method pointer incompatible with Function instance");
+
+        static_assert(std::is_same_v<MClassAccessType, MClassType&> ||
+            std::is_same_v<MClassAccessType, const MClassType&> ||
+            std::is_same_v<MClassAccessType, MClassType*> ||
+            std::is_same_v<MClassAccessType, const MClassType*>,
+            "Class instance type must be (const) reference or pointer (to const)");
+
+        MethodHolder(MPtrType func) : func_(func) {}
+
+        virtual RetType Call(MClassAccessType instance, MArgsType... args) const override
+        {
+            if constexpr (std::is_pointer_v<MClassAccessType>)
+                return (instance->*func_)(std::forward<MArgsType>(args)...);
+            else
+                return (instance.*func_)(std::forward<MArgsType>(args)...);
+        }
+
+        virtual IFuncBase* Copy() const override
+        {
+            return new MethodHolder(func_);
+        }
+
+        const std::type_info& Type() const noexcept override
+        {
+            return typeid(func_);
+        }
+
+    private:
+        MPtrType func_;
+    };
+
     IFuncBase* target_;
 };
 
-// Deduction for function pointers
-template<typename RetType, typename... ArgsType>
-Function(RetType (*)(ArgsType...)) -> Function<RetType(ArgsType...)>;
+// Deduction guide for function pointers
+template<typename RetType, typename... ArgsType, bool NoExcept>
+Function(RetType (*)(ArgsType...) noexcept(NoExcept)) ->
+    Function<RetType(ArgsType...) noexcept(NoExcept)>;
 
-// Deduction for functors
+// Deduction guide for class methods pointers
+#define METHOD_DEDUCTION_HELPER(MODIFIERS) \
+template<typename MRetType, typename MClassType, typename... MArgsType, bool NoExcept> \
+Function(MRetType (MClassType::*)(MArgsType...) MODIFIERS noexcept(NoExcept)) -> \
+    Function<MRetType(MClassType&, MArgsType...) noexcept(NoExcept)>;
+
+METHOD_DEDUCTION_HELPER()
+METHOD_DEDUCTION_HELPER(const)
+
+// Deduction guide for functors
 
 template<typename DummyFuncType>
 struct DeductionHelper;
 
-#define DEDUCTION_HELPER(MODIFIERS) \
+#define FUNCTOR_DEDUCTION_HELPER(MODIFIERS) \
 template<typename RetType, typename Class, typename... ArgsType, bool NoExcept> \
 struct DeductionHelper<RetType (Class::*)(ArgsType...) MODIFIERS noexcept(NoExcept)> \
 { \
-    using FuncType = RetType(ArgsType...); \
+    using FuncType = RetType(ArgsType...) noexcept(NoExcept); \
 };
 
-DEDUCTION_HELPER()
-DEDUCTION_HELPER(const)
+FUNCTOR_DEDUCTION_HELPER()
+FUNCTOR_DEDUCTION_HELPER(const)
 
 template<typename Functor>
 Function(Functor) -> Function<typename DeductionHelper<decltype(&Functor::operator())>::FuncType>;
