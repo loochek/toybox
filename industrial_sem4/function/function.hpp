@@ -118,7 +118,8 @@ public:
 
     void Swap(Function& other) noexcept
     {
-        std::swap(target_, other.target_);
+        // SFO buffer size >= pointer size
+        std::swap(sfo_buf_, other.sfo_buf_); // Arrays swap!
         std::swap(state_, other.state_);
     }
 
