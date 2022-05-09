@@ -21,7 +21,7 @@ public:
 
     // For functors
     template<typename Functor>
-    Function(Functor func) : state_(State::Empty)
+    Function(Functor func) : target_(nullptr), state_(State::Empty)
     {
         if constexpr (sizeof(FunctorHolder<Functor>) <= SFO_MAX_SIZE)
         {
@@ -37,7 +37,7 @@ public:
 
     // For class methods
     template<typename MFuncType, typename MClassType>
-    Function(MFuncType MClassType::*func) : state_(State::Small)
+    Function(MFuncType MClassType::*func) : target_(nullptr), state_(State::Small)
     {
         assert(sizeof(MethodHolder<MFuncType, MClassType, ArgsType...>) <= SFO_MAX_SIZE);
         new (sfo_buf_) MethodHolder<MFuncType, MClassType, ArgsType...>(func);
